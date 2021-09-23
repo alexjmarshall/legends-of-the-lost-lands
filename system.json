@@ -1,0 +1,38 @@
+{
+  "name": "lostlands",
+  "title": "Legends of the Lost Lands",
+  "description": "A system for play in the Lost Lands.",
+  "author": "Alex",
+  "authors": [],
+  "url": "n/a",
+  "license": "LICENSE.txt",
+  "flags": {},
+  "version": "0.1",
+  "minimumCoreVersion": "0.8.4",
+  "compatibleCoreVersion": "0.8.8",
+  "scripts": [],
+  "esmodules": [
+    "module/simple.js"
+  ],
+  "styles": [
+    "styles/simple.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [],
+  "system": [],
+  "dependencies": [],
+  "socket": false,
+  "manifest": "n/a",
+  "download": "n/a",
+  "protected": false,
+  "gridDistance": 5,
+  "gridUnits": "ft",
+  "primaryTokenAttribute": "hp",
+  "secondaryTokenAttribute": "xp"
+}

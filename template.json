@@ -1,0 +1,59 @@
+{
+"Actor": {
+  "types": ["character", "container"],
+  "templates": {
+    "basicProps": {
+      "biography": "",
+      "attributes": {},
+      "groups": {}
+    }
+  },
+  "character": {
+    "templates": ["basicProps"],
+    "hp": {
+      "value": 10,
+      "min": 0,
+      "max": 10
+    },
+    "xp": {
+      "value": 0,
+      "min": 0,
+      "max": 1000
+    }
+  },
+  "container": {
+    "templates": ["basicProps"]
+  }
+},
+"Item": {
+  "types": ["item", "spell_magic", "spell_cleric", "spell_witch", "feature"],
+  "templates": {
+    "basicProps": {
+      "description": "",
+      "attributes": {},
+      "groups": {},
+      "macro": ""
+    },
+    "spell": {
+      "prepared": false
+    }
+  },
+  "item": {
+    "templates": ["basicProps"],
+    "quantity": 1,
+    "weight": 1
+  },
+  "spell_magic": {
+    "templates": ["basicProps", "spell"]
+  },
+  "spell_cleric": {
+    "templates": ["basicProps", "spell"]
+  },
+  "spell_witch": {
+    "templates": ["basicProps", "spell"]
+  },
+  "feature": {
+    "templates": ["basicProps"]
+  }
+}
+}
