@@ -8,7 +8,7 @@
 export async function createLostlandsMacro(data, slot) {
   if(data.type === 'Macro') return false;
   const item = data.data;
-  const itemName = item?.name;
+  const itemName = item?.name || '';
   const itemMacro = item?.data.macro;
   let itemMacroWithId;
   if(item?._id && itemMacro) itemMacroWithId = itemMacro.replace('itemId', item._id);
@@ -38,7 +38,7 @@ export async function createLostlandsMacro(data, slot) {
           label: "Off-hand",
           callback: () => {
             data.skipOffhandDialog = true;
-            item.data.macro = "game.lostlands.offhandWeaponMacro('itemId')";
+            item.data.macro = "game.lostlands.Macro.offhandWeaponMacro('itemId')";
             item.name += " (off-hand)";
             createLostlandsMacro(data, slot)
           }
@@ -73,7 +73,7 @@ export async function createLostlandsMacro(data, slot) {
           label: "Dismount rider",
           callback: () => {
             data.skipDismountDialog = true;
-            item.data.macro = "game.lostlands.dismountWeaponMacro('itemId')";
+            item.data.macro = "game.lostlands.Macro.dismountWeaponMacro('itemId')";
             item.name += " (dismount)";
             createLostlandsMacro(data, slot)
           }
@@ -143,79 +143,6 @@ export function thrownWeaponMacro(weaponId) {
   }).render(true);
 }
 
-// function baseAttack(weaponId, options={}) {
-//   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
-//   new Dialog({
-//     title: "Attack",
-//     content: 
-//       `<form>
-//         <div class="form-group">
-//           <label>Attack modifiers?</label>
-//           <input type="text" id="atkMod" placeholder="e.g. -4">
-//         </div>
-//       </form>`,
-//     buttons: {
-//       one: {
-//         icon: '<i class="fas fa-check"></i>',
-//         label: "Attack",
-//         callback: async html => {
-//           const atkMod = html.find('[id=atkMod]')[0].value;
-//           attack(atkMod);
-//         }
-//       },
-//       two: {
-//         icon: '<i class="fas fa-times"></i>',
-//         label: "Cancel",
-//         callback: () => console.log("Cancelled attack")
-//       }
-//     },
-//     default: "one"
-//   }).render(true);
-  
-//   async function attack(dialogAtkMod) {
-//     // atk and dmg mods
-//     dialogAtkMod = dialogAtkMod || 0;
-//     const token = canvas.tokens.controlled[0];
-//     const rollData = token.actor.getRollData();
-//     const bab = rollData.bab || 0;
-//     const strmod = rollData.strmod || 0;
-//     const weaponItem = token.actor.data.items.get(weaponId);
-//     const attrAtkMod = strmod;
-//     const weapon = weaponItem?.name;
-//     const weaponAttrs = weaponItem?.data.data.attributes;
-//     const weapAtkMod = weaponAttrs?.atkmod?.value || 0;
-
-//     // target and range
-//     let targetToken, targetRollData;
-//     if([...game.user.targets].length === 1) {
-//       targetToken = [...game.user.targets][0];
-//       targetRollData = targetToken.actor.getRollData();
-//     }
-
-//     // put together chat message content
-//     const d20roll = new Roll("d20");
-//     await d20roll.evaluate();
-//     const totalAtk = `${d20roll.total}+${bab}+${attrAtkMod}${weapAtkMod ? `+${weapAtkMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}`;
-
-//     let targetNameText = '';
-//     if(targetToken?.actor?.name) {
-//       targetNameText = ` ${targetToken.actor.name}`;
-//     }
-
-//     let attackText = `attacks${targetNameText}`;
-//     if(options.dismount) attackText = `attempts to dismount${targetNameText} with ${weapon}`;
-//     if(options.grapple) attackText = `grapples${targetNameText}`;
-
-//     const content = `${attackText} [[${totalAtk}]]`;
-//     ChatMessage.create({
-//       speaker: ChatMessage.getSpeaker(token),
-//       content: content,
-//       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-//       emote: true
-//     }); // , {chatBubble: true}
-//   }
-// }
-
 function weaponAttack(weaponId, options={}) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
   new Dialog({
@@ -238,7 +165,7 @@ function weaponAttack(weaponId, options={}) {
         callback: async html => {
           const atkMod = html.find('[id=atkMod]')[0]?.value;
           const dmgMod = html.find('[id=dmgMod]')[0]?.value;
-          attack(atkMod, dmgMod);
+          await attack(atkMod, dmgMod);
         }
       },
       two: {
@@ -337,22 +264,22 @@ function weaponAttack(weaponId, options={}) {
       }
     }
     if(weapLowerCase.includes('sling')) {
-      attackText = `slings a stone with ${weapon} at${targetNameText}`;
+      attackText = `slings a stone with ${weapon}${targetNameText ? ` at${targetNameText}` : ''}`;
       hitSound = 'sling_hit';
       missSound = 'sling_miss';
     }
     if(weapLowerCase.includes('bow')) {
-      attackText = `shoots an arrow from ${weapon} at${targetNameText}`;
+      attackText = `shoots an arrow from ${weapon}${targetNameText ? ` at${targetNameText}` : ''}`;
       hitSound = 'bow_hit';
       missSound = 'bow_miss';
     }
     if(weapLowerCase.includes('crossbow')) {
-      attackText = `shoots a bolt from ${weapon} at${targetNameText}`;
+      attackText = `shoots a bolt from ${weapon}${targetNameText ? ` at${targetNameText}` : ''}`;
       hitSound = 'crossbow_hit';
       missSound = 'crossbow_miss';
     } 
     if(options.thrown) {
-      attackText = `throws ${weapon} at${targetNameText}`;
+      attackText = `throws ${weapon}${targetNameText ? ` at${targetNameText}` : ''}`;
       hitSound = 'thrown_hit';
       missSound = 'thrown_miss';
     }

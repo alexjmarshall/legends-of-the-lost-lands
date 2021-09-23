@@ -11,7 +11,8 @@ import { SpellItemSheet } from "./spell-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
-import { createLostlandsMacro, missileWeaponMacro, meleeWeaponMacro, thrownWeaponMacro, offhandWeaponMacro, dismountWeaponMacro, grappleMacro } from "./macro.js";
+// import { createLostlandsMacro, missileWeaponMacro, meleeWeaponMacro, thrownWeaponMacro, offhandWeaponMacro, dismountWeaponMacro, grappleMacro } from "./macro.js";
+import * as Macro from "./macro.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -34,13 +35,14 @@ Hooks.once("init", async function() {
 
   game.lostlands = {
     SimpleActor,
-    createLostlandsMacro,
-    missileWeaponMacro,
-    meleeWeaponMacro,
-    thrownWeaponMacro,
-    offhandWeaponMacro,
-    dismountWeaponMacro,
-    grappleMacro
+    Macro
+    // createLostlandsMacro,
+    // missileWeaponMacro,
+    // meleeWeaponMacro,
+    // thrownWeaponMacro,
+    // offhandWeaponMacro,
+    // dismountWeaponMacro,
+    // grappleMacro
   };
 
   // Define custom Entity classes
@@ -129,7 +131,7 @@ Hooks.once("init", async function() {
 /**
  * Macrobar hook.
  */
-Hooks.on("hotbarDrop", (bar, data, slot) => createLostlandsMacro(data, slot));
+Hooks.on("hotbarDrop", (bar, data, slot) => Macro.createLostlandsMacro(data, slot));
 
 /**
  * Adds the actor template context menu.
