@@ -1,5 +1,4 @@
 import { EntitySheetHelper } from "./helper.js";
-import { FIGHTER_XP_PROGRESSION } from "./constants.js";
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -8,13 +7,21 @@ import { FIGHTER_XP_PROGRESSION } from "./constants.js";
 export class SimpleActor extends Actor {
 
   /** @inheritdoc */
-  prepareDerivedData() {
+  async prepareDerivedData() {
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
     const items = this.data.items;
     const actorData = this.data.data;
     const attributes = actorData.attributes;
+
+    // level up sound
+    if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
+      AudioHelper.play({src: "systems/lostlands/sounds/level_up.mp3", volume: 1, loop: false}, true);
+      await this.update({"data.islevelup": true});
+    } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
+      await this.update({"data.islevelup": false});
+    }
 
     // encumbrance and mv
     actorData.encumbrance = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor(b.data.data.quantity * b.data.data.weight), 0);
@@ -28,7 +35,7 @@ export class SimpleActor extends Actor {
       else if(attributes.mvmod?.value && +mv) mv += +attributes.mvmod?.value || 0;
       else if(attributes.maxmv?.value && +mv === 12) mv = +(attributes.maxmv.value || 0);
       if(this._id && mv !== actorData.mv) {
-        this.update({"data.mv": mv, "data.speed": (mv * 5)});
+        await this.update({"data.mv": mv, "data.speed": (mv * 5)});
       }
     }
     // encumbrance for containers
@@ -58,7 +65,7 @@ export class SimpleActor extends Actor {
         break;
       }
     }
-    shouldUpdateMods && this.update({data: scoreMods});
+    shouldUpdateMods && await this.update({data: scoreMods});
   }
 
   /* -------------------------------------------- */

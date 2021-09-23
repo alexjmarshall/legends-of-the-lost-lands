@@ -298,7 +298,7 @@ function weaponAttack(weaponId, options={}) {
     let resultText = dmgText;
     let resultSound;
     if(isCrit) {
-      resultText = ` and <span style="${resultStyle('#5DFC0A')}">CRITICALS</span>${dmgText}`;
+      resultText = ` and <span style="${resultStyle('#5DFC0A')}">CRITS</span>${dmgText}`;
       resultSound = hitSound;
     }
     if(!isNaN(targetRollData?.ac)) {

@@ -29,8 +29,8 @@
         {{#if hasSpells}}
         <a class="item" data-tab="spells">Spells</a>
         {{/if}}
-        {{#if hasFeatures}}
-        <a class="item" data-tab="features">Features</a>
+        {{#if hasSkills}}
+        <a class="item" data-tab="skills">Skills</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
     </nav>
@@ -155,10 +155,10 @@
             {{/each}}
         </div>
 
-        {{!-- Features Tab --}}
-        <div class="tab items" data-group="primary" data-tab="features">
+        {{!-- Skills Tab --}}
+        <div class="tab items" data-group="primary" data-tab="skills">
             <ol class="item-list">
-                {{#each data.features as |item id|}}
+                {{#each data.skills as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>

@@ -44,9 +44,9 @@ export class SimpleActorSheet extends ActorSheet {
     this.sortSpellsByType('spell_witch', context.data);
     context.hasSpells = Object.keys(context.data.spells).length > 0;
 
-    // sort features
-    context.data.features = items.filter(i => i.type === "feature");
-    context.hasFeatures = context.data.features.length > 0;
+    // sort skills
+    context.data.skills = items.filter(i => i.type === "skill");
+    context.hasSkills = context.data.skills.length > 0;
 
     return context;
   }
