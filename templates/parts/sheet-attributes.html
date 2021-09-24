@@ -3,13 +3,18 @@
         {{#each attributes as |attr key|}}
         <li class="attribute flexrow" data-attribute="{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}">
             <div class="attribute-key-wrapper flexrow" {{#if ../isPlayer}}style="display:none;"{{/if}}>
+                <!-- {{#if attr.isFormula}}
+                    <a class="attribute-roll" data-label="{{attr.label}}" data-roll="{{attr.value}}"><i class="fas fa-dice-d20"></i></a>
+                {{/if}} -->
+                <input class="attribute-key" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.key" value="{{key}}" placeholder="{{localize "SIMPLE.AttributeKey"}}"/>
+            </div>
+            <div class="attribute-key-wrapper flexrow">
                 {{#if attr.isFormula}}
                     <a class="attribute-roll" data-label="{{attr.label}}" data-roll="{{attr.value}}"><i class="fas fa-dice-d20"></i></a>
                 {{/if}}
-                <input class="attribute-key" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.key" value="{{key}}" placeholder="{{localize "SIMPLE.AttributeKey"}}"/>
-            </div>
-            <input class="attribute-label" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.label" value="{{attr.label}}"
+                <input class="attribute-key" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.label" value="{{attr.label}}"
                 placeholder="{{localize "SIMPLE.AttributeLabel"}}"/>
+            </div>
             {{!-- Handle booleans. --}}
             {{#if attr.isCheckbox}}
             <label class="attribute-value checkbox"><input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
