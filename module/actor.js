@@ -66,6 +66,11 @@ export class SimpleActor extends Actor {
       }
     }
     shouldUpdateMods && await this.update({data: scoreMods});
+
+    // touch AC
+    let touchAc = 9 + (actorData.dexmod || 0);
+    if(attributes.touchac?.value) touchAc = +attributes.touchac.value;
+    touchAc !== actorData.touchac && await this.update({"data.touchac": touchAc});
   }
 
   /* -------------------------------------------- */
