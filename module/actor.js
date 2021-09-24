@@ -24,28 +24,26 @@ export class SimpleActor extends Actor {
     }
 
     // encumbrance and mv
-    actorData.encumbrance = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor(b.data.data.quantity * b.data.data.weight), 0);
-    if(attributes.encumbrance?.value) actorData.encumbrance = +attributes.encumbrance.value;
-    // derive MV and speed from encumbrance for characters
+    actorData.enc = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor(b.data.data.quantity * b.data.data.weight), 0);
+    actorData.enc = attributes.enc?.value || actorData.enc;
+    // derive mv and speed from encumbrance for characters
     if(this.data.type === 'character') {
-      const strEnc = attributes.ability_scores?.str?.value ? (Math.floor((+attributes.ability_scores.str.value) / 3) + 1) * 3 : 0;
-      let mv = (5 - Math.ceil((+actorData.encumbrance || 1) / (strEnc || 1))) * 3;
-      if(mv < 0) mv = 0;
-      if(attributes.mv?.value) mv = +attributes.mv.value;
-      else if(attributes.mvmod?.value && +mv) mv += +attributes.mvmod?.value || 0;
-      else if(attributes.maxmv?.value && +mv === 12) mv = +(attributes.maxmv.value || 0);
-      if(this._id && mv !== actorData.mv) {
-        await this.update({"data.mv": mv, "data.speed": (mv * 5)});
-      }
+      const str = attributes.ability_scores?.str?.value || -1;
+      const strEnc = (Math.floor(+str / 3) + 1) * 3;
+      let mv = (5 - Math.ceil((+actorData.enc || 1) / (strEnc || 1))) * 3;
+      mv = mv < 0 ? 0 : mv;
+      mv = (+attributes.maxmv?.value && +mv === 12) ? +attributes.maxmv.value : mv;
+      mv = +attributes.mv?.value || mv;
+      if(this._id && mv !== actorData.mv) await this.update({"data.mv": mv, "data.speed": (mv * 5)});
     }
+
     // encumbrance for containers
     if(this.data.type === 'container') {
       const otherActors = game.actors?.filter(a => a.name !== this.name) || [];
       for(let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
         if(container) {
-          console.log(attributes.factor);
-          const containerUpdate = { _id: container._id, "data.weight": Math.floor(actorData.encumbrance / (attributes.factor?.value || 1)) || 1 };
+          const containerUpdate = { _id: container._id, "data.weight": Math.floor(actorData.enc / (attributes.factor?.value || 1)) || 1 };
           otherActor.updateEmbeddedDocuments("Item", [containerUpdate]);
         }
       }
@@ -65,11 +63,11 @@ export class SimpleActor extends Actor {
         break;
       }
     }
-    shouldUpdateMods && await this.update({data: scoreMods});
+    if(this._id && shouldUpdateMods) await this.update({data: scoreMods});
 
     // touch AC
     let touchAc = 9 + (actorData.dexmod || 0);
-    if(attributes.touchac?.value) touchAc = +attributes.touchac.value;
+    touchAc = +attributes.touchac?.value || touchAc;
     touchAc !== actorData.touchac && await this.update({"data.touchac": touchAc});
   }
 
