@@ -50,12 +50,12 @@ export class SimpleActor extends Actor {
     }
     // ability score modifiers
     const scoreMods = {};
-    if(attributes.ability_scores?.str?.value) scoreMods.strmod = Math.floor(attributes.ability_scores.str.value / 3 - 3);
-    if(attributes.ability_scores?.int?.value) scoreMods.intmod = Math.floor(attributes.ability_scores.int.value / 3 - 3);
-    if(attributes.ability_scores?.wis?.value) scoreMods.wismod = Math.floor(attributes.ability_scores.wis.value / 3 - 3);
-    if(attributes.ability_scores?.dex?.value) scoreMods.dexmod = Math.floor(attributes.ability_scores.dex.value / 3 - 3);
-    if(attributes.ability_scores?.con?.value) scoreMods.conmod = Math.floor(attributes.ability_scores.con.value / 3 - 3);
-    if(attributes.ability_scores?.cha?.value) scoreMods.chamod = Math.floor(attributes.ability_scores.cha.value / 3 - 3);
+    scoreMods.str_mod = attributes.ability_scores?.str?.value ? Math.floor(attributes.ability_scores.str.value / 3 - 3) : 0;
+    scoreMods.int_mod = attributes.ability_scores?.int?.value ? Math.floor(attributes.ability_scores.int.value / 3 - 3) : 0;
+    scoreMods.wis_mod = attributes.ability_scores?.wis?.value ? Math.floor(attributes.ability_scores.wis.value / 3 - 3) : 0;
+    scoreMods.dex_mod = attributes.ability_scores?.dex?.value ? Math.floor(attributes.ability_scores.dex.value / 3 - 3) : 0;
+    scoreMods.con_mod = attributes.ability_scores?.con?.value ? Math.floor(attributes.ability_scores.con.value / 3 - 3) : 0;
+    scoreMods.cha_mod = attributes.ability_scores?.cha?.value ? Math.floor(attributes.ability_scores.cha.value / 3 - 3) : 0;
     let shouldUpdateMods = false;
     for(const key of Object.keys(scoreMods)) {
       if(scoreMods[key] !== actorData[key]) {
@@ -66,9 +66,9 @@ export class SimpleActor extends Actor {
     if(this._id && shouldUpdateMods) await this.update({data: scoreMods});
 
     // touch AC
-    let touchAc = 9 + (actorData.dexmod || 0);
-    touchAc = +attributes.touchac?.value || touchAc;
-    touchAc !== actorData.touchac && await this.update({"data.touchac": touchAc});
+    let touchAc = 9 + (actorData.dex_mod || 0);
+    touchAc = +attributes.touch_ac?.value || touchAc;
+    touchAc !== actorData.touch_ac && await this.update({"data.touch_ac": touchAc});
   }
 
   /* -------------------------------------------- */
