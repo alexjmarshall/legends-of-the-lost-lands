@@ -41,14 +41,13 @@ export async function createLostlandsMacro(data, slot) {
 }
 
 export function grappleMacro() {
-  return weaponAttack(null, { grapple: true })
+  return weaponAttack(null, { atkType: 'touch', dmgType: 'grapple' });
 }
 
 /*
 * options:
 * {
 *  offhand: true/false
-*  unarmed: true
 *  skipHookDialog: true/false
 *  skipModDialog: true/false
 *  skipThrowDialog: true/false
@@ -72,11 +71,12 @@ export async function attackMacro(weaponId, options={}) {
 
   // get weapon and its properties
   const weaponItem = token.actor.data.items.get(weaponId);
-  if(!weaponItem && !options.unarmed) return ui.notifications.error("Cannot find item in selected character's inventory.");
+  if(!weaponItem) return ui.notifications.error("Cannot find item in selected character's inventory.");
   const weapName = weaponItem?.name || '';
   const weapAttrs = weaponItem?.data?.data?.attributes;
   const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
-  const weapDmg = options.unarmed ? '1d2' : weapAttrs?.dmg?.value || '1d3'; // improvised weapon damage
+  const weapDmg = weapAttrs?.dmg?.value;
+  if(!weapDmg) return ui.notifications.error("Damage not set for item.");
   options.throwable = options.throwable || weapAttrs?.throwable?.value;
   options.hasHook = options.hasHook || weapAttrs?.has_hook?.value;
   options.maxRange = options.maxRange || weapAttrs?.max_range?.value;
