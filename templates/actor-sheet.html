@@ -129,23 +129,31 @@
         {{!-- Owned Spells Tab --}}
         <div class="tab items" data-group="primary" data-tab="spells">
             {{#each data.spells as |spelltype key|}}
-            <header class="items-header flexrow">
+            <header class="spells-header flexrow">
                 <span style="text-align: center;">{{#ifeq key "spell_magic"}}Magic Spells{{/ifeq}}{{#ifeq key "spell_cleric"}}Cleric Spells{{/ifeq}}{{#ifeq key "spell_witch"}}Witch Spells{{/ifeq}}</span>
             </header>
                 {{#each spelltype as |level id|}}
-                <header class="items-header flexrow">
-                    <span></span>
-                    <span style="text-align: center;">Level {{id}}</span>
-                    {{#if level.slots.value}}<span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>{{else}}<span></span>{{/if}}
+                <header class="spells-header flexrow">
+                    <span style="text-align: left;">Level {{id}}</span>
+                    <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
                 </header>
                 <ol class="item-list">
                     {{#each level.spells as |spell id|}}
                     <li class="item flexrow" data-item-id="{{spell._id}}">
-                        <input type="checkbox" id="prepareSpell" {{#if spell.data.prepared}}checked{{/if}}/>
+                        <div class="item-roll">
+                            {{#if spell.data.macro}}
+                                <a><i class="fas fa-dice-d20"></i></a>
+                            {{/if}}
+                        </div>
+                        <div style="flex: 0 0 20px;">
+                            {{#if spell.data.attributes.lvl.value}}
+                                <input class="prepare-spell" type="checkbox" style="margin-left:0;" {{#if spell.data.prepared}}checked{{/if}}/>
+                            {{/if}}
+                        </div>
                         <img class="item-row" data-action="edit" src="{{spell.img}}" title="{{spell.name}}" width="24" height="24"/>
                         <h4 class="item-name item-row" data-action="edit">{{spell.name}}</h4>
                         <div class="item-row flex3" data-action="edit">
-                            {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 2em;">{{spell.data.attributes.range.value}}</span>{{/if}}
+                            {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 2em;">{{spell.data.attributes.range.value}}'</span>{{/if}}
                             {{#if spell.data.attributes.area.value}}<label class="label">Area:</label><span style="margin-right: 2em;">{{spell.data.attributes.area.value}}</span>{{/if}}
                             {{#if spell.data.attributes.duration.value}}<label class="label">Duration:</label><span style="margin-right: 2em;">{{spell.data.attributes.duration.value}}</span>{{/if}}
                         </div>

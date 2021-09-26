@@ -191,6 +191,18 @@
   font-weight: bold;
   line-height: 28px;
 }
+.lostlands .spells-header {
+  top: 0;
+  left: 0;
+  align-items: center;
+  padding: 0 5px;
+  background: #cfcdc2;
+  border: 1px solid #AAA;
+  border-radius: 2px;
+  text-align: left;
+  font-weight: bold;
+  line-height: 28px;
+}
 .lostlands .attributes-list {
   list-style: none;
   margin: 0;

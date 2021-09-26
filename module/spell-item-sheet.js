@@ -20,7 +20,7 @@ export class SpellItemSheet extends SimpleItemSheet {
     const context = super.getData();
     EntitySheetHelper.getAttributeData(context.data);
     context.systemData = context.data.data;
-    context.hasLevel = !!context.systemData.attributes.level?.value;
+    context.hasLevel = !!context.systemData.attributes.lvl?.value;
     context.hasRange = !!context.systemData.attributes.range?.value;
     context.hasArea = !!context.systemData.attributes.area?.value;
     context.hasDuration = !!context.systemData.attributes.duration?.value;

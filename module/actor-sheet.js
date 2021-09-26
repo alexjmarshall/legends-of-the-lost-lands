@@ -55,16 +55,18 @@ export class SimpleActorSheet extends ActorSheet {
     const spells = data.items.filter(i => i.type === `${spelltype}`);
     if(!spells.length) return;
     data.spells[`${spelltype}`] = {};
-    const nolevelSpells = spells.filter(s => !s.data.attributes.level?.value);
+    const nolevelSpells = spells.filter(s => !s.data.attributes.lvl?.value);
     if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(none)`] = {spells: nolevelSpells};
     for(let i = 1; i <= MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
-      const spellsAtLevel = spells.filter(s => s.data.attributes.level?.value === i);
-      if(!spellsAtLevel.length) break;
+      const spellsAtLevel = spells.filter(s => s.data.attributes.lvl?.value === i);
+      const slotsAtLevelVal = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value;
+      const slotsAtLevelMax = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max;
+      if(!spellsAtLevel.length) continue;
       data.spells[`${spelltype}`][`${i}`] = {
         spells: spellsAtLevel,
         slots: {
-          value: data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value,
-          max: data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max
+          value: slotsAtLevelVal,
+          max: slotsAtLevelMax
         }
       }
     }
@@ -91,13 +93,23 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-roll a").click(this._onItemMacroRoll.bind(this));
 
     // Spell preparation checkbox
-    html.find("#prepareSpell").on("change", async function(event) {
+    html.find(".prepare-spell").on("change", function(event) {
       event.preventDefault();
       const li = event.target.closest(".item");
       const itemId = li?.dataset.itemId;
-      const item = this.actor.items.get(itemId);
-      const value = !item.data.data.prepared;
-      await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": value}]);
+      const spell = this.actor.items.get(itemId);
+      const isPrepared = !!spell.data.data.prepared;
+      const spellLevel = spell.data.data.attributes.lvl.value;
+      const actorSlotsAttr = this.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`];
+      const spellsPrepared = this.actor.data.items.filter(i => i.type === `${spell.type}` && 
+        i.data.data.attributes.lvl?.value === spellLevel && 
+        i.data.data.prepared).length;
+      const slotsMax = actorSlotsAttr?.max || 0;
+      if(!isPrepared && spellsPrepared >= slotsMax) {
+        $(event.target).prop('checked', false);
+        return ui.notifications.error("Cannot prepare any more spells of this level.");
+      }
+      this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
     }.bind(this));
 
     // Add draggable for Macro creation
@@ -142,7 +154,7 @@ export class SimpleActorSheet extends ActorSheet {
         return item.sheet.render(true);
       case "delete":
         const actor = this.actor;
-        const itemQty = +item.data.data.quantity;
+        const itemQty = +item.data.data.quantity || 0;
         if(itemQty <= 1) return item.delete();
         new Dialog({
           title: "Delete Item",
