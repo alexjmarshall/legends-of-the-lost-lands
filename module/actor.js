@@ -6,6 +6,22 @@ import { EntitySheetHelper } from "./helper.js";
  */
 export class SimpleActor extends Actor {
 
+  /* character template attributes:
+  * bab
+  * ac
+  * lvl
+  * lvl_title
+  * class
+  * race
+  * ability_scores.str, int, wis, dex, con, cha
+  * spell_cleric.lvl_1, spell_magic.lvl_1, etc.: resource, min 0 value and max spell slots
+  * 
+  * optional:
+  * touch_ac
+  * max_mv
+  * 
+  */
+
   /** @inheritdoc */
   async prepareDerivedData() {
     super.prepareDerivedData();
