@@ -11,7 +11,6 @@ import { SpellItemSheet } from "./spell-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
-// import { createLostlandsMacro, missileWeaponMacro, meleeWeaponMacro, thrownWeaponMacro, offhandWeaponMacro, dismountWeaponMacro, grappleMacro } from "./macro.js";
 import * as Macro from "./macro.js";
 
 /* -------------------------------------------- */
@@ -36,13 +35,6 @@ Hooks.once("init", async function() {
   game.lostlands = {
     SimpleActor,
     Macro
-    // createLostlandsMacro,
-    // missileWeaponMacro,
-    // meleeWeaponMacro,
-    // thrownWeaponMacro,
-    // offhandWeaponMacro,
-    // dismountWeaponMacro,
-    // grappleMacro
   };
 
   // Define custom Entity classes
