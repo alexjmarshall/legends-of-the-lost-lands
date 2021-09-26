@@ -84,7 +84,7 @@
 }
 .lostlands .item-list {
   list-style: none;
-  margin: 7px 0;
+  margin: 5px 0;
   padding: 0;
   overflow-y: auto;
 }
@@ -183,7 +183,7 @@
   top: 0;
   left: 0;
   align-items: center;
-  padding: 0 5px;
+  padding: 2px 5px;
   background: #cfcdc2;
   border: 1px solid #AAA;
   border-radius: 2px;
@@ -195,7 +195,7 @@
   top: 0;
   left: 0;
   align-items: center;
-  padding: 0 5px;
+  padding: 2px 5px;
   background: #cfcdc2;
   border: 1px solid #AAA;
   border-radius: 2px;

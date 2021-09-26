@@ -410,7 +410,7 @@ export function buyBasicEquipment() {
     if(cost > totalMoney) {
       ChatMessage.create({
         speaker: ChatMessage.getSpeaker(token),
-        content: `tries to purchase ${qty} ${itemName}${qty > 1 ? 's' : ''} for ${price} GP, but does not have enough money. The merchant appears annoyed.`,
+        content: `tries to purchase ${qty} ${itemName}${qty > 1 ? 's' : ''} for ${price} GP, but doesn't have enough money. The merchant appears annoyed.`,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE
       });
       return;
