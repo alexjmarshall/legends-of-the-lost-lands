@@ -53,20 +53,18 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortSpellsByType(spelltype, data) {
     const spells = data.items.filter(i => i.type === `${spelltype}`);
-    if(spells.length > 0) {
-      data.spells[`${spelltype}`] = {};
-      let nolevelSpells = spells.filter(s => !s.data.attributes.level?.value);
-      if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(none)`] = {spells: nolevelSpells};
-      for(let i = 1; i <= MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
-        let spellsAtLevel = spells.filter(s => s.data.attributes.level?.value === i);
-        if(spellsAtLevel.length > 0) {
-          data.spells[`${spelltype}`][`${i}`] = {
-            spells: spellsAtLevel,
-            slots: {
-              value: data.data.attributes[`${spelltype}`]?.[`level_${i}`]?.value,
-              max: data.data.attributes[`${spelltype}`]?.[`level_${i}`]?.max
-            }
-          }
+    if(!spells.length) return;
+    data.spells[`${spelltype}`] = {};
+    const nolevelSpells = spells.filter(s => !s.data.attributes.level?.value);
+    if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(none)`] = {spells: nolevelSpells};
+    for(let i = 1; i <= MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
+      const spellsAtLevel = spells.filter(s => s.data.attributes.level?.value === i);
+      if(!spellsAtLevel.length) break;
+      data.spells[`${spelltype}`][`${i}`] = {
+        spells: spellsAtLevel,
+        slots: {
+          value: data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value,
+          max: data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max
         }
       }
     }
@@ -90,6 +88,7 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
+    html.find(".item-roll a").click(this._onItemMacroRoll.bind(this));
 
     // Spell preparation checkbox
     html.find("#prepareSpell").on("change", async function(event) {
@@ -142,7 +141,47 @@ export class SimpleActorSheet extends ActorSheet {
       case "edit":
         return item.sheet.render(true);
       case "delete":
-        return item.delete();
+        const actor = this.actor;
+        const itemQty = +item.data.data.quantity;
+        if(itemQty <= 1) return item.delete();
+        new Dialog({
+          title: "Delete Item",
+          content: 
+          `<form>
+            <div class="flexrow">
+              <label class="flex1">How many?</label>
+              <label class="flex1" style="text-align:center;" id="splitValue"></label>
+              <input class="flex3" type="range" min="1" id="splitRange">
+            </div>
+          </form>`,
+          buttons: {
+            one: {
+              icon: '<i class="fas fa-check"></i>',
+              label: "Submit",
+              callback: async html => {
+                const quantityVal = +html.find("#splitRange").val();
+                if(quantityVal >= itemQty) return item.delete();
+                await actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.quantity": itemQty - quantityVal}]);
+              }
+            },
+            two: {
+              icon: '<i class="fas fa-times"></i>',
+              label: "Cancel"
+            }
+          },
+          default: "two",
+          render: html => {
+            const initialVal = Math.floor(itemQty / 2);
+            const splitRange = html.find('#splitRange');
+            splitRange.attr("max",itemQty);
+            splitRange.val(initialVal);
+            const splitValue = html.find('#splitValue');
+            splitValue.html(initialVal);
+            splitRange.on('input', () => {
+              splitValue.html(splitRange.val());
+            });
+          }
+        }).render(true);
     }
   }
 
@@ -164,6 +203,23 @@ export class SimpleActorSheet extends ActorSheet {
     });
   }
 
+  async _onItemMacroRoll(event) {
+    let button = $(event.currentTarget);
+    const li = button.parents(".item");
+    const itemId = li.data("itemId");
+    const item = this.actor.items.get(itemId);
+    const itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
+    let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
+    if (!macro && itemMacroWithId) {
+      macro = await Macro.create({
+        name: item.name,
+        type: "script",
+        command: itemMacroWithId,
+        flags: { "lostlands.attrMacro": true }
+      });
+    }
+    macro.execute();
+  }
   /* -------------------------------------------- */
 
   /** @inheritdoc */

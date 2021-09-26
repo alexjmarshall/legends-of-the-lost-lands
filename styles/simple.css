@@ -137,6 +137,11 @@
   align-items: center;
   justify-content: center;
 }
+.lostlands .items .item-roll {
+  flex: 0 0 16px;
+  text-align: right;
+  margin-right: 5px;
+}
 .lostlands .attributes .group-prefix {
   height: 31px;
   margin-right: 10px;
@@ -153,6 +158,10 @@
   display: block;
 }
 .lostlands .attributes .attribute-key {
+  background: transparent;
+  border: none;
+}
+.lostlands .attributes .attribute-label {
   background: transparent;
   border: none;
 }
@@ -195,6 +204,9 @@
   border: none;
   border-radius: 0;
   border-bottom: 1px solid #AAA;
+}
+.lostlands .attributes-list .attribute-col {
+  flex: 0 0 41px;
 }
 .lostlands .attributes-list .attribute-col label {
   font-size: 10px;
