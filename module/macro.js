@@ -44,6 +44,29 @@ export function grappleMacro() {
   return weaponAttack(null, { atkType: 'touch', dmgType: 'grapple' });
 }
 
+export function spellMacro(spellId) {
+  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select spellcasting token.");
+  const token = canvas.tokens.controlled[0];
+  const spell = token.actor.data.items.get(spellId);
+  const isPrepared = !!spell.data.data.prepared;
+  if(!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
+  const spellLevel = spell.data.data.attributes.lvl?.value;
+  if(!spellLevel) return ui.notifications.error("Spell does not have level set.");
+
+  let actorSpellSlots = +token.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
+  if(actorSpellSlots <= 0) return ui.notifications.error("No spells remaining of this level.");
+  const updateData = { data: {
+    attributes: {
+      [`${spell.type}`]: {
+        [`lvl_${spellLevel}`]: {
+          value: (actorSpellSlots - 1)
+        }
+      }
+    }
+  }};
+  token.actor.update(updateData);
+}
+
 /*
 * options:
 * {
