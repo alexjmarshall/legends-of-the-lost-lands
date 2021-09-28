@@ -143,7 +143,8 @@ export async function attackMacro(weaponId, options={}) {
 
   // put together chat message content
   const d20Roll = new Roll("d20");
-  const d20Result = await d20Roll.evaluate().total;
+  await d20Roll.evaluate();
+  const d20Result = d20Roll.total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
   totalAtk += `${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
@@ -207,7 +208,8 @@ export async function attackMacro(weaponId, options={}) {
 
   const dmgText = `${totalDmg ? ` for [[${totalDmg}]] damage.` : ''}`;
   let resultText = dmgText;
-  let resultSound, isHit;
+  let resultSound = missSound;
+  let isHit;
   if(!isNaN(targetRollData?.ac)) {
     const totalAtkRoll = new Roll(totalAtk);
     await totalAtkRoll.evaluate();
