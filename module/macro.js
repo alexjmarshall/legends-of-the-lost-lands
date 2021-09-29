@@ -81,165 +81,191 @@ export function spellMacro(spellId) {
 *  light: true/false -- item attribute
 *  maxRange: (value) -- item attribute
 *  atkType: melee/missile/throw/touch  -- item attribute
-*  dmgType: slash/thrust/bash/throw/stone/arrow/bolt/punch/grapple/hook  -- item attribute
+*  dmgType: slash/stab/bash/throw/stone/arrow/bolt/punch/grapple/hook  -- item attribute
 *  fragile: true/false -- item attribute
 *  finesse: true/false -- item attribute
 *  unwieldly: true/false -- item attribute
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weaponId, options={}) {
+export async function attackMacro(weapons=[], options={}) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
+  if(!Array.isArray(weapons)) return ui.notifications.error("Weapon items passed to attackMacro() must be in an array.");
   const token = canvas.tokens.controlled[0];
 
-  // get weapon and its properties
-  const weaponItem = token.actor.data.items.get(weaponId);
-  if(!weaponItem) return ui.notifications.error("Cannot find item in selected character's inventory.");
-  const weapName = weaponItem?.name || '';
-  const weapAttrs = weaponItem?.data?.data?.attributes;
-  const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
-  const weapDmg = weapAttrs?.dmg?.value;
-  if(!weapDmg) return ui.notifications.error("Damage not set for item.");
-  options.throwable = options.throwable || weapAttrs?.throwable?.value;
-  options.hasHook = options.hasHook || weapAttrs?.has_hook?.value;
-  options.maxRange = options.maxRange || weapAttrs?.max_range?.value;
-  options.atkType = options.atkType || weapAttrs?.atk_type?.value;
-  options.dmgType = options.dmgType || weapAttrs?.dmg_type?.value;
-  options.fragile = options.fragile || weapAttrs?.fragile?.value;
-  options.finesse = options.finesse || weapAttrs?.finesse?.value;
-  options.unwieldy = options.unwieldy || weapAttrs?.unwieldy?.value;
-  options.critMin = options.critMin || weapAttrs?.crit_min?.value
-  
-  // show attake choice dialogs
-  if(options.throwable && !options.skipThrowDialog) return throwDialog(weaponId, options);
-  if(options.hasHook && !options.skipHookDialog) return hookDialog(weaponId, options);
-  if(!options.skipModDialog) return modDialog(weaponId, options);
+  if(!options.skipModDialog) return modDialog(weapons, options);
+  // if more than one weapon, skip other dialogs
+  if(weapons.length > 1) {
+    options.skipThrowDialog = true;
+    options.skipHookDialog = true;
+  }
 
-  // get actor and its properties
-  const rollData = token.actor.getRollData();
-  const bab = rollData.bab || 0;
-  const strMod = rollData.str_mod || 0;
-  const dexMod = rollData.dex_mod || 0;
-  const offhandAtkPenalty = options.offhand ? -2 : 0;
-  const attrAtkMod = (options.atkType === 'missile' || options.atkType === 'throw' || options.finesse) ? dexMod : strMod;
-  const attrDmgMod = (options.atkType === 'missile' || options.offhand) ? 0 : strMod;
-  const actorAtkMod = rollData.atk_mod || 0;
-  const actorDmgMod = rollData.dmg_mod || 0;  
+  let content = '';
+  let resultSoundPaths = [];
+  for(const weaponId of weapons) {
+    // get weapon and its properties
+    const actorItems = token.actor.data.items;
+    const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId.toLowerCase().replace(/\s/g,''));
+    if(!weaponItem) return ui.notifications.error("Cannot find item in selected character's inventory.");
+    const weapName = weaponItem?.name || '';
+    const weapAttrs = weaponItem?.data?.data?.attributes;
+    const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
+    const weapDmg = weapAttrs?.dmg?.value;
+    if(!weapDmg) return ui.notifications.error("Damage not set for item.");
+    const offhand = options.offhand || weapons.indexOf(weaponId) > 0;
+    const throwable = options.throwable || weapAttrs?.throwable?.value;
+    const hasHook = options.hasHook || weapAttrs?.has_hook?.value;
+    const maxRange = options.maxRange || weapAttrs?.max_range?.value;
+    const atkType = options.atkType || weapAttrs?.atk_type?.value;
+    const dmgType = options.dmgType || weapAttrs?.dmg_type?.value;
+    const fragile = options.fragile || weapAttrs?.fragile?.value;
+    const finesse = options.finesse || weapAttrs?.finesse?.value;
+    const unwieldy = options.unwieldy || weapAttrs?.unwieldy?.value;
+    const critMin = options.critMin || weapAttrs?.crit_min?.value || 20;
+    
+    // show attack choice dialogs
+    if(throwable && !options.skipThrowDialog) return throwDialog(weapons, options);
+    if(hasHook && !options.skipHookDialog) return hookDialog(weapons, options);
+    
+    // get actor and its properties
+    const rollData = token.actor.getRollData();
+    const bab = rollData.bab || 0;
+    const strMod = rollData.str_mod || 0;
+    const dexMod = rollData.dex_mod || 0;
+    const offhandAtkPenalty = offhand ? -2 : 0;
+    const attrAtkMod = (atkType === 'missile' || atkType === 'throw' || finesse) ? dexMod : strMod;
+    const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
+    const actorAtkMod = rollData.atk_mod || 0;
+    const actorDmgMod = rollData.dmg_mod || 0;  
 
-  // determine target and range
-  let targetToken, targetRollData, range, rangePenalty;
-  if([...game.user.targets].length === 1) {
-    targetToken = [...game.user.targets][0];
-    targetRollData = targetToken.actor.getRollData();
-    if(options.atkType === 'missile' || options.atkType === 'throw') {
-      const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
-        canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
-        canvas.grid.measureDistance(token.position, targetToken.position);
-      range = Math.floor(+canvasDistance / 5) * 5;
-      if(range > +options.maxRange) return ui.notifications.error("Target is beyond maximum range for this weapon."); 
-      rangePenalty = -Math.abs(Math.floor(range / 10));
+    // determine target and range
+    let targetToken, targetRollData, range, rangePenalty;
+    if([...game.user.targets].length === 1) {
+      targetToken = [...game.user.targets][0];
+      targetRollData = targetToken.actor.getRollData();
+      if(atkType === 'missile' || atkType === 'throw') {
+        const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
+          canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
+          canvas.grid.measureDistance(token.position, targetToken.position);
+        range = Math.floor(+canvasDistance / 5) * 5;
+        if(range > +maxRange) return ui.notifications.error("Target is beyond maximum range for this weapon."); 
+        rangePenalty = -Math.abs(Math.floor(range / 10));
+      }
     }
-  }
 
-  // put together chat message content
-  const d20Roll = new Roll("d20");
-  await d20Roll.evaluate();
-  const d20Result = d20Roll.total;
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
-  totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-  totalAtk += `${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
-  const critMin = options.critMin || 20;
-  const isCrit = options.atkType !== 'touch' && d20Result >= critMin;
-  let totalDmg = `${weapDmg ? `${weapDmg}` : ''}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
-  totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${options.dialogDmgMod ? `+${options.dialogDmgMod}` : ''}`;
-  if(isCrit) totalDmg += `+${weapDmg}`;
-  if(options.atkType === 'touch') totalDmg = '';
+    // put together chat message content
+    const d20Roll = new Roll("d20");
+    await d20Roll.evaluate();
+    const d20Result = d20Roll.total;
+    let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
+    totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
+    totalAtk += `${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
+    const isCrit = atkType !== 'touch' && d20Result >= critMin;
+    let totalDmg = `${weapDmg ? `${weapDmg}` : ''}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
+    totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${options.dialogDmgMod ? `+${options.dialogDmgMod}` : ''}`;
+    if(isCrit) totalDmg += `+${weapDmg}`;
+    if(atkType === 'touch') totalDmg = '';
 
-  let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
-  let rangeText = range ? ` from ${range}' away` : '';
-  let attackText = `attacks${targetNameText}${weapName ? ` with ${weapName}` : ''}`;
-  let hitSound, missSound;
-  switch(options.dmgType) {
-    case 'slash':
-      attackText = `slashes${targetNameText} with ${weapName}`;
-      hitSound = 'slash_hit';
-      missSound = 'slash_miss';
-      break;
-    case 'thrust':
-      attackText = `thrusts ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'thrust_hit';
-      missSound = 'thrust_miss';
-      break;
-    case 'bash':
-      attackText = `bashes${targetNameText} with ${weapName}`;
-      hitSound = 'bash_hit';
-      missSound = 'bash_miss';
-      break;
-    case 'stone':
-      attackText = `slings a stone with ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'stone_hit';
-      missSound = 'stone_miss';
-      break;
-    case 'arrow':
-      attackText = `shoots an arrow from ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'arrow_hit';
-      missSound = 'arrow_miss';
-      break;
-    case 'bolt':
-      attackText = `shoots a bolt from ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'bolt_hit';
-      missSound = 'bolt_miss';
-      break;
-    case 'throw':
-      attackText = `throws ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'throw_hit';
-      missSound = 'throw_miss';
-      break;
-    case 'grapple':
-      attackText = `attempts to grapple${targetNameText}`;
-      break;
-    case 'hook':
-      attackText = `attempts to hook${targetNameText} with ${weapName}`;
-      break;
-    case 'punch':
-      attackText = `throws a punch${targetNameText ? ` at${targetNameText}` : ''}`;
-      break;
-  }
+    let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
+    let rangeText = range ? ` from ${range}' away` : '';
+    let attackText = `attacks${targetNameText}${weapName ? ` with ${weapName}` : ''}`;
+    let hitSound, missSound;
+    switch(dmgType) {
+      case 'slash':
+        attackText = `slashes${targetNameText} with ${weapName}`;
+        hitSound = 'slash_hit';
+        missSound = 'slash_miss';
+        break;
+      case 'stab':
+        attackText = `stabs${targetNameText} with ${weapName}`;
+        hitSound = 'stab_hit';
+        missSound = 'stab_miss';
+        break;
+      case 'bash':
+        attackText = `bashes${targetNameText} with ${weapName}`;
+        hitSound = 'bash_hit';
+        missSound = 'bash_miss';
+        break;
+      case 'stone':
+        attackText = `slings a stone with ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
+        hitSound = 'stone_hit';
+        missSound = 'stone_miss';
+        break;
+      case 'arrow':
+        attackText = `shoots an arrow from ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
+        hitSound = 'arrow_hit';
+        missSound = 'arrow_miss';
+        break;
+      case 'bolt':
+        attackText = `shoots a bolt from ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
+        hitSound = 'bolt_hit';
+        missSound = 'bolt_miss';
+        break;
+      case 'throw':
+        attackText = `throws ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
+        hitSound = 'throw_hit';
+        missSound = 'throw_miss';
+        break;
+      case 'grapple':
+        attackText = `attempts to grapple${targetNameText}`;
+        break;
+      case 'hook':
+        attackText = `attempts to hook${targetNameText} with ${weapName}`;
+        break;
+      case 'punch':
+        attackText = `throws a punch${targetNameText ? ` at${targetNameText}` : ''}`;
+        break;
+    }
 
-  const dmgText = `${totalDmg ? ` for [[${totalDmg}]] damage.` : ''}`;
-  let resultText = dmgText;
-  let resultSound = missSound;
-  let isHit;
-  if(!isNaN(targetRollData?.ac)) {
-    const totalAtkRoll = new Roll(totalAtk);
-    await totalAtkRoll.evaluate();
-    const touchAc = targetRollData.touch_ac || targetRollData.ac;
-    isHit = totalAtkRoll.total >= (options.atkType === 'touch' ? touchAc : targetRollData.ac);
-    if(isHit && !isCrit) {
-      resultText = ` and <span style="${resultStyle('#7CCD7C')}">HITS</span>${dmgText}`;
+    const dmgText = `${totalDmg ? ` for [[${totalDmg}]] damage.` : ''}`;
+    let resultText = dmgText;
+    let resultSound = missSound;
+    let isHit;
+    if(!isNaN(targetRollData?.ac)) {
+      const totalAtkRoll = new Roll(totalAtk);
+      await totalAtkRoll.evaluate();
+      const touchAc = targetRollData.touch_ac || targetRollData.ac;
+      isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetRollData.ac);
+      if(isHit && !isCrit) {
+        resultText = ` and <span style="${resultStyle('#7CCD7C')}">HITS</span>${dmgText}`;
+        resultSound = hitSound;
+      } else if(!isHit) {
+        resultText = ` and <span style="${resultStyle('#EE6363')}">MISSES</span>`;
+        resultSound = missSound;
+      }
+    }
+    if(isCrit && isHit !== false) {
+      resultText = ` and <span style="${resultStyle('#5DFC0A')}">CRITS</span>${dmgText}`;
       resultSound = hitSound;
-    } else if(!isHit) {
-      resultText = ` and <span style="${resultStyle('#EE6363')}">MISSES</span>`;
-      resultSound = missSound;
     }
-  }
-  if(isCrit && isHit !== false) {
-    resultText = ` and <span style="${resultStyle('#5DFC0A')}">CRITS</span>${dmgText}`;
-    resultSound = hitSound;
-  }
-  if(options.fragile && options.atkType === 'melee' && d20Result === 1) {
-    resultText = ` and their weapon <span style="${resultStyle('#EE6363')}">BREAKS</span>`;
-    resultSound = 'weapon_break';
-  }
+    if(fragile && atkType === 'melee' && d20Result === 1) {
+      resultText = ` and their weapon <span style="${resultStyle('#EE6363')}">BREAKS</span>`;
+      resultSound = 'weapon_break';
+    }
+    if(unwieldy && atkType === 'melee' && d20Result === 1) {
+      resultText = ` and strikes themselves${dmgText}`;
+      resultSound = hitSound;
+    }
 
-  const content = `${attackText}${rangeText} [[${totalAtk}]]${resultText}`;
+    content += `${content ? `${token.actor.name} ` : ''}${attackText}${rangeText} [[${totalAtk}]]${resultText} `;
+    resultSound && resultSoundPaths.push(`systems/lostlands/sounds/${resultSound}.mp3`);
+  }
+  
+  // create chat message and play attack result sounds
   ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
-    content: content,
+    content: content.trim(),
     type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+    flavor: 'Two-Weapon Fighting',
     emote: true,
-    sound: resultSound ? `systems/lostlands/sounds/${resultSound}.mp3` : undefined
+    sound: resultSoundPaths[0] ? resultSoundPaths[0] : undefined
   }); // , {chatBubble: true}
+  resultSoundPaths.shift();
+  for(const path of resultSoundPaths) {
+    setTimeout(() => {
+      AudioHelper.play({src: path, volume: 1, loop: false}, true);
+    }, 500);
+  }
 
   function resultStyle(bgColour) {
     return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all;`;
@@ -312,7 +338,7 @@ function modDialog(weaponId, options) {
           <label>Attack modifiers?</label>
           <input type="text" id="atkMod" placeholder="e.g. -4">
         </div>
-        ${options.attackType === 'touch' ? '' : `<div class="form-group">
+        ${options.atkType === 'touch' ? '' : `<div class="form-group">
           <label>Damage modifiers?</label>
           <input type="text" id="dmgMod" placeholder="e.g. 2d6">
         </div>
