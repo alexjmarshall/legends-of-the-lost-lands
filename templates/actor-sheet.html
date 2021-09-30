@@ -173,6 +173,11 @@
             <ol class="item-list">
                 {{#each data.skills as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
+                    <div class="item-roll">
+                        {{#if item.data.macro}}
+                            <a><i class="fas fa-dice-d20"></i></a>
+                        {{/if}}
+                    </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
                     {{!-- Iterate through all attributes on the item and output buttons for any that are formula. --}}
