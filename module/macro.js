@@ -262,11 +262,12 @@ export async function attackMacro(weapons, options={}) {
       resultSound = 'weapon_break';
     }
 
-    content += `<p style="line-height:1.4em;">${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}</p>`;
+    content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;
     resultSound && resultSoundPaths.push(`systems/lostlands/sounds/${resultSound}.mp3`);
   }
   
   // create chat message and play attack result sounds
+  content = `<div style="line-height:1.6em;">${content}</div>`;
   await macroChatMessage(token, content, flavor, resultSoundPaths[0]);
   resultSoundPaths.shift();
   for (const path of resultSoundPaths) {
