@@ -50,7 +50,7 @@ export class SimpleActor extends Actor {
       const str = attributes.ability_scores?.str?.value || 0;
       const strEnc = (Math.floor(str / 3) + 1) * 3;
       let mv = (5 - Math.ceil((actorData.enc || 1) / (strEnc || 1))) * 3;
-      mv = Math.clamped(mv, 0, mv);
+      mv = Math.max(0, mv);
       if(mv === 12) mv = attributes.maxmv?.value ?? mv;
       mv = attributes.mv?.value ?? mv;
       // if(this._id && mv !== actorData.mv) {
@@ -89,7 +89,7 @@ export class SimpleActor extends Actor {
     const baseAc = baseAcAndMaxDexBonusMap.size ? Math.max(...baseAcAndMaxDexBonusMap.keys()) : 9;
     const maxDexBonus = baseAcAndMaxDexBonusMap.get(baseAc) ?? 3;
     const wornAc = wornItems.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), baseAc);
-    let ac = wornAc + Math.clamped(updateData.dex_mod, updateData.dex_mod, maxDexBonus);
+    let ac = wornAc + Math.min(updateData.dex_mod, maxDexBonus);
     ac = attributes.ac?.value ?? ac;
     updateData.ac = ac || 9;
     // if(this._id && ac !== actorData.ac) await this.update({"data.ac": (ac || 9)});
