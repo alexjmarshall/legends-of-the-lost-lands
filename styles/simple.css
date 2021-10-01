@@ -88,6 +88,11 @@
   padding: 0;
   overflow-y: auto;
 }
+.lostlands .items .item-column {
+  text-align: right;
+  flex: 0 0 85px;
+  margin-right: 5px;
+}
 .lostlands .item-list .item {
   min-height: 30px;
   line-height: 24px;
@@ -103,7 +108,20 @@
   margin: 0;
 }
 .lostlands .item-list .item-controls {
+  margin-left: 36px;
   flex: 0 0 36px;
+}
+.lostlands .item-list .item-controls-left {
+  flex: 0 0 36px;
+  text-align: right;
+}
+.lostlands .item-list .item-toggle {
+  flex: 0 0 18px;
+  text-align: right;
+  margin-right: 5px;
+}
+.opacity-50 {
+  opacity: 0.5;
 }
 .lostlands .item-list .item-buttons {
   display: flex;
@@ -136,11 +154,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.lostlands .items .item-roll {
-  flex: 0 0 16px;
-  text-align: right;
-  margin-right: 5px;
 }
 .lostlands .attributes .group-prefix {
   height: 31px;

@@ -46,18 +46,26 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header flexrow">
-                <span style="max-width:24px"></span>
+                <span style="max-width:41px"></span>
+                <span style="max-width:29px"></span>
                 <span></span>
-                <span>Quantity</span>
-                <span>Weight</span>
-                <span style="max-width:36px"></span>
+                <span class="item-column">Quantity</span>
+                <span  class="item-column">Weight</span>
+                <span style="max-width:67px"></span>
             </header>
             <ol class="item-list">
                 {{#each data.equipment as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-roll">
+                    <div class="item-toggle">
                         {{#if item.data.macro}}
-                            <a><i class="fas fa-dice-d20"></i></a>
+                            <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
+                        {{/if}}
+                    </div>
+                    <div class="item-toggle">
+                        {{#if item.data.attributes.wearable.value}}
+                            <a class="item-control {{#if item.data.worn}}{{else}}opacity-50{{/if}}" title="Wear Item" data-type="{{item.type}}" data-action="wear">
+                                <i class="fas fa-tshirt"></i>
+                            </a>
                         {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
@@ -96,8 +104,8 @@
                         {{/if}}
                         {{/each}}
                     </div> -->
-                    <span class="item-row" data-action="edit">{{item.data.quantity}}</span>
-                    <span class="item-row" data-action="edit">{{item.data.totalWeight}}</span>
+                    <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
+                    <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
                     <div class="item-controls">
                         <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
                         <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
@@ -106,23 +114,32 @@
                 {{/each}}
             </ol>
             {{#if isGM}}
-            <p>
-                <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
-            </p>
+            <div class="flexrow" style="margin: 0.5em 0;">
+                <span style="max-width:46px;white-space: nowrap;">
+                    <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
+                </span>
+                <span style="max-width:29px"></span>
+                <span></span>
+                <span class="item-column"></span>
+                <div class="item-column"><label class="label">Total:</label><span>{{data.data.enc}}</span></div>
+                <span style="max-width:72px"></span> 
+            </div>
             {{/if}}
             <header class="items-header flexrow">
-                <span style="max-width:24px"></span>
-                <span></span>
+                <span style="max-width:41px"></span>
+                <span style="max-width:29px"></span>
+                <span>Armor Class</span>
                 <span>Movement Rate</span>
                 <span>Encumbrance</span>
-                <span style="max-width:36px"></span>
+                <span style="max-width:31px"></span>
             </header>
-            <div class="item flexrow">
-                <span style="max-width:24px"></span>
-                <span></span>
+            <div class="item flexrow" style="padding: 0 5px;">
+                <span style="max-width:41px"></span>
+                <span style="max-width:29px"></span>
+                <span>{{data.data.ac}}</span>
                 <span>{{data.data.mv}}</span>
                 <span>{{data.data.enc}}</span>
-                <span style="max-width:36px"></span>
+                <span style="max-width:31px"></span>
             </div>
         </div>
 
@@ -140,22 +157,24 @@
                 <ol class="item-list">
                     {{#each level.spells as |spell id|}}
                     <li class="item flexrow" data-item-id="{{spell._id}}">
-                        <div class="item-roll">
+                        <div class="item-toggle">
                             {{#if spell.data.macro}}
-                                <a><i class="fas fa-dice-d20"></i></a>
+                                <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
                             {{/if}}
                         </div>
-                        <div style="flex: 0 0 20px;">
+                        <div class="item-toggle">
                             {{#if spell.data.attributes.lvl.value}}
-                                <input class="prepare-spell" type="checkbox" style="margin-left:0;" {{#if spell.data.prepared}}checked{{/if}}/>
+                                <a class="item-control {{#if spell.data.prepared}}{{else}}opacity-50{{/if}}" title="Prepare Spell" data-type="{{spell.type}}" data-action="prepare">
+                                    <i class="fas fa-hand-sparkles"></i>
+                                </a>
                             {{/if}}
                         </div>
                         <img class="item-row" data-action="edit" src="{{spell.img}}" title="{{spell.name}}" width="24" height="24"/>
                         <h4 class="item-name item-row" data-action="edit">{{spell.name}}</h4>
-                        <div class="item-row flex3" data-action="edit">
-                            {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 2em;">{{spell.data.attributes.range.value}}'</span>{{/if}}
-                            {{#if spell.data.attributes.area.value}}<label class="label">Area:</label><span style="margin-right: 2em;">{{spell.data.attributes.area.value}}</span>{{/if}}
-                            {{#if spell.data.attributes.duration.value}}<label class="label">Duration:</label><span style="margin-right: 2em;">{{spell.data.attributes.duration.value}}</span>{{/if}}
+                        <div style="text-align: right; margin-right: 5px;" class="item-row flex3" data-action="edit">
+                            {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.range.value}}'</span>{{/if}}
+                            {{#if spell.data.attributes.area.value}}<label class="label">Area:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.area.value}}</span>{{/if}}
+                            {{#if spell.data.attributes.duration.value}}<label class="label">Duration:</label><span>{{spell.data.attributes.duration.value}}</span>{{/if}}
                         </div>
                         <div class="item-controls">
                             <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="{{spell.type}}" data-action="edit"><i class="fas fa-edit"></i></a>
@@ -173,9 +192,9 @@
             <ol class="item-list">
                 {{#each data.skills as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-roll">
+                    <div class="item-toggle">
                         {{#if item.data.macro}}
-                            <a><i class="fas fa-dice-d20"></i></a>
+                            <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
                         {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
