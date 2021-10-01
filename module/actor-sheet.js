@@ -90,27 +90,27 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-    html.find(".item-roll a").click(this._onItemMacroRoll.bind(this));
+    // html.find(".item-roll a").click(this._onItemMacroRoll.bind(this));
 
-    // Spell preparation checkbox
-    html.find(".prepare-spell").on("change", function(event) {
-      event.preventDefault();
-      const li = event.target.closest(".item");
-      const itemId = li?.dataset.itemId;
-      const spell = this.actor.items.get(itemId);
-      const isPrepared = !!spell.data.data.prepared;
-      const spellLevel = spell.data.data.attributes.lvl.value;
-      const actorSlotsAttr = this.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`];
-      const spellsPrepared = this.actor.data.items.filter(i => i.type === `${spell.type}` && 
-        i.data.data.attributes.lvl?.value === spellLevel && 
-        i.data.data.prepared).length;
-      const slotsMax = actorSlotsAttr?.max || 0;
-      if(!isPrepared && spellsPrepared >= slotsMax) {
-        $(event.target).prop('checked', false);
-        return ui.notifications.error("Cannot prepare any more spells of this level.");
-      }
-      this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
-    }.bind(this));
+    // // Spell preparation checkbox
+    // html.find(".prepare-spell").on("change", function(event) {
+    //   event.preventDefault();
+    //   const li = event.target.closest(".item");
+    //   const itemId = li?.dataset.itemId;
+    //   const spell = this.actor.items.get(itemId);
+    //   const isPrepared = !!spell.data.data.prepared;
+    //   const spellLevel = spell.data.data.attributes.lvl.value;
+    //   const actorSlotsAttr = this.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`];
+    //   const spellsPrepared = this.actor.data.items.filter(i => i.type === `${spell.type}` && 
+    //     i.data.data.attributes.lvl?.value === spellLevel && 
+    //     i.data.data.prepared).length;
+    //   const slotsMax = actorSlotsAttr?.max || 0;
+    //   if(!isPrepared && spellsPrepared >= slotsMax) {
+    //     $(event.target).prop('checked', false);
+    //     return ui.notifications.error("Cannot prepare any more spells of this level.");
+    //   }
+    //   this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
+    // }.bind(this));
 
     // Add draggable for Macro creation
     html.find(".attributes a.attribute-roll").each((i, a) => {
@@ -129,13 +129,14 @@ export class SimpleActorSheet extends ActorSheet {
    * @param event
    * @private
    */
-  _onItemControl(event) {
+  async _onItemControl(event) {
     event.preventDefault();
 
     // Obtain event data
     const button = event.currentTarget;
     const li = button.closest(".item");
-    const item = this.actor.items.get(li?.dataset.itemId);
+    const itemId = li?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
     const type = button.dataset.type;
     const sheetFlag = {
       core: {
@@ -194,6 +195,36 @@ export class SimpleActorSheet extends ActorSheet {
             });
           }
         }).render(true);
+      case "prepare":
+        const isPrepared = !!item.data.data.prepared;
+        const spellLevel = item.data.data.attributes.lvl.value;
+        const actorSlotsAttr = this.actor.data.data.attributes[`${item.type}`]?.[`lvl_${spellLevel}`];
+        const preparedSpells = this.actor.data.items.filter(i => i.type === `${item.type}` && 
+          i.data.data.attributes.lvl?.value === spellLevel && 
+          i.data.data.prepared);
+        const slotsMax = actorSlotsAttr?.max || 0;
+        if(slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level.");
+        if(!isPrepared && preparedSpells.length >= slotsMax) {
+          // clear up a slot by unpreparing first prepared spell
+          const firstPreparedSpellId = preparedSpells[0].data._id;
+          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
+        }
+        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
+      case "wear":
+        const isWorn = !!item.data.data.worn;
+        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
+      case "use":
+        const itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
+        let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
+        if (!macro && itemMacroWithId) {
+          macro = await Macro.create({
+            name: item.name,
+            type: "script",
+            command: itemMacroWithId,
+            flags: { "lostlands.attrMacro": true }
+          });
+        }
+        await macro.execute();
     }
   }
 
