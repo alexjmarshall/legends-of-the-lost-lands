@@ -58,6 +58,24 @@
   width: 88px;
   height: 28px;
 }
+.lostlands .resource.hp {
+  width: 28%;
+}
+.lostlands .resource.hp input {
+  width: 40px;
+}
+.lostlands .resource.xp {
+  width: 40%;
+}
+.lostlands .resource.xp input {
+  width: 66px;
+}
+.lostlands .resource.value {
+  width: 16%;
+}
+.lostlands .resource.value input {
+  width: 33px;
+}
 .lostlands .tabs {
   flex: 0 0 40px;
   border-top: 1px solid #AAA;

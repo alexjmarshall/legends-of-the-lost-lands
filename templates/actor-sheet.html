@@ -7,17 +7,25 @@
             <h1 class="charname">
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" />
             </h1>
-            <div class="resource">
+            <div class="resource hp">
                 <label class="label">HP</label>
                 <input type="number" name="data.hp.value" value="{{systemData.hp.value}}"/>
                 <span> / </span>
                 <input type="number" name="data.hp.max" value="{{systemData.hp.max}}"/>
             </div>
-            <div class="resource">
+            <div class="resource xp">
                 <label class="label">XP</label>
                 <input type="number" name="data.xp.value" value="{{systemData.xp.value}}"/>
                 <span> / </span>
                 <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
+            </div>
+            <div class="resource value">
+                <label class="label">AC</label>
+                <input type="number" value="{{systemData.ac}}" disabled/>
+            </div>
+            <div class="resource value">
+                <label class="label">MV</label>
+                <input type="number" value="{{systemData.mv}}" disabled/>
             </div>
         </div>
     </header>
@@ -46,12 +54,11 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header flexrow">
-                <span style="max-width:41px"></span>
-                <span style="max-width:29px"></span>
-                <span></span>
+                <div style="max-width:70px"></div>
+                <div></div>
                 <span class="item-column">Quantity</span>
-                <span  class="item-column">Weight</span>
-                <span style="max-width:67px"></span>
+                <span class="item-column">Weight</span>
+                <span style="max-width:31px; margin-left:36px;"></span>
             </header>
             <ol class="item-list">
                 {{#each data.equipment as |item id|}}
@@ -70,40 +77,6 @@
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                    {{!-- Iterate through all attributes on the item and output buttons for any that are formula. --}}
-                    <!-- <div class="item-buttons">
-                        {{#each item.data.attributes as |itemAttr key|}}
-                        {{#if itemAttr.dtype}}
-                            {{#if itemAttr.isFormula}}
-                                {{!-- Use the items.name.key format for shorthand. --}}
-                                {{#if ../../shorthand}}
-                                <button class="item-button rollable" data-roll="@items.{{slugify item.name}}.{{key}}" data-label="{{ itemAttr.label }}"
-                                    title="{{itemAttr.value}}">{{itemAttr.label}}</button>
-                                {{!-- Use the items.name.attributes.key.value format otherwise. --}}
-                                {{else}}
-                                <button class="item-button rollable"
-                                    data-roll="@items.{{slugify item.name}}.attributes.{{key}}.value" data-label="{{ itemAttr.label }}"
-                                    title="{{itemAttr.value}}">{{itemAttr.label}}</button>
-                                {{/if}}
-                            {{/if}}
-                        {{else}}
-                            {{#each itemAttr as |itemGroupedAttr groupedKey|}}
-                                {{#if itemGroupedAttr.isFormula}}
-                                    {{!-- Use the items.name.key format for shorthand. --}}
-                                    {{#if ../../../shorthand}}
-                                    <button class="item-button rollable" data-roll="@items.{{slugify item.name}}.{{key}}.{{groupedKey}}" data-label="{{ itemGroupedAttr.label }}"
-                                        title="{{itemGroupedAttr.value}}">{{itemGroupedAttr.label}}</button>
-                                    {{!-- Use the items.name.attributes.key.value format otherwise. --}}
-                                    {{else}}
-                                    <button class="item-button rollable"
-                                        data-roll="@items.{{slugify item.name}}.attributes.{{key}}.{{groupedKey}}.value" data-label="{{ itemGroupedAttr.label }}"
-                                        title="{{itemGroupedAttr.value}}">{{itemGroupedAttr.label}}</button>
-                                    {{/if}}
-                                {{/if}}
-                            {{/each}}
-                        {{/if}}
-                        {{/each}}
-                    </div> -->
                     <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
                     <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
                     <div class="item-controls">
@@ -115,36 +88,19 @@
             </ol>
             {{#if isGM}}
             <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:46px;white-space: nowrap;">
+                <span style="max-width:75px;white-space: nowrap;">
                     <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
                 </span>
-                <span style="max-width:29px"></span>
                 <span></span>
                 <span class="item-column"></span>
                 <div class="item-column"><label class="label">Total:</label><span>{{data.data.enc}}</span></div>
-                <span style="max-width:72px"></span> 
+                <span style="max-width:36px; margin-left:36px;"></span> 
             </div>
             {{/if}}
-            <header class="items-header flexrow">
-                <span style="max-width:41px"></span>
-                <span style="max-width:29px"></span>
-                <span>Armor Class</span>
-                <span>Movement Rate</span>
-                <span>Encumbrance</span>
-                <span style="max-width:31px"></span>
-            </header>
-            <div class="item flexrow" style="padding: 0 5px;">
-                <span style="max-width:41px"></span>
-                <span style="max-width:29px"></span>
-                <span>{{data.data.ac}}</span>
-                <span>{{data.data.mv}}</span>
-                <span>{{data.data.enc}}</span>
-                <span style="max-width:31px"></span>
-            </div>
         </div>
 
         {{!-- Owned Spells Tab --}}
-        <div class="tab items" data-group="primary" data-tab="spells">
+        <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each data.spells as |spelltype key|}}
             <header class="spells-header flexrow">
                 <span style="text-align: center;">{{#ifeq key "spell_magic"}}Magic Spells{{/ifeq}}{{#ifeq key "spell_cleric"}}Cleric Spells{{/ifeq}}{{#ifeq key "spell_witch"}}Witch Spells{{/ifeq}}</span>
@@ -159,7 +115,7 @@
                     <li class="item flexrow" data-item-id="{{spell._id}}">
                         <div class="item-toggle">
                             {{#if spell.data.macro}}
-                                <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
+                                <a class="item-control" data-action="use" title="Cast Spell"><i class="fas fa-dice-d20"></i></a>
                             {{/if}}
                         </div>
                         <div class="item-toggle">
@@ -171,7 +127,7 @@
                         </div>
                         <img class="item-row" data-action="edit" src="{{spell.img}}" title="{{spell.name}}" width="24" height="24"/>
                         <h4 class="item-name item-row" data-action="edit">{{spell.name}}</h4>
-                        <div style="text-align: right; margin-right: 5px;" class="item-row flex3" data-action="edit">
+                        <div style="margin-right: 5px;" class="item-row flex3" data-action="edit">
                             {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.range.value}}'</span>{{/if}}
                             {{#if spell.data.attributes.area.value}}<label class="label">Area:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.area.value}}</span>{{/if}}
                             {{#if spell.data.attributes.duration.value}}<label class="label">Duration:</label><span>{{spell.data.attributes.duration.value}}</span>{{/if}}
@@ -188,51 +144,17 @@
         </div>
 
         {{!-- Skills Tab --}}
-        <div class="tab items" data-group="primary" data-tab="skills">
+        <div class="tab skills" data-group="primary" data-tab="skills">
             <ol class="item-list">
                 {{#each data.skills as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
                         {{#if item.data.macro}}
-                            <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
+                            <a class="item-control" data-action="use" title="Use Skill"><i class="fas fa-dice-d20"></i></a>
                         {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                    {{!-- Iterate through all attributes on the item and output buttons for any that are formula. --}}
-                    <!-- <div class="item-buttons">
-                        {{#each item.data.attributes as |itemAttr key|}}
-                        {{#if itemAttr.dtype}}
-                            {{#if itemAttr.isFormula}}
-                                {{!-- Use the items.name.key format for shorthand. --}}
-                                {{#if ../../shorthand}}
-                                <button class="item-button rollable" data-roll="@items.{{slugify item.name}}.{{key}}" data-label="{{ itemAttr.label }}"
-                                    title="{{itemAttr.value}}">{{itemAttr.label}}</button>
-                                {{!-- Use the items.name.attributes.key.value format otherwise. --}}
-                                {{else}}
-                                <button class="item-button rollable"
-                                    data-roll="@items.{{slugify item.name}}.attributes.{{key}}.value" data-label="{{ itemAttr.label }}"
-                                    title="{{itemAttr.value}}">{{itemAttr.label}}</button>
-                                {{/if}}
-                            {{/if}}
-                        {{else}}
-                            {{#each itemAttr as |itemGroupedAttr groupedKey|}}
-                                {{#if itemGroupedAttr.isFormula}}
-                                    {{!-- Use the items.name.key format for shorthand. --}}
-                                    {{#if ../../../shorthand}}
-                                    <button class="item-button rollable" data-roll="@items.{{slugify item.name}}.{{key}}.{{groupedKey}}" data-label="{{ itemGroupedAttr.label }}"
-                                        title="{{itemGroupedAttr.value}}">{{itemGroupedAttr.label}}</button>
-                                    {{!-- Use the items.name.attributes.key.value format otherwise. --}}
-                                    {{else}}
-                                    <button class="item-button rollable"
-                                        data-roll="@items.{{slugify item.name}}.attributes.{{key}}.{{groupedKey}}.value" data-label="{{ itemGroupedAttr.label }}"
-                                        title="{{itemGroupedAttr.value}}">{{itemGroupedAttr.label}}</button>
-                                    {{/if}}
-                                {{/if}}
-                            {{/each}}
-                        {{/if}}
-                        {{/each}}
-                    </div> -->
                     <div class="item-controls">
                         <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
                         <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
@@ -246,7 +168,7 @@
         <div class="tab attributes" data-group="primary" data-tab="attributes">
             <header class="attributes-header flexrow">
                 <span class="attribute-key" {{#if isPlayer}}style="display:none;"{{/if}}>{{localize "SIMPLE.AttributeKey"}}</span>
-                <span class="attribute-label">{{#if isPlayer}}Base Attributes{{else}}{{localize "SIMPLE.AttributeLabel"}}{{/if}}</span>
+                <span class="attribute-label">{{localize "SIMPLE.AttributeLabel"}}</span>
                 <span class="attribute-value">{{localize "SIMPLE.AttributeValue"}}</span>
                 <span class="attribute-dtype" {{#if isPlayer}}style="display:none;"{{/if}}>{{localize "SIMPLE.AttributeDtype"}}</span>
                 <a class="attribute-control" data-action="create" data-group="{{group}}" {{#if isPlayer}}style="display:none;"{{/if}}><i class="fas fa-plus"></i></a>
