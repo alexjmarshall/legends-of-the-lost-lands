@@ -8,13 +8,13 @@ export class SimpleActor extends Actor {
 
   /* character template attributes:
   * bab
-  * ac
   * lvl
   * lvl_title
   * class
   * race
   * ability_scores.str, int, wis, dex, con, cha
   * spell_cleric.lvl_1, spell_magic.lvl_1, etc.: resource, min 0 value and max spell slots
+  * sv
   * 
   * optional:
   * touch_ac
@@ -30,27 +30,33 @@ export class SimpleActor extends Actor {
     const items = this.data.items;
     const actorData = this.data.data;
     const attributes = actorData.attributes;
+    const updateData = {};
 
     // level up sound
     if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
       AudioHelper.play({src: "systems/lostlands/sounds/level_up.mp3", volume: 1, loop: false}, false);
-      await this.update({"data.islevelup": true});
+      updateData.islevelup = true;
+      // await this.update({"data.islevelup": true});
     } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
-      await this.update({"data.islevelup": false});
+      updateData.islevelup = false;
+      // await this.update({"data.islevelup": false});
     }
 
     // encumbrance and mv
-    actorData.enc = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor(b.data.data.quantity * b.data.data.weight), 0);
-    actorData.enc = attributes.enc?.value || actorData.enc;
+    actorData.enc = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor((b.data.data.quantity || 0) * (b.data.data.weight || 0)), 0);
+    actorData.enc = attributes.enc?.value ?? actorData.enc;
     // derive mv and speed from encumbrance for characters
     if(this.data.type === 'character') {
-      const str = attributes.ability_scores?.str?.value || -1;
-      const strEnc = (Math.floor(+str / 3) + 1) * 3;
-      let mv = (5 - Math.ceil((+actorData.enc || 1) / (strEnc || 1))) * 3;
-      mv = mv < 0 ? 0 : mv;
-      mv = (+attributes.maxmv?.value && +mv === 12) ? +attributes.maxmv.value : mv;
-      mv = +attributes.mv?.value || mv;
-      if(this._id && mv !== actorData.mv) await this.update({"data.mv": mv, "data.speed": (mv * 5)});
+      const str = attributes.ability_scores?.str?.value || 0;
+      const strEnc = (Math.floor(str / 3) + 1) * 3;
+      let mv = (5 - Math.ceil((actorData.enc || 1) / (strEnc || 1))) * 3;
+      mv = Math.clamped(mv, 0, mv);
+      if(mv === 12) mv = attributes.maxmv?.value ?? mv;
+      mv = attributes.mv?.value ?? mv;
+      // if(this._id && mv !== actorData.mv) {
+      updateData.mv = mv || 0;
+      updateData.speed = mv * 5 || 0; //await this.update({"data.mv": (mv || 0), "data.speed": ((mv * 5) || 0)});
+      // }
     }
 
     // encumbrance for containers
@@ -58,33 +64,51 @@ export class SimpleActor extends Actor {
       const otherActors = game.actors?.filter(a => a.name !== this.name) || [];
       for(let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
-        if(container) {
-          const containerUpdate = { _id: container._id, "data.weight": Math.floor(actorData.enc / (attributes.factor?.value || 1)) || 1 };
-          otherActor.updateEmbeddedDocuments("Item", [containerUpdate]);
+        if(container && container._id) {
+          const containerWeight = Math.floor(actorData.enc / (attributes.factor?.value || 1)) || 1;
+          if(containerWeight !== container.data.data.weight) {
+            otherActor.updateEmbeddedDocuments("Item", [{ _id: container._id, "data.weight": containerWeight }]);
+          }
         }
       }
     }
     // ability score modifiers
-    const scoreMods = {};
-    scoreMods.str_mod = attributes.ability_scores?.str?.value ? Math.floor(attributes.ability_scores.str.value / 3 - 3) : 0;
-    scoreMods.int_mod = attributes.ability_scores?.int?.value ? Math.floor(attributes.ability_scores.int.value / 3 - 3) : 0;
-    scoreMods.wis_mod = attributes.ability_scores?.wis?.value ? Math.floor(attributes.ability_scores.wis.value / 3 - 3) : 0;
-    scoreMods.dex_mod = attributes.ability_scores?.dex?.value ? Math.floor(attributes.ability_scores.dex.value / 3 - 3) : 0;
-    scoreMods.con_mod = attributes.ability_scores?.con?.value ? Math.floor(attributes.ability_scores.con.value / 3 - 3) : 0;
-    scoreMods.cha_mod = attributes.ability_scores?.cha?.value ? Math.floor(attributes.ability_scores.cha.value / 3 - 3) : 0;
-    let shouldUpdateMods = false;
-    for(const key of Object.keys(scoreMods)) {
-      if(scoreMods[key] !== actorData[key]) {
-        shouldUpdateMods = true;
+    // const scoreMods = {};
+    updateData.str_mod = Math.floor((attributes.ability_scores?.str?.value || 0) / 3 - 3);
+    updateData.int_mod = Math.floor((attributes.ability_scores?.int?.value || 0) / 3 - 3);
+    updateData.wis_mod = Math.floor((attributes.ability_scores?.wis?.value || 0) / 3 - 3);
+    updateData.dex_mod = Math.floor((attributes.ability_scores?.dex?.value || 0) / 3 - 3);
+    updateData.con_mod = Math.floor((attributes.ability_scores?.con?.value || 0) / 3 - 3);
+    updateData.cha_mod = Math.floor((attributes.ability_scores?.cha?.value || 0) / 3 - 3);
+    // if(this._id && shouldUpdateMods) updateData.//await this.update({data: scoreMods});
+
+    // ac not working TEST WITH JAS
+    const wornItems = items.filter(i => i.data.data.worn === true);
+    const wornBaseAcItems = wornItems.filter(i => i.data.data.attributes.ac_base?.value);
+    const baseAcAndMaxDexBonusMap = new Map(wornBaseAcItems.map(i => [i.data.data.attributes.ac_base.value, i.data.data.attributes.max_dex_bonus?.value]));
+    const baseAc = baseAcAndMaxDexBonusMap.size ? Math.max(...baseAcAndMaxDexBonusMap.keys()) : 9;
+    const maxDexBonus = baseAcAndMaxDexBonusMap.get(baseAc) ?? 3;
+    const wornAc = wornItems.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), baseAc);
+    let ac = wornAc + Math.clamped(updateData.dex_mod, updateData.dex_mod, maxDexBonus);
+    ac = attributes.ac?.value ?? ac;
+    updateData.ac = ac || 9;
+    // if(this._id && ac !== actorData.ac) await this.update({"data.ac": (ac || 9)});
+
+    // touch AC
+    let touchAc = 9 + updateData.dex_mod;
+    touchAc = attributes.touch_ac?.value ?? touchAc;
+    updateData.touch_ac = touchAc || 9;
+    // if(this._id && touchAc !== actorData.touch_ac) await this.update({"data.touch_ac": (touchAc || 9)});
+
+    // update actor if any update data is different than existing data
+    let shouldUpdate = false;
+    for(const key of Object.keys(updateData)) {
+      if(updateData[key] !== actorData[key]) {
+        shouldUpdate = true;
         break;
       }
     }
-    if(this._id && shouldUpdateMods) await this.update({data: scoreMods});
-
-    // touch AC
-    let touchAc = 9 + (actorData.dex_mod || 0);
-    touchAc = +attributes.touch_ac?.value || touchAc;
-    touchAc !== actorData.touch_ac && await this.update({"data.touch_ac": touchAc});
+    if(this._id && shouldUpdate) await this.update({data: updateData});
   }
 
   /* -------------------------------------------- */
