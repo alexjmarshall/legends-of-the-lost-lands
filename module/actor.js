@@ -57,13 +57,15 @@ export class SimpleActor extends Actor {
 
     // encumbrance for containers
     if(this.data.type === 'container') {
-      const otherActors = game.actors?.filter(a => a.name !== this.name) || [];
+      const otherActors = game.actors?.filter(a => a.name !== this.name && a.hasPlayerOwner) || [];
       for(let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
-        if(!container || !container._id) continue;
-        const containerWeight = Math.floor(actorData.enc / (attributes.factor?.value || 1)) || 1;
-        const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
-        if(containerWeight !== container.data.data.weight) otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
+        if(container && container._id) {
+          const containerWeight = Math.floor(actorData.enc / (attributes.factor?.value || 1)) || 1;
+          const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
+          if(containerWeight !== container.data.data.weight) await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
+          break;
+        }
       }
     }
     // ability score modifiers
