@@ -5,7 +5,6 @@
             <input class="group-key" type="text" readonly name="data.groups.{{groupKey}}.key" value="{{groupKey}}" {{#if ../isPlayer}}style="display:none;"{{/if}} />
             {{#if ../isPlayer}}
             <span class="attribute-label" name="data.groups.{{groupKey}}.label">{{group.label}}</span>
-            <span class="attribute-label">{{localize "SIMPLE.AttributeValue"}}</span>
             {{else}}
             <input class="group-label" type="text" name="data.groups.{{groupKey}}.label" value="{{group.label}}" placeholder="Group Label" />
             <select class="group-dtype" name="data.groups.{{groupKey}}.dtype">

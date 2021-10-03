@@ -2,30 +2,31 @@
 
     {{!-- Sheet Header --}}
     <header class="sheet-header">
-        <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" height="100" width="100" />
+        <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
         <div class="header-fields">
             <h1 class="charname">
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" />
             </h1>
-            <div class="resource hp">
-                <label class="label">HP</label>
+            <div class="resource">
+                <label>HP</label>
                 <input type="number" name="data.hp.value" value="{{systemData.hp.value}}"/>
                 <span> / </span>
                 <input type="number" name="data.hp.max" value="{{systemData.hp.max}}"/>
             </div>
-            <div class="resource xp">
-                <label class="label">XP</label>
+            <div class="resource">
+                <label>XP</label>
                 <input type="number" name="data.xp.value" value="{{systemData.xp.value}}"/>
                 <span> / </span>
                 <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
             </div>
-            <div class="resource value">
-                <label class="label">AC</label>
+            <div class="resource">
+                <label>AC</label>
                 <input type="number" value="{{systemData.ac}}" disabled/>
             </div>
-            <div class="resource value">
-                <label class="label">MV</label>
+            <div class="resource">
+                <label>MV</label>
                 <input type="number" value="{{systemData.mv}}" disabled/>
+            </div>
             </div>
         </div>
     </header>
@@ -166,13 +167,15 @@
 
         {{!-- Attributes Tab --}}
         <div class="tab attributes" data-group="primary" data-tab="attributes">
+            {{#if isGM}}
             <header class="attributes-header flexrow">
-                <span class="attribute-key" {{#if isPlayer}}style="display:none;"{{/if}}>{{localize "SIMPLE.AttributeKey"}}</span>
+                <span class="attribute-key">{{localize "SIMPLE.AttributeKey"}}</span>
                 <span class="attribute-label">{{localize "SIMPLE.AttributeLabel"}}</span>
                 <span class="attribute-value">{{localize "SIMPLE.AttributeValue"}}</span>
-                <span class="attribute-dtype" {{#if isPlayer}}style="display:none;"{{/if}}>{{localize "SIMPLE.AttributeDtype"}}</span>
-                <a class="attribute-control" data-action="create" data-group="{{group}}" {{#if isPlayer}}style="display:none;"{{/if}}><i class="fas fa-plus"></i></a>
+                <span class="attribute-dtype">{{localize "SIMPLE.AttributeDtype"}}</span>
+                <a class="attribute-control" data-action="create" data-group="{{group}}"><i class="fas fa-plus"></i></a>
             </header>
+            {{/if}}
 
             {{!-- Render the attribute list partial. --}}
             {{> "systems/lostlands/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}

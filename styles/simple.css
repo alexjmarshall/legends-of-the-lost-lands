@@ -19,22 +19,33 @@
   margin-top: 10px;
 }
 .lostlands .sheet-header {
-  flex: 0 0 100px;
+  flex: 0 0 150px;
   overflow: hidden;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  margin-bottom: 10px;
+  align-items: unset!important;
+  margin-bottom: 5px;
 }
 .lostlands .sheet-header .profile-img {
   flex: 0 0 100px;
-  height: 100px;
+  height: 150px;
   margin-right: 10px;
+  max-width: 150px;
+  object-fit: cover;
+}
+.lostlands.sheet.item .sheet-header {
+  flex: 0 0 100px;
+  margin-bottom: 5px;
+}
+.lostlands.sheet.item .sheet-header .profile-img {
+  flex: 0 0 75px;
+  height: 100px;
+  max-width: 100px;
 }
 .lostlands .sheet-header .header-fields {
   flex: 1;
-  height: 100px;
 }
 .lostlands .sheet-header h1.charname {
   height: 50px;
@@ -50,34 +61,17 @@
 .lostlands .resource {
   width: 50%;
   height: 40px;
-  margin-top: 10px;
+  margin-top: 8px;
   float: left;
   text-align: center;
 }
 .lostlands .resource input {
-  width: 88px;
+  width: 75px;
   height: 28px;
-}
-.lostlands .resource.hp {
-  width: 28%;
-}
-.lostlands .resource.hp input {
-  width: 40px;
-}
-.lostlands .resource.xp {
-  width: 40%;
-}
-.lostlands .resource.xp input {
-  width: 66px;
-}
-.lostlands .resource.value {
-  width: 16%;
-}
-.lostlands .resource.value input {
-  width: 33px;
 }
 .lostlands .tabs {
   flex: 0 0 40px;
+  height: 40px!important;
   border-top: 1px solid #AAA;
   border-bottom: 1px solid #AAA;
 }

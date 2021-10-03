@@ -3,7 +3,6 @@
         {{#each attributes as |attr key|}}
         <li class="attribute flexrow" data-attribute="{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}">
             <div class="attribute-key-wrapper flexrow" {{#if ../isPlayer}}style="display:none;"{{/if}}>
-
                 <input class="attribute-key" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.key" value="{{key}}" placeholder="{{localize "SIMPLE.AttributeKey"}}"/>
             </div>
             <div class="attribute-key-wrapper flexrow">
@@ -11,15 +10,19 @@
                     <a class="attribute-roll" data-label="{{attr.label}}" data-roll="{{attr.value}}"><i class="fas fa-dice-d20"></i></a>
                 {{/if}}
                 <input class="attribute-label" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.label" value="{{attr.label}}"
-                    placeholder="{{localize "SIMPLE.AttributeLabel"}}"/>
+                    placeholder="{{localize "SIMPLE.AttributeLabel"}}" {{#if ../isPlayer}}readonly{{/if}} />
             </div>
             {{!-- Handle booleans. --}}
             {{#if attr.isCheckbox}}
             <label class="attribute-value checkbox"><input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
-                    {{checked attr.value}} /></label>
+                    {{checked attr.value}} {{#if ../isPlayer}}readonly{{/if}} /></label>
             {{else}}
             {{!-- Handle resources. --}}
             {{#if attr.isResource}}
+            {{#if ../isPlayer}}
+                <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max" value="{{attr.max}}"
+                    data-dtype="Number" readonly />
+            {{else}}
             <div class="attribute-group flexrow">
                 <span class="attribute-col flexcol">
                     <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min">{{localize "SIMPLE.ResourceMin"}}</label>
@@ -37,10 +40,11 @@
                         data-dtype="Number" />
                 </span>
             </div>
+            {{/if}}
             {{!-- Handle other input types. --}}
             {{else}}
             <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" value="{{attr.value}}"
-                data-dtype="{{attr.dtype}}" placeholder="{{localize "SIMPLE.AttributeValue"}}"/>
+                data-dtype="{{attr.dtype}}" placeholder="{{localize "SIMPLE.AttributeValue"}}" {{#if ../isPlayer}}readonly{{/if}} />
             {{/if}}
             {{/if}}
             <select class="attribute-dtype" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.dtype" {{#if ../isPlayer}}style="display:none;"{{/if}}>
