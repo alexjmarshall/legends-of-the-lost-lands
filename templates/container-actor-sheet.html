@@ -32,10 +32,10 @@
   {{!-- Sheet Body --}}
   <section class="sheet-body">
 
-      {{!-- Biography Tab --}}
-      <div class="tab description" data-group="primary" data-tab="description">
-          {{editor content=systemData.biography target="data.biography" button=true owner=owner editable=editable rollData=rollData}}
-      </div>
+    {{!-- Description Tab --}}
+    <div class="tab description" data-group="primary" data-tab="description">
+        {{editor content=systemData.description target="data.description" button=true owner=owner editable=editable rollData=rollData}}
+    </div>
 
       {{!-- Owned Items Tab --}}
       <div class="tab items" data-group="primary" data-tab="items">

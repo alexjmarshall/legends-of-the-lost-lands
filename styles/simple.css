@@ -94,6 +94,9 @@
 .lostlands .editor-content {
   height: 100%;
 }
+.lostlands .editor-content {
+  padding: 0 5px;
+}
 .lostlands .item-list {
   list-style: none;
   margin: 5px 0;

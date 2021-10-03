@@ -9,7 +9,7 @@ export class ContainerActorSheet extends SimpleActorSheet {
       width: 600,
       height: 600,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
-      scrollY: [".biography", ".items", ".attributes"],
+      scrollY: [".description", ".items", ".attributes"],
       dragDrop: [{dragSelector: ".item-list .item", dropSelector: null}]
     });
   }

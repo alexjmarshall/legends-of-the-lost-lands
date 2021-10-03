@@ -16,7 +16,7 @@ export class SimpleActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
-      scrollY: [".biography", ".items", ".attributes"],
+      scrollY: [".description", ".items", ".spells", ".features", ".attributes"],
       dragDrop: [{dragSelector: ".item-list .item", dropSelector: null}]
     });
   }
@@ -44,9 +44,9 @@ export class SimpleActorSheet extends ActorSheet {
     this.sortSpellsByType('spell_witch', context.data);
     context.hasSpells = Object.keys(context.data.spells).length > 0;
 
-    // sort skills
-    context.data.skills = items.filter(i => i.type === "skill");
-    context.hasSkills = context.data.skills.length > 0;
+    // sort features
+    context.data.features = items.filter(i => i.type === "feature");
+    context.hasFeatures = context.data.features.length > 0;
 
     return context;
   }
@@ -90,27 +90,6 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-    // html.find(".item-roll a").click(this._onItemMacroRoll.bind(this));
-
-    // // Spell preparation checkbox
-    // html.find(".prepare-spell").on("change", function(event) {
-    //   event.preventDefault();
-    //   const li = event.target.closest(".item");
-    //   const itemId = li?.dataset.itemId;
-    //   const spell = this.actor.items.get(itemId);
-    //   const isPrepared = !!spell.data.data.prepared;
-    //   const spellLevel = spell.data.data.attributes.lvl.value;
-    //   const actorSlotsAttr = this.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`];
-    //   const spellsPrepared = this.actor.data.items.filter(i => i.type === `${spell.type}` && 
-    //     i.data.data.attributes.lvl?.value === spellLevel && 
-    //     i.data.data.prepared).length;
-    //   const slotsMax = actorSlotsAttr?.max || 0;
-    //   if(!isPrepared && spellsPrepared >= slotsMax) {
-    //     $(event.target).prop('checked', false);
-    //     return ui.notifications.error("Cannot prepare any more spells of this level.");
-    //   }
-    //   this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
-    // }.bind(this));
 
     // Add draggable for Macro creation
     html.find(".attributes a.attribute-roll").each((i, a) => {
@@ -157,7 +136,7 @@ export class SimpleActorSheet extends ActorSheet {
         const actor = this.actor;
         const itemQty = +item.data.data.quantity || 0;
         if(itemQty <= 1) return item.delete();
-        new Dialog({
+        return new Dialog({
           title: "Delete Item",
           content: 
           `<form>
@@ -224,7 +203,7 @@ export class SimpleActorSheet extends ActorSheet {
             flags: { "lostlands.attrMacro": true }
           });
         }
-        await macro.execute();
+        return await macro.execute();
     }
   }
 
@@ -246,23 +225,6 @@ export class SimpleActorSheet extends ActorSheet {
     });
   }
 
-  async _onItemMacroRoll(event) {
-    let button = $(event.currentTarget);
-    const li = button.parents(".item");
-    const itemId = li.data("itemId");
-    const item = this.actor.items.get(itemId);
-    const itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
-    let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
-    if (!macro && itemMacroWithId) {
-      macro = await Macro.create({
-        name: item.name,
-        type: "script",
-        command: itemMacroWithId,
-        flags: { "lostlands.attrMacro": true }
-      });
-    }
-    macro.execute();
-  }
   /* -------------------------------------------- */
 
   /** @inheritdoc */

@@ -8,6 +8,7 @@ export const preloadHandlebarsTemplates = async function() {
   // Define template paths to load
   const templatePaths = [
     // Attribute list partial.
+    "systems/lostlands/templates/parts/item-sheet-body.html",
     "systems/lostlands/templates/parts/sheet-attributes.html",
     "systems/lostlands/templates/parts/sheet-groups.html",
     "systems/lostlands/templates/sidebar/entity-create.html"

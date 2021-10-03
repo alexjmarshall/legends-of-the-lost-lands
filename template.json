@@ -1,9 +1,9 @@
 {
 "Actor": {
-  "types": ["character", "container"],
+  "types": ["character", "monster", "container"],
   "templates": {
     "basicProps": {
-      "biography": "",
+      "description": "",
       "attributes": {},
       "groups": {}
     }
@@ -11,9 +11,22 @@
   "character": {
     "templates": ["basicProps"],
     "hp": {
-      "value": 10,
+      "value": 8,
       "min": 0,
-      "max": 10
+      "max": 8
+    },
+    "xp": {
+      "value": 0,
+      "min": 0,
+      "max": 1000
+    }
+  },
+  "monster": {
+    "templates": ["basicProps"],
+    "hp": {
+      "value": 8,
+      "min": 0,
+      "max": 8
     },
     "xp": {
       "value": 0,
@@ -26,7 +39,7 @@
   }
 },
 "Item": {
-  "types": ["item", "spell_magic", "spell_cleric", "spell_witch", "skill"],
+  "types": ["item", "spell_magic", "spell_cleric", "spell_witch", "feature"],
   "templates": {
     "basicProps": {
       "description": "",
@@ -52,7 +65,7 @@
   "spell_witch": {
     "templates": ["basicProps", "spell"]
   },
-  "skill": {
+  "feature": {
     "templates": ["basicProps"]
   }
 }
