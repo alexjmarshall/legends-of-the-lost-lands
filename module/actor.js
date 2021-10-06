@@ -14,7 +14,7 @@ export class SimpleActor extends Actor {
   * race
   * ability_scores.str, int, wis, dex, con, cha
   * spell_cleric.lvl_1, spell_magic.lvl_1, etc.: resource, min 0 value and max spell slots
-  * sv
+  * st
   * 
   * optional:
   * touch_ac
@@ -76,21 +76,27 @@ export class SimpleActor extends Actor {
     updateData.con_mod = Math.floor((attributes.ability_scores?.con?.value || 0) / 3 - 3);
     updateData.cha_mod = Math.floor((attributes.ability_scores?.cha?.value || 0) / 3 - 3);
 
-    // ac
-    const wornItems = items.filter(i => i.data.data.worn === true);
-    const wornBaseAcItems = wornItems.filter(i => i.data.data.attributes.ac_base?.value);
-    const baseAcAndMaxDexBonusMap = new Map(wornBaseAcItems.map(i => [i.data.data.attributes.ac_base.value, i.data.data.attributes.max_dex_bonus?.value]));
-    const baseAc = baseAcAndMaxDexBonusMap.size ? Math.max(...baseAcAndMaxDexBonusMap.keys()) : 9;
-    const maxDexBonus = baseAcAndMaxDexBonusMap.get(baseAc) ?? 3;
-    const wornAc = wornItems.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), baseAc);
-    let ac = wornAc + Math.min(updateData.dex_mod, maxDexBonus);
-    ac = attributes.ac?.value ?? ac;
-    updateData.ac = ac || 9;
+    /* AC
+    slots:
+    - helmet
+    - cloak
+    - armor
+    - tunic
+    - bracers
+    - gauntlets
+    - ring
+    - belt
+    - boots
+    */
+    const wornOrHeldItems = items.filter(i => i.data.data.worn === true || i.data.data.held === true);
+    const acMods = wornOrHeldItems.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
+    const maxDexBonus = Math.min(...wornOrHeldItems.map(i => i.data.data.attributes.max_dex_bonus?.value || Infinity));
+    const wornAc = 9 + acMods + Math.min(updateData.dex_mod, maxDexBonus);
+    updateData.ac = attributes.ac?.value ?? wornAc;
 
     // touch AC
-    let touchAc = 9 + updateData.dex_mod;
-    touchAc = attributes.touch_ac?.value ?? touchAc;
-    updateData.touch_ac = touchAc || 9;
+    const touchAc = 9 + updateData.dex_mod;
+    updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
 
     // update actor if any update data is different than existing data
     let shouldUpdate = false;
