@@ -86,6 +86,39 @@ function getMultiItemAttrs(itemId) {
   return MultiItem?.data?.data?.attributes;
 }
 
+export async function saveMacro(damage=0, options={}) {
+  const tokens = canvas.tokens.controlled;
+  if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw.");
+  options.atkType = 'touch'; // to omit mod dialog damage field
+  if(!options.skipModDialog) return modDialog(damage, 'Save', options, saveMacro);
+
+  for(const token of tokens) {
+    const st = +token.actor.data.data.attributes.st?.value;
+    if(!st) return ui.notifications.error(`${token.actor.name} has no st attribute set.`);
+    const actorStMod = token.actor.data.data.st_mod || 0;
+    const d20Roll = new Roll("d20");
+    await d20Roll.evaluate();
+    const d20Result = d20Roll.total;
+    const saveText = `${d20Result}${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
+    const savingThrow = new Roll(saveText);
+    await savingThrow.evaluate();
+    const success = savingThrow.total >= st;
+    const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
+    const takenDamage = success ? Math.floor(damage / 2) : damage;
+    const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes ${[[takenDamage]]} damage` : ``}`;
+    
+    if(tokens.indexOf(token) > 0) await wait(500);
+    ChatMessage.create({
+      speaker: ChatMessage.getSpeaker(token),
+      content: content.trim(),
+      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      flavor: takenDamage ? 'Save for Half Damage' : 'Saving Throw'
+    });
+    const currentHp = +token.actor.data.data.hp?.value;
+    if(game.user.isGM && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
+  }
+}
+
 /*
 * options:
 * {
@@ -96,6 +129,7 @@ function getMultiItemAttrs(itemId) {
 *  skipThrowDialog: true/false
 *  dialogAtkMod: (value)
 *  dialogDmgMod: (value)
+*  applyDamage: true/false
 *  throwable: true/false -- item attribute
 *  hasHook: true/false -- item attribute
 *  light: true/false -- item attribute
@@ -111,6 +145,9 @@ function getMultiItemAttrs(itemId) {
 export async function attackMacro(weapons, options={}) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
   const token = canvas.tokens.controlled[0];
+  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
+  const targetToken = [...game.user.targets][0];
+  const targetRollData = targetToken?.actor?.getRollData();
   if(!Array.isArray(weapons)) weapons = [weapons];
 
   let content = '';
@@ -141,7 +178,7 @@ export async function attackMacro(weapons, options={}) {
     // show attack choice dialogs
     if(weapons.length === 1 && throwable && !options.skipThrowDialog) return throwDialog(weapons, options);
     if(weapons.length === 1 && hasHook && !options.skipHookDialog) return hookDialog(weapons, options);
-    if(!options.skipModDialog) return modDialog(weapons, options);
+    if(!options.skipModDialog) return modDialog(weapons, 'Attack', options, attackMacro);
     
     // get actor and its properties
     const rollData = token.actor.getRollData();
@@ -155,10 +192,8 @@ export async function attackMacro(weapons, options={}) {
     const actorDmgMod = rollData.dmg_mod || 0;  
 
     // determine target and range
-    let targetToken, targetRollData, range, rangePenalty;
+    let range, rangePenalty;
     if([...game.user.targets].length === 1) {
-      targetToken = [...game.user.targets][0];
-      targetRollData = targetToken.actor.getRollData();
       if(atkType === 'missile' || atkType === 'throw') {
         const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
           canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
@@ -269,16 +304,17 @@ export async function attackMacro(weapons, options={}) {
   // create chat message and play attack result sounds
   content = `<div style="line-height:1.6em;">${content}</div>`;
   await macroChatMessage(token, content, flavor, resultSoundPaths[0]);
+  console.log(options.applyDamage);
   resultSoundPaths.shift();
   for (const path of resultSoundPaths) {
     setTimeout(() => {
       AudioHelper.play({src: path, volume: 1, loop: false}, true);
-    }, 500);
+    }, 500); // use wait function instead
   }
+}
 
-  function resultStyle(bgColour) {
-    return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
-  }
+function resultStyle(bgColour) {
+  return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
 }
 
 async function macroChatMessage(token, content, flavor, sound) {
@@ -348,29 +384,29 @@ function hookDialog(weaponId, options) {
   }).render(true);
 }
 
-function modDialog(weaponId, options) {
+function modDialog(data, label, options, callback) {
   new Dialog({
     title: "Modifiers",
     content: 
       `<form>
         <div class="form-group">
-          <label>Attack modifiers?</label>
+          <label>${label} modifiers?</label>
           <input type="text" id="atkMod" placeholder="e.g. -4">
         </div>
         ${options.atkType === 'touch' ? '' : `<div class="form-group">
           <label>Damage modifiers?</label>
           <input type="text" id="dmgMod" placeholder="e.g. 2d6">
-        </div>
-      </form>`}`,
+        </div>`}
+      </form>`,
     buttons: {
       one: {
         icon: '<i class="fas fa-check"></i>',
-        label: "Attack",
+        label: `${label}`,
         callback: html => {
           options.skipModDialog = true;
           options.dialogAtkMod = html.find('[id=atkMod]')[0]?.value;
           options.dialogDmgMod = html.find('[id=dmgMod]')[0]?.value;
-          attackMacro(weaponId, options);
+          callback(data, options);
         }
       },
       two: {
@@ -564,4 +600,10 @@ export function buyBasicEquipment() {
       }
     }
   }).render(true);
+}
+
+async function wait(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
 }
