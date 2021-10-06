@@ -163,7 +163,7 @@ export class SimpleActorSheet extends ActorSheet {
           },
           default: "two",
           render: html => {
-            const initialVal = Math.floor(itemQty / 2);
+            const initialVal = itemQty;
             const splitRange = html.find('#splitRange');
             splitRange.attr("max",itemQty);
             splitRange.val(initialVal);
@@ -188,10 +188,28 @@ export class SimpleActorSheet extends ActorSheet {
           const firstPreparedSpellId = preparedSpells[0].data._id;
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
-        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
+        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
-        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
+        // check whether already wearing an item in this slot
+        const slot = item.data.data.attributes.slot?.value;
+        const slotItems = this.actor.data.items.filter(i => i.data.data.attributes.slot?.value === slot && i.data.data.worn);
+        const slotLimit = slot === 'ring' ? 2 : 1;
+        if(slot && !isWorn && slotItems.length >= slotLimit) {
+          // clear up the slot
+          const firstSlotItemId = slotItems[0].data._id;
+          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
+        }
+        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
+      case "hold":
+        const isHeld = !!item.data.data.held;
+        const heldItems = this.actor.data.items.filter(i => i.data.data.held);
+        if(!isHeld && heldItems.length >= 2) {
+          // clear up a slot by unholding first held item
+          const firstHeldItemId = heldItems[0].data._id;
+          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstHeldItemId, "data.held": false}]);
+        }
+        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
         const itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
         let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
@@ -202,6 +220,9 @@ export class SimpleActorSheet extends ActorSheet {
             command: itemMacroWithId,
             flags: { "lostlands.attrMacro": true }
           });
+        }
+        if(event.ctrlKey && macro.data.command?.includes('attackMacro')) {
+          macro.data.command = macro.data.command.replace('{}', '{applyDamage: true}');
         }
         return await macro.execute();
     }
