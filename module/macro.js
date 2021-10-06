@@ -107,11 +107,11 @@ export async function saveMacro(damage=0, options={}) {
     const success = savingThrow.total >= st;
     const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
     const takenDamage = success ? Math.floor(damage / 2) : damage;
-    const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes ${[[takenDamage]]} damage` : ``}`;
+    const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes [[${takenDamage}]] damage` : ``}`;
     
     if(tokens.indexOf(token) > 0) await wait(500);
     const flavor = takenDamage ? 'Save for Half Damage' : 'Saving Throw';
-    macroChatMessage(token, content, flavor, sound);
+    macroChatMessage(token, content, flavor);
     const currentHp = +token.actor.data.data.hp?.value;
     if(game.user.isGM && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
   }
