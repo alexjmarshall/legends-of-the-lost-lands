@@ -64,21 +64,23 @@ export async function spellMacro(spellId) {
 }
 
 export async function twoWeaponFighting(itemId, options={}) {
-  const weaponString = getMultiItemAttrs(itemId)?.weapons?.value;
+  const weaponString = getItemAttrs(itemId)?.weapons?.value;
+  if(!weaponString || !weaponString.includes(',')) return ui.notifications.error("Incorrectly formatted weapon list.");
   options.flavor = `Two-Weapon Fighting (${weaponString})`;
   const weapons = weaponString.split(',');
   await attackMacro(weapons, options);
 }
 
 export async function attackRoutine(itemId, options={}) {
-  const routineString = getMultiItemAttrs(itemId)?.routine?.value;
+  const routineString = getItemAttrs(itemId)?.routine?.value;
+  if(!routineString || !routineString.includes(',')) return ui.notifications.error("Incorrectly formatted routine list.");
   options.flavor = `Attack Routine (${routineString})`;
   const attacks = routineString.split(',');
   options.offhand = false;
   await attackMacro(attacks, options);
 }
 
-function getMultiItemAttrs(itemId) {
+function getItemAttrs(itemId) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
   const token = canvas.tokens.controlled[0];
   const actorItems = token.actor.data.items;
@@ -108,12 +110,8 @@ export async function saveMacro(damage=0, options={}) {
     const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes ${[[takenDamage]]} damage` : ``}`;
     
     if(tokens.indexOf(token) > 0) await wait(500);
-    ChatMessage.create({
-      speaker: ChatMessage.getSpeaker(token),
-      content: content.trim(),
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      flavor: takenDamage ? 'Save for Half Damage' : 'Saving Throw'
-    });
+    const flavor = takenDamage ? 'Save for Half Damage' : 'Saving Throw';
+    macroChatMessage(token, content, flavor, sound);
     const currentHp = +token.actor.data.data.hp?.value;
     if(game.user.isGM && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
   }
@@ -150,9 +148,7 @@ export async function attackMacro(weapons, options={}) {
   const targetRollData = targetToken?.actor?.getRollData();
   if(!Array.isArray(weapons)) weapons = [weapons];
 
-  let content = '';
-  let flavor = options.flavor;
-  let resultSoundPaths = [];
+  let content = '', flavor = options.flavor;
   for(const weaponId of weapons) {
     // get weapon and its properties
     const actorItems = token.actor.data.items;
@@ -205,14 +201,15 @@ export async function attackMacro(weapons, options={}) {
     }
 
     // put together chat message content
-    const d20Roll = new Roll("d20");
-    await d20Roll.evaluate();
-    const d20Result = d20Roll.total;
+    const d20Result = await new Roll("d20").evaluate().total;
+    const dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+    const dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
+    const weapDmgResult = await new Roll(weapDmg).evaluate().total;
     let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
     totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-    totalAtk += `${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
-    let totalDmg = `${weapDmg ? `${weapDmg}` : ''}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
-    totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${options.dialogDmgMod ? `+${options.dialogDmgMod}` : ''}`;
+    totalAtk += `${dialogAtkMod ? `+${dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
+    let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
+    totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
     const isCrit = atkType !== 'touch' && d20Result >= critMin;
     let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
     if(isCrit) dmgText += ` + <span style="font-style:normal;">[[/r ${weapDmg}#${weapName} damage]]</span>`;
@@ -298,19 +295,22 @@ export async function attackMacro(weapons, options={}) {
     }
 
     content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;
-    resultSound && resultSoundPaths.push(`systems/lostlands/sounds/${resultSound}.mp3`);
+    if(weapons.indexOf(weaponId) > 0) await wait(500);
+    resultSound && AudioHelper.play({src: `systems/lostlands/sounds/${resultSound}.mp3`, volume: 1, loop: false}, true);
+
+    // apply damage to target
+    if(isHit && options.applyDamage === true && game.user.isGM) {
+      const totalDmgRoll = new Roll(totalDmg);
+      await totalDmgRoll.evaluate();
+      const currentHp = +targetToken.actor.data.data.hp?.value;
+      console.log(totalDmg, totalDmgRoll.total, currentHp);
+      if(!isNaN(currentHp)) await targetToken.actor.update({"data.hp.value": currentHp - totalDmgRoll.total});
+    }
   }
   
   // create chat message and play attack result sounds
   content = `<div style="line-height:1.6em;">${content}</div>`;
-  await macroChatMessage(token, content, flavor, resultSoundPaths[0]);
-  console.log(options.applyDamage);
-  resultSoundPaths.shift();
-  for (const path of resultSoundPaths) {
-    setTimeout(() => {
-      AudioHelper.play({src: path, volume: 1, loop: false}, true);
-    }, 500); // use wait function instead
-  }
+  await macroChatMessage(token, content, flavor);
 }
 
 function resultStyle(bgColour) {

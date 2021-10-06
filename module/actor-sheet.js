@@ -221,7 +221,7 @@ export class SimpleActorSheet extends ActorSheet {
             flags: { "lostlands.attrMacro": true }
           });
         }
-        if(event.ctrlKey && macro.data.command?.includes('attackMacro')) {
+        if(event.ctrlKey) {
           macro.data.command = macro.data.command.replace('{}', '{applyDamage: true}');
         }
         return await macro.execute();
