@@ -33,10 +33,13 @@
         {{!-- Render the grouped attributes partial and control. --}}
         <div class="groups">
             {{> "systems/lostlands/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
-            <div class="group-controls flexrow" {{#if isPlayer}}style="display:none;"{{/if}}>
+
+            {{#if isGM}}
+            <div class="group-controls flexrow">
                 <input class="group-prefix" type="text" value=""/>
                 <a class="button group-control" data-action="create-group"><i class="fas fa-plus"></i>Add Attribute Group</a>
             </div>
+            {{/if}}
         </div>
     </div>
 

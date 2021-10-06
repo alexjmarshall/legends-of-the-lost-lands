@@ -6,8 +6,8 @@ export class ContainerActorSheet extends SimpleActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["lostlands", "sheet", "actor"],
       template: "systems/lostlands/templates/container-actor-sheet.html",
-      width: 600,
-      height: 600,
+      width: 520,
+      height: 480,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
       scrollY: [".description", ".items", ".attributes"],
       dragDrop: [{dragSelector: ".item-list .item", dropSelector: null}]

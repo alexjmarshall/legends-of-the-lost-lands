@@ -14,8 +14,9 @@
             </div>
             {{!-- Handle booleans. --}}
             {{#if attr.isCheckbox}}
-            <label class="attribute-value checkbox"><input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
-                    {{checked attr.value}} {{#if ../isPlayer}}readonly{{/if}} /></label>
+            <label class="attribute-value checkbox" style="flex:1;">
+                <input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" {{checked attr.value}} {{#if ../isPlayer}}disabled{{/if}} />
+            </label>
             {{else}}
             {{!-- Handle resources. --}}
             {{#if attr.isResource}}
