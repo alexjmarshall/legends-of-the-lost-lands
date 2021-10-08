@@ -14,9 +14,6 @@ export async function createLostlandsMacro(data, slot) {
   let itemMacroWithId = '';
   if(item?._id && itemMacro) itemMacroWithId = itemMacro.replace('itemId', item._id);
 
-  const lightWeap = item.data?.attributes?.light?.value;
-  if(lightWeap && !data.skipOffhandDialog) return offhandDialog(data, slot);
-
   const macroName = itemName || (data.label ? data.label : undefined);
   const macroCommand = itemMacroWithId || (data.roll ? `/r ${data.roll}#${data.label}` : undefined);
   const type = data.roll ? "chat" : "script";
@@ -61,68 +58,65 @@ export async function spellMacro(spellId) {
     }
   }};
   await token.actor.update(updateData);
+  // show description in a chat msg with all rolls as deferred rolls
 }
 
-export async function twoWeaponFighting(itemId, options={}) {
-  const weaponString = getItemAttrs(itemId)?.weapons?.value;
-  if(!weaponString || !weaponString.includes(',')) return ui.notifications.error("Incorrectly formatted weapon list.");
-  options.flavor = `Two-Weapon Fighting (${weaponString})`;
-  const weapons = weaponString.split(',');
-  await attackMacro(weapons, options);
-}
-
-export async function attackRoutine(itemId, options={}) {
-  const routineString = getItemAttrs(itemId)?.routine?.value;
-  if(!routineString || !routineString.includes(',')) return ui.notifications.error("Incorrectly formatted routine list.");
-  options.flavor = `Attack Routine (${routineString})`;
-  const attacks = routineString.split(',');
-  options.offhand = false;
-  await attackMacro(attacks, options);
-}
-
-function getItemAttrs(itemId) {
-  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
-  const token = canvas.tokens.controlled[0];
+function getMultiAttacks(itemId, token) {
   const actorItems = token.actor.data.items;
-  const MultiItem = actorItems.get(itemId);
-  return MultiItem?.data?.data?.attributes;
+  const MultiItem = actorItems.get(itemId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const attrs = MultiItem?.data?.data?.attributes;
+  return attrs?.routine?.value || attrs?.weapons?.value;
 }
 
 export async function saveMacro(damage=0, options={}) {
   const tokens = canvas.tokens.controlled;
   if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw.");
   options.atkType = 'touch'; // to omit mod dialog damage field
-  if(!options.skipModDialog) return modDialog(damage, 'Save', options, saveMacro);
+  
+  save(tokens, damage, options);
+}
 
-  for(const token of tokens) {
-    const st = +token.actor.data.data.attributes.st?.value;
-    if(!st) return ui.notifications.error(`${token.actor.name} has no st attribute set.`);
-    const actorStMod = token.actor.data.data.st_mod || 0;
-    const d20Roll = new Roll("d20");
-    await d20Roll.evaluate();
-    const d20Result = d20Roll.total;
-    const saveText = `${d20Result}${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
-    const savingThrow = new Roll(saveText);
-    await savingThrow.evaluate();
-    const success = savingThrow.total >= st;
-    const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
-    const takenDamage = success ? Math.floor(damage / 2) : damage;
-    const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes [[${takenDamage}]] damage` : ``}`;
-    
-    if(tokens.indexOf(token) > 0) await wait(500);
-    const flavor = takenDamage ? 'Save for Half Damage' : 'Saving Throw';
-    macroChatMessage(token, content, flavor);
-    const currentHp = +token.actor.data.data.hp?.value;
-    if(game.user.isGM && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
+async function save(tokens, damage, options) {
+  if(!tokens.length) return;
+  
+  const token = tokens.slice(-1)[0];
+  const st = +token.actor.data.data.attributes.st?.value;
+  if(!st) {
+    ui.notifications.error(`${token.actor.name} has no st attribute set.`);
+    tokens.pop();
+    return save(tokens, damage, options);
   }
+  if(!options.skipModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
+  const actorStMod = token.actor.data.data.st_mod || 0;
+  const d20Roll = new Roll("d20");
+  await d20Roll.evaluate();
+  const d20Result = d20Roll.total;
+  const saveText = `${d20Result}${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
+  const savingThrow = new Roll(saveText);
+  await savingThrow.evaluate();
+  const success = savingThrow.total >= st;
+  const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
+  const takenDamage = success ? Math.floor(damage / 2) : damage;
+  const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes [[${takenDamage}]] damage` : ``}`;
+  
+  if(options.delay && !options.shownModDialog) await wait(500);
+  options.delay = true;
+  const flavor = takenDamage ? 'Save for Half Damage' : 'Saving Throw';
+  macroChatMessage(token, {content: content, flavor: flavor});
+  const currentHp = +token.actor.data.data.hp?.value;
+  if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
+
+  options.shownModDialog = false;
+  tokens.pop();
+  save(tokens, damage, options);
 }
 
 /*
 * options:
 * {
-*  flavor: chat message header
-*  offhand: true/false
-*  skipHookDialog: true/false
+*  flavor: chat message header -- actor
+*  offhand: true/false -- weapon
+*  skipHookDialog: true/false -- 
 *  skipModDialog: true/false
 *  skipThrowDialog: true/false
 *  dialogAtkMod: (value)
@@ -141,222 +135,254 @@ export async function saveMacro(damage=0, options={}) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select attacking token.");
-  const token = canvas.tokens.controlled[0];
-  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
-  const targetToken = [...game.user.targets][0];
-  const targetRollData = targetToken?.actor?.getRollData();
   if(!Array.isArray(weapons)) weapons = [weapons];
 
-  let content = '', flavor = options.flavor;
-  for(const weaponId of weapons) {
-    // get weapon and its properties
-    const actorItems = token.actor.data.items;
-    const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId?.toLowerCase().replace(/\s/g,''));
-    if(!weaponItem) return ui.notifications.error("Cannot find item in selected character's inventory.");
-    const weapName = weaponItem?.name || '';
-    const weapAttrs = weaponItem?.data?.data?.attributes;
-    const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
-    const weapDmg = weapAttrs?.dmg?.value;
-    if(!weapDmg) return ui.notifications.error("Damage not set for item.");
-    flavor = flavor || weapName;
-    const offhand = options.offhand == null ? weapons.indexOf(weaponId) > 0 : options.offhand;
-    const throwable = options.throwable == null ? weapAttrs?.throwable?.value : options.throwable;
-    const hasHook = options.hasHook == null ? weapAttrs?.has_hook?.value : options.hasHook;
-    const maxRange = options.maxRange == null ? weapAttrs?.max_range?.value : options.maxRange;
-    const atkType = options.atkType == null ? weapAttrs?.atk_type?.value : options.atkType;
-    const dmgType = options.dmgType == null ? weapAttrs?.dmg_type?.value : options.dmgType;
-    const fragile = options.fragile == null ? weapAttrs?.fragile?.value : options.fragile;
-    const finesse = options.finesse == null ? weapAttrs?.finesse?.value : options.finesse;
-    const unwieldy = options.unwieldy == null ? weapAttrs?.unwieldy?.value : options.unwieldy;
-    const critMin = options.critMin == null ? (weapAttrs?.crit_min?.value || 20) : options.critMin;
-    
-    // show attack choice dialogs
-    if(weapons.length === 1 && throwable && !options.skipThrowDialog) return throwDialog(weapons, options);
-    if(weapons.length === 1 && hasHook && !options.skipHookDialog) return hookDialog(weapons, options);
-    if(!options.skipModDialog) return modDialog(weapons, 'Attack', options, attackMacro);
-    
-    // get actor and its properties
-    const rollData = token.actor.getRollData();
-    const bab = rollData.bab || 0;
-    const strMod = rollData.str_mod || 0;
-    const dexMod = rollData.dex_mod || 0;
-    const offhandAtkPenalty = offhand ? -2 : 0;
-    const attrAtkMod = (atkType === 'missile' || atkType === 'throw' || finesse) ? dexMod : strMod;
-    const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
-    const actorAtkMod = rollData.atk_mod || 0;
-    const actorDmgMod = rollData.dmg_mod || 0;  
+  const selectedTokens = canvas.tokens.controlled;
+  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
+  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
+  const targetToken = [...game.user.targets][0];
 
-    // determine target and range
-    let range, rangePenalty;
-    if([...game.user.targets].length === 1) {
-      if(atkType === 'missile' || atkType === 'throw') {
-        const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
-          canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
-          canvas.grid.measureDistance(token.position, targetToken.position);
-        range = Math.floor(+canvasDistance / 5) * 5;
-        if(range > +maxRange) return ui.notifications.error("Target is beyond maximum range for this weapon."); 
-        rangePenalty = -Math.abs(Math.floor(range / 10));
-      }
+  const attackers = [];
+  for(const token of selectedTokens) {
+    let attackerWeapons;
+    if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine' || weapons[0].toLowerCase().replace(/\s/g,'') === 'two-weaponfighting') {
+      const attacksString = getMultiAttacks(weapons[0], token);
+      if(!attacksString || !attacksString.includes(',')) return ui.notifications.error("Incorrectly formatted attack list.");
+      options.flavor = `${weapons[0]} (${attacksString})`;
+      attackerWeapons = attacksString.split(',');
+      if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine') options.offhand = false;
+      if(weapons[0].toLowerCase().replace(/\s/g,'') === 'two-weaponfighting') options.throwable = false;
     }
+    attackerWeapons = attackerWeapons || weapons.map(w => w);
+    attackers.push({
+      token: token,
+      weapons: attackerWeapons.reverse(),
+      chatMsgData: { content: '', flavor: options.flavor, sound: options.sound }
+    })
+  }
 
-    // put together chat message content
-    const d20Result = await new Roll("d20").evaluate().total;
-    const dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
-    const dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
-    const weapDmgResult = await new Roll(weapDmg).evaluate().total;
-    let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
-    totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-    totalAtk += `${dialogAtkMod ? `+${dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
-    let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
-    totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
-    const isCrit = atkType !== 'touch' && d20Result >= critMin;
-    let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
-    if(isCrit) dmgText += ` + <span style="font-style:normal;">[[/r ${weapDmg}#${weapName} damage]]</span>`;
-    dmgText += ' damage';
-    if(atkType === 'touch') dmgText = '';
+  attack(attackers, targetToken, options);
+}
 
-    let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
-    let rangeText = range ? ` (${range}')` : '';
-    let attackText = `attacks${targetNameText}`;
-    let hitSound, missSound;
-    switch(dmgType) {
-      case 'slash':
-        attackText = `slashes${targetNameText}`;
-        hitSound = 'slash_hit';
-        missSound = 'slash_miss';
-        break;
-      case 'stab':
-        attackText = `stabs${targetNameText}`;
-        hitSound = 'stab_hit';
-        missSound = 'stab_miss';
-        break;
-      case 'bash':
-        attackText = `bashes${targetNameText}`;
-        hitSound = 'bash_hit';
-        missSound = 'bash_miss';
-        break;
-      case 'stone':
-        attackText = `slings a stone${targetNameText ? ` at${targetNameText}` : ''}`;
-        hitSound = 'stone_hit';
-        missSound = 'stone_miss';
-        break;
-      case 'arrow':
-        attackText = `shoots an arrow${targetNameText ? ` at${targetNameText}` : ''}`;
-        hitSound = 'arrow_hit';
-        missSound = 'arrow_miss';
-        break;
-      case 'bolt':
-        attackText = `shoots a bolt${targetNameText ? ` at${targetNameText}` : ''}`;
-        hitSound = 'bolt_hit';
-        missSound = 'bolt_miss';
-        break;
-      case 'throw':
-        attackText = `throws ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-        hitSound = 'throw_hit';
-        missSound = 'throw_miss';
-        break;
-      case 'grapple':
-        attackText = `grapples${targetNameText}`;
-        break;
-      case 'hook':
-        attackText = `hooks${targetNameText} with ${weapName}`;
-        break;
-      case 'punch':
-        attackText = `punches${targetNameText}`;
-        break;
+async function attack(attackers, targetToken, options) {
+  if(!attackers.length) return;
+  const attacker = attackers.slice(-1)[0];
+  const token = attacker.token;
+  const weapons = attacker.weapons;
+  const chatMsgData = attacker.chatMsgData;
+
+  // if this attacker's weapons are finished, remove attacker and create attack chat msg
+  if(!weapons.length) {
+    if(chatMsgData.content) {
+      chatMsgData.content = `<div style="line-height:1.6em;">${chatMsgData.content}</div>`;
+      macroChatMessage(token, chatMsgData);
     }
+    attackers.pop();
+    return attack(attackers, targetToken, options);
+  }
 
-    let resultText = '';
-    let resultSound = missSound;
-    let isHit = true;
-    if(!isNaN(targetRollData?.ac)) {
-      const totalAtkRoll = new Roll(totalAtk);
-      await totalAtkRoll.evaluate();
-      const touchAc = targetRollData.touch_ac || targetRollData.ac;
-      isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetRollData.ac);
-      if(isHit) {
-        resultText = ` <span style="${resultStyle('#7CCD7C')}">HIT</span>`;
-        resultSound = hitSound;
-      } else {
-        resultText = ` <span style="${resultStyle('#EE6363')}">MISS</span>`;
-      }
+  const targetRollData = targetToken?.actor?.getRollData();
+  const weaponId = weapons.slice(-1)[0];
+
+  // get weapon and its properties
+  const actorItems = token.actor.data.items;
+  const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId?.toLowerCase().replace(/\s/g,''));
+  if(!weaponItem) {
+    ui.notifications.error("Cannot find item in selected character's inventory.");
+    weapons.pop();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
+  const weapName = weaponItem?.name || '';
+  const weapAttrs = weaponItem?.data?.data?.attributes;
+  const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
+  const weapDmg = weapAttrs?.dmg?.value;
+  if(!weapDmg) {
+    ui.notifications.error("Damage not set for item.");
+    weapons.pop();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
+  chatMsgData.flavor = chatMsgData.flavor || weapName;
+  const offhand = options.offhand == null ? !!attacker.offhand : options.offhand;
+  const throwable = options.throwable == null ? weapAttrs?.throwable?.value : options.throwable;
+  const hasHook = options.hasHook == null ? weapAttrs?.has_hook?.value : options.hasHook;
+  const maxRange = options.maxRange == null ? weapAttrs?.max_range?.value : options.maxRange;
+  const atkType = options.atkType == null ? weapAttrs?.atk_type?.value : options.atkType;
+  const dmgType = options.dmgType == null ? weapAttrs?.dmg_type?.value : options.dmgType;
+  const fragile = options.fragile == null ? weapAttrs?.fragile?.value : options.fragile;
+  const finesse = options.finesse == null ? weapAttrs?.finesse?.value : options.finesse;
+  const unwieldy = options.unwieldy == null ? weapAttrs?.unwieldy?.value : options.unwieldy;
+  const critMin = options.critMin == null ? (weapAttrs?.crit_min?.value || 20) : options.critMin;
+  
+  // show attack choice dialogs
+  if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) return throwDialog(options, attackers, targetToken);
+  if(hasHook && !options.skipHookDialog && !options.shownHookDialog) return hookDialog(options, attackers, targetToken);
+  if(!options.skipModDialog && !options.shownModDialog && !attacker.skipModDialog) return modDialog(options, 'Attack', attack, attackers, targetToken);
+  attacker.skipModDialog = true;
+  
+  // get actor and its properties
+  const rollData = token.actor.getRollData();
+  const bab = rollData.bab || 0;
+  const strMod = rollData.str_mod || 0;
+  const dexMod = rollData.dex_mod || 0;
+  const offhandAtkPenalty = offhand ? -2 : 0;
+  const attrAtkMod = (atkType === 'missile' || atkType === 'throw' || finesse) ? dexMod : strMod;
+  const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
+  const actorAtkMod = rollData.atk_mod || 0;
+  const actorDmgMod = rollData.dmg_mod || 0;  
+
+  // determine target and range
+  let range, rangePenalty;
+  if(atkType === 'missile' || atkType === 'throw') {
+    const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
+      canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
+      canvas.grid.measureDistance(token.position, targetToken.position);
+    range = Math.floor(+canvasDistance / 5) * 5;
+    if(range > +maxRange) {
+      ui.notifications.error("Target is beyond maximum range for this weapon.");
+      weapons.pop();
+      options.shownThrowDialog = false;
+      options.shownHookDialog = false;
+      options.shownModDialog = false;
+      attacker.offhand = true;
+      return attack(attackers, targetToken, options);
     }
-    if(isCrit && isHit) resultText = ` <span style="${resultStyle('#FFFF5C')}">CRIT</span>`;
-    if(unwieldy && atkType === 'melee' && d20Result === 1) {
-      isHit = true;
-      resultText += ` hit self`;
+    rangePenalty = -Math.abs(Math.floor(range / 10));
+  }
+
+  // put together chat message content
+  const d20Result = await new Roll("d20").evaluate().total;
+  const dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+  const dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
+  const weapDmgResult = await new Roll(weapDmg).evaluate().total;
+  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
+  totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
+  totalAtk += `${dialogAtkMod ? `+${dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
+  let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
+  totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
+  const isCrit = atkType !== 'touch' && d20Result >= critMin;
+  let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
+  if(isCrit) dmgText += ` + <span style="font-style:normal;">[[/r ${weapDmg}#${weapName} damage]]</span>`;
+  dmgText += ' damage';
+  if(atkType === 'touch') dmgText = '';
+
+  let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
+  let rangeText = range ? ` (${range}')` : '';
+  let attackText = `attacks${targetNameText}`;
+  let hitSound, missSound;
+  switch(dmgType) {
+    case 'slash':
+      attackText = `slashes${targetNameText}`;
+      hitSound = 'slash_hit';
+      missSound = 'slash_miss';
+      break;
+    case 'stab':
+      attackText = `stabs${targetNameText}`;
+      hitSound = 'stab_hit';
+      missSound = 'stab_miss';
+      break;
+    case 'bash':
+      attackText = `bashes${targetNameText}`;
+      hitSound = 'bash_hit';
+      missSound = 'bash_miss';
+      break;
+    case 'stone':
+      attackText = `slings a stone${targetNameText ? ` at${targetNameText}` : ''}`;
+      hitSound = 'stone_hit';
+      missSound = 'stone_miss';
+      break;
+    case 'arrow':
+      attackText = `shoots an arrow${targetNameText ? ` at${targetNameText}` : ''}`;
+      hitSound = 'arrow_hit';
+      missSound = 'arrow_miss';
+      break;
+    case 'bolt':
+      attackText = `shoots a bolt${targetNameText ? ` at${targetNameText}` : ''}`;
+      hitSound = 'bolt_hit';
+      missSound = 'bolt_miss';
+      break;
+    case 'throw':
+      attackText = `throws ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
+      hitSound = 'throw_hit';
+      missSound = 'throw_miss';
+      break;
+    case 'grapple':
+      attackText = `grapples${targetNameText}`;
+      break;
+    case 'hook':
+      attackText = `hooks${targetNameText} with ${weapName}`;
+      break;
+    case 'punch':
+      attackText = `punches${targetNameText}`;
+      break;
+  }
+
+  let resultText = '';
+  let resultSound = missSound;
+  let isHit = true;
+  if(!isNaN(targetRollData?.ac)) {
+    const totalAtkRoll = new Roll(totalAtk);
+    await totalAtkRoll.evaluate();
+    const touchAc = targetRollData.touch_ac || targetRollData.ac;
+    isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetRollData.ac);
+    if(isHit) {
+      resultText = ` <span style="${resultStyle('#7CCD7C')}">HIT</span>`;
       resultSound = hitSound;
-    }
-    if(isHit) resultText += dmgText;
-    if(fragile && atkType === 'melee' && d20Result === 1) {
-      resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
-      resultSound = 'weapon_break';
-    }
-
-    content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;
-    if(weapons.indexOf(weaponId) > 0) await wait(500);
-    resultSound && AudioHelper.play({src: `systems/lostlands/sounds/${resultSound}.mp3`, volume: 1, loop: false}, true);
-
-    // apply damage to target
-    if(isHit && options.applyDamage === true && game.user.isGM) {
-      const totalDmgRoll = new Roll(totalDmg);
-      await totalDmgRoll.evaluate();
-      const currentHp = +targetToken.actor.data.data.hp?.value;
-      console.log(totalDmg, totalDmgRoll.total, currentHp);
-      if(!isNaN(currentHp)) await targetToken.actor.update({"data.hp.value": currentHp - totalDmgRoll.total});
+    } else {
+      resultText = ` <span style="${resultStyle('#EE6363')}">MISS</span>`;
     }
   }
-  
-  // create chat message and play attack result sounds
-  content = `<div style="line-height:1.6em;">${content}</div>`;
-  await macroChatMessage(token, content, flavor);
+  if(isCrit && isHit) resultText = ` <span style="${resultStyle('#FFFF5C')}">CRIT</span>`;
+  if(unwieldy && atkType === 'melee' && d20Result === 1) {
+    isHit = true;
+    resultText += ` hit self`;
+    resultSound = hitSound;
+  }
+  if(isHit) resultText += dmgText;
+  if(fragile && atkType === 'melee' && d20Result === 1) {
+    resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
+    resultSound = 'weapon_break';
+  }
+
+  chatMsgData.content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;
+
+  // play sound and apply damage
+  if(options.delay && !options.shownThrowDialog && !options.shownHookDialog && !options.shownModDialog) await wait(500);
+  options.delay = true;
+  resultSound && AudioHelper.play({src: `systems/lostlands/sounds/${resultSound}.mp3`, volume: 1, loop: false}, true);
+  if(isHit && targetToken && options.applyDamage === true && game.user.isGM) {
+    const totalDmgRoll = new Roll(totalDmg);
+    await totalDmgRoll.evaluate();
+    const currentHp = +targetToken.actor.data.data.hp?.value;
+    if(!isNaN(currentHp)) await targetToken.actor.update({"data.hp.value": currentHp - totalDmgRoll.total});
+  }
+
+  // reset for new weapon
+  weapons.pop();
+  options.shownThrowDialog = false;
+  options.shownHookDialog = false;
+  options.shownModDialog = false;
+  attacker.offhand = true;
+
+  return attack(attackers, targetToken, options);
 }
 
 function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
 }
 
-async function macroChatMessage(token, content, flavor, sound) {
-  await ChatMessage.create({
+function macroChatMessage(token, data) {
+  ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
-    content: content.trim(),
+    content: data.content.trim(),
     type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-    flavor: flavor,
-    sound: sound
+    flavor: data.flavor,
+    sound: data.sound
   }, {chatBubble: true});
 }
 
-function offhandDialog(data, slot) {
-  const item = data.data;
-  return new Dialog({
-    title: "What form of attack?",
-    content: ``,
-    buttons: {
-      one: {
-        icon: '<i class="fas fa-hand-point-right"></i>',
-        label: "Main-hand",
-        callback: () => {
-          data.skipOffhandDialog = true;
-          createLostlandsMacro(data, slot)
-        }
-      },
-      two: {
-        icon: '<i class="fas fa-hand-point-left"></i>',
-        label: "Off-hand",
-        callback: () => {
-          data.skipOffhandDialog = true;
-          item.data.macro = "game.lostlands.Macro.attackMacro(['itemId'], {offhand: true, throwable: false})";
-          item.name += " (off-hand)";
-          createLostlandsMacro(data, slot)
-        }
-      }
-    },
-    default: "one"
-  }).render(true);
-}
-
-function hookDialog(weaponId, options) {
+function hookDialog(options, ...data) {
   return new Dialog({
     title: "What form of attack?",
     content: ``,
@@ -365,18 +391,18 @@ function hookDialog(weaponId, options) {
         icon: '<i class="fas fa-user-friends"></i>',
         label: "Standard",
         callback: () => {
-          options.skipHookDialog = true;
-          attackMacro(weaponId, options);
+          options.shownHookDialog = true;
+          attack(...data, options);
         }
       },
       two: {
         icon: '<i class="fas fa-candy-cane"></i>',
         label: "Hook",
         callback: () => {
-          options.skipHookDialog = true;
+          options.shownHookDialog = true;
           options.atkType = 'touch';
           options.dmgType = 'hook';
-          attackMacro(weaponId, options);
+          attack(...data, options);
         }
       }
     },
@@ -384,7 +410,7 @@ function hookDialog(weaponId, options) {
   }).render(true);
 }
 
-function modDialog(data, label, options, callback) {
+function modDialog(options, label, callback, ...data) {
   new Dialog({
     title: "Modifiers",
     content: 
@@ -403,23 +429,23 @@ function modDialog(data, label, options, callback) {
         icon: '<i class="fas fa-check"></i>',
         label: `${label}`,
         callback: html => {
-          options.skipModDialog = true;
+          options.shownModDialog = true;
           options.dialogAtkMod = html.find('[id=atkMod]')[0]?.value;
           options.dialogDmgMod = html.find('[id=dmgMod]')[0]?.value;
-          callback(data, options);
+          callback(...data, options);
         }
       },
       two: {
         icon: '<i class="fas fa-times"></i>',
         label: "Cancel",
-        callback: () => console.log("Cancelled attack")
+        callback: () => console.log("Cancelled modifier dialog")
       }
     },
     default: "one"
   }).render(true);
 }
 
-function throwDialog(weaponId, options) {
+function throwDialog(options, ...data) {
   new Dialog({
     title: "What form of attack?",
     content: ``,
@@ -428,19 +454,19 @@ function throwDialog(weaponId, options) {
         icon: '<i class="fas fa-user-friends"></i>',
         label: "Melee",
         callback: () => {
-          options.skipThrowDialog = true;
+          options.shownThrowDialog = true;
           options.atkType = 'melee';
-          attackMacro(weaponId, options);
+          attack(...data, options);
         }
       },
       two: {
         icon: '<i class="fas fa-people-arrows"></i>',
         label: "Throw",
         callback: () => {
-          options.skipThrowDialog = true;
+          options.shownThrowDialog = true;
           options.atkType = 'throw';
           options.dmgType = 'throw';
-          attackMacro(weaponId, options);
+          attack(...data, options);
         }
       }
     },
@@ -567,13 +593,13 @@ export function buyBasicEquipment() {
       one: {
         icon: '<i class="fas fa-check"></i>',
         label: "Buy",
-        callback: async html => {
+        callback: html => {
           const itemId = html.find("#select").val();
           const itemName = html.find("#select option:selected").text();
           const qty = html.find("#qty").val();
           const unitCost = html.find("#cost").val();
           const cost = qty && unitCost ? qty * unitCost : undefined;
-          await resolvePurchase(itemId, itemName, qty, cost);
+          resolvePurchase(itemId, itemName, qty, cost);
         }
       },
       two: {
