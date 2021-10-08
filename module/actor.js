@@ -41,7 +41,7 @@ export class SimpleActor extends Actor {
     }
 
     // encumbrance and mv
-    actorData.enc = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.floor((b.data.data.quantity || 0) * (b.data.data.weight || 0)), 0);
+    actorData.enc = items.filter(i => i.data.type === "item").reduce((a, b) => a + Math.ceil((b.data.data.quantity || 0) * (b.data.data.weight || 0)), 0);
     actorData.enc = attributes.enc?.value ?? actorData.enc;
     // derive mv and speed from encumbrance for characters
     if(this.data.type === 'character') {
