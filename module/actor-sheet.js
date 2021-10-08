@@ -212,12 +212,13 @@ export class SimpleActorSheet extends ActorSheet {
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
         let itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
-        if(event.ctrlKey && event.altKey) {
+        let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro')
+        if(event.ctrlKey && event.altKey && isLostlandsMacro) {
           // create alternate version of macro
           itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true, skipModDialog: true}');
-        } else if(event.ctrlKey) {
+        } else if(event.ctrlKey && isLostlandsMacro) {
           itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true}');
-        } else if(event.altKey) {
+        } else if(event.altKey && isLostlandsMacro) {
           itemMacroWithId = itemMacroWithId.replace('{}', '{skipModDialog: true}');
         }
         let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
