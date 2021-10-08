@@ -28,7 +28,7 @@ export async function createLostlandsMacro(data, slot) {
       flags: { "lostlands.attrMacro": true }
     });
     else {
-      ui.notifications.error("Could not find a macro for this item.");
+      ui.notifications.error("Could not find a macro for this item or function.");
       return false;
     }
   }
@@ -37,10 +37,10 @@ export async function createLostlandsMacro(data, slot) {
   return false;
 }
 
-export async function spellMacro(spellId) {
+export function spellMacro(spellId) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select spellcasting token.");
   const token = canvas.tokens.controlled[0];
-  const spell = token.actor.data.items.get(spellId);
+  const spell = token.actor.data.items.get(spellId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
   const isPrepared = !!spell.data.data.prepared;
   if(!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
   const spellLevel = spell.data.data.attributes.lvl?.value;
@@ -57,8 +57,22 @@ export async function spellMacro(spellId) {
       }
     }
   }};
-  await token.actor.update(updateData);
+  token.actor.update(updateData);
   // show description in a chat msg with all rolls as deferred rolls
+  if(!spell.data.data.description) return;
+  macroChatMessage(token, { content: spell.data.data.description, flavor: spell.name, sound: spell.data.data.attributes.sound?.value});
+}
+
+export function consumableMacro(itemId) {
+  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select token comsuming the item.");
+  const token = canvas.tokens.controlled[0];
+  const item = token.actor.data.items.get(itemId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const qty = +item.data.data.quantity || 0;
+  if(!qty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
+  token.actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
+  // show description in a chat msg with all rolls as deferred rolls
+  if(!item.data.data.description) return;
+  macroChatMessage(token, { content: item.data.data.description, flavor: item.name, sound: item.data.data.attributes.sound?.value});
 }
 
 function getMultiAttacks(itemId, token) {
@@ -87,6 +101,7 @@ async function save(tokens, damage, options) {
     return save(tokens, damage, options);
   }
   if(!options.skipModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
+  options.shownModDialog = false;
   const actorStMod = token.actor.data.data.st_mod || 0;
   const d20Roll = new Roll("d20");
   await d20Roll.evaluate();
@@ -97,16 +112,16 @@ async function save(tokens, damage, options) {
   const success = savingThrow.total >= st;
   const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  const content = `saves [[${saveText}]]${resultText}${takenDamage ? ` and takes [[${takenDamage}]] damage` : ``}`;
+  const content = `saves [[${saveText}]]${resultText}${damage ? ` and takes [[${takenDamage}]] damage` : ``}`;
   
-  if(options.delay && !options.shownModDialog) await wait(500);
-  options.delay = true;
-  const flavor = takenDamage ? 'Save for Half Damage' : 'Saving Throw';
+  const flavor = damage ? 'Save for Half Damage' : 'Saving Throw';
   macroChatMessage(token, {content: content, flavor: flavor});
   const currentHp = +token.actor.data.data.hp?.value;
   if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
+  
+  // wait if not last actor and skipModDialog
+  if(tokens.length > 1 && options.skipModDialog) await wait(500);
 
-  options.shownModDialog = false;
   tokens.pop();
   save(tokens, damage, options);
 }
@@ -134,7 +149,7 @@ async function save(tokens, damage, options) {
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weapons, options={}) {
+export async function attackMacro(weapons, options={}) { // arrows used up from worn quiver in attackMacro, check for light offhand in attackMacro,, refactor spell type and feature type and feature sheet
   if(!Array.isArray(weapons)) weapons = [weapons];
 
   const selectedTokens = canvas.tokens.controlled;
@@ -147,7 +162,10 @@ export async function attackMacro(weapons, options={}) {
     let attackerWeapons;
     if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine' || weapons[0].toLowerCase().replace(/\s/g,'') === 'two-weaponfighting') {
       const attacksString = getMultiAttacks(weapons[0], token);
-      if(!attacksString || !attacksString.includes(',')) return ui.notifications.error("Incorrectly formatted attack list.");
+      if(!attacksString || !attacksString.includes(',')) {
+        ui.notifications.error("Missing or incorrectly formatted attack list.");
+        continue;
+      }
       options.flavor = `${weapons[0]} (${attacksString})`;
       attackerWeapons = attacksString.split(',');
       if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine') options.offhand = false;
@@ -157,7 +175,8 @@ export async function attackMacro(weapons, options={}) {
     attackers.push({
       token: token,
       weapons: attackerWeapons.reverse(),
-      chatMsgData: { content: '', flavor: options.flavor, sound: options.sound }
+      chatMsgData: { content: '', flavor: options.flavor, sound: options.sound },
+      attacks: []
     })
   }
 
@@ -170,12 +189,24 @@ async function attack(attackers, targetToken, options) {
   const token = attacker.token;
   const weapons = attacker.weapons;
   const chatMsgData = attacker.chatMsgData;
+  const attacks = attacker.attacks;
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if(!weapons.length) {
     if(chatMsgData.content) {
       chatMsgData.content = `<div style="line-height:1.6em;">${chatMsgData.content}</div>`;
       macroChatMessage(token, chatMsgData);
+      for(const attack of attacks) {
+        attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
+        if(attack.damage) {
+          let targetHp = +targetToken.actor.data.data.hp?.value;
+          if(!isNaN(targetHp)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
+        }
+        // should wait unless last actors last weapon, or next weapon shows mod dialog
+        // wait if NOT last weapon of last actor AND (NOT last weapon of this actor OR skipModDialog)
+        if(!(attacks.indexOf(attack) === attacks.length -1 && attackers.length === 1) &&
+          (attacks.indexOf(attack) !== attacks.length -1 || options.skipModDialog)) await wait(500);
+      }
     }
     attackers.pop();
     return attack(attackers, targetToken, options);
@@ -193,10 +224,16 @@ async function attack(attackers, targetToken, options) {
     attacker.offhand = true;
     return attack(attackers, targetToken, options);
   }
-  const weapName = weaponItem?.name || '';
-  const weapAttrs = weaponItem?.data?.data?.attributes;
-  const weapAtkMod = weapAttrs?.atk_mod?.value || 0;
-  const weapDmg = weapAttrs?.dmg?.value;
+  if(weaponItem.data.data.quantity < 1) {
+    ui.notifications.error("Item must have a quantity greater than zero to use.");
+    weapons.pop();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
+  const weapName = weaponItem.name || '';
+  const weapAttrs = weaponItem.data.data.attributes;
+  const weapAtkMod = weapAttrs.atk_mod?.value || 0;
+  const weapDmg = weapAttrs.dmg?.value;
   if(!weapDmg) {
     ui.notifications.error("Damage not set for item.");
     weapons.pop();
@@ -205,20 +242,28 @@ async function attack(attackers, targetToken, options) {
   }
   chatMsgData.flavor = chatMsgData.flavor || weapName;
   const offhand = options.offhand == null ? !!attacker.offhand : options.offhand;
-  const throwable = options.throwable == null ? weapAttrs?.throwable?.value : options.throwable;
-  const hasHook = options.hasHook == null ? weapAttrs?.has_hook?.value : options.hasHook;
-  const maxRange = options.maxRange == null ? weapAttrs?.max_range?.value : options.maxRange;
-  const atkType = options.atkType == null ? weapAttrs?.atk_type?.value : options.atkType;
-  const dmgType = options.dmgType == null ? weapAttrs?.dmg_type?.value : options.dmgType;
-  const fragile = options.fragile == null ? weapAttrs?.fragile?.value : options.fragile;
-  const finesse = options.finesse == null ? weapAttrs?.finesse?.value : options.finesse;
-  const unwieldy = options.unwieldy == null ? weapAttrs?.unwieldy?.value : options.unwieldy;
-  const critMin = options.critMin == null ? (weapAttrs?.crit_min?.value || 20) : options.critMin;
+  if(offhand && !weapAttrs.light?.value) {
+    ui.notifications.error("Weapon used in the offhand must be light.");
+    weapons.pop();
+    return attack(attackers, targetToken, options);
+  }
+  const throwable = options.throwable == null ? weapAttrs.throwable?.value : options.throwable;
+  const hasHook = options.hasHook == null ? weapAttrs.has_hook?.value : options.hasHook;
+  const maxRange = options.maxRange == null ? weapAttrs.max_range?.value : options.maxRange;
+  const atkType = options.atkType == null ? weapAttrs.atk_type?.value : options.atkType;
+  const dmgType = options.dmgType == null ? weapAttrs.dmg_type?.value : options.dmgType;
+  const fragile = options.fragile == null ? weapAttrs.fragile?.value : options.fragile;
+  const finesse = options.finesse == null ? weapAttrs.finesse?.value : options.finesse;
+  const unwieldy = options.unwieldy == null ? weapAttrs.unwieldy?.value : options.unwieldy;
+  const critMin = options.critMin == null ? (weapAttrs.crit_min?.value || 20) : options.critMin;
   
   // show attack choice dialogs
   if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) return throwDialog(options, attackers, targetToken);
+  options.shownThrowDialog = false;
   if(hasHook && !options.skipHookDialog && !options.shownHookDialog) return hookDialog(options, attackers, targetToken);
+  options.shownHookDialog = false;
   if(!options.skipModDialog && !options.shownModDialog && !attacker.skipModDialog) return modDialog(options, 'Attack', attack, attackers, targetToken);
+  options.shownModDialog = false;
   attacker.skipModDialog = true;
   
   // get actor and its properties
@@ -242,9 +287,6 @@ async function attack(attackers, targetToken, options) {
     if(range > +maxRange) {
       ui.notifications.error("Target is beyond maximum range for this weapon.");
       weapons.pop();
-      options.shownThrowDialog = false;
-      options.shownHookDialog = false;
-      options.shownModDialog = false;
       attacker.offhand = true;
       return attack(attackers, targetToken, options);
     }
@@ -347,22 +389,18 @@ async function attack(attackers, targetToken, options) {
 
   chatMsgData.content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;
 
-  // play sound and apply damage
-  if(options.delay && !options.shownThrowDialog && !options.shownHookDialog && !options.shownModDialog) await wait(500);
-  options.delay = true;
-  resultSound && AudioHelper.play({src: `systems/lostlands/sounds/${resultSound}.mp3`, volume: 1, loop: false}, true);
+  // add sound and damage
+  attacks.push({sound: '', damage: ''});
+  const thisAttack = attacks.slice(-1)[0];
+  thisAttack.sound = resultSound;
   if(isHit && targetToken && options.applyDamage === true && game.user.isGM) {
     const totalDmgRoll = new Roll(totalDmg);
     await totalDmgRoll.evaluate();
-    const currentHp = +targetToken.actor.data.data.hp?.value;
-    if(!isNaN(currentHp)) await targetToken.actor.update({"data.hp.value": currentHp - totalDmgRoll.total});
+    thisAttack.damage = totalDmgRoll.total;
   }
 
   // reset for new weapon
   weapons.pop();
-  options.shownThrowDialog = false;
-  options.shownHookDialog = false;
-  options.shownModDialog = false;
   attacker.offhand = true;
 
   return attack(attackers, targetToken, options);
@@ -378,7 +416,7 @@ function macroChatMessage(token, data) {
     content: data.content.trim(),
     type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
     flavor: data.flavor,
-    sound: data.sound
+    sound: data.sound ? `systems/lostlands/sounds/${data.sound}.mp3` : undefined
   }, {chatBubble: true});
 }
 
