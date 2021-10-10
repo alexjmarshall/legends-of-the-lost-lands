@@ -37,7 +37,7 @@ export async function createLostlandsMacro(data, slot) {
   return false;
 }
 
-export function spellMacro(spellId) {
+export async function spellMacro(spellId) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select spellcasting token.");
   const token = canvas.tokens.controlled[0];
   const spell = token.actor.data.items.get(spellId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
@@ -57,19 +57,19 @@ export function spellMacro(spellId) {
       }
     }
   }};
-  token.actor.update(updateData);
+  await token.actor.update(updateData);
   // show description in a chat msg with all rolls as deferred rolls
   if(!spell.data.data.description) return;
   macroChatMessage(token, { content: spell.data.data.description, flavor: spell.name, sound: spell.data.data.attributes.sound?.value});
 }
 
-export function consumableMacro(itemId) {
+export async function consumableMacro(itemId) {
   if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select token comsuming the item.");
   const token = canvas.tokens.controlled[0];
   const item = token.actor.data.items.get(itemId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   const qty = +item.data.data.quantity || 0;
   if(!qty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
-  token.actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
+  await token.actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
   // show description in a chat msg with all rolls as deferred rolls
   if(!item.data.data.description) return;
   macroChatMessage(token, { content: item.data.data.description, flavor: item.name, sound: item.data.data.attributes.sound?.value});
@@ -117,7 +117,7 @@ async function save(tokens, damage, options) {
   const flavor = damage ? 'Save for Half Damage' : 'Saving Throw';
   macroChatMessage(token, {content: content, flavor: flavor});
   const currentHp = +token.actor.data.data.hp?.value;
-  if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) token.actor.update({"data.hp.value": currentHp - takenDamage})
+  if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
   // wait if not last actor and skipModDialog
   if(tokens.length > 1 && options.skipModDialog) await wait(500);
@@ -149,7 +149,7 @@ async function save(tokens, damage, options) {
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weapons, options={}) { // arrows used up from worn quiver in attackMacro, check for light offhand in attackMacro,, refactor spell type and feature type and feature sheet
+export async function attackMacro(weapons, options={}) { // must be holding a weapon to use it, auto throw/melee depending on target distance, alt-click to target a token, refactor spell type and feature type and feature sheet, use const actor = token ? token.actor : game.user.character; to default to player's character when no token is selected
   if(!Array.isArray(weapons)) weapons = [weapons];
 
   const selectedTokens = canvas.tokens.controlled;
@@ -190,6 +190,12 @@ async function attack(attackers, targetToken, options) {
   const weapons = attacker.weapons;
   const chatMsgData = attacker.chatMsgData;
   const attacks = attacker.attacks;
+  const targetRollData = targetToken?.actor?.getRollData();
+  const weaponId = weapons.slice(-1)[0];
+  const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
+    canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
+    canvas.grid.measureDistance(token.position, targetToken.position);
+  const range = Math.floor(+canvasDistance / 5) * 5;
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if(!weapons.length) {
@@ -212,9 +218,6 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  const targetRollData = targetToken?.actor?.getRollData();
-  const weaponId = weapons.slice(-1)[0];
-
   // get weapon and its properties
   const actorItems = token.actor.data.items;
   const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId?.toLowerCase().replace(/\s/g,''));
@@ -231,6 +234,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
   const weapName = weaponItem.name || '';
+  chatMsgData.flavor = chatMsgData.flavor || weapName;
   const weapAttrs = weaponItem.data.data.attributes;
   const weapAtkMod = weapAttrs.atk_mod?.value || 0;
   const weapDmg = weapAttrs.dmg?.value;
@@ -240,7 +244,7 @@ async function attack(attackers, targetToken, options) {
     attacker.offhand = true;
     return attack(attackers, targetToken, options);
   }
-  chatMsgData.flavor = chatMsgData.flavor || weapName;
+  
   const offhand = options.offhand == null ? !!attacker.offhand : options.offhand;
   if(offhand && !weapAttrs.light?.value) {
     ui.notifications.error("Weapon used in the offhand must be light.");
@@ -249,8 +253,8 @@ async function attack(attackers, targetToken, options) {
   }
   const throwable = options.throwable == null ? weapAttrs.throwable?.value : options.throwable;
   const hasHook = options.hasHook == null ? weapAttrs.has_hook?.value : options.hasHook;
-  const maxRange = options.maxRange == null ? weapAttrs.max_range?.value : options.maxRange;
   const atkType = options.atkType == null ? weapAttrs.atk_type?.value : options.atkType;
+  const maxRange = options.maxRange == null ? (atkType === 'melee' ? 5 : weapAttrs.max_range?.value) : options.maxRange;
   const dmgType = options.dmgType == null ? weapAttrs.dmg_type?.value : options.dmgType;
   const fragile = options.fragile == null ? weapAttrs.fragile?.value : options.fragile;
   const finesse = options.finesse == null ? weapAttrs.finesse?.value : options.finesse;
@@ -258,11 +262,20 @@ async function attack(attackers, targetToken, options) {
   const critMin = options.critMin == null ? (weapAttrs.crit_min?.value || 20) : options.critMin;
   
   // show attack choice dialogs
+  // automate throw dialog
+  if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) {
+    if(range > 5) {
+      options.atkType = 'throw';
+      options.dmgType = 'throw';
+    }
+    options.shownThrowDialog = true;
+    return attack(attackers, targetToken, options);
+  }
   if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) return throwDialog(options, attackers, targetToken);
-  options.shownThrowDialog = false;
   if(hasHook && !options.skipHookDialog && !options.shownHookDialog) return hookDialog(options, attackers, targetToken);
-  options.shownHookDialog = false;
   if(!options.skipModDialog && !options.shownModDialog && !attacker.skipModDialog) return modDialog(options, 'Attack', attack, attackers, targetToken);
+  options.shownThrowDialog = false;
+  options.shownHookDialog = false;
   options.shownModDialog = false;
   attacker.skipModDialog = true;
   
@@ -275,22 +288,33 @@ async function attack(attackers, targetToken, options) {
   const attrAtkMod = (atkType === 'missile' || atkType === 'throw' || finesse) ? dexMod : strMod;
   const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
   const actorAtkMod = rollData.atk_mod || 0;
-  const actorDmgMod = rollData.dmg_mod || 0;  
+  const actorDmgMod = rollData.dmg_mod || 0;
 
-  // determine target and range
-  let range, rangePenalty;
+  if(range > +maxRange) {
+    ui.notifications.error("Target is beyond maximum range for this weapon.");
+    weapons.pop();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
+  // determine range penalty and reduce qty of thrown weapon/missile
+  let rangePenalty;
   if(atkType === 'missile' || atkType === 'throw') {
-    const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
-      canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
-      canvas.grid.measureDistance(token.position, targetToken.position);
-    range = Math.floor(+canvasDistance / 5) * 5;
-    if(range > +maxRange) {
-      ui.notifications.error("Target is beyond maximum range for this weapon.");
-      weapons.pop();
-      attacker.offhand = true;
-      return attack(attackers, targetToken, options);
-    }
     rangePenalty = -Math.abs(Math.floor(range / 10));
+    // reduce qty of thrown weapon/missile
+    if(atkType === 'throw') {
+      const weaponQty = weaponItem.data.data.quantity;
+      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.quantity': weaponQty - 1}]);
+    } else {
+      const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value?.toLowerCase() === 'quiver');
+      const quiverQty = quiver?.data.data.quantity;
+      if(!quiver || !quiverQty) {
+        ui.notifications.error("Nothing found to shoot from this weapon.");
+        weapons.pop();
+        attacker.offhand = true;
+        return attack(attackers, targetToken, options);
+      }
+      await token.actor.updateEmbeddedDocuments("Item", [{'_id': quiver.data._id, 'data.quantity': quiverQty - 1}]);
+    }
   }
 
   // put together chat message content
@@ -310,7 +334,7 @@ async function attack(attackers, targetToken, options) {
   if(atkType === 'touch') dmgText = '';
 
   let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
-  let rangeText = range ? ` (${range}')` : '';
+  let rangeText = range && rangePenalty ? ` (${range}')` : '';
   let attackText = `attacks${targetNameText}`;
   let hitSound, missSound;
   switch(dmgType) {

@@ -81,6 +81,7 @@ export class SimpleActor extends Actor {
     - helmet
     - cloak
     - armor
+    - quiver
     - tunic
     - bracers
     - gauntlets
