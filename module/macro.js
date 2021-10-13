@@ -149,7 +149,7 @@ async function save(tokens, damage, options) {
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weapons, options={}) { // must be holding a weapon to use it, auto throw/melee depending on target distance, alt-click to target a token, refactor spell type and feature type and feature sheet, use const actor = token ? token.actor : game.user.character; to default to player's character when no token is selected
+export async function attackMacro(weapons, options={}) { // must be holding a weapon to use it -- this and useConsumable, auto throw/melee depending on target distance, alt-click to target a token, refactor spell type and feature type and feature sheet, use const actor = token ? token.actor : game.user.character; to default to player's character when no token is selected
   if(!Array.isArray(weapons)) weapons = [weapons];
 
   const selectedTokens = canvas.tokens.controlled;
@@ -229,6 +229,12 @@ async function attack(attackers, targetToken, options) {
   }
   if(weaponItem.data.data.quantity < 1) {
     ui.notifications.error("Item must have a quantity greater than zero to use.");
+    weapons.pop();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
+  if(weaponItem.data.data.attributes.holdable && weaponItem.data.data.held !== true) {
+    ui.notifications.error("Item must be held to use.");
     weapons.pop();
     attacker.offhand = true;
     return attack(attackers, targetToken, options);
@@ -324,7 +330,7 @@ async function attack(attackers, targetToken, options) {
   const weapDmgResult = await new Roll(weapDmg).evaluate().total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-  totalAtk += `${dialogAtkMod ? `+${dialogAtkMod}` : ''}${rangePenalty ? `+${rangePenalty}` : ''}`;
+  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}`;
   let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
   const isCrit = atkType !== 'touch' && d20Result >= critMin;
