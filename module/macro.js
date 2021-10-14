@@ -38,15 +38,16 @@ export async function createLostlandsMacro(data, slot) {
 }
 
 export async function spellMacro(spellId) {
-  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select spellcasting token.");
-  const token = canvas.tokens.controlled[0];
-  const spell = token.actor.data.items.get(spellId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if(!actor) return ui.notifications.error("Select spellcasting token.");
+  const spell = actor.data.items.get(spellId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
   const isPrepared = !!spell.data.data.prepared;
   if(!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
   const spellLevel = spell.data.data.attributes.lvl?.value;
   if(!spellLevel) return ui.notifications.error("Spell does not have level set.");
 
-  let actorSpellSlots = +token.actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
+  let actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
   if(actorSpellSlots <= 0) return ui.notifications.error("No spells remaining of this level.");
   const updateData = { data: {
     attributes: {
@@ -57,22 +58,45 @@ export async function spellMacro(spellId) {
       }
     }
   }};
-  await token.actor.update(updateData);
+  await actor.update(updateData);
   // show description in a chat msg with all rolls as deferred rolls
   if(!spell.data.data.description) return;
   macroChatMessage(token, { content: spell.data.data.description, flavor: spell.name, sound: spell.data.data.attributes.sound?.value});
 }
 
 export async function consumableMacro(itemId) {
-  if(canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select token comsuming the item.");
-  const token = canvas.tokens.controlled[0];
-  const item = token.actor.data.items.get(itemId) || token.actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if(!actor) return ui.notifications.error("Select token consuming the item.");
+  const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   const qty = +item.data.data.quantity || 0;
   if(!qty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
-  await token.actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
+  await actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
   // show description in a chat msg with all rolls as deferred rolls
   if(!item.data.data.description) return;
   macroChatMessage(token, { content: item.data.data.description, flavor: item.name, sound: item.data.data.attributes.sound?.value});
+}
+
+export async function chargedItemMacro(itemId, options) {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if(!actor) return ui.notifications.error("Select token using the item.");
+  const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const charges = +item.data.data.attributes.charges?.value;
+  if(!charges) return ui.notifications.error("Item has no charges remaining.");
+  if(item.data.data.attributes.holdable && item.data.data.held !== true) return ui.notifications.error("Item must be held to use.");
+
+  if(!options.numChargesUsed && !options.shownChargesUsedDialog && !options.skipModDialog) return chargesUsedDialog(options, itemId);
+  const numChargesUsed = +options.numChargesUsed || 1;
+  const chargesLeft = charges - numChargesUsed;
+  await actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
+  // show description in a chat msg with all rolls as deferred rolls
+  if(!item.data.data.description) return;
+  macroChatMessage(token, { 
+    content: item.data.data.description, 
+    flavor: `${item.name}: ${chargesLeft} charges`,
+    sound: item.data.data.attributes.sound?.value
+  });
 }
 
 function getMultiAttacks(itemId, token) {
@@ -103,10 +127,16 @@ async function save(tokens, damage, options) {
   if(!options.skipModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
   options.shownModDialog = false;
   const actorStMod = token.actor.data.data.st_mod || 0;
-  const d20Roll = new Roll("d20");
-  await d20Roll.evaluate();
-  const d20Result = d20Roll.total;
-  const saveText = `${d20Result}${options.dialogAtkMod ? `+${options.dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
+  const d20Result = await new Roll("d20").evaluate().total;
+  let dialogAtkMod = '';
+  try {
+    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+  } catch {
+    ui.notifications.error("Invalid input to modifier dialog.");
+    tokens.pop();
+    return save(tokens, damage, options);
+  }
+  const saveText = `${d20Result}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
   const success = savingThrow.total >= st;
@@ -149,8 +179,8 @@ async function save(tokens, damage, options) {
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weapons, options={}) { // must be holding a weapon to use it -- this and useConsumable, auto throw/melee depending on target distance, alt-click to target a token, refactor spell type and feature type and feature sheet, use const actor = token ? token.actor : game.user.character; to default to player's character when no token is selected
-  if(!Array.isArray(weapons)) weapons = [weapons];
+export async function attackMacro(weapons, options={}) { // fix feature sheet, use type as a label, potions/consumables can be used in one round without holding, but no movement and provoke opp attack. magic items (wands etc including Holy Symbol) must be held like weapons but can be used while moving, 
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for useMagic Item (expend charge, must be holding, make description chat msg) turnUndead, useThiefSkill (? or just make roll on attr tab)
 
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
@@ -192,9 +222,9 @@ async function attack(attackers, targetToken, options) {
   const attacks = attacker.attacks;
   const targetRollData = targetToken?.actor?.getRollData();
   const weaponId = weapons.slice(-1)[0];
-  const canvasDistance = canvas.grid.grid.constructor.name === 'SquareGrid' ?
+  const canvasDistance = targetToken ? (canvas.grid.grid.constructor.name === 'SquareGrid' ?
     canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
-    canvas.grid.measureDistance(token.position, targetToken.position);
+    canvas.grid.measureDistance(token.position, targetToken.position)) : undefined;
   const range = Math.floor(+canvasDistance / 5) * 5;
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
@@ -269,7 +299,7 @@ async function attack(attackers, targetToken, options) {
   
   // show attack choice dialogs
   // automate throw dialog
-  if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) {
+  if(range && throwable && !options.skipThrowDialog && !options.shownThrowDialog) {
     if(range > 5) {
       options.atkType = 'throw';
       options.dmgType = 'throw';
@@ -325,8 +355,15 @@ async function attack(attackers, targetToken, options) {
 
   // put together chat message content
   const d20Result = await new Roll("d20").evaluate().total;
-  const dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
-  const dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
+  let dialogAtkMod = '', dialogDmgMod = '';
+  try {
+    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+    dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
+  } catch {
+    ui.notifications.error("Invalid input to modifier dialog.");
+    attackers.pop();
+    return attack(attackers, targetToken, options);
+  }
   const weapDmgResult = await new Roll(weapDmg).evaluate().total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
@@ -507,6 +544,36 @@ function modDialog(options, label, callback, ...data) {
         icon: '<i class="fas fa-times"></i>',
         label: "Cancel",
         callback: () => console.log("Cancelled modifier dialog")
+      }
+    },
+    default: "one"
+  }).render(true);
+}
+
+function chargesUsedDialog(options, ...data) {
+  new Dialog({
+    title: "Modifiers",
+    content: 
+      `<form>
+        <div class="form-group">
+          <label>Charges expended?</label>
+          <input type="number" id="chargesUsed" value="1">
+        </div>
+      </form>`,
+    buttons: {
+      one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: `Use`,
+        callback: html => {
+          options.shownChargesUsedDialog = true;
+          options.numChargesUsed = +html.find('[id=chargesUsed]')[0]?.value;
+          chargedItemMacro(...data, options);
+        }
+      },
+      two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "Cancel",
+        callback: () => console.log("Cancelled chargesUsed dialog")
       }
     },
     default: "one"
