@@ -109,7 +109,7 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each data.spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span style="text-align: center;">{{#ifeq key "spell_magic"}}Magic Spells{{/ifeq}}{{#ifeq key "spell_cleric"}}Cleric Spells{{/ifeq}}{{#ifeq key "spell_witch"}}Witch Spells{{/ifeq}}</span>
+                <span style="text-align: center;">{{#ifeq key "spell_magic"}}Magic{{/ifeq}}{{#ifeq key "spell_cleric"}}Cleric{{/ifeq}}{{#ifeq key "spell_witch"}}Witch{{/ifeq}}</span>
             </header>
                 {{#each spelltype as |level id|}}
                 <header class="spells-header flexrow">

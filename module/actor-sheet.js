@@ -77,10 +77,12 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortFeaturesBySource(source, data) {
     const attrs = data.data.attributes;
-    const sourceKey = source === 'class' ? `Class${attrs.class?.value != null ? ` (${attrs.class.value})` : ''}` :
-      source === 'race' ? `Class${attrs.race?.value != null ? ` (${attrs.race.value})` : ''}` :
+    const sourceKey = source === 'class' ?
+      `${attrs.class?.value != null ? `${attrs.class.value}` : 'Class'}` :
+      source === 'race' ? `${attrs.race?.value != null ? `${attrs.race.value}` : 'Race'}` :
       source;
-    const featureBySource = source === 'none' ? data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value == null) :
+    const featureBySource = source === 'none' ? 
+      data.items.filter(i => i.type === `feature` && (i.data.attributes.source?.value?.toLowerCase() !== 'class' && i.data.attributes.source?.value?.toLowerCase() !== 'race')) :
       data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value?.toLowerCase() === `${source}`);
     if(!featureBySource.length) return;
     data.features[`${sourceKey}`] = featureBySource;
