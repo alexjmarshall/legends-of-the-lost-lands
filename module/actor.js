@@ -69,12 +69,12 @@ export class SimpleActor extends Actor {
       }
     }
     // ability score modifiers
-    updateData.str_mod = Math.floor((attributes.ability_scores?.str?.value || 0) / 3 - 3);
-    updateData.int_mod = Math.floor((attributes.ability_scores?.int?.value || 0) / 3 - 3);
-    updateData.wis_mod = Math.floor((attributes.ability_scores?.wis?.value || 0) / 3 - 3);
-    updateData.dex_mod = Math.floor((attributes.ability_scores?.dex?.value || 0) / 3 - 3);
-    updateData.con_mod = Math.floor((attributes.ability_scores?.con?.value || 0) / 3 - 3);
-    updateData.cha_mod = Math.floor((attributes.ability_scores?.cha?.value || 0) / 3 - 3);
+    updateData.str_mod = Math.floor(attributes.ability_scores?.str?.value / 3 - 3) || 0;
+    updateData.int_mod = Math.floor(attributes.ability_scores?.int?.value / 3 - 3) || 0;
+    updateData.wis_mod = Math.floor(attributes.ability_scores?.wis?.value / 3 - 3) || 0;
+    updateData.dex_mod = Math.floor(attributes.ability_scores?.dex?.value / 3 - 3) || 0;
+    updateData.con_mod = Math.floor(attributes.ability_scores?.con?.value / 3 - 3) || 0;
+    updateData.cha_mod = Math.floor(attributes.ability_scores?.cha?.value / 3 - 3) || 0;
 
     /* AC
     slots:
