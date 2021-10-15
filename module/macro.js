@@ -180,8 +180,9 @@ async function save(tokens, damage, options) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for turnUndead, useThiefSkill (? or just make roll on attr tab), sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
-  // automate shield add to AC and bash damage bonus to metal armor
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for turnUndead, thief skills, misc rolls like swim/climb, reaction/morale, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
+  // automate shield add to AC, helmet prevent crits, and bash damage bonus to metal armor
+  // XP progressions and other class/race features
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -222,10 +223,7 @@ async function attack(attackers, targetToken, options) {
   const attacks = attacker.attacks;
   const targetRollData = targetToken?.actor?.getRollData();
   const weaponId = weapons.slice(-1)[0];
-  const canvasDistance = targetToken ? (canvas.grid.grid.constructor.name === 'SquareGrid' ?
-    canvas.grid.measureDistanceGrid(token.position, targetToken.position) :
-    canvas.grid.measureDistance(token.position, targetToken.position)) : undefined;
-  const range = Math.floor(+canvasDistance / 5) * 5;
+  const range = measureRange(token, targetToken);
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if(!weapons.length) {
@@ -430,19 +428,42 @@ async function attack(attackers, targetToken, options) {
   let resultText = '';
   let resultSound = missSound;
   let isHit = true;
+  let targetAc;
   if(!isNaN(targetRollData?.ac)) {
+    // check for friendly adjacent tokens wearing a Large Shield
+    // note this doesn't work for monsters
+    const adjacentFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 && measureRange(targetToken, t) === 5);
+    const largeShieldMods = adjacentFriendlyTokens.map(t => 
+      t.actor.items.filter(i => i.data.data.held && i.data.data.attributes.large?.value)
+      .map(i => i.data.data.attributes.ac_mod?.value)
+    ).flat();
+    const largeShieldMod = Math.max(...largeShieldMods, 0);
+    targetAc = targetRollData.ac + largeShieldMod;
+    const touchAc = targetRollData.touch_ac || targetRollData.ac;
+    if(atkType === 'missile' || atkType === 'throw') {
+      // disregard bucklers, add +1 for each large shield held
+      const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.small?.value);
+      bucklersHeld.forEach(i => targetAc -= +i.data.data.attributes.ac_mod?.value || 0);
+      const largeShieldsHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.large?.value);
+      largeShieldsHeld.forEach(() => targetAc += 1);
+    }
+    // disregard shield mods if weapon is unwieldy, e.g. flail
+    if(unwieldy && atkType === 'melee') {
+      const shieldMods = largeShieldMod + targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.ac_mod?.value > 0)
+        .reduce((a,b) => a + b.data.data.attributes.ac_mod.value, 0);
+      targetAc -= shieldMods;
+    }
     const totalAtkRoll = new Roll(totalAtk);
     await totalAtkRoll.evaluate();
-    const touchAc = targetRollData.touch_ac || targetRollData.ac;
-    isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetRollData.ac);
+    isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetAc);
     if(isHit) {
-      resultText = ` <span style="${resultStyle('#7CCD7C')}">HIT</span>`;
+      resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#7CCD7C')}">HIT</span>`;
       resultSound = hitSound;
     } else {
-      resultText = ` <span style="${resultStyle('#EE6363')}">MISS</span>`;
+      resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#EE6363')}">MISS</span>`;
     }
   }
-  if(isCrit && isHit) resultText = ` <span style="${resultStyle('#FFFF5C')}">CRIT</span>`;
+  if(isCrit && isHit) resultText = `${targetAc ? ` vs. AC ${targetAc}` : ''} <span style="${resultStyle('#FFFF5C')}">CRIT</span>`;
   if(unwieldy && atkType === 'melee' && d20Result === 1) {
     isHit = true;
     resultText += ` hit self`;
@@ -475,6 +496,14 @@ async function attack(attackers, targetToken, options) {
 
 function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
+}
+
+function measureRange(token1, token2) {
+  const canvasDistance = token1 && token2 ? (canvas.grid.grid.constructor.name === 'SquareGrid' ?
+  canvas.grid.measureDistanceGrid(token1.position, token2.position) :
+  canvas.grid.measureDistance(token1.position, token2.position)) : undefined;
+  // return range rounded to 5'
+  return Math.floor(+canvasDistance / 5) * 5;
 }
 
 export function macroChatMessage(token, data) {
