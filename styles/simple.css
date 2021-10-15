@@ -202,6 +202,7 @@
 }
 .lostlands .attributes-header {
   position: sticky;
+  z-index: 99999;
   top: 0;
   left: 0;
   align-items: center;
@@ -215,6 +216,7 @@
 }
 .lostlands .items-header {
   position: sticky;
+  z-index: 99999;
   top: 0;
   left: 0;
   align-items: center;
