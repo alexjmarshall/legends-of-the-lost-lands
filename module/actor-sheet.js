@@ -45,8 +45,11 @@ export class SimpleActorSheet extends ActorSheet {
     context.hasSpells = Object.keys(context.data.spells).length > 0;
 
     // sort features
-    context.data.features = items.filter(i => i.type === "feature");
-    context.hasFeatures = context.data.features.length > 0;
+    context.data.features = {};
+    this.sortFeaturesBySource('none', context.data);
+    this.sortFeaturesBySource('class', context.data);
+    this.sortFeaturesBySource('race', context.data);
+    context.hasFeatures = Object.keys(context.data.features).length > 0;
 
     return context;
   }
@@ -70,6 +73,17 @@ export class SimpleActorSheet extends ActorSheet {
         }
       }
     }
+  }
+
+  sortFeaturesBySource(source, data) {
+    const attrs = data.data.attributes;
+    const sourceKey = source === 'class' ? `Class${attrs.class?.value != null ? ` (${attrs.class.value})` : ''}` :
+      source === 'race' ? `Class${attrs.race?.value != null ? ` (${attrs.race.value})` : ''}` :
+      source;
+    const featureBySource = source === 'none' ? data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value == null) :
+      data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value?.toLowerCase() === `${source}`);
+    if(!featureBySource.length) return;
+    data.features[`${sourceKey}`] = featureBySource;
   }
 
   /* -------------------------------------------- */
@@ -188,26 +202,38 @@ export class SimpleActorSheet extends ActorSheet {
           const firstPreparedSpellId = preparedSpells[0].data._id;
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
+        if(!isPrepared === true) {
+          game.lostlands.Macro.macroChatMessage(this, { content: `prepares ${item.name}` });
+        }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
         // check whether already wearing an item in this slot
-        const slot = item.data.data.attributes.slot?.value;
-        const slotItems = this.actor.data.items.filter(i => i.data.data.attributes.slot?.value === slot && i.data.data.worn);
-        const slotLimit = slot === 'ring' ? 2 : 1;
-        if(slot && !isWorn && slotItems.length >= slotLimit) {
+        const slot = item.data.data.attributes.slot?.value?.toLowerCase();
+        const slotItems = this.actor.data.items.filter(i => i.data.data.worn && i.data.data.attributes.slot?.value === slot);
+        const slotLimit = slot === 'ring' ? 10 : 1;
+        const wearingRingofProtection = !!this.actor.data.items.find(i => i.data.data.worn && i.data.name.toLowerCase().includes('ring of protection'));
+        if(slot && !isWorn && (slotItems.length >= slotLimit || (wearingRingofProtection && !!item.data.name.toLowerCase().includes('ring of protection')))) {
+          // return ui.notifications.error("Must remove an item of this type first.");
           // clear up the slot
           const firstSlotItemId = slotItems[0].data._id;
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
+        }
+        if(!isWorn === true) {
+          game.lostlands.Macro.macroChatMessage(this, { content: `dons ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
         if(!isHeld && heldItems.length >= 2) {
+          // return ui.notifications.error("Must drop an item first.");
           // clear up a slot by unholding first held item
           const firstHeldItemId = heldItems[0].data._id;
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstHeldItemId, "data.held": false}]);
+        }
+        if(!isHeld === true) {
+          game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":

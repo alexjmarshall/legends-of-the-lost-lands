@@ -151,16 +151,20 @@
 
         {{!-- Features Tab --}}
         <div class="tab features" data-group="primary" data-tab="features">
+            {{#each data.features as |source key|}}
+            <header class="features-header flexrow" {{#ifeq key "none"}}style="display:none;"{{/ifeq}}>
+                <span style="text-align: center;">{{key}}</span>
+            </header>
             <ol class="item-list">
-                {{#each data.features as |item id|}}
-                <li class="item flexrow" data-item-id="{{item._id}}">
+                {{#each source as |feature id|}}
+                <li class="item flexrow" data-item-id="{{feature._id}}">
                     <div class="item-toggle">
-                        {{#if item.data.macro}}
+                        {{#if feature.data.macro}}
                             <a class="item-control" data-action="use" title="Use Feature"><i class="fas fa-dice-d20"></i></a>
                         {{/if}}
                     </div>
-                    <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
-                    <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
+                    <img class="item-row" data-action="edit" src="{{feature.img}}" title="{{feature.name}}" width="24" height="24"/>
+                    <h4 class="item-name item-row" data-action="edit">{{feature.name}}</h4>
                     <div class="item-controls">
                         <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
                         <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
@@ -168,6 +172,7 @@
                 </li>
                 {{/each}}
             </ol>
+            {{/each}}
         </div>
 
         {{!-- Attributes Tab --}}

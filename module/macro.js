@@ -179,9 +179,9 @@ async function save(tokens, damage, options) {
 *  critMin: (value) -- item attribute
 * }
 */
-export async function attackMacro(weapons, options={}) { // fix feature sheet, use type as a label, potions/consumables can be used in one round without holding, but no movement and provoke opp attack. magic items (wands etc including Holy Symbol) must be held like weapons but can be used while moving, 
-  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for useMagic Item (expend charge, must be holding, make description chat msg) turnUndead, useThiefSkill (? or just make roll on attr tab)
-
+export async function attackMacro(weapons, options={}) {
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for turnUndead, useThiefSkill (? or just make roll on attr tab), sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
+  // automate shield add to AC and bash damage bonus to metal armor
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -477,7 +477,7 @@ function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
 }
 
-function macroChatMessage(token, data) {
+export function macroChatMessage(token, data) {
   ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
     content: data.content.trim(),

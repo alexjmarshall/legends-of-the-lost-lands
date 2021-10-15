@@ -542,10 +542,14 @@ export class EntitySheetHelper {
     const parentFolder = folder?.parentFolder?.name;
     let type;
     let level;
-    if(parentFolder && (parentFolder === 'Magic Spells' || parentFolder === 'Cleric Spells' || parentFolder === 'Witch Spells'))
+    if(parentFolder && (parentFolder === 'Magic Spells' || parentFolder === 'Cleric Spells' || parentFolder === 'Witch Spells')) {
       type = `spell_${parentFolder.split(' ')[0].toLowerCase()}`;
-
-    if(folder) level = +folder?.name.split('Level ').pop();
+    }
+    if(folder?.name === 'Features' || parentFolder === 'Features') {
+      type = `feature`;
+    }
+    
+    if(folder && type?.includes('spell_')) level = +folder?.name.split('Level ').pop();
     if(!isNaN(level)) data.data = { attributes: { lvl: { value: level, label: "", dtype: "Number", group: "" } } };
 
     // Render the entity creation form

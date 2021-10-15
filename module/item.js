@@ -9,7 +9,6 @@ export class SimpleItem extends Item {
   /* item template attributes:
   * spells:
   * lvl: number
-  * school: conj, ench, evoc, illu, necr 
   * range: number in feet
   * duration: string
   * area: string
