@@ -288,7 +288,7 @@ async function attack(attackers, targetToken, options) {
   const throwable = options.throwable == null ? weapAttrs.throwable?.value : options.throwable;
   const hasHook = options.hasHook == null ? weapAttrs.has_hook?.value : options.hasHook;
   const atkType = options.atkType == null ? weapAttrs.atk_type?.value : options.atkType;
-  const maxRange = options.maxRange == null ? (atkType === 'melee' ? 5 : weapAttrs.max_range?.value) : options.maxRange;
+  const maxRange = options.maxRange == null ? (atkType === 'melee' ? (weapAttrs.reach?.value ? 10 : 5) : weapAttrs.max_range?.value) : options.maxRange;
   const dmgType = options.dmgType == null ? weapAttrs.dmg_type?.value : options.dmgType;
   const fragile = options.fragile == null ? weapAttrs.fragile?.value : options.fragile;
   const finesse = options.finesse == null ? weapAttrs.finesse?.value : options.finesse;
