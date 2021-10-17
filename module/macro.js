@@ -445,7 +445,13 @@ async function attack(attackers, targetToken, options) {
       const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.small?.value);
       bucklersHeld.forEach(i => targetAc -= +i.data.data.attributes.ac_mod?.value || 0);
       const largeShieldsHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.large?.value);
-      largeShieldsHeld.forEach(() => targetAc += 1);
+      largeShieldsHeld.forEach((i) => targetAc += 1);
+    }
+    // handle bonus for bash vs. metal armor
+    const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value === 'armor');
+    const targetArmorType = targetArmor?.data.data.attributes.type?.value.toLowerCase();
+    if((targetArmorType === 'chain' || targetArmorType === 'plate') && dmgType === 'bash') {
+      targetAc -= 2;
     }
     // disregard shield mods if weapon is unwieldy, e.g. flail
     if(unwieldy && atkType === 'melee') {
