@@ -228,11 +228,14 @@ export class SimpleActorSheet extends ActorSheet {
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
-        if(!isHeld && heldItems.length >= 2) {
+        const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
+        if(!isHeld && heldItems.length >= heldItemsLimit) {
           // return ui.notifications.error("Must drop an item first.");
-          // clear up a slot by unholding first held item
-          const firstHeldItemId = heldItems[0].data._id;
-          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstHeldItemId, "data.held": false}]);
+          // if heldItemsLimit is 1, must clear all held items. Otherwise, just clear one.
+          for(const item of heldItems) {
+            await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);
+            if(heldItemsLimit > 1) break;
+          }
         }
         if(!isHeld === true) {
           game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
@@ -243,11 +246,11 @@ export class SimpleActorSheet extends ActorSheet {
         let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro')
         if(event.ctrlKey && event.altKey && isLostlandsMacro) {
           // create alternate version of macro
-          itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true, skipModDialog: true}');
+          itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true, showModDialog: true}');
         } else if(event.ctrlKey && isLostlandsMacro) {
           itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true}');
         } else if(event.altKey && isLostlandsMacro) {
-          itemMacroWithId = itemMacroWithId.replace('{}', '{skipModDialog: true}');
+          itemMacroWithId = itemMacroWithId.replace('{}', '{showModDialog: true}');
         }
         let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
         if (!macro && itemMacroWithId) {

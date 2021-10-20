@@ -77,7 +77,7 @@ Hooks.once("init", async function() {
   /**
    * Update the initiative formula.
    * @param {string} formula - Dice formula to evaluate.
-   * @param {boolean} notify - Whether or not to post nofications.
+   * @param {boolean} notify - Whether or not to post notifications.
    */
   function _simpleUpdateInit(formula, notify = false) {
     const isValid = Roll.validate(formula);

@@ -86,7 +86,7 @@ export async function chargedItemMacro(itemId, options) {
   if(!charges) return ui.notifications.error("Item has no charges remaining.");
   if(item.data.data.attributes.holdable && item.data.data.held !== true) return ui.notifications.error("Item must be held to use.");
 
-  if(!options.numChargesUsed && !options.shownChargesUsedDialog && !options.skipModDialog) return chargesUsedDialog(options, itemId);
+  if(!options.numChargesUsed && !options.shownChargesUsedDialog && options.showModDialog) return chargesUsedDialog(options, itemId);
   const numChargesUsed = +options.numChargesUsed || 1;
   const chargesLeft = charges - numChargesUsed;
   await actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
@@ -109,7 +109,6 @@ function getMultiAttacks(itemId, token) {
 export async function saveMacro(damage=0, options={}) {
   const tokens = canvas.tokens.controlled;
   if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw.");
-  options.atkType = 'touch'; // to omit mod dialog damage field
   
   save(tokens, damage, options);
 }
@@ -124,7 +123,8 @@ async function save(tokens, damage, options) {
     tokens.pop();
     return save(tokens, damage, options);
   }
-  if(!options.skipModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
+  options.atkType = 'touch'; // to skip damage field in mod dialog
+  if(options.showModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
   options.shownModDialog = false;
   const actorStMod = token.actor.data.data.st_mod || 0;
   const d20Result = await new Roll("d20").evaluate().total;
@@ -140,17 +140,17 @@ async function save(tokens, damage, options) {
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
   const success = savingThrow.total >= st;
-  const resultText = success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>`; 
+  const resultText = ` vs. ST ${st}` + ( success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>` ); 
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  const content = `saves [[${saveText}]]${resultText}${damage ? ` and takes [[${takenDamage}]] damage` : ``}`;
+  const content = `<div style="line-height:1.6em;">saves [[${saveText}]]${resultText}${damage ? ` and takes [[${takenDamage}]] damage` : ``}</div>`;
   
   const flavor = damage ? 'Save for Half Damage' : 'Saving Throw';
   macroChatMessage(token, {content: content, flavor: flavor});
   const currentHp = +token.actor.data.data.hp?.value;
   if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
-  // wait if not last actor and skipModDialog
-  if(tokens.length > 1 && options.skipModDialog) await wait(500);
+  // wait if not last actor and not showing mod dialogs
+  if(tokens.length > 1 && !options.showModDialog) await wait(500);
 
   tokens.pop();
   save(tokens, damage, options);
@@ -162,7 +162,7 @@ async function save(tokens, damage, options) {
 *  flavor: chat message header -- actor
 *  offhand: true/false -- weapon
 *  skipHookDialog: true/false -- 
-*  skipModDialog: true/false
+*  showModDialog: true/false
 *  skipThrowDialog: true/false
 *  dialogAtkMod: (value)
 *  dialogDmgMod: (value)
@@ -180,9 +180,15 @@ async function save(tokens, damage, options) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for turnUndead, thief skills, misc rolls like swim/climb, reaction/morale, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
-  // automate shield add to AC, helmet prevent crits, and bash damage bonus to metal armor
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
   // XP progressions and other class/race features
+  // players must be able to edit two weapon fighting list
+  // do not show chat bubble for most macro actions
+  // how to abide by max HP limit?
+  // add XP automatically
+  // players cannot edit their XP or HP
+  // spells should say in chat who is being targeted
+  // better UI for buying standard equipment?  maybe paste msg in chat that has button that opens up window with items selected from certain folder
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -237,9 +243,9 @@ async function attack(attackers, targetToken, options) {
           if(!isNaN(targetHp)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
         }
         // should wait unless last actors last weapon, or next weapon shows mod dialog
-        // wait if NOT last weapon of last actor AND (NOT last weapon of this actor OR skipModDialog)
+        // wait if NOT last weapon of last actor AND (NOT last weapon of this actor OR not showing mod dialog)
         if(!(attacks.indexOf(attack) === attacks.length -1 && attackers.length === 1) &&
-          (attacks.indexOf(attack) !== attacks.length -1 || options.skipModDialog)) await wait(500);
+          (attacks.indexOf(attack) !== attacks.length -1 || !options.showModDialog)) await wait(500);
       }
     }
     attackers.pop();
@@ -307,11 +313,11 @@ async function attack(attackers, targetToken, options) {
   }
   if(throwable && !options.skipThrowDialog && !options.shownThrowDialog) return throwDialog(options, attackers, targetToken);
   if(hasHook && !options.skipHookDialog && !options.shownHookDialog) return hookDialog(options, attackers, targetToken);
-  if(!options.skipModDialog && !options.shownModDialog && !attacker.skipModDialog) return modDialog(options, 'Attack', attack, attackers, targetToken);
+  if(options.showModDialog && !options.shownModDialog && attacker.showModDialog !== false) return modDialog(options, 'Attack', attack, attackers, targetToken);
   options.shownThrowDialog = false;
   options.shownHookDialog = false;
   options.shownModDialog = false;
-  attacker.skipModDialog = true;
+  attacker.showModDialog = false;
   
   // get actor and its properties
   const rollData = token.actor.getRollData();
@@ -368,7 +374,7 @@ async function attack(attackers, targetToken, options) {
   totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}`;
   let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
-  const isCrit = atkType !== 'touch' && d20Result >= critMin;
+  const isCrit = atkType !== 'touch' && d20Result >= critMin && !targetToken.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
   let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
   if(isCrit) dmgText += ` + <span style="font-style:normal;">[[/r ${weapDmg}#${weapName} damage]]</span>`;
   dmgText += ' damage';
@@ -512,14 +518,14 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / 5) * 5;
 }
 
-export function macroChatMessage(token, data) {
+export function macroChatMessage(token, data, chatBubble=true) {
   ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
     content: data.content.trim(),
     type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
     flavor: data.flavor,
     sound: data.sound ? `systems/lostlands/sounds/${data.sound}.mp3` : undefined
-  }, {chatBubble: true});
+  }, {chatBubble: chatBubble});
 }
 
 function hookDialog(options, ...data) {
@@ -790,7 +796,7 @@ export function buyBasicEquipment() {
       function syncCostVal() {
         const itemId = select.val();
         const selectedItem = game.items.get(itemId);
-        const itemCost = selectedItem.data.data.attributes.value?.value;
+        const itemCost = selectedItem.data.data.attributes.gp_value?.value;
         if(!itemCost) ui.notifications.error("Item does not have the value attribute set.");
         costInput.val(itemCost);
       }
