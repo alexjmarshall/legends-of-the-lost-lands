@@ -42,6 +42,7 @@ export async function spellMacro(spellId) {
   const actor = token ? token.actor : game.user.character;
   if(!actor) return ui.notifications.error("Select spellcasting token.");
   const spell = actor.data.items.get(spellId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
+  if(!spell) return ui.notifications.error("Could not find spell on this character.");
   const isPrepared = !!spell.data.data.prepared;
   if(!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
   const spellLevel = spell.data.data.attributes.lvl?.value;
@@ -58,30 +59,62 @@ export async function spellMacro(spellId) {
       }
     }
   }};
-  await actor.update(updateData);
-  // show description in a chat msg with all rolls as deferred rolls
-  if(!spell.data.data.description) return;
-  macroChatMessage(token, { content: spell.data.data.description, flavor: spell.name, sound: spell.data.data.attributes.sound?.value});
+  
+  if(!spell.data.data.description) return ui.notifications.error("Spell has no description set.");
+  macroChatMessage(token, { 
+    content: spell.data.data.description, 
+    flavor: spell.name, 
+    sound: spell.data.data.attributes.sound?.value
+  }, false);
+
+  canvas.hud.bubbles.say(token, `casts ${spell.name}`, {emote: true});
+  return actor.update(updateData);
 }
 
-export async function consumableMacro(itemId) {
+export async function consumableItemMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select token consuming the item.");
+  if(!actor) return ui.notifications.error("Select character consuming the item.");
   const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
-  const qty = +item.data.data.quantity || 0;
-  if(!qty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
-  await actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qty - 1}]);
-  // show description in a chat msg with all rolls as deferred rolls
-  if(!item.data.data.description) return;
-  macroChatMessage(token, { content: item.data.data.description, flavor: item.name, sound: item.data.data.attributes.sound?.value});
+  if(!item) return ui.notifications.error("Could not find item on this character.");
+  const itemQty = +item.data.data.quantity;
+  if(!itemQty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
+
+  if(options.applyHeal) {
+    try {
+      const healPoints = await new Roll(item.data.data.attributes.heal?.value).evaluate().total;
+      const currentHp = +actor.data.data.hp?.value;
+      const maxHp = +actor.data.data.hp?.max;
+      let hpUpdate = currentHp + +healPoints;
+      if ( hpUpdate > maxHp ) hpUpdate = maxHp;
+      if(!isNaN(hpUpdate) && hpUpdate !== currentHp) await actor.update({'data.hp.value': hpUpdate});
+      macroChatMessage(token, { 
+        content: `healed [[${healPoints}]] points of damage`, 
+        flavor: item.name, 
+        sound: item.data.data.attributes.sound?.value
+      }, false);
+    } catch {
+      return ui.notifications.error("Invalid heal formula.");
+    }
+  } else {
+    if(!item.data.data.description) return ui.notifications.error("Item has no description set.");
+    macroChatMessage(token, { 
+      content: item.data.data.description, 
+      flavor: item.name, 
+      sound: item.data.data.attributes.sound?.value
+    }, false);
+  }
+  canvas.hud.bubbles.say(token, `${options.verb || 'consumes'} ${item.name}`, {emote: true});
+  const qtyUpdate = itemQty - 1;
+  return actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qtyUpdate}]);
 }
 
-export async function chargedItemMacro(itemId, options) {
+export async function chargedItemMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
   if(!actor) return ui.notifications.error("Select token using the item.");
   const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  if(!item) return ui.notifications.error("Could not find item on this character.");
   const charges = +item.data.data.attributes.charges?.value;
   if(!charges) return ui.notifications.error("Item has no charges remaining.");
   if(item.data.data.attributes.holdable && item.data.data.held !== true) return ui.notifications.error("Item must be held to use.");
@@ -89,14 +122,16 @@ export async function chargedItemMacro(itemId, options) {
   if(!options.numChargesUsed && !options.shownChargesUsedDialog && options.showModDialog) return chargesUsedDialog(options, itemId);
   const numChargesUsed = +options.numChargesUsed || 1;
   const chargesLeft = charges - numChargesUsed;
-  await actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
-  // show description in a chat msg with all rolls as deferred rolls
-  if(!item.data.data.description) return;
+  
+  if(!item.data.data.description) return ui.notifications.error("Item has no description set.");
   macroChatMessage(token, { 
     content: item.data.data.description, 
     flavor: `${item.name}: ${chargesLeft} charges`,
     sound: item.data.data.attributes.sound?.value
-  });
+  }, false);
+
+  canvas.hud.bubbles.say(token, `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from ${item.name}`, {emote: true});
+  return actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
 }
 
 function getMultiAttacks(itemId, token) {
@@ -145,9 +180,12 @@ async function save(tokens, damage, options) {
   const content = `<div style="line-height:1.6em;">saves [[${saveText}]]${resultText}${damage ? ` and takes [[${takenDamage}]] damage` : ``}</div>`;
   
   const flavor = damage ? 'Save for Half Damage' : 'Saving Throw';
-  macroChatMessage(token, {content: content, flavor: flavor});
+  macroChatMessage(token, {
+    content: content, 
+    flavor: flavor
+  });
   const currentHp = +token.actor.data.data.hp?.value;
-  if((game.user.isGM || token.actor.isOwner) && !isNaN(currentHp)) await token.actor.update({"data.hp.value": currentHp - takenDamage})
+  if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
   // wait if not last actor and not showing mod dialogs
   if(tokens.length > 1 && !options.showModDialog) await wait(500);
@@ -168,6 +206,7 @@ async function save(tokens, damage, options) {
 *  dialogDmgMod: (value)
 *  applyDamage: true/false
 *  throwable: true/false -- item attribute
+*  reach: true/false -- item attribute
 *  hasHook: true/false -- item attribute
 *  light: true/false -- item attribute
 *  maxRange: (value) -- item attribute
@@ -181,14 +220,16 @@ async function save(tokens, damage, options) {
 */
 export async function attackMacro(weapons, options={}) {
   if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
-  // XP progressions and other class/race features
-  // players must be able to edit two weapon fighting list
-  // do not show chat bubble for most macro actions
-  // how to abide by max HP limit?
-  // add XP automatically
-  // players cannot edit their XP or HP
-  // spells should say in chat who is being targeted
-  // better UI for buying standard equipment?  maybe paste msg in chat that has button that opens up window with items selected from certain folder
+  // XP progressions and other class/race features -- nah to auto level up
+  // players must be able to edit two weapon fighting list -- DONE
+  // do not show chat bubble for most macro actions -- looks good, but can set not pan to speaker globally?
+  // should use combat tracker? or nah
+  // how to abide by max HP limit? -- DONE
+  // players cannot edit their XP or HP -- nah
+  // spells should say in chat who is being targeted? -- nah
+  // spell macro work for both spells and scrolls -- DONE
+  // document all attribute properties
+  // better UI for buying standard equipment?  maybe paste msg in chat that has button that opens up window with items selected from certain folder -- nah
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -256,7 +297,7 @@ async function attack(attackers, targetToken, options) {
   const actorItems = token.actor.data.items;
   const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId?.toLowerCase().replace(/\s/g,''));
   if(!weaponItem) {
-    ui.notifications.error("Cannot find item in selected character's inventory.");
+    ui.notifications.error("ould not find item on this character.");
     weapons.pop();
     attacker.offhand = true;
     return attack(attackers, targetToken, options);
