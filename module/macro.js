@@ -71,27 +71,41 @@ export async function spellMacro(spellId) {
   return actor.update(updateData);
 }
 
-export async function consumableItemMacro(itemId, options={}) {
+export function potionMacro(itemId, options={}) {
+  options.verb = 'quaffs';
+  options.sound = 'drink_potion';
+  return consumeItem(itemId, options);
+}
+
+export function scrollMacro(itemId, options={}) {
+  options.verb = 'reads';
+  // options.sound = 'drink_potion';
+  return consumeItem(itemId, options);
+}
+
+async function consumeItem(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select character consuming the item.");
+  if(!actor) return ui.notifications.error("Select character using the item.");
   const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   if(!item) return ui.notifications.error("Could not find item on this character.");
   const itemQty = +item.data.data.quantity;
   if(!itemQty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
 
-  if(options.applyHeal) {
+  const ctrlOrAlt = options.showModDialog || options.applyDamage;
+  const healFormula = item.data.data.attributes.heal?.value;
+  if(ctrlOrAlt && healFormula) {
     try {
-      const healPoints = await new Roll(item.data.data.attributes.heal?.value).evaluate().total;
+      const healPoints = await new Roll(healFormula).evaluate().total;
       const currentHp = +actor.data.data.hp?.value;
       const maxHp = +actor.data.data.hp?.max;
       let hpUpdate = currentHp + +healPoints;
       if ( hpUpdate > maxHp ) hpUpdate = maxHp;
       if(!isNaN(hpUpdate) && hpUpdate !== currentHp) await actor.update({'data.hp.value': hpUpdate});
       macroChatMessage(token, { 
-        content: `healed [[${healPoints}]] points of damage`, 
+        content: `heals [[${healPoints}]] points of damage`, 
         flavor: item.name, 
-        sound: item.data.data.attributes.sound?.value
+        sound: options.sound
       }, false);
     } catch {
       return ui.notifications.error("Invalid heal formula.");
@@ -101,7 +115,7 @@ export async function consumableItemMacro(itemId, options={}) {
     macroChatMessage(token, { 
       content: item.data.data.description, 
       flavor: item.name, 
-      sound: item.data.data.attributes.sound?.value
+      sound: options.sound
     }, false);
   }
   canvas.hud.bubbles.say(token, `${options.verb || 'consumes'} ${item.name}`, {emote: true});
@@ -112,7 +126,7 @@ export async function consumableItemMacro(itemId, options={}) {
 export async function chargedItemMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select token using the item.");
+  if(!actor) return ui.notifications.error("Select character using the item.");
   const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   if(!item) return ui.notifications.error("Could not find item on this character.");
   const charges = +item.data.data.attributes.charges?.value;
@@ -136,7 +150,7 @@ export async function chargedItemMacro(itemId, options={}) {
 
 function getMultiAttacks(itemId, token) {
   const actorItems = token.actor.data.items;
-  const MultiItem = actorItems.get(itemId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const MultiItem = actorItems.get(itemId) || actorItems.find(i => i.type === 'feature' && i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   const attrs = MultiItem?.data?.data?.attributes;
   return attrs?.routine?.value || attrs?.weapons?.value;
 }
@@ -145,23 +159,23 @@ export async function saveMacro(damage=0, options={}) {
   const tokens = canvas.tokens.controlled;
   if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw.");
   
-  save(tokens, damage, options);
+  return save(tokens, damage, options);
 }
 
 async function save(tokens, damage, options) {
   if(!tokens.length) return;
-  
   const token = tokens.slice(-1)[0];
-  const st = +token.actor.data.data.attributes.st?.value;
-  if(!st) {
-    ui.notifications.error(`${token.actor.name} has no st attribute set.`);
+  const actor = token.actor;
+  const saveTarget = +token.actor.data.data.attributes.st?.value;
+  if(!saveTarget) {
+    ui.notifications.error(`${actor.name} has no save target number set.`);
     tokens.pop();
     return save(tokens, damage, options);
   }
   options.atkType = 'touch'; // to skip damage field in mod dialog
-  if(options.showModDialog && !options.shownModDialog) return modDialog(options, 'Save', save, tokens, damage);
+  if(options.showModDialog && !options.shownModDialog) return modDialog(options, options.flavor || 'Save', save, tokens, damage);
   options.shownModDialog = false;
-  const actorStMod = token.actor.data.data.st_mod || 0;
+  const actorSaveMod = +actor.data.data.save_mod || 0;
   const d20Result = await new Roll("d20").evaluate().total;
   let dialogAtkMod = '';
   try {
@@ -171,20 +185,29 @@ async function save(tokens, damage, options) {
     tokens.pop();
     return save(tokens, damage, options);
   }
-  const saveText = `${d20Result}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorStMod ? `+${actorStMod}` : ''}`;
+  const saveText = `${d20Result}${options.attrMod ? `+${options.attrMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
-  const success = savingThrow.total >= st;
-  const resultText = ` vs. ST ${st}` + ( success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>` ); 
+  const success = savingThrow.total >= saveTarget;
+  const resultText = ` vs. ST ${saveTarget}` + ( success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>` );
+  const critFail = d20Result === 1 && options.critFailText;
+  if(critFail && options.critFailBrokenItem) {
+    const itemQty = +options.critFailBrokenItem.data.data.quantity;
+    const qtyUpdate = itemQty - 1;
+    options.sound = options.critFailSound || options.sound;
+    await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem.data._id, 'data.quantity': qtyUpdate}]);
+  }
+  const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  const content = `<div style="line-height:1.6em;">saves [[${saveText}]]${resultText}${damage ? ` and takes [[${takenDamage}]] damage` : ``}</div>`;
-  
-  const flavor = damage ? 'Save for Half Damage' : 'Saving Throw';
+  let content = `<div style="line-height:1.6em;">${options.verb || 'saves'} [[${saveText}]]${resultText}`;
+  content += `${damage ? ` and takes [[${takenDamage}]] damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}</div>`;
+  const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   macroChatMessage(token, {
     content: content, 
-    flavor: flavor
+    flavor: flavor,
+    sound: options.sound
   });
-  const currentHp = +token.actor.data.data.hp?.value;
+  const currentHp = +actor.data.data.hp?.value;
   if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
   // wait if not last actor and not showing mod dialogs
@@ -192,6 +215,45 @@ async function save(tokens, damage, options) {
 
   tokens.pop();
   save(tokens, damage, options);
+}
+
+export function thiefSkillMacro(skill, options={}) {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  if(!token) return ui.notifications.error("Select character(s) attempting the thief skill.");
+  const actor = token.actor;
+
+  options.flavor = skill;
+  options.attrMod = +actor.data.data.dex_mod;
+  options.verb = `attempts to ${skill}`;
+  const lockPickItem = actor.items.find(i => i.type === 'item' && i.name.toLowerCase().replace(/\s/g,'') === 'lockpicks');
+  switch(skill.toLowerCase().replace(/\s/g,'')) {
+    case 'openlocks':
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`No lock picks found on character.`);
+      options.failText = ` but may try again when their skill increases`;
+      options.critFailText = ` and the lock pick breaks!`;
+      options.critFailSound = 'break_lock_pick';
+      options.critFailBrokenItem = lockPickItem;
+      break;
+    case 'disarmtraps':
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`No lock picks found on character.`);
+      options.failText = ` but may try again when their skill increases`;
+      options.critFailText = ` and the trap fires!`;
+      options.critFailSound = 'break_lock_pick';
+      options.critFailBrokenItem = lockPickItem;
+      break;
+    case 'pickpockets':
+      options.failText = ` but may try again when their skill increases`;
+      options.critFailText = ` and is immediately caught!`;
+      break;
+    case 'movesilently':
+      options.failText = ` but may hide to avoid detection`;
+      options.critFailText = ` and is immediately caught!`;
+      break;
+    case 'hideinshadows':
+      options.failText = ` and may be found if searched for`;
+      options.critFailText = ` and is immediately caught!`;
+  }
+  return saveMacro(0, options);
 }
 
 /*
@@ -222,14 +284,18 @@ export async function attackMacro(weapons, options={}) {
   if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
   // XP progressions and other class/race features -- nah to auto level up
   // players must be able to edit two weapon fighting list -- DONE
-  // do not show chat bubble for most macro actions -- looks good, but can set not pan to speaker globally?
+  // do not show chat bubble for most macro actions -- looks good, but can set not pan to speaker globally? if not, don't have attack macro show chat bubble
   // should use combat tracker? or nah
   // how to abide by max HP limit? -- DONE
   // players cannot edit their XP or HP -- nah
+  // if fragile weapon breaks, should reduce quantity!
   // spells should say in chat who is being targeted? -- nah
   // spell macro work for both spells and scrolls -- DONE
   // document all attribute properties
-  // better UI for buying standard equipment?  maybe paste msg in chat that has button that opens up window with items selected from certain folder -- nah
+  // save and attack should take in actors rather than tokens as arg
+  // replace buy basic items macro with merchant sheet
+  // need to refactor sound strings to use whole filename including filetype
+  // collections of sound profiles e.g. male_1, female_1 for player to choose -- soundboard tab with select for profile and buttons for sounds, GM can click checkbox for whether select is editable by players
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -238,6 +304,7 @@ export async function attackMacro(weapons, options={}) {
   const attackers = [];
   for(const token of selectedTokens) {
     let attackerWeapons;
+    // handle attack routine and two-weapon fighting
     if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine' || weapons[0].toLowerCase().replace(/\s/g,'') === 'two-weaponfighting') {
       const attacksString = getMultiAttacks(weapons[0], token);
       if(!attacksString || !attacksString.includes(',')) {
@@ -248,6 +315,34 @@ export async function attackMacro(weapons, options={}) {
       attackerWeapons = attacksString.split(',');
       if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine') options.offhand = false;
       if(weapons[0].toLowerCase().replace(/\s/g,'') === 'two-weaponfighting') options.throwable = false;
+    }
+    // handle backstab
+    if(weapons[0].toLowerCase().replace(/\s/g,'') === 'backstab') {
+      const backstabItem = token.actor.items.find(i => i.type === 'feature' && i.name.toLowerCase().replace(/\s/g,'') === 'backstab');
+      if(!backstabItem) {
+        ui.notifications.error(`Backstab feature not found on this character.`);
+        continue;
+      }
+      const weapName = backstabItem.data.data.attributes.weapon?.value;
+      const weapItem = token.actor.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === weapName.toLowerCase().replace(/\s/g,''));
+      if(!weapItem) {
+        ui.notifications.error(`No backstab weapon found.`);
+        continue;
+      }
+      if(weapItem.data.data.attributes.light?.value !== true) {
+        ui.notifications.error(`Cannot backstab with this weapon.`);
+        continue;
+      }
+      const dmgMulti = +backstabItem.data.data.attributes.dmg_multi?.value;
+      if(!dmgMulti) {
+        ui.notifications.error(`No damage multiplier set on backstab feature.`);
+        continue;
+      }
+      options.atkMod = 4;
+      options.dmgMulti = dmgMulti;
+      options.flavor = `Backstab (${weapName})`;
+      options.throwable = false;
+      attackerWeapons = [weapItem.id];
     }
     attackerWeapons = attackerWeapons || weapons.map(w => w);
     attackers.push({
@@ -297,7 +392,7 @@ async function attack(attackers, targetToken, options) {
   const actorItems = token.actor.data.items;
   const weaponItem = actorItems.get(weaponId) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weaponId?.toLowerCase().replace(/\s/g,''));
   if(!weaponItem) {
-    ui.notifications.error("ould not find item on this character.");
+    ui.notifications.error("Could not find item on this character.");
     weapons.pop();
     attacker.offhand = true;
     return attack(attackers, targetToken, options);
@@ -388,7 +483,8 @@ async function attack(attackers, targetToken, options) {
     } else {
       const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value?.toLowerCase() === 'quiver');
       const quiverQty = quiver?.data.data.quantity;
-      if(!quiver || !quiverQty) {
+      const matchWeap = dmgType === 'bolt' ? quiver?.name?.toLowerCase()?.includes('bolt') : dmgType === 'arrow' ? quiver?.name?.toLowerCase()?.includes('bolt') : true;
+      if(!quiver || !quiverQty || !matchWeap) {
         ui.notifications.error("Nothing found to shoot from this weapon.");
         weapons.pop();
         attacker.offhand = true;
@@ -412,8 +508,8 @@ async function attack(attackers, targetToken, options) {
   const weapDmgResult = await new Roll(weapDmg).evaluate().total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}`;
-  let totalDmg = `${weapDmgResult}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
+  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${options.atkMod ? `+${options.atkMod}` : ''}`;
+  let totalDmg = `${options.dmgMulti ? `${weapDmgResult}*${options.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
   const isCrit = atkType !== 'touch' && d20Result >= critMin && !targetToken.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
   let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
