@@ -295,7 +295,10 @@ export async function attackMacro(weapons, options={}) {
   // save and attack should take in actors rather than tokens as arg
   // replace buy basic items macro with merchant sheet
   // need to refactor sound strings to use whole filename including filetype
-  // collections of sound profiles e.g. male_1, female_1 for player to choose -- soundboard tab with select for profile and buttons for sounds, GM can click checkbox for whether select is editable by players
+  // collections of sound profiles e.g. male_1, female_1 for player to choose
+  // sounds played automatically: click your token (ok), take damage (hurt), drop below 0 HP (death), cast spell (?), drag-move (ok), thief skill (ok) turn undead (ok)
+  // sounds: amused, angry, bored, death, dying, hurt, kill, lead, ok, party_death, party_fail, retreat, sleepy, toot, what. each has multiple which play randomly when icon clicked
+  // only show soundsets of the same type as the PC's class 
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -622,6 +625,7 @@ async function attack(attackers, targetToken, options) {
   if(fragile && atkType === 'melee' && d20Result === 1) {
     resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
     resultSound = 'weapon_break';
+    // reduce qty by 1
   }
 
   chatMsgData.content += `${attackText}${rangeText} <span style="font-style:normal;">[[${totalAtk}]]</span>${resultText}<br>`;

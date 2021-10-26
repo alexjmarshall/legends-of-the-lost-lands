@@ -42,6 +42,7 @@
         <a class="item" data-tab="features">Features</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
+        <a class="item" data-tab="soundboard">Soundboard</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -201,6 +202,19 @@
                 </div>
                 {{/if}}
             </div>
+        </div>
+        {{!-- Soundboard Tab --}}
+        <div class="tab soundboard" data-group="primary" data-tab="soundboard">
+            <select class="voice-select" name="data.voice">
+                {{#select systemData.voice}}
+                {{#each data.voiceOptions}}
+                <option value="{{this}}">{{this}}</option>
+                {{/each}}
+                {{/select}}
+            </select>
+            {{#each data.voiceMoods}}
+            <button class="voice-play" data-sound="{{this}}">{{this}}</button><br>
+            {{/each}}
         </div>
     </section>
 </form>

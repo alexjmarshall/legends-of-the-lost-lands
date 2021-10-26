@@ -1,6 +1,6 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const MAX_SPELL_LEVELS = {'spell_witch': 6, 'spell_cleric': 5, 'spell_magic': 9};
-export const FIGHTER_XP_PROGRESSION = [
+export const FIGHTER_XP_PROGRESSION = [ // put all class XP progressions in one base object
   {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
   {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
   {xpRequired: 60000, updateData: {"data.level": 7, "data.bab": 7, "data.st": 10, "data.xp.max": 120000}},
@@ -11,3 +11,60 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
+const VOICE_PROFILES = [
+  "F_Barb", 
+  "F_Bard", 
+  "F_Drow", 
+  "F_Fgt01", 
+  "F_Fgt02",
+  "F_Fgt03",
+  "F_Fgt04",
+  "F_Fgt05",
+  "F_HOrc1",
+  "F_HoW1",
+  "F_HoW2",
+  "F_HoW3",
+  "F_Mage1",
+  "F_Mage2",
+  "F_Mage3",
+  "F_Mage4",
+  "F_Mage5",
+  "F_Sorc1",
+  "F_Thief1",
+  "F_Thief2"
+];
+const VOICE_MOODS = [
+  "amused",
+  "angry",
+  "bored",
+  "death",
+  "dying",
+  "hurt",
+  "kill",
+  "lead",
+  "ok",
+  "party_death",
+  "party_fail",
+  "retreat",
+  "sleepy",
+  "toot",
+  "what"
+];
+export const VOICE_SOUNDS = {};
+(async function() {
+  for(const voice of VOICE_PROFILES) {
+    VOICE_SOUNDS[`${voice}`] = {};
+    for(const mood of VOICE_MOODS) {
+      VOICE_SOUNDS[`${voice}`][`${mood}`] = [];
+      let request, i = 1;
+      do {
+        request = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+        request.ok && VOICE_SOUNDS[`${voice}`][`${mood}`].push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+        i++;
+      } while (request.ok)
+    }
+  }
+  return VOICE_SOUNDS;
+})();
+
+

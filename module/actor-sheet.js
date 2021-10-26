@@ -1,6 +1,5 @@
 import { EntitySheetHelper } from "./helper.js";
-import {ATTRIBUTE_TYPES} from "./constants.js";
-import {MAX_SPELL_LEVELS} from "./constants.js";
+import {ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS} from "./constants.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -50,6 +49,12 @@ export class SimpleActorSheet extends ActorSheet {
     this.sortFeaturesBySource('class', context.data);
     this.sortFeaturesBySource('race', context.data);
     context.hasFeatures = Object.keys(context.data.features).length > 0;
+
+    context.data.voiceOptions = Object.keys(VOICE_SOUNDS);
+    for(const key in VOICE_SOUNDS) {
+      context.data.voiceMoods = Object.keys(VOICE_SOUNDS[key]);
+      break;
+    }
 
     return context;
   }
@@ -106,6 +111,9 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
+
+    // Voice Select
+    html.find(".voice-play").click(this._onVoicePlay.bind(this));
 
     // Add draggable for Macro creation
     html.find(".attributes a.attribute-roll").each((i, a) => {
@@ -281,6 +289,17 @@ export class SimpleActorSheet extends ActorSheet {
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
       flavor: `<h2>${item.name}</h2><h3>${button.text()}</h3>`
     });
+  }
+
+  /* -------------------------------------------- */
+
+  _onVoicePlay(event) {
+    let button = $(event.currentTarget);
+    const sound = button.data('sound');
+    const voice = this.actor.data.data.voice;
+    const numTracks = VOICE_SOUNDS[`${voice}`][`${sound}`].length;
+    const trackNum = Math.floor(Math.random() * numTracks + 1);
+    AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${sound}_${trackNum}.mp3`, volume: 1, loop: false}, true);
   }
 
   /* -------------------------------------------- */
