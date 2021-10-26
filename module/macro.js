@@ -1,3 +1,4 @@
+import { wait } from "./utils.js";
 /**
  * Create a Macro from an attribute drop.
  * Get an existing lostlands macro if one exists, otherwise create a new one.
@@ -281,7 +282,7 @@ export function thiefSkillMacro(skill, options={}) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a soundboard tab
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a voice tab
   // XP progressions and other class/race features -- nah to auto level up
   // players must be able to edit two weapon fighting list -- DONE
   // do not show chat bubble for most macro actions -- looks good, but can set not pan to speaker globally? if not, don't have attack macro show chat bubble
@@ -943,10 +944,4 @@ export function buyBasicEquipment() {
       }
     }
   }).render(true);
-}
-
-async function wait(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
 }

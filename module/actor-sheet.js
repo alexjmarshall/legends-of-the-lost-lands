@@ -1,5 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
-import {ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS} from "./constants.js";
+import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS } from "./constants.js";
+import { wait } from "./utils.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -50,11 +51,8 @@ export class SimpleActorSheet extends ActorSheet {
     this.sortFeaturesBySource('race', context.data);
     context.hasFeatures = Object.keys(context.data.features).length > 0;
 
-    context.data.voiceOptions = Object.keys(VOICE_SOUNDS);
-    for(const key in VOICE_SOUNDS) {
-      context.data.voiceMoods = Object.keys(VOICE_SOUNDS[key]);
-      break;
-    }
+    context.data.voiceProfiles = VOICE_SOUNDS.keys();
+    context.data.voiceMoods = VOICE_SOUNDS.values().next().value.keys();
 
     return context;
   }
@@ -112,7 +110,7 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
 
-    // Voice Select
+    // Voice Sound Play
     html.find(".voice-play").click(this._onVoicePlay.bind(this));
 
     // Add draggable for Macro creation
@@ -293,13 +291,21 @@ export class SimpleActorSheet extends ActorSheet {
 
   /* -------------------------------------------- */
 
-  _onVoicePlay(event) {
+  async _onVoicePlay(event) {
     let button = $(event.currentTarget);
-    const sound = button.data('sound');
-    const voice = this.actor.data.data.voice;
-    const numTracks = VOICE_SOUNDS[`${voice}`][`${sound}`].length;
+    const tab = button.closest('.tab.voice');
+    const buttons = tab.find('button.voice-play');
+    const mood = button.data('mood');
+    const select = tab.find('.voice-select');
+    const voice = select.find(":selected").val();
+    const numTracks = VOICE_SOUNDS.get(`${voice}`).get(`${mood}`).length;
     const trackNum = Math.floor(Math.random() * numTracks + 1);
-    AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${sound}_${trackNum}.mp3`, volume: 1, loop: false}, true);
+    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, true);
+    buttons.attr('disabled', true);
+    select.attr('disabled', true);
+    await wait(sound.duration * 1000);
+    buttons.attr('disabled', false);
+    select.attr('disabled', false);
   }
 
   /* -------------------------------------------- */

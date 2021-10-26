@@ -50,21 +50,21 @@ const VOICE_MOODS = [
   "toot",
   "what"
 ];
-export const VOICE_SOUNDS = {};
+export const VOICE_SOUNDS = new Map();
 (async function() {
   for(const voice of VOICE_PROFILES) {
-    VOICE_SOUNDS[`${voice}`] = {};
+    const moodMap = new Map();
     for(const mood of VOICE_MOODS) {
-      VOICE_SOUNDS[`${voice}`][`${mood}`] = [];
-      let request, i = 1;
+      const pathArr = [];
+      let response, i = 0;
       do {
-        request = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
-        request.ok && VOICE_SOUNDS[`${voice}`][`${mood}`].push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
         i++;
-      } while (request.ok)
+        response = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+        response.ok && pathArr.push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+      } while (response.ok)
+      moodMap.set(`${mood}`, pathArr);
     }
+    VOICE_SOUNDS.set(`${voice}`, moodMap);
   }
-  return VOICE_SOUNDS;
+  console.log('Completed loading voice sound paths',VOICE_SOUNDS);
 })();
-
-
