@@ -1,5 +1,6 @@
-import { wait } from "./utils.js";
-import { VOICE_SOUNDS } from "./constants.js";
+import { VOICE_MOODS } from "./constants.js";
+import { wait, playVoiceSound } from "./utils.js";
+
 /**
  * Create a Macro from an attribute drop.
  * Get an existing lostlands macro if one exists, otherwise create a new one.
@@ -50,28 +51,14 @@ export async function createLostlandsMacro(data, slot) {
   return false;
 }
 
-const voice = (() => {
-  const speakingActorIds = new Map();
-
-  return async function(mood) {
-    const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-    const actor = token ? token.actor : game.user.character;
-    if(!actor) return ui.notifications.error("Select speaking token.");
-    const voice = actor.data.data.voice;
-    if(!voice) return ui.notifications.error("Character does not have a selected voice.");
-    const actorId = actor.isToken ? actor.token.id : actor.id;
-    if(speakingActorIds.has(actorId)) return;
-    speakingActorIds.set(actorId);
-
-    const numTracks = VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`)?.length || 1;
-    const trackNum = Math.floor(Math.random() * numTracks + 1);
-    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, true);
-    canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
-    await wait(sound.duration * 1000);
-    speakingActorIds.delete(actorId);
-  }
-})();
-export const voiceMacro = mood => voice(mood);
+export function voiceMacro(mood) {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if(!actor) return ui.notifications.error("Select speaking token.");
+  const voice = actor.data.data.voice;
+  if(!voice) return ui.notifications.error("Character does not have a selected voice.");
+  return playVoiceSound(mood, actor, token);
+}
 
 export async function spellMacro(spellId) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
@@ -416,6 +403,7 @@ async function attack(attackers, targetToken, options) {
         if(attack.damage) {
           let targetHp = +targetToken.actor.data.data.hp?.value;
           if(!isNaN(targetHp)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
+          playVoiceSound(VOICE_MOODS.HURT, targetToken.actor, targetToken);
         }
         // should wait unless last actors last weapon, or next weapon shows mod dialog
         // wait if NOT last weapon of last actor AND (NOT last weapon of this actor OR not showing mod dialog)
