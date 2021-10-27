@@ -57,8 +57,9 @@ export class SimpleActorSheet extends ActorSheet {
       context.data.voiceMoods.push( { mood: key, icon: value } );
     }
     context.hasVoice = !!context.systemData.voice;
-    context.hasNoVoice = !context.systemData.voice;
+    context.noVoice = !context.systemData.voice;
     context.hideVoiceSelection = context.isPlayer && context.hasVoice;
+    context.showSoundBoard = context.isGM || context.hasVoice;
 
     return context;
   }
@@ -118,6 +119,8 @@ export class SimpleActorSheet extends ActorSheet {
 
     // Voice Sounds
     html.find(".voice-play").click(this._onVoicePlay.bind(this));
+    html.find(".voice-preview").click(this._onVoicePreview.bind(this));
+    html.find(".voice-select").change(e => e.stopPropagation());
     html.find(".voice-select-button").click(this._onVoiceSelect.bind(this));
     html.find(".voice-reset-button").click(this._onVoiceReset.bind(this));
 
@@ -314,11 +317,29 @@ export class SimpleActorSheet extends ActorSheet {
     if (hasVoice) {
       const token = this.actor.isToken ? this.actor.token.data :
       canvas.tokens.objects.children.find(t => t.actor.id === this.actor.id && t.actor.data.data.voice === this.actor.data.data.voice);
-      canvas.hud.bubbles.say(token, `♫ ♫ ♫`, {emote: true});
+      canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
     }
     buttons.attr('disabled', true);
     await wait(sound.duration * 1000);
     buttons.attr('disabled', false);
+  }
+
+  async _onVoicePreview(event) {
+    event.preventDefault();
+    let button = $(event.currentTarget);
+    const tab = button.closest('.tab.voice');
+    const select = tab.find('.voice-select');
+    const voice = this.actor.data.data.voice || select.find(":selected").val();
+    const allSoundPaths = [];
+    VOICE_SOUNDS?.get(`${voice}`)?.forEach((v, k) => {
+      allSoundPaths.push(...v)
+    });
+    const numTracks = allSoundPaths.length;
+    const trackNum = Math.floor(Math.random() * numTracks);
+    const sound = await AudioHelper.play({src: allSoundPaths[trackNum], volume: 1, loop: false}, false);
+    button.attr('disabled', true);
+    await wait(sound.duration * 1000);
+    button.attr('disabled', false);
   }
 
   _onVoiceSelect(event) {

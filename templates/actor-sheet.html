@@ -216,22 +216,25 @@
                         {{/each}}
                         {{/select}}
                     </select>
+                    <a class="voice-preview" title="Preview Voice"><i class="fas fa-volume-up"></i></a>
                 </div>
                 <div><button class="voice-select-button" {{#if hasVoice}}disabled{{/if}}>Select voice</button></div>
                 {{#if isGM}}
-                <div><button class="voice-reset-button" {{#if hasNoVoice}}disabled{{/if}}>Reset voice</button></div>
+                <div><button class="voice-reset-button" {{#if noVoice}}disabled{{/if}}>Reset voice</button></div>
                 {{/if}}
             </div>
-            {{#if hasNoVoice}}
+            {{#if noVoice}}
             <p class="voice-note"><span class="label">Note:</span>Before selecting your voice, any sounds you play using the buttons below will be audible only to you.
-                After selecting your voice, sounds you play will be audible to everyone.
+                After selecting your voice, sounds you play here will be audible to everyone.
             </p>
             {{/if}}
+            {{#if showSoundBoard}}
             {{#each data.voiceMoods}}
-            <button class="voice-play" title="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}" data-mood="{{this.mood}}">
-                <img src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}"/>
+            <button class="voice-play" title="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}" data-mood="{{this.mood}}">
+                <img src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}"/>
             </button>
             {{/each}}
+            {{/if}}
         </div>
     </section>
 </form>
