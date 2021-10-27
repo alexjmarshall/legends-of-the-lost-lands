@@ -12,6 +12,8 @@ import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
+import { VOICE_MOODS } from "./constants.js";
+import { playVoiceSound } from "./utils.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -189,4 +191,12 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
       item.setFlag("lostlands", "isTemplate", false);
     }
   });
+});
+
+// Play 'what' voice sound on token selection
+Hooks.on("controlToken", (token, selected) => {
+  if (!selected) return;
+  if (Math.random() < 0.5) return;
+  const actor = token ? token.actor : game.user.character;
+  playVoiceSound(VOICE_MOODS.WHAT, actor, token, false);
 });
