@@ -33,38 +33,43 @@ const VOICE_PROFILES = [
   "F_Thief1",
   "F_Thief2"
 ];
-const VOICE_MOODS = [
-  "amused",
-  "angry",
-  "bored",
-  "death",
-  "dying",
-  "hurt",
-  "kill",
-  "lead",
-  "ok",
-  "party_death",
-  "party_fail",
-  "retreat",
-  "sleepy",
-  "toot",
-  "what"
-];
+export const VOICE_MOODS = new Map([
+  ["amused","https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png"],
+  ["angry","https://img.icons8.com/ios/50/000000/battle.png"],
+  ["bored","https://img.icons8.com/ios/50/000000/bored.png"],
+  ["death","https://img.icons8.com/ios/50/000000/dying.png"], //https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-death-halloween-wanicon-lineal-wanicon.png
+  ["dying","https://img.icons8.com/ios/50/000000/wound.png"],
+  ["hurt","https://img.icons8.com/ios/50/000000/action.png"],
+  ["kill","https://img.icons8.com/ios/50/000000/murder.png"],
+  ["lead","https://img.icons8.com/ios/50/000000/leadership.png"],
+  ["ok","https://img.icons8.com/ios/50/000000/easy.png"],
+  ["party_death","https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png"],
+  ["party_fail","https://img.icons8.com/ios/50/000000/facepalm.png"],
+  ["retreat","https://img.icons8.com/ios/50/000000/running-rabbit.png"],
+  ["sleepy","https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png"],
+  ["toot","https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png"],
+  ["what","https://img.icons8.com/ios/50/000000/question-mark--v1.png"]
+]);
 export const VOICE_SOUNDS = new Map();
+// populate voice sound file paths
 (async function() {
-  for(const voice of VOICE_PROFILES) {
+  for (const voice of VOICE_PROFILES) {
     const moodMap = new Map();
-    for(const mood of VOICE_MOODS) {
+    for (const mood of VOICE_MOODS.keys()) {
       const pathArr = [];
       let response, i = 0;
       do {
         i++;
-        response = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
-        response.ok && pathArr.push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+        try {
+          response = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+          response.ok && pathArr.push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
+        } catch (error) {
+          console.log(`Problem loading sound file path: systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`)
+        }
       } while (response.ok)
       moodMap.set(`${mood}`, pathArr);
     }
     VOICE_SOUNDS.set(`${voice}`, moodMap);
   }
-  console.log('Completed loading voice sound paths',VOICE_SOUNDS);
+  console.log('Completed loading voice sound file paths',VOICE_SOUNDS);
 })();
