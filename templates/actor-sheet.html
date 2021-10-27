@@ -231,7 +231,7 @@
             {{#if showSoundBoard}}
             {{#each data.voiceMoods}}
             <button class="voice-play" title="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}" data-mood="{{this.mood}}">
-                <img src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}"/>
+                <img style="pointer-events: none;" src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}"/>
             </button>
             {{/each}}
             {{/if}}

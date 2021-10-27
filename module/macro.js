@@ -1,4 +1,5 @@
 import { wait } from "./utils.js";
+import { VOICE_SOUNDS } from "./constants.js";
 /**
  * Create a Macro from an attribute drop.
  * Get an existing lostlands macro if one exists, otherwise create a new one.
@@ -9,34 +10,68 @@ import { wait } from "./utils.js";
  */
 export async function createLostlandsMacro(data, slot) {
   if(data.type === 'Macro') return false;
-  const item = data.data;
-  const itemName = item?.name || '';
-  const itemMacro = item?.data.macro || '';
-  let itemMacroWithId = '';
-  if(item?._id && itemMacro) itemMacroWithId = itemMacro.replace('itemId', item._id);
-
-  const macroName = itemName || (data.label ? data.label : undefined);
-  const macroCommand = itemMacroWithId || (data.roll ? `/r ${data.roll}#${data.label}` : undefined);
-  const type = data.roll ? "chat" : "script";
-
-  let macro = game.macros.find(m => (m.name === macroName && m.data.command === macroCommand));
-  
+  const macroData = {};
+  // case 1: item
+  if (data.data) {
+    const item = data.data;
+    const itemMacroWithId = item.data.macro?.replace('itemId', item._id);
+    macroData.name = item.name;
+    macroData.command = itemMacroWithId;
+    macroData.type = "script";
+  }
+  // case 2: roll
+  if (data.roll && data.label) {
+    macroData.name = data.label;
+    macroData.command = `/r ${data.roll}#${data.label}`;
+    macroData.type = "chat";
+  }
+  // case 3: voice button
+  if (data.mood) {
+    macroData.name = `Voice: ${data.mood}`;
+    macroData.command = `game.lostlands.Macro.voiceMacro("${data.mood}")`;
+    macroData.type = "script";
+  }
+  let macro = game.macros.find(m => (m.name === macroData.name && m.data.command === macroData.command));
   if (!macro) {
-    if(macroCommand) macro = await Macro.create({
-      name: macroName,
-      type: type,
-      command: macroCommand,
-      flags: { "lostlands.attrMacro": true }
-    });
+    if (macroData.command) {
+      macro = await Macro.create({
+        name: macroData.name,
+        type: macroData.type,
+        command: macroData.command,
+        flags: { "lostlands.attrMacro": true }
+      });
+    }
     else {
-      ui.notifications.error("Could not find a macro for this item or function.");
+      ui.notifications.error("Could not find a macro for this.");
       return false;
     }
   }
-
   game.user.assignHotbarMacro(macro, slot);
   return false;
 }
+
+const voice = (() => {
+  const speakingActorIds = new Map();
+
+  return async function(mood) {
+    const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+    const actor = token ? token.actor : game.user.character;
+    if(!actor) return ui.notifications.error("Select speaking token.");
+    const voice = actor.data.data.voice;
+    if(!voice) return ui.notifications.error("Character does not have a selected voice.");
+    const actorId = actor.isToken ? actor.token.id : actor.id;
+    if(speakingActorIds.has(actorId)) return;
+    speakingActorIds.set(actorId);
+
+    const numTracks = VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`)?.length || 1;
+    const trackNum = Math.floor(Math.random() * numTracks + 1);
+    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, true);
+    canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
+    await wait(sound.duration * 1000);
+    speakingActorIds.delete(actorId);
+  }
+})();
+export const voiceMacro = mood => voice(mood);
 
 export async function spellMacro(spellId) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
@@ -515,7 +550,8 @@ async function attack(attackers, targetToken, options) {
   totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${options.atkMod ? `+${options.atkMod}` : ''}`;
   let totalDmg = `${options.dmgMulti ? `${weapDmgResult}*${options.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
-  const isCrit = atkType !== 'touch' && d20Result >= critMin && !targetToken.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
+  const targetPreventsCrits = targetToken?.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
+  const isCrit = atkType !== 'touch' && d20Result >= critMin && !targetPreventsCrits;
   let dmgText = `${totalDmg ? ` for <span style="font-style:normal;">[[${totalDmg}]]</span>` : ''}`;
   if(isCrit) dmgText += ` + <span style="font-style:normal;">[[/r ${weapDmg}#${weapName} damage]]</span>`;
   dmgText += ' damage';

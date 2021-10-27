@@ -125,7 +125,7 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".voice-reset-button").click(this._onVoiceReset.bind(this));
 
     // Add draggable for Macro creation
-    html.find(".attributes a.attribute-roll").each((i, a) => {
+    html.find(".attributes a.attribute-roll, .voice button.voice-play").each((i, a) => {
       a.setAttribute("draggable", true);
       a.addEventListener("dragstart", ev => {
         let dragData = ev.currentTarget.dataset;
