@@ -1,5 +1,5 @@
 import { EntitySheetHelper } from "./helper.js";
-import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS } from "./constants.js";
+import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS, VOICE_MOODS } from "./constants.js";
 import { wait } from "./utils.js";
 
 /**
@@ -52,7 +52,13 @@ export class SimpleActorSheet extends ActorSheet {
     context.hasFeatures = Object.keys(context.data.features).length > 0;
 
     context.data.voiceProfiles = VOICE_SOUNDS.keys();
-    context.data.voiceMoods = VOICE_SOUNDS.values().next().value.keys();
+    context.data.voiceMoods = [];
+    for (const [key, value] of VOICE_MOODS) {
+      context.data.voiceMoods.push( { mood: key, icon: value } );
+    }
+    context.hasVoice = !!context.systemData.voice;
+    context.hasNoVoice = !context.systemData.voice;
+    context.hideVoiceSelection = context.isPlayer && context.hasVoice;
 
     return context;
   }
@@ -110,8 +116,10 @@ export class SimpleActorSheet extends ActorSheet {
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
 
-    // Voice Sound Play
+    // Voice Sounds
     html.find(".voice-play").click(this._onVoicePlay.bind(this));
+    html.find(".voice-select-button").click(this._onVoiceSelect.bind(this));
+    html.find(".voice-reset-button").click(this._onVoiceReset.bind(this));
 
     // Add draggable for Macro creation
     html.find(".attributes a.attribute-roll").each((i, a) => {
@@ -292,20 +300,66 @@ export class SimpleActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   async _onVoicePlay(event) {
+    event.preventDefault();
     let button = $(event.currentTarget);
     const tab = button.closest('.tab.voice');
     const buttons = tab.find('button.voice-play');
     const mood = button.data('mood');
     const select = tab.find('.voice-select');
-    const voice = select.find(":selected").val();
-    const numTracks = VOICE_SOUNDS.get(`${voice}`).get(`${mood}`).length;
+    const voice = this.actor.data.data.voice || select.find(":selected").val();
+    const numTracks = VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`)?.length || 1;
     const trackNum = Math.floor(Math.random() * numTracks + 1);
-    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, true);
+    const hasVoice = !!this.actor.data.data.voice;
+    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, hasVoice);
+    if (hasVoice) {
+      const token = this.actor.isToken ? this.actor.token.data :
+      canvas.tokens.objects.children.find(t => t.actor.id === this.actor.id && t.actor.data.data.voice === this.actor.data.data.voice);
+      canvas.hud.bubbles.say(token, `♫ ♫ ♫`, {emote: true});
+    }
     buttons.attr('disabled', true);
-    select.attr('disabled', true);
     await wait(sound.duration * 1000);
     buttons.attr('disabled', false);
-    select.attr('disabled', false);
+  }
+
+  _onVoiceSelect(event) {
+    event.preventDefault();
+    let button = $(event.currentTarget);
+    const tab = button.closest('.tab.voice');
+    const select = tab.find('.voice-select');
+    const voice = select.find(":selected").val();
+    const otherCharacterHasVoice = !!game.actors.find(a => a.data.data.voice === voice);
+    if (otherCharacterHasVoice) {
+      return new Dialog({
+        title: "Voice Already Selected",
+        content: `Another party member has already selected this voice. Are you sure you wish to continue?`,
+        buttons: {
+          one: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Continue",
+            callback: () => assignVoice.bind(this)()
+          },
+          two: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Cancel"
+          }
+        },
+        default: "two"
+      }).render(true);
+    }
+    assignVoice.bind(this)();
+    function assignVoice() {
+      const currentVoice = this.actor.data.data.voice;
+      voice && voice !== currentVoice && this.actor.update({"data.voice": voice});
+    }
+  }
+
+  _onVoiceReset(event) {
+    event.preventDefault();
+    let button = $(event.currentTarget);
+    const tab = button.closest('.tab.voice');
+    const select = tab.find('.voice-select');
+    const currentVoice = this.actor.data.data.voice;
+    currentVoice && this.actor.update({"data.voice": null});
   }
 
   /* -------------------------------------------- */
