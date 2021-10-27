@@ -1,6 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
-import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS, VOICE_MOODS } from "./constants.js";
-import { wait } from "./utils.js";
+import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS, VOICE_MOOD_ICONS } from "./constants.js";
+import { wait, playVoiceSound } from "./utils.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -53,7 +53,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     context.data.voiceProfiles = VOICE_SOUNDS.keys();
     context.data.voiceMoods = [];
-    for (const [key, value] of VOICE_MOODS) {
+    for (const [key, value] of VOICE_MOOD_ICONS) {
       context.data.voiceMoods.push( { mood: key, icon: value } );
     }
     context.hasVoice = !!context.systemData.voice;
@@ -302,44 +302,31 @@ export class SimpleActorSheet extends ActorSheet {
 
   /* -------------------------------------------- */
 
-  async _onVoicePlay(event) {
+  _onVoicePlay(event) {
     event.preventDefault();
     let button = $(event.currentTarget);
-    const tab = button.closest('.tab.voice');
-    const buttons = tab.find('button.voice-play');
     const mood = button.data('mood');
-    const select = tab.find('.voice-select');
-    const voice = this.actor.data.data.voice || select.find(":selected").val();
-    const numTracks = VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`)?.length || 1;
-    const trackNum = Math.floor(Math.random() * numTracks + 1);
     const hasVoice = !!this.actor.data.data.voice;
-    const sound = await AudioHelper.play({src: `systems/lostlands/sounds/${voice}/${mood}_${trackNum}.mp3`, volume: 1, loop: false}, hasVoice);
     if (hasVoice) {
-      const token = this.actor.isToken ? this.actor.token.data :
-      canvas.tokens.objects.children.find(t => t.actor.id === this.actor.id && t.actor.data.data.voice === this.actor.data.data.voice);
-      canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
+      return playVoiceSound(mood, this.actor);
     }
-    buttons.attr('disabled', true);
-    await wait(sound.duration * 1000);
-    buttons.attr('disabled', false);
+    this._onVoicePreview(event, mood);
+    button.attr('disabled', true);
+    button.attr('disabled', false);
   }
 
-  async _onVoicePreview(event) {
-    event.preventDefault();
+  _onVoicePreview(event, mood) {
     let button = $(event.currentTarget);
     const tab = button.closest('.tab.voice');
     const select = tab.find('.voice-select');
-    const voice = this.actor.data.data.voice || select.find(":selected").val();
-    const allSoundPaths = [];
-    VOICE_SOUNDS?.get(`${voice}`)?.forEach((v, k) => {
-      allSoundPaths.push(...v)
-    });
-    const numTracks = allSoundPaths.length;
+    const voice = select.find(":selected").val();
+    const soundsArr = mood ? VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
+      Array.from(VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
+    if (!soundsArr) return;
+
+    const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
-    const sound = await AudioHelper.play({src: allSoundPaths[trackNum], volume: 1, loop: false}, false);
-    button.attr('disabled', true);
-    await wait(sound.duration * 1000);
-    button.attr('disabled', false);
+    AudioHelper.play({src: soundsArr[trackNum], volume: 1, loop: false}, false);
   }
 
   _onVoiceSelect(event) {
