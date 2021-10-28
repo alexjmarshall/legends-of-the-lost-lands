@@ -78,7 +78,7 @@ export class SimpleActorSheet extends ActorSheet {
       if(!spellsByType.length) continue;
       sortedSpells[spelltype] = {};
       const nolevelSpells = spellsByType.filter(s => !s.data.attributes.lvl?.value);
-      if(nolevelSpells.length > 0) sortedSpells[spelltype][`Other`] = {spells: nolevelSpells};
+      if(nolevelSpells.length > 0) sortedSpells[spelltype][`(none)`] = {spells: nolevelSpells};
       for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[spelltype]; i++) {
         const spellsAtLevel = spellsByType.filter(s => s.data.attributes.lvl?.value === i);
         const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value;
@@ -228,9 +228,10 @@ export class SimpleActorSheet extends ActorSheet {
         const slotsMax = actorSlotsAttr?.max || 0;
         if(slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level.");
         if(!isPrepared && preparedSpells.length >= slotsMax) {
-          // clear up a slot by unpreparing first prepared spell
-          const firstPreparedSpellId = preparedSpells[0].data._id;
-          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
+          return ui.notifications.error("Cannot prepare any more spells of this level.");
+          // // clear up a slot by unpreparing first prepared spell
+          // const firstPreparedSpellId = preparedSpells[0].data._id;
+          // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
         if(!isPrepared === true) {
           game.lostlands.Macro.macroChatMessage(this, { content: `prepares ${item.name}` });
@@ -238,15 +239,18 @@ export class SimpleActorSheet extends ActorSheet {
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
-        // check whether already wearing an item in this slot
-        const slot = item.data.data.attributes.slot?.value?.toLowerCase();
-        const slotItems = this.actor.data.items.filter(i => i.data.data.worn && i.data.data.attributes.slot?.value === slot);
-        let slotLimit = slot === 'ring' ? 10 : 1;
-        const wearingRingofProt = !!this.actor.data.items.find(i => i.data.data.worn && i.data.name.toLowerCase().includes('ring of protection'));
-        const itemIsRingofProt = !!item.data.name.toLowerCase().includes('ring of protection');
-        const stackingRingofProt = wearingRingofProt && itemIsRingofProt;
-        if ( slot && !isWorn && (slotItems.length >= slotLimit || stackingRingofProt) ) {
-          return ui.notifications.error("Must remove an item of this type first.");
+        // return error if trying to stack rings of protection
+        const wornItems = this.actor.data.items.filter(i => i.data.data.worn);
+        const stackingRingofProt = !!item.data.name.toLowerCase().includes('ring of protection') &&
+          !!wornItems.find(i => i.data.name.toLowerCase().includes('ring of protection'));
+        if ( !isWorn && stackingRingofProt ) {
+          return ui.notifications.error("Cannot wear more than one ring of protection.");
+        }
+        const itemSlot = item.data.data.attributes.slot?.value?.toLowerCase();
+        const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
+        const slotLimit = itemSlot === 'ring' ? 10 : 1;
+        if ( itemSlot && !isWorn && wornItemsInSlot.length >= slotLimit ) {
+          return ui.notifications.error(`Must remove an item from this slot (${itemSlot}) first.`);
           // clear up the slot
           // const firstSlotItemId = slotItems[0].data._id;
           // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
