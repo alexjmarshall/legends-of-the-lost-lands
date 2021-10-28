@@ -66,13 +66,7 @@ export class ContainerActorSheet extends ActorSheet {
     const itemId = li?.dataset.itemId;
     const item = this.actor.items.get(itemId);
     const type = button.dataset.type;
-    const sheetFlag = {
-      core: {
-        sheetClass: "lostlands.SpellItemSheet"
-      }
-    };
-    const data = {flags:sheetFlag, name: game.i18n.localize("SIMPLE.ItemNew"), type: type};
-    if(type === "item") data.flags = {};
+    const data = {name: game.i18n.localize("SIMPLE.ItemNew"), type: type};
     
     // Handle different actions
     switch ( button.dataset.action ) {

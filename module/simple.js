@@ -2,6 +2,7 @@ import { SimpleActor } from "./actor.js";
 import { SimpleItem } from "./item.js";
 import { SimpleItemSheet } from "./item-sheet.js";
 import { SpellItemSheet } from "./spell-item-sheet.js";
+import { FeatureItemSheet } from "./feature-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { MerchantActorSheet } from "./merchant-actor-sheet.js";
@@ -46,6 +47,7 @@ Hooks.once("init", async function() {
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("lostlands", SimpleItemSheet, { makeDefault: true });
   Items.registerSheet("lostlands", SpellItemSheet, { makeDefault: false });
+  Items.registerSheet("lostlands", FeatureItemSheet, { makeDefault: false });
 
   // Register system settings
   game.settings.register("lostlands", "macroShorthand", {
