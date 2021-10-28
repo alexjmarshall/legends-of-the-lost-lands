@@ -44,11 +44,9 @@ export class SimpleActorSheet extends ActorSheet {
     context.hasSpells = Object.values(context.data.spells).flat().length > 0;
 
     // sort features
-    context.data.features = {};
-    this.sortFeaturesBySource('Class', context.data);
-    this.sortFeaturesBySource('Race', context.data);
-    this.sortFeaturesBySource('Other', context.data);
-    context.hasFeatures = Object.keys(context.data.features).length > 0;
+    const features = context.data.items.filter(i => i.type === 'feature');
+    context.data.features = this.sortFeaturesBySource(features, context.data.data.attributes);
+    context.hasFeatures = Object.values(context.data.features).flat().length > 0;
 
     context.data.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     context.data.voiceMoods = [];
@@ -98,18 +96,17 @@ export class SimpleActorSheet extends ActorSheet {
     return sortedSpells;
   }
 
-  sortFeaturesBySource(source, data) {
-    const attrs = data.data.attributes;
-    const sourceKey = source === 'Class' ? (`${attrs.class?.value}` || source) :
-      source === 'Race' ? (`${attrs.race?.value}` || 'Race') :
-      source;
-    const featureBySource = source === 'Other' ? 
-      data.items.filter(i => i.type === `feature` && 
-        (i.data.attributes.source?.value?.toLowerCase() !== 'class' && 
-        i.data.attributes.source?.value?.toLowerCase() !== 'race')) :
-      data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value?.toLowerCase() === `${source}`);
-    if(!featureBySource.length) return;
-    data.features[`${sourceKey}`] = featureBySource;
+  sortFeaturesBySource(features, attrs) {
+    const sortedFeatures = {};
+    const classKey = `${attrs.class?.value}` || 'Class';
+    const raceKey = `${attrs.race?.value}` || 'Race';
+
+    sortedFeatures[classKey] = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'class');
+    sortedFeatures[raceKey] = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'race');
+    sortedFeatures['Other'] = features.filter(f => f.data.attributes.source?.value?.toLowerCase() !== 'class' && 
+      f.data.attributes.source?.value?.toLowerCase() !== 'race');
+
+    return sortedFeatures;
   }
 
   /* -------------------------------------------- */
