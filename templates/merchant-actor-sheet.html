@@ -1,0 +1,95 @@
+<form class="flexcol {{cssClass}}" autocomplete="off">
+
+  {{!-- Sheet Header --}}
+  <header class="sheet-header container-header">
+      <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
+      <div class="header-fields">
+          <h1 class="charname">
+          <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
+          </h1>
+          <div class="resource container-resource">
+              <label>Gold</label>
+              <input type="number" value="{{systemData.attributes.gold.value}}" disabled />
+          </div>
+      </div>
+  </header>
+
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs tabs" data-group="primary">
+      <!-- <a class="item" data-tab="description">Description</a> -->
+      <a class="item" data-tab="items">Items</a>
+      <a class="item" data-tab="attributes" {{#if isPlayer}}style="display:none;"{{/if}}>Attributes</a>
+  </nav>
+
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
+
+      {{!-- Description Tab --}}
+      <div class="tab description" data-group="primary" data-tab="description">
+          {{editor content=systemData.description target="data.description" button=true owner=owner editable=editable rollData=rollData}}
+      </div>
+
+      {{!-- Owned Items Tab --}}
+      <div class="tab items" data-group="primary" data-tab="items">
+          <header class="items-header flexrow">
+              <div style="max-width:46px"></div>
+              <div></div>
+              <span class="item-column">Quantity</span>
+              <span class="item-column">Weight</span>
+              <span style="max-width:78px;"></span>
+          </header>
+          <ol class="item-list">
+              {{#each data.items as |item id|}}
+              <li class="item flexrow" data-item-id="{{item._id}}">
+                  <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
+                  <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
+                  <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
+                  <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
+                  <div class="item-controls">
+                      <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
+                      <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
+                  </div>
+              </li>
+              {{/each}}
+          </ol>
+          <div class="flexrow" style="margin: 0.5em 0;">
+              <span>
+                  {{#if isGM}}
+                  <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
+                  {{/if}}
+              </span>
+              <span class="item-column"></span>
+              <div class="item-column"><label class="label">Total:</label><span>{{systemData.enc}}</span></div>
+              <span style="max-width:82px;"></span> 
+          </div>
+      </div>
+
+      {{!-- Attributes Tab --}}
+      <div class="tab attributes" data-group="primary" data-tab="attributes">
+          {{#if isGM}}
+          <header class="attributes-header flexrow">
+              <span class="attribute-key">{{localize "SIMPLE.AttributeKey"}}</span>
+              <span class="attribute-label">{{localize "SIMPLE.AttributeLabel"}}</span>
+              <span class="attribute-value">{{localize "SIMPLE.AttributeValue"}}</span>
+              <span class="attribute-dtype">{{localize "SIMPLE.AttributeDtype"}}</span>
+              <a class="attribute-control" data-action="create" data-group="{{group}}"><i class="fas fa-plus"></i></a>
+          </header>
+          {{/if}}
+
+          {{!-- Render the attribute list partial. --}}
+          {{> "systems/lostlands/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
+
+          {{!-- Render the grouped attributes partial and control. --}}
+          <div class="groups">
+              {{> "systems/lostlands/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+
+              {{#if isGM}}
+              <div class="group-controls flexrow">
+                  <input class="group-prefix" type="text" value=""/>
+                  <a class="button group-control" data-action="create-group"><i class="fas fa-plus"></i>Add Attribute Group</a>
+              </div>
+              {{/if}}
+          </div>
+      </div>
+  </section>
+</form>

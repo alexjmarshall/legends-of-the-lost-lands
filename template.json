@@ -1,6 +1,6 @@
 {
 "Actor": {
-  "types": ["character", "monster", "container"],
+  "types": ["character", "monster", "container", "merchant"],
   "templates": {
     "basicProps": {
       "description": "",
@@ -35,6 +35,9 @@
     }
   },
   "container": {
+    "templates": ["basicProps"]
+  },
+  "merchant": {
     "templates": ["basicProps"]
   }
 },

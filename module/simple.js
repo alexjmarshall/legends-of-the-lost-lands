@@ -4,6 +4,7 @@ import { SimpleItemSheet } from "./item-sheet.js";
 import { SpellItemSheet } from "./spell-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
+import { MerchantActorSheet } from "./merchant-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
@@ -41,6 +42,7 @@ Hooks.once("init", async function() {
   Actors.unregisterSheet("core", ActorSheet);
   Actors.registerSheet("lostlands", SimpleActorSheet, { makeDefault: true });
   Actors.registerSheet("lostlands", ContainerActorSheet, { makeDefault: false });
+  Actors.registerSheet("lostlands", MerchantActorSheet, { makeDefault: false });
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("lostlands", SimpleItemSheet, { makeDefault: true });
   Items.registerSheet("lostlands", SpellItemSheet, { makeDefault: false });
