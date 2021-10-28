@@ -349,10 +349,10 @@
 }
 .lostlands .voice-select-button,
 .lostlands .voice-reset-button {
-  width: fit-content;
+  width: auto;
 }
 .lostlands .voice-play {
-  width: fit-content;
+  width: auto;
   padding: 5px;
   margin: 3px 1px;
   vertical-align: bottom;
