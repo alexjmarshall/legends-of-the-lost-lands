@@ -1,6 +1,6 @@
 import { SimpleItemSheet } from "./item-sheet.js";
 import { EntitySheetHelper } from "./helper.js";
-import {ATTRIBUTE_TYPES} from "./constants.js";
+import * as CONST from "./constants.js";
 
 export class SpellItemSheet extends SimpleItemSheet {
   /** @inheritdoc */
@@ -24,7 +24,7 @@ export class SpellItemSheet extends SimpleItemSheet {
     context.hasRange = !!context.systemData.attributes.range?.value;
     context.hasArea = !!context.systemData.attributes.area?.value;
     context.hasDuration = !!context.systemData.attributes.duration?.value;
-    context.dtypes = ATTRIBUTE_TYPES;
+    context.dtypes = CONST.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
     if(context.data.type === "spell_magic") context.spellType = "Magic";

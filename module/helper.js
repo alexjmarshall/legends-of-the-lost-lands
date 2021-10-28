@@ -1,4 +1,4 @@
-import { ATTRIBUTE_TYPES } from "./constants.js";
+import * as CONST from "./constants.js";
 
 export class EntitySheetHelper {
 
