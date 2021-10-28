@@ -36,6 +36,7 @@ export class SimpleActorSheet extends ActorSheet {
     // sort equipment
     const items = context.data.items;
     context.data.equipment = items.filter(i => i.type === "item");
+    // sort by type, e.g. potions, scrolls, weapons, armor, etc -- based on macro command
 
     // sort spells
     context.data.spells = {};
@@ -230,16 +231,20 @@ export class SimpleActorSheet extends ActorSheet {
         // check whether already wearing an item in this slot
         const slot = item.data.data.attributes.slot?.value?.toLowerCase();
         const slotItems = this.actor.data.items.filter(i => i.data.data.worn && i.data.data.attributes.slot?.value === slot);
-        const slotLimit = slot === 'ring' ? 10 : 1;
-        const wearingRingofProtection = !!this.actor.data.items.find(i => i.data.data.worn && i.data.name.toLowerCase().includes('ring of protection'));
-        if(slot && !isWorn && (slotItems.length >= slotLimit || (wearingRingofProtection && !!item.data.name.toLowerCase().includes('ring of protection')))) {
-          // return ui.notifications.error("Must remove an item of this type first.");
+        let slotLimit = slot === 'ring' ? 10 : 1;
+        const wearingRingofProt = !!this.actor.data.items.find(i => i.data.data.worn && i.data.name.toLowerCase().includes('ring of protection'));
+        const itemIsRingofProt = !!item.data.name.toLowerCase().includes('ring of protection');
+        const stackingRingofProt = wearingRingofProt && itemIsRingofProt;
+        if ( slot && !isWorn && (slotItems.length >= slotLimit || stackingRingofProt) ) {
+          return ui.notifications.error("Must remove an item of this type first.");
           // clear up the slot
-          const firstSlotItemId = slotItems[0].data._id;
-          await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
+          // const firstSlotItemId = slotItems[0].data._id;
+          // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
         }
-        if(!isWorn === true) {
+        if (!isWorn) {
           game.lostlands.Macro.macroChatMessage(this, { content: `dons ${item.name}` });
+        } else {
+          game.lostlands.Macro.macroChatMessage(this, { content: `doffs ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
@@ -247,15 +252,17 @@ export class SimpleActorSheet extends ActorSheet {
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
         const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
         if(!isHeld && heldItems.length >= heldItemsLimit) {
-          // return ui.notifications.error("Must drop an item first.");
+          return ui.notifications.error("Must drop an item first.");
           // if heldItemsLimit is 1, must clear all held items. Otherwise, just clear one.
-          for(const item of heldItems) {
-            await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);
-            if(heldItemsLimit > 1) break;
-          }
+          // for(const item of heldItems) {
+          //   await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);
+          //   if(heldItemsLimit > 1) break;
+          // }
         }
-        if(!isHeld === true) {
+        if(!isHeld) {
           game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
+        } else {
+          game.lostlands.Macro.macroChatMessage(this, { content: `stows ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":

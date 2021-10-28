@@ -322,6 +322,7 @@ export async function attackMacro(weapons, options={}) {
   // sounds played automatically: click your token (ok), take damage (hurt), drop below 0 HP (death), cast spell (?), drag-move (ok), thief skill (ok)
   // sounds: amused, angry, bored, death, dying, hurt, kill, lead, ok, party_death, party_fail, retreat, sleepy, toot, what. each has multiple which play randomly when icon clicked
   // only show soundsets of the same type as the PC's class 
+  // crossbow macro click alternates between firing and reloading
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
