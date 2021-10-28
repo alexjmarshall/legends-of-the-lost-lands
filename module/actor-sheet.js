@@ -40,11 +40,8 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sort spells
     const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
-    context.data.spells = this.sortSpellsByType(spells);
-    // this.sortSpellsByType('spell_cleric', context.data);
-    // this.sortSpellsByType('spell_magic', context.data);
-    // this.sortSpellsByType('spell_witch', context.data);
-    // context.hasSpells = Object.values(context.data.spells).flat().length > 0;
+    context.data.spells = this.sortSpellsByType(spells, context.data.data.attributes);
+    context.hasSpells = Object.values(context.data.spells).flat().length > 0;
 
     // sort features
     context.data.features = {};
@@ -76,25 +73,29 @@ export class SimpleActorSheet extends ActorSheet {
     return equipment;
   }
 
-  sortSpellsByType(spelltype, data) {
-    const spells = data.items.filter(i => i.type === `${spelltype}`);
-    if(!spells.length) return;
-    data.spells[`${spelltype}`] = {};
-    const nolevelSpells = spells.filter(s => !s.data.attributes.lvl?.value);
-    if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(other)`] = {spells: nolevelSpells};
-    for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
-      const spellsAtLevel = spells.filter(s => s.data.attributes.lvl?.value === i);
-      const slotsAtLevelVal = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value;
-      const slotsAtLevelMax = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max;
-      if(!spellsAtLevel.length) continue;
-      data.spells[`${spelltype}`][`${i}`] = {
-        spells: spellsAtLevel,
-        slots: {
-          value: slotsAtLevelVal,
-          max: slotsAtLevelMax
+  sortSpellsByType(spells, attrs) {
+    const sortedSpells = {};
+    for(const spelltype of Object.values(Constant.SPELL_TYPES)) {
+      const spellsByType = spells.filter(s => s.type === spelltype);
+      if(!spellsByType.length) continue;
+      sortedSpells[spelltype] = {};
+      const nolevelSpells = spellsByType.filter(s => !s.data.attributes.lvl?.value);
+      if(nolevelSpells.length > 0) sortedSpells[spelltype][`Other`] = {spells: nolevelSpells};
+      for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[spelltype]; i++) {
+        const spellsAtLevel = spellsByType.filter(s => s.data.attributes.lvl?.value === i);
+        const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value;
+        const slotsAtLevelMax = attrs[spelltype]?.[`lvl_${i}`]?.max;
+        if(!spellsAtLevel.length) continue;
+        sortedSpells[spelltype][`${i}`] = {
+          spells: spellsAtLevel,
+          slots: {
+            value: slotsAtLevelVal,
+            max: slotsAtLevelMax
+          }
         }
       }
     }
+    return sortedSpells;
   }
 
   sortFeaturesBySource(source, data) {

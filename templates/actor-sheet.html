@@ -121,7 +121,7 @@
             </header>
                 {{#each spelltype as |level id|}}
                 <header class="spells-header flexrow">
-                    <span style="text-align: left;">Level {{id}}</span>
+                    <span style="text-align: left;">{{#ifeq id 'Other'}}{{else}}Level {{/ifeq}}{{id}}</span>
                     <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
                 </header>
                 <ol class="item-list">
