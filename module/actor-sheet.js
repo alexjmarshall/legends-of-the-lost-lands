@@ -1,6 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
 import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS, VOICE_MOOD_ICONS } from "./constants.js";
-import { wait, playVoiceSound } from "./utils.js";
+import { playVoiceSound } from "./utils.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -306,13 +306,13 @@ export class SimpleActorSheet extends ActorSheet {
     event.preventDefault();
     let button = $(event.currentTarget);
     const mood = button.data('mood');
+    button.attr('disabled', true);
+    button.attr('disabled', false);
     const hasVoice = !!this.actor.data.data.voice;
     if (hasVoice) {
       return playVoiceSound(mood, this.actor);
     }
     this._onVoicePreview(event, mood);
-    button.attr('disabled', true);
-    button.attr('disabled', false);
   }
 
   _onVoicePreview(event, mood) {

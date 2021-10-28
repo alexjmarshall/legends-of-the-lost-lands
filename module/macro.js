@@ -406,10 +406,10 @@ async function attack(attackers, targetToken, options) {
           if(!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
           (async () => {
               if ( hpUpdate > 0 ) {
-              await playVoiceSound(VOICE_MOODS.HURT, targetToken.actor, targetToken, true, 0.5);
+              await playVoiceSound(VOICE_MOODS.HURT, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
             } else if ( targetHp > 0 ) {
-              await playVoiceSound(VOICE_MOODS.DEATH, targetToken.actor, targetToken, true, 0.5);
-              await playVoiceSound(VOICE_MOODS.KILL, token.actor, token, true, 0.5);
+              await playVoiceSound(VOICE_MOODS.DEATH, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
+              await playVoiceSound(VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
             }
           })();
         }
