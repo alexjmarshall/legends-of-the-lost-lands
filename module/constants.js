@@ -93,18 +93,11 @@ export const VOICE_SOUNDS = new Map();
 (async function() {
   for (const voice of VOICE_PROFILES) {
     const moodMap = new Map();
+    const response = await fetch(`systems/lostlands/sounds/${voice}/DirContents.txt/`);
+    const fileList = await response.text();
+    const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
     for (const mood of Object.values(VOICE_MOODS)) {
-      const pathArr = [];
-      let response, i = 0;
-      do {
-        i++;
-        try {
-          response = await fetch(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
-          response.ok && pathArr.push(`systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`);
-        } catch (error) {
-          console.log(`Problem loading sound file path: systems/lostlands/sounds/${voice}/${mood}_${i}.mp3/`)
-        }
-      } while (response.ok)
+      const pathArr = fileArr.filter(f => f.includes(mood)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
       moodMap.set(`${mood}`, pathArr);
     }
     VOICE_SOUNDS.set(`${voice}`, moodMap);
