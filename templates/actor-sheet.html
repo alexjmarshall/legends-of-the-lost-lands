@@ -34,7 +34,9 @@
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="description">Biography</a>
+        {{#if hasEquipment}}
         <a class="item" data-tab="items">Items</a>
+        {{/if}}
         {{#if hasSpells}}
         <a class="item" data-tab="spells">Spells</a>
         {{/if}}
@@ -55,15 +57,19 @@
 
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
-            <header class="items-header flexrow">
+            <header class="items-header sticky flexrow">
                 <div style="max-width:46px"></div>
                 <div></div>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:78px;"></span>
             </header>
+            {{#each data.equipment as |type key|}}
+            <header class="items-header flexrow">
+                <span style="text-align: center;">{{key}}{{#ifeq key 'Other'}}{{else}} Items{{/ifeq}}</span>
+            </header>
             <ol class="item-list">
-                {{#each data.equipment as |item id|}}
+                {{#each type as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
                         {{#if item.data.macro}}
@@ -77,7 +83,6 @@
                         </a>
                         {{else if item.data.attributes.holdable.value}}
                         <a class="item-control {{#if item.data.held}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold">
-                            <!-- <i class="fas fa-hand-paper"></i> -->
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
                         {{/if}}
@@ -93,6 +98,7 @@
                 </li>
                 {{/each}}
             </ol>
+            {{/each}}
             <div class="flexrow" style="margin: 0.5em 0;">
                 <span style="max-width:46px;">
                 </span>
@@ -154,7 +160,7 @@
         {{!-- Features Tab --}}
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each data.features as |source key|}}
-            <header class="features-header flexrow" {{#ifeq key "none"}}style="display:none;"{{/ifeq}}>
+            <header class="features-header flexrow">
                 <span style="text-align: center;">{{key}}</span>
             </header>
             <ol class="item-list">
