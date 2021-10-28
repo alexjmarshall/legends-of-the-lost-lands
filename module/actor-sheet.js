@@ -1,6 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
-import { ATTRIBUTE_TYPES, MAX_SPELL_LEVELS, VOICE_SOUNDS, VOICE_MOOD_ICONS } from "./constants.js";
-import { playVoiceSound } from "./utils.js";
+import * as utils from "./utils.js";
+import * as CONST from "./constants.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -29,32 +29,33 @@ export class SimpleActorSheet extends ActorSheet {
     EntitySheetHelper.getAttributeData(context.data);
     context.shorthand = !!game.settings.get("lostlands", "macroShorthand");
     context.systemData = context.data.data;
-    context.dtypes = ATTRIBUTE_TYPES;
+    context.dtypes = CONST.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
-    context.isPlayer = !game.user.isGM;
+    context.isPlayer = !context.isGM;
 
     // sort equipment
-    const items = context.data.items;
-    context.data.equipment = items.filter(i => i.type === "item");
-    // sort by type, e.g. potions, scrolls, weapons, armor, etc -- based on macro command
+    const items = context.data.items.filter(i => i.type === 'item');
+    context.data.equipment = this.sortEquipmentByType(items);
+    context.hasEquipment = Object.values(context.data.equipment).flat().length > 0;
 
     // sort spells
-    context.data.spells = {};
+    const spells = context.data.items.filter(i => CONST.SPELL_TYPES.i.type === 'spell_magic' ||
+    i.type === 'spell_magic');
     this.sortSpellsByType('spell_cleric', context.data);
     this.sortSpellsByType('spell_magic', context.data);
     this.sortSpellsByType('spell_witch', context.data);
-    context.hasSpells = Object.keys(context.data.spells).length > 0;
+    context.hasSpells = Object.values(context.data.spells).flat().length > 0;
 
     // sort features
     context.data.features = {};
-    this.sortFeaturesBySource('none', context.data);
-    this.sortFeaturesBySource('class', context.data);
-    this.sortFeaturesBySource('race', context.data);
+    this.sortFeaturesBySource('Class', context.data);
+    this.sortFeaturesBySource('Race', context.data);
+    this.sortFeaturesBySource('Other', context.data);
     context.hasFeatures = Object.keys(context.data.features).length > 0;
 
-    context.data.voiceProfiles = VOICE_SOUNDS.keys();
+    context.data.voiceProfiles = CONST.VOICE_SOUNDS.keys();
     context.data.voiceMoods = [];
-    for (const [key, value] of VOICE_MOOD_ICONS) {
+    for (const [key, value] of CONST.VOICE_MOOD_ICONS) {
       context.data.voiceMoods.push( { mood: key, icon: value } );
     }
     context.hasVoice = !!context.systemData.voice;
@@ -65,13 +66,23 @@ export class SimpleActorSheet extends ActorSheet {
     return context;
   }
 
+  sortEquipmentByType(items) {    
+    const equipment = {};
+    equipment['Held'] = items.filter(i => i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    equipment['Worn'] = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    equipment['Magic'] = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
+    equipment['Other'] = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+
+    return equipment;
+  }
+
   sortSpellsByType(spelltype, data) {
     const spells = data.items.filter(i => i.type === `${spelltype}`);
     if(!spells.length) return;
     data.spells[`${spelltype}`] = {};
     const nolevelSpells = spells.filter(s => !s.data.attributes.lvl?.value);
-    if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(none)`] = {spells: nolevelSpells};
-    for(let i = 1; i <= MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
+    if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(other)`] = {spells: nolevelSpells};
+    for(let i = 1; i <= CONST.MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
       const spellsAtLevel = spells.filter(s => s.data.attributes.lvl?.value === i);
       const slotsAtLevelVal = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value;
       const slotsAtLevelMax = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max;
@@ -88,12 +99,13 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortFeaturesBySource(source, data) {
     const attrs = data.data.attributes;
-    const sourceKey = source === 'class' ?
-      `${attrs.class?.value != null ? `${attrs.class.value}` : 'Class'}` :
-      source === 'race' ? `${attrs.race?.value != null ? `${attrs.race.value}` : 'Race'}` :
+    const sourceKey = source === 'Class' ? (`${attrs.class?.value}` || source) :
+      source === 'Race' ? (`${attrs.race?.value}` || 'Race') :
       source;
-    const featureBySource = source === 'none' ? 
-      data.items.filter(i => i.type === `feature` && (i.data.attributes.source?.value?.toLowerCase() !== 'class' && i.data.attributes.source?.value?.toLowerCase() !== 'race')) :
+    const featureBySource = source === 'Other' ? 
+      data.items.filter(i => i.type === `feature` && 
+        (i.data.attributes.source?.value?.toLowerCase() !== 'class' && 
+        i.data.attributes.source?.value?.toLowerCase() !== 'race')) :
       data.items.filter(i => i.type === `feature` && i.data.attributes.source?.value?.toLowerCase() === `${source}`);
     if(!featureBySource.length) return;
     data.features[`${sourceKey}`] = featureBySource;
@@ -223,7 +235,7 @@ export class SimpleActorSheet extends ActorSheet {
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
         if(!isPrepared === true) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `prepares ${item.name}` });
+          game.lostlands.MACRO.macroChatMessage(this, { content: `prepares ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -242,9 +254,9 @@ export class SimpleActorSheet extends ActorSheet {
           // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
         }
         if (!isWorn) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `dons ${item.name}` });
+          game.lostlands.MACRO.macroChatMessage(this, { content: `dons ${item.name}` });
         } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `doffs ${item.name}` });
+          game.lostlands.MACRO.macroChatMessage(this, { content: `doffs ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
@@ -260,9 +272,9 @@ export class SimpleActorSheet extends ActorSheet {
           // }
         }
         if(!isHeld) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
+          game.lostlands.MACRO.macroChatMessage(this, { content: `wields ${item.name}` });
         } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `stows ${item.name}` });
+          game.lostlands.MACRO.macroChatMessage(this, { content: `stows ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
@@ -317,7 +329,7 @@ export class SimpleActorSheet extends ActorSheet {
     button.attr('disabled', false);
     const hasVoice = !!this.actor.data.data.voice;
     if (hasVoice) {
-      return playVoiceSound(mood, this.actor);
+      return utils.playVoiceSound(mood, this.actor);
     }
     this._onVoicePreview(event, mood);
   }
@@ -327,10 +339,9 @@ export class SimpleActorSheet extends ActorSheet {
     const tab = button.closest('.tab.voice');
     const select = tab.find('.voice-select');
     const voice = select.find(":selected").val();
-    const soundsArr = mood ? VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
-      Array.from(VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
+    const soundsArr = mood ? CONST.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
+      Array.from(CONST.VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
     if (!soundsArr) return;
-
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
     AudioHelper.play({src: soundsArr[trackNum], volume: 1, loop: false}, false);
@@ -370,9 +381,6 @@ export class SimpleActorSheet extends ActorSheet {
 
   _onVoiceReset(event) {
     event.preventDefault();
-    let button = $(event.currentTarget);
-    const tab = button.closest('.tab.voice');
-    const select = tab.find('.voice-select');
     const currentVoice = this.actor.data.data.voice;
     currentVoice && this.actor.update({"data.voice": null});
   }
