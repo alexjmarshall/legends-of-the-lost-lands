@@ -198,10 +198,15 @@ Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
   const actor = token ? token.actor : game.user.character;
   if ( actor.data.data.hp.value < 1 ) return;
-  playVoiceSound(VOICE_MOODS.WHAT, actor, token, false, 0.5);
+  playVoiceSound(VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.4});
 });
 // Play 'ok' voice sound on token movement
-Hooks.on("updateToken", (token, moved, data) => { // fires for all clients? so do not push sound
+Hooks.on("updateToken", (token, moved, data) => {
   if ( !moved.x && !moved.y ) return;
-  playVoiceSound(VOICE_MOODS.OK, token.actor, token, false, 0.5);
+  playVoiceSound(VOICE_MOODS.OK, token.actor, token.data, {push: false, chatBubble: false, chance: 0.7});
+});
+Hooks.on("renderActorSheet", (app, html) => {
+  const actor = app.actor;
+  if ( !actor ) return;
+  playVoiceSound(VOICE_MOODS.WHAT, actor, undefined, {push: false, chatBubble: false, chance: 0.4});
 });
