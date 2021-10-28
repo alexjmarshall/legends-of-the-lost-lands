@@ -97,10 +97,10 @@ export const VOICE_SOUNDS = new Map();
     const fileList = await response.text();
     const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
     for (const mood of Object.values(VOICE_MOODS)) {
-      const pathArr = fileArr.filter(f => f.includes(mood)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
+      const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.mp3`).test(f)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
       moodMap.set(`${mood}`, pathArr);
     }
     VOICE_SOUNDS.set(`${voice}`, moodMap);
   }
-  console.log('Completed loading voice sound file paths',VOICE_SOUNDS);
+  console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
