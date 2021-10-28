@@ -1,5 +1,14 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
-export const MAX_SPELL_LEVELS = {'spell_witch': 6, 'spell_cleric': 5, 'spell_magic': 9};
+export const SPELL_TYPES = {
+  SPELL_CLERIC: "spell_cleric",
+  SPELL_MAGIC: "spell_magic",
+  SPELL_WITCH: "spell_witch"
+};
+export const MAX_SPELL_LEVELS = {
+  [SPELL_TYPES.SPELL_CLERIC]: 5,
+  [SPELL_TYPES.SPELL_MAGIC]: 9,
+  [SPELL_TYPES.SPELL_WITCH]: 6
+};
 export const FIGHTER_XP_PROGRESSION = [ // put all class XP progressions in one base object
   {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
   {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
