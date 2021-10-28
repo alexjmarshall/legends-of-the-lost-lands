@@ -1,5 +1,5 @@
 import { EntitySheetHelper } from "./helper.js";
-import * as CONST from "./constants.js";
+import * as Constant from "./constants.js";
 
 /**
  * Extend the basic ItemSheet with some very simple modifications
@@ -26,7 +26,7 @@ export class SimpleItemSheet extends ItemSheet {
     const context = super.getData();
     EntitySheetHelper.getAttributeData(context.data);
     context.systemData = context.data.data;
-    context.dtypes = CONST.ATTRIBUTE_TYPES;
+    context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
     return context;

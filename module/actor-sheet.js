@@ -1,6 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
-import * as utils from "./utils.js";
-import * as CONST from "./constants.js";
+import * as Util from "./utils.js";
+import * as Constant from "./constants.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -29,7 +29,7 @@ export class SimpleActorSheet extends ActorSheet {
     EntitySheetHelper.getAttributeData(context.data);
     context.shorthand = !!game.settings.get("lostlands", "macroShorthand");
     context.systemData = context.data.data;
-    context.dtypes = CONST.ATTRIBUTE_TYPES;
+    context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
 
@@ -39,12 +39,12 @@ export class SimpleActorSheet extends ActorSheet {
     context.hasEquipment = Object.values(context.data.equipment).flat().length > 0;
 
     // sort spells
-    const spells = context.data.items.filter(i => CONST.SPELL_TYPES.i.type === 'spell_magic' ||
-    i.type === 'spell_magic');
-    this.sortSpellsByType('spell_cleric', context.data);
-    this.sortSpellsByType('spell_magic', context.data);
-    this.sortSpellsByType('spell_witch', context.data);
-    context.hasSpells = Object.values(context.data.spells).flat().length > 0;
+    const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
+    context.data.spells = this.sortSpellsByType(spells);
+    // this.sortSpellsByType('spell_cleric', context.data);
+    // this.sortSpellsByType('spell_magic', context.data);
+    // this.sortSpellsByType('spell_witch', context.data);
+    // context.hasSpells = Object.values(context.data.spells).flat().length > 0;
 
     // sort features
     context.data.features = {};
@@ -53,9 +53,9 @@ export class SimpleActorSheet extends ActorSheet {
     this.sortFeaturesBySource('Other', context.data);
     context.hasFeatures = Object.keys(context.data.features).length > 0;
 
-    context.data.voiceProfiles = CONST.VOICE_SOUNDS.keys();
+    context.data.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     context.data.voiceMoods = [];
-    for (const [key, value] of CONST.VOICE_MOOD_ICONS) {
+    for (const [key, value] of Constant.VOICE_MOOD_ICONS) {
       context.data.voiceMoods.push( { mood: key, icon: value } );
     }
     context.hasVoice = !!context.systemData.voice;
@@ -82,7 +82,7 @@ export class SimpleActorSheet extends ActorSheet {
     data.spells[`${spelltype}`] = {};
     const nolevelSpells = spells.filter(s => !s.data.attributes.lvl?.value);
     if(nolevelSpells.length > 0) data.spells[`${spelltype}`][`(other)`] = {spells: nolevelSpells};
-    for(let i = 1; i <= CONST.MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
+    for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[`${spelltype}`]; i++) {
       const spellsAtLevel = spells.filter(s => s.data.attributes.lvl?.value === i);
       const slotsAtLevelVal = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.value;
       const slotsAtLevelMax = data.data.attributes[`${spelltype}`]?.[`lvl_${i}`]?.max;
@@ -235,7 +235,7 @@ export class SimpleActorSheet extends ActorSheet {
           await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
         if(!isPrepared === true) {
-          game.lostlands.MACRO.macroChatMessage(this, { content: `prepares ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `prepares ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -254,9 +254,9 @@ export class SimpleActorSheet extends ActorSheet {
           // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
         }
         if (!isWorn) {
-          game.lostlands.MACRO.macroChatMessage(this, { content: `dons ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `dons ${item.name}` });
         } else {
-          game.lostlands.MACRO.macroChatMessage(this, { content: `doffs ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `doffs ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
@@ -272,9 +272,9 @@ export class SimpleActorSheet extends ActorSheet {
           // }
         }
         if(!isHeld) {
-          game.lostlands.MACRO.macroChatMessage(this, { content: `wields ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
         } else {
-          game.lostlands.MACRO.macroChatMessage(this, { content: `stows ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `stows ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
@@ -329,7 +329,7 @@ export class SimpleActorSheet extends ActorSheet {
     button.attr('disabled', false);
     const hasVoice = !!this.actor.data.data.voice;
     if (hasVoice) {
-      return utils.playVoiceSound(mood, this.actor);
+      return Util.playVoiceSound(mood, this.actor);
     }
     this._onVoicePreview(event, mood);
   }
@@ -339,8 +339,8 @@ export class SimpleActorSheet extends ActorSheet {
     const tab = button.closest('.tab.voice');
     const select = tab.find('.voice-select');
     const voice = select.find(":selected").val();
-    const soundsArr = mood ? CONST.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
-      Array.from(CONST.VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
+    const soundsArr = mood ? Constant.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
+      Array.from(Constant.VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);

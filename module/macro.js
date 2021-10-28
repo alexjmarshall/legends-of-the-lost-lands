@@ -1,5 +1,5 @@
-import * as CONST from "./constants.js";
-import * as utils from "./utils.js";
+import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 /**
  * Create a Macro from an attribute drop.
@@ -29,7 +29,7 @@ export async function createLostlandsMacro(data, slot) {
   // case 3: voice button
   if (data.mood) {
     macroData.name = `Voice: ${data.mood}`;
-    macroData.command = `game.lostlands.MACRO.voiceMacro("${data.mood}")`;
+    macroData.command = `game.lostlands.Macro.voiceMacro("${data.mood}")`;
     macroData.type = "script";
   }
   let macro = game.macros.find(m => (m.name === macroData.name && m.data.command === macroData.command));
@@ -57,7 +57,7 @@ export function voiceMacro(mood) {
   if(!actor) return ui.notifications.error("Select speaking token.");
   const voice = actor.data.data.voice;
   if(!voice) return ui.notifications.error("Character does not have a selected voice.");
-  return utils.playVoiceSound(mood, actor, token);
+  return Util.playVoiceSound(mood, actor, token);
 }
 
 export async function spellMacro(spellId) {
@@ -234,7 +234,7 @@ async function save(tokens, damage, options) {
   if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
   // wait if not last actor and not showing mod dialogs
-  if(tokens.length > 1 && !options.showModDialog) await utils.wait(500);
+  if(tokens.length > 1 && !options.showModDialog) await Util.wait(500);
 
   tokens.pop();
   save(tokens, damage, options);
@@ -407,10 +407,10 @@ async function attack(attackers, targetToken, options) {
           if(!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
           (async () => {
               if ( hpUpdate > 0 ) {
-              await utils.playVoiceSound(CONST.VOICE_MOODS.HURT, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
+              await Util.playVoiceSound(Constant.VOICE_MOODS.HURT, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
             } else if ( targetHp > 0 ) {
-              await utils.playVoiceSound(CONST.VOICE_MOODS.DEATH, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
-              await utils.playVoiceSound(CONST.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
+              await Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
+              await Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
             }
           })();
         }
@@ -418,7 +418,7 @@ async function attack(attackers, targetToken, options) {
         // wait if NOT last weapon of final actor AND (NOT last weapon of this actor OR not showing mod dialog)
         if(!(attacks.indexOf(attack) === attacks.length - 1 && attackers.length === 1) &&
           (attacks.indexOf(attack) !== attacks.length - 1 || !options.showModDialog)) {
-            await utils.wait(500);
+            await Util.wait(500);
         }
       }
     }

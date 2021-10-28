@@ -1,9 +1,3 @@
-/**
- * A simple and flexible system for world-building using an arbitrary collection of character and item attributes
- * Author: Atropos
- */
-
-// Import Modules
 import { SimpleActor } from "./actor.js";
 import { SimpleItem } from "./item.js";
 import { SimpleItemSheet } from "./item-sheet.js";
@@ -11,9 +5,9 @@ import { SpellItemSheet } from "./spell-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
-import * as macro from "./macro.js";
-import * as CONST from "./constants.js";
-import * as utils from "./utils.js";
+import * as Macro from "./macro.js";
+import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -36,7 +30,7 @@ Hooks.once("init", async function() {
 
   game.lostlands = {
     SimpleActor,
-    macro
+    Macro
   };
 
   // Define custom Entity classes
@@ -198,10 +192,10 @@ Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
   const actor = token ? token.actor : game.user.character;
   if ( actor.data.data.hp.value < 1 ) return;
-  utils.playVoiceSound(CONST.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
+  Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
 });
 // Play 'ok' voice sound on token movement
 Hooks.on("updateToken", (token, moved, data) => {
   if ( !moved.x && !moved.y ) return;
-  utils.playVoiceSound(CONST.VOICE_MOODS.OK, token.actor, token.data, {push: false, chatBubble: false, chance: 0.7});
+  Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: false, chatBubble: false, chance: 0.7});
 });

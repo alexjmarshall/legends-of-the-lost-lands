@@ -1,5 +1,3 @@
-import * as CONST from "./constants.js";
-
 export class EntitySheetHelper {
 
   static getAttributeData(data) {

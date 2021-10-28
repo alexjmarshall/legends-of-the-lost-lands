@@ -1,4 +1,4 @@
-import * as CONST from ".constants.js";
+import * as Constant from "./constants.js";
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -15,7 +15,7 @@ export const playVoiceSound = (() => {
     const actorId = actor.isToken ? actor.token.id : actor.id;
     if (speakingActorIds.has(actorId)) return;
     speakingActorIds.set(actorId);
-    const soundsArr = CONST.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`);
+    const soundsArr = Constant.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`);
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
     
