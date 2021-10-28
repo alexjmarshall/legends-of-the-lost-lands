@@ -593,6 +593,7 @@ export class EntitySheetHelper {
         // set sheet for non-default types
         const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
           createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
+          createData.type === types.feature ? "lostlands.FeatureItemSheet" :
           (documentName === 'Item' && createData.type !== 'item') ? "lostlands.SpellItemSheet" : null;
         if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
