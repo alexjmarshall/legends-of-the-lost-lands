@@ -1,3 +1,5 @@
+import * as Constant from "./constants.js";
+
 export class EntitySheetHelper {
 
   static getAttributeData(data) {
@@ -535,21 +537,27 @@ export class EntitySheetHelper {
       types[a] = a;
     }
 
-    // set type and level of spells from folder
+    // set type from folder
     const folder = game.folders.get(`${data.folder}`);
-    const parentFolder = folder?.parentFolder?.name;
-    let type;
-    let level;
-    if(parentFolder && (parentFolder === 'Magic Spells' || parentFolder === 'Cleric Spells' || parentFolder === 'Witch Spells')) {
-      type = `spell_${parentFolder.split(' ')[0].toLowerCase()}`;
+    const folderName = folder?.name;
+    const parentFolderName = folder?.parentFolder?.name;
+    const regExp = str => new RegExp(`${str?.toLowerCase()}s\?$`, 'i');
+    const typeVals = Object.values(types);
+    let type = typeVals.find(t => regExp(t).test(folderName) || regExp(t).test(parentFolderName));
+
+    // set type and level if creating a spell
+    if(parentFolderName && documentName === 'Item') {
+      if (parentFolderName.toLowerCase() === 'magic spells') type = types[Constant.SPELL_TYPES.SPELL_MAGIC];
+      if (parentFolderName.toLowerCase() === 'cleric spells') type = types[Constant.SPELL_TYPES.SPELL_CLERIC];
+      if (parentFolderName.toLowerCase() === 'witch spells') type = types[Constant.SPELL_TYPES.SPELL_WITCH];
     }
-    if(folder?.name === 'Features' || parentFolder === 'Features') {
-      type = `feature`;
+    if ( folderName && Object.values(Constant.SPELL_TYPES).includes(type) ) {
+      const level = +folderName.split('Level ').pop();
+      if (!isNaN(level)) {
+        data.data = { attributes: { lvl: { value: level, label: "Level", dtype: "Number", group: "" } } };
+      }
     }
     
-    if(folder && type?.includes('spell_')) level = +folder?.name.split('Level ').pop();
-    if(!isNaN(level)) data.data = { attributes: { lvl: { value: level, label: "", dtype: "Number", group: "" } } };
-
     // Render the entity creation form
     const html = await renderTemplate(`systems/lostlands/templates/sidebar/entity-create.html`, {
       name: data.name || game.i18n.format("ENTITY.New", {entity: label}),
@@ -582,21 +590,15 @@ export class EntitySheetHelper {
           createData.type = template.data.type;
           delete createData.flags.lostlands.isTemplate;
         }
-        
         // set sheet for non-default types
-        if(createData.type === 'container') {
+        const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
+          createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
+          (documentName === 'Item' && createData.type !== 'item') ? "lostlands.SpellItemSheet" : null;
+        if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
             flags: {
               core: {
-                sheetClass: "lostlands.ContainerActorSheet"
-              }
-            }
-          });
-        } else if(createData.type !== 'item') {
-          createData = foundry.utils.mergeObject(createData, {
-            flags: {
-              core: {
-                sheetClass: "lostlands.SpellItemSheet"
+                sheetClass: sheetClass
               }
             }
           });
