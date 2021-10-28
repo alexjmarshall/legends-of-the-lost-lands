@@ -23,9 +23,9 @@ export class SpellItemSheet extends SimpleItemSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
-    if(context.data.type === "spell_magic") context.spellType = "Magic";
-    else if(context.data.type === "spell_cleric") context.spellType = "Cleric";
-    else if(context.data.type === "spell_witch") context.spellType = "Witch";
+    if(context.data.type === Constant.SPELL_TYPES.SPELL_MAGIC) context.spellType = "Magic";
+    else if(context.data.type === Constant.SPELL_TYPES.SPELL_CLERIC) context.spellType = "Cleric";
+    else if(context.data.type === Constant.SPELL_TYPES.SPELL_WITCH) context.spellType = "Witch";
     return context;
   }
 }
