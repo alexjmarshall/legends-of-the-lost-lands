@@ -319,7 +319,7 @@ export async function attackMacro(weapons, options={}) {
   // replace buy basic items macro with merchant sheet
   // need to refactor sound strings to use whole filename including filetype
   // collections of sound profiles e.g. male_1, female_1 for player to choose
-  // sounds played automatically: click your token (ok), take damage (hurt), drop below 0 HP (death), cast spell (?), drag-move (ok), thief skill (ok) turn undead (ok)
+  // sounds played automatically: click your token (ok), take damage (hurt), drop below 0 HP (death), cast spell (?), drag-move (ok), thief skill (ok)
   // sounds: amused, angry, bored, death, dying, hurt, kill, lead, ok, party_death, party_fail, retreat, sleepy, toot, what. each has multiple which play randomly when icon clicked
   // only show soundsets of the same type as the PC's class 
   const selectedTokens = canvas.tokens.controlled;
@@ -402,13 +402,23 @@ async function attack(attackers, targetToken, options) {
         attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
         if(attack.damage) {
           let targetHp = +targetToken.actor.data.data.hp?.value;
-          if(!isNaN(targetHp)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
-          playVoiceSound(VOICE_MOODS.HURT, targetToken.actor, targetToken);
+          const hpUpdate = targetHp - attack.damage;
+          if(!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
+          (async () => {
+              if ( hpUpdate > 0 ) {
+              await playVoiceSound(VOICE_MOODS.HURT, targetToken.actor, targetToken, true, 0.5);
+            } else if ( targetHp > 0 ) {
+              await playVoiceSound(VOICE_MOODS.DEATH, targetToken.actor, targetToken, true, 0.5);
+              await playVoiceSound(VOICE_MOODS.KILL, token.actor, token, true, 0.5);
+            }
+          })();
         }
         // should wait unless last actors last weapon, or next weapon shows mod dialog
-        // wait if NOT last weapon of last actor AND (NOT last weapon of this actor OR not showing mod dialog)
-        if(!(attacks.indexOf(attack) === attacks.length -1 && attackers.length === 1) &&
-          (attacks.indexOf(attack) !== attacks.length -1 || !options.showModDialog)) await wait(500);
+        // wait if NOT last weapon of final actor AND (NOT last weapon of this actor OR not showing mod dialog)
+        if(!(attacks.indexOf(attack) === attacks.length - 1 && attackers.length === 1) &&
+          (attacks.indexOf(attack) !== attacks.length - 1 || !options.showModDialog)) {
+            await wait(500);
+        }
       }
     }
     attackers.pop();

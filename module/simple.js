@@ -196,7 +196,12 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
 // Play 'what' voice sound on token selection
 Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
-  if (Math.random() < 0.5) return;
   const actor = token ? token.actor : game.user.character;
-  playVoiceSound(VOICE_MOODS.WHAT, actor, token, false);
+  if ( actor.data.data.hp.value < 1 ) return;
+  playVoiceSound(VOICE_MOODS.WHAT, actor, token, false, 0.5);
+});
+// Play 'ok' voice sound on token movement
+Hooks.on("updateToken", (token, moved, data) => { // fires for all clients? so do not push sound
+  if ( !moved.x && !moved.y ) return;
+  playVoiceSound(VOICE_MOODS.OK, token.actor, token, false, 0.5);
 });
