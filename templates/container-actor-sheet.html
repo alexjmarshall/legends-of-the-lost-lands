@@ -20,7 +20,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="description">Description</a>
         <a class="item" data-tab="items">Items</a>
-        <a class="item" data-tab="attributes">Attributes</a>
+        <a class="item" data-tab="attributes" {{#if isPlayer}}style="display:none;"{{/if}}>Attributes</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -41,14 +41,8 @@
                 <span style="max-width:78px;"></span>
             </header>
             <ol class="item-list">
-                {{#each data.equipment as |item id|}}
+                {{#each data.items as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-toggle">
-    
-                    </div>
-                    <div class="item-toggle">
-      
-                    </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
                     <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
@@ -61,8 +55,6 @@
                 {{/each}}
             </ol>
             <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:46px;">
-                </span>
                 <span>
                     {{#if isGM}}
                     <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>

@@ -126,7 +126,6 @@ export class SimpleActorSheet extends ActorSheet {
     // Item Controls
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
-    html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
 
     // Voice Sounds
     html.find(".voice-play").click(this._onVoicePlay.bind(this));
@@ -301,24 +300,6 @@ export class SimpleActorSheet extends ActorSheet {
         }
         return await macro.execute();
     }
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Listen for roll buttons on items.
-   * @param {MouseEvent} event    The originating left click event
-   */
-  _onItemRoll(event) {
-    let button = $(event.currentTarget);
-    const li = button.parents(".item");
-    const item = this.actor.items.get(li.data("itemId"));
-    let r = new Roll(button.data('roll'), this.actor.getRollData());
-    return r.toMessage({
-      user: game.user.id,
-      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `<h2>${item.name}</h2><h3>${button.text()}</h3>`
-    });
   }
 
   /* -------------------------------------------- */
