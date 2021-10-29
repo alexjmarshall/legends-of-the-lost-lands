@@ -65,13 +65,13 @@ export class SimpleActorSheet extends ActorSheet {
   sortEquipmentByType(items) {    
     const equipment = {};
     const heldArr = items.filter(i => i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    if (heldArr.length) equipment['Held'] = heldArr;
+    if (heldArr.length) equipment.holdable = heldArr;
     const wornArr = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    if (wornArr.length) equipment['Worn'] = wornArr;
+    if (wornArr.length) equipment.wearable = wornArr;
     const magicArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
-    if (magicArr.length) equipment['Magic'] = magicArr
+    if (magicArr.length) equipment.magic = magicArr
     const otherArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    if (otherArr.length) equipment['Other'] = otherArr;
+    if (otherArr.length) equipment.other = otherArr;
 
     return equipment;
   }
@@ -89,7 +89,7 @@ export class SimpleActorSheet extends ActorSheet {
         const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value;
         const slotsAtLevelMax = attrs[spelltype]?.[`lvl_${i}`]?.max;
         if(!spellsAtLevel.length) continue;
-        sortedSpells[spelltype][`${i}`] = {
+        sortedSpells[spelltype][`Level ${i}`] = {
           spells: spellsAtLevel,
           slots: {
             value: slotsAtLevelVal,
@@ -267,7 +267,7 @@ export class SimpleActorSheet extends ActorSheet {
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
         const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
         if(!isHeld && heldItems.length >= heldItemsLimit) {
-          return ui.notifications.error("Must drop an item first.");
+          return ui.notifications.error("Must release a handheld item first.");
           // if heldItemsLimit is 1, must clear all held items. Otherwise, just clear one.
           // for(const item of heldItems) {
           //   await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);

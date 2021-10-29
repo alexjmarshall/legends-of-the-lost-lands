@@ -195,7 +195,8 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
 Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
   const actor = token ? token.actor : game.user.character;
-  if ( actor.data.data.hp.value < 1 ) return;
+  const actorHp = actor.data.data.hp?.value;
+  if ( !actorHp || actorHp < 1 ) return;
   Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
 });
 // Play 'ok' voice sound on token movement

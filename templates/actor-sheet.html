@@ -33,9 +33,9 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Biography</a>
+        <a class="item" data-tab="description">Description</a>
         {{#if hasEquipment}}
-        <a class="item" data-tab="items">Equipment</a>
+        <a class="item" data-tab="items">Items</a>
         {{/if}}
         {{#if hasSpells}}
         <a class="item" data-tab="spells">Spells</a>
@@ -58,15 +58,25 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <div style="max-width:46px"></div>
+                <div></div>
                 <div></div>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
-                <span style="max-width:78px;"></span>
+                <span style="max-width:77px;"></span>
             </header>
             {{#each data.equipment as |type key|}}
             <header class="items-header flexrow">
-                <span style="text-align: center;">{{key}}</span>
+                <span style="text-align: center;">
+                    {{#ifeq key "holdable"}}Held{{else}}
+                    {{#ifeq key "wearable"}}Worn{{else}}
+                    {{#ifeq key "magic"}}Magic{{else}}
+                    {{#ifeq key "other"}}Other{{else}}
+                    {{key}}
+                    {{/ifeq}}
+                    {{/ifeq}}
+                    {{/ifeq}}
+                    {{/ifeq}}
+                </span>
             </header>
             <ol class="item-list">
                 {{#each type as |item id|}}
@@ -117,15 +127,23 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each data.spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span style="text-align: center;">{{#ifeq key "spell_magic"}}Magic{{/ifeq}}{{#ifeq key "spell_cleric"}}Cleric{{/ifeq}}{{#ifeq key "spell_witch"}}Witch{{/ifeq}}</span>
+                <span style="text-align: center;">
+                    {{#ifeq key "spell_magic"}}Magic{{else}}
+                    {{#ifeq key "spell_cleric"}}Cleric{{else}}
+                    {{#ifeq key "spell_witch"}}Witch{{else}}
+                    {{key}}
+                    {{/ifeq}}
+                    {{/ifeq}}
+                    {{/ifeq}}
+                </span>
             </header>
-                {{#each spelltype as |level id|}}
+                {{#each spelltype as |level key|}}
                 <header class="spells-header flexrow">
-                    <span style="text-align: left;">Level {{id}}</span>
+                    <span style="text-align: left;">{{key}}</span>
                     <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
                 </header>
                 <ol class="item-list">
-                    {{#each level.spells as |spell id|}}
+                    {{#each level.spells as |spell|}}
                     <li class="item flexrow" data-item-id="{{spell._id}}">
                         <div class="item-toggle">
                             {{#if spell.data.macro}}

@@ -17,7 +17,7 @@
   {{!-- Sheet Tab Navigation --}}
   <nav class="sheet-tabs tabs" data-group="primary">
       <a class="item" data-tab="description" {{#if isPlayer}}style="display:none;"{{/if}}>Description</a>
-      <a class="item" data-tab="items">Items for Sale</a>
+      <a class="item" data-tab="items">Items</a>
       <a class="item" data-tab="attributes" {{#if isPlayer}}style="display:none;"{{/if}}>Attributes</a>
   </nav>
   {{!-- Sheet Body --}}
@@ -31,24 +31,24 @@
       {{!-- Owned Items Tab --}}
       <div class="tab items" data-group="primary" data-tab="items">
           <header class="items-header flexrow">
-              <div style="max-width:46px"></div>
               <div></div>
-              <span class="item-column">Cost</span>
+              <div></div>
               <span class="item-column">Quantity</span>
-              <span style="max-width:78px;"></span>
+              <span class="item-column">Price (ea.)</span>
+              <span style="max-width:77px;"></span>
           </header>
           <ol class="item-list">
               {{#each data.items as |item id|}}
               <li class="item flexrow" data-item-id="{{item._id}}">
                 <div class="item-toggle">
-                    {{#if item.data.cost}}
+                    {{#if item.data.price}}
                     <a class="item-control" data-action="buy" title="Buy Item"><i class="fas fa-coins"></i></a>
                     {{/if}}
                 </div>
                 <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                 <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                <span class="item-row item-column" data-action="edit">{{item.data.cost}}</span>
                 <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
+                <span class="item-row item-column item-price" data-action="edit">{{item.data.price}} gp</span>
                 {{#if ../isGM}}
                 <div class="item-controls">
                     <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
