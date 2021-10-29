@@ -64,10 +64,14 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortEquipmentByType(items) {    
     const equipment = {};
-    equipment['Held'] = items.filter(i => i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    equipment['Worn'] = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    equipment['Magic'] = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
-    equipment['Other'] = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    const heldArr = items.filter(i => i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    if (heldArr.length) equipment['Held'] = heldArr;
+    const wornArr = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    if (wornArr.length) equipment['Worn'] = wornArr;
+    const magicArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
+    if (magicArr.length) equipment['Magic'] = magicArr
+    const otherArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    if (otherArr.length) equipment['Other'] = otherArr;
 
     return equipment;
   }
@@ -102,10 +106,13 @@ export class SimpleActorSheet extends ActorSheet {
     const classKey = `${attrs.class?.value}` || 'Class';
     const raceKey = `${attrs.race?.value}` || 'Race';
 
-    sortedFeatures[classKey] = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'class');
-    sortedFeatures[raceKey] = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'race');
-    sortedFeatures['Other'] = features.filter(f => f.data.attributes.source?.value?.toLowerCase() !== 'class' && 
+    const classArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'class');
+    if (classArr.length) sortedFeatures[classKey] = classArr;
+    const raceArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'race');
+    if (raceArr.length) sortedFeatures[raceKey] = raceArr;
+    const otherArr = features.filter(f => f.data.attributes.source?.value?.toLowerCase() !== 'class' && 
       f.data.attributes.source?.value?.toLowerCase() !== 'race');
+    if (otherArr.length) sortedFeatures['Other'] = otherArr;
 
     return sortedFeatures;
   }
