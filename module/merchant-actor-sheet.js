@@ -26,9 +26,13 @@ export class MerchantActorSheet extends ActorSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
-    context.data.items = context.data.items.filter(i => i.type === 'item');
 
-    // derived value based on item gp_value and merchant attitude
+    // derived value for items based on item gp_value and merchant attitude
+    const items = context.data.items.filter(i => i.type === 'item');
+    items.forEach(item => item.data.price = item.data.attributes.gp_value?.value);
+    context.data.items = items;
+
+    // will buy back full price for 1 real time minute
 
     return context;
   }
@@ -38,12 +42,6 @@ export class MerchantActorSheet extends ActorSheet {
   /** @inheritdoc */
   activateListeners(html) {
     super.activateListeners(html);
-
-    // Need drop listeners for selling to merchant, even if not editable
-
-
-    // Everything below here is only needed if the sheet is editable
-    if ( !this.isEditable ) return;
 
     // Attribute Management
     html.find(".attributes").on("click", ".attribute-control", EntitySheetHelper.onClickAttributeControl.bind(this));
@@ -75,12 +73,17 @@ export class MerchantActorSheet extends ActorSheet {
     
     // Handle different actions
     switch ( button.dataset.action ) {
+      case "buy":
+        const displayPrice = $(li)?.find('.item-price').text();
+        const price = +displayPrice.match(/^\d+/);
+        return game.lostlands.Macro.buyMacro(item, price, this.actor);
       case "create":
         const cls = getDocumentClass("Item");
         return cls.create(data, {parent: this.actor});
       case "edit":
         return item.sheet.render(true);
       case "delete":
+        if (!game.user.isGM) return;
         const actor = this.actor;
         const itemQty = +item.data.data.quantity || 0;
         if(itemQty <= 1) return item.delete();

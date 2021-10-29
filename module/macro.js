@@ -853,10 +853,10 @@ export function buyBasicEquipment() {
     <optgroup label="Arms & Armor">${armsAndArmorOptionsText}</optgroup>
   `;
 
-  async function resolvePurchase(itemId, itemName, qty, price) {
+  async function resolvePurchase(itemId, itemName, qty, pricePoop) {
     qty = +qty;
-    let cost = +price;
-    if(isNaN(qty) || qty < 0 || qty % 1 || isNaN(cost) || cost < 0 || cost % 1){
+    let price = +price;
+    if(isNaN(qty) || qty < 0 || qty % 1 || isNaN(price) || price < 0 || price % 1){
       ui.notifications.error("Invalid input.");
       return;
     }
@@ -869,7 +869,7 @@ export function buyBasicEquipment() {
     const cpQty = +cpItem?.data.data.quantity || 0;
     const totalMoney = Math.round((gpQty + spQty/10 + cpQty/50) * 100) / 100;
 
-    if(cost > totalMoney) {
+    if(price > totalMoney) {
       ChatMessage.create({
         speaker: ChatMessage.getSpeaker(token),
         content: `tries to purchase ${qty} ${itemName}${qty > 1 ? 's' : ''} for ${price} GP, but doesn't have enough money. The merchant appears annoyed.`,
@@ -890,17 +890,17 @@ export function buyBasicEquipment() {
     }
 
     // pay for item from actor
-    if(cpQty >= cost*50) {
-      const cpUpdate = { _id: cpItem?.data._id, "data.quantity": cpQty - cost*50 };
+    if(cpQty >= price*50) {
+      const cpUpdate = { _id: cpItem?.data._id, "data.quantity": cpQty - price*50 };
       cpUpdate._id && await actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-    } else if(Math.round((spQty/10 + cpQty/50) * 100) / 100 >= cost) {
+    } else if(Math.round((spQty/10 + cpQty/50) * 100) / 100 >= price) {
       const cpUpdate = { _id: cpItem?.data._id, "data.quantity": cpQty % 5 };
       cpUpdate._id && await actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-      cost = Math.round((cost - Math.floor(cpQty / 5) * 5 / 50) * 100) / 100;
-      const spUpdate = { _id: spItem?.data._id, "data.quantity": spQty - cost*10 };
+      price = Math.round((price - Math.floor(cpQty / 5) * 5 / 50) * 100) / 100;
+      const spUpdate = { _id: spItem?.data._id, "data.quantity": spQty - price*10 };
       spUpdate._id && await actor.updateEmbeddedDocuments("Item", [spUpdate]);
     } else {
-      let change = Math.round((totalMoney - cost) * 100) / 100;
+      let change = Math.round((totalMoney - price) * 100) / 100;
       let gpChange = Math.floor(change);
       change = Math.round((change - gpChange) * 10 * 100) / 100;
       let spChange = Math.floor(change);
@@ -937,8 +937,8 @@ export function buyBasicEquipment() {
             </select>
           </div>
           <div class="flexcol flex1">
-            <label for="cost">Cost</label>
-            <input id="cost" type="number"/>
+            <label for="price">Price</label>
+            <input id="price" type="number"/>
           </div>
         </div>
       </form></p>`,
@@ -950,9 +950,9 @@ export function buyBasicEquipment() {
           const itemId = html.find("#select").val();
           const itemName = html.find("#select option:selected").text();
           const qty = html.find("#qty").val();
-          const unitCost = html.find("#cost").val();
-          const cost = qty && unitCost ? qty * unitCost : undefined;
-          resolvePurchase(itemId, itemName, qty, cost);
+          const unitPrice = html.find("#price").val();
+          const price = qty && unitPrice ? qty * unitPrice : undefined;
+          resolvePurchase(itemId, itemName, qty, price);
         }
       },
       two: {
@@ -963,20 +963,78 @@ export function buyBasicEquipment() {
     default: "two",
     render: html => {
       const select = html.find("#select");
-      const costInput = html.find("#cost");
-      syncCostVal();
+      const priceInput = html.find("#price");
+      syncPriceVal();
 
       select.change(function() {
-        syncCostVal();
+        syncPriceVal();
       })
 
-      function syncCostVal() {
+      function syncPriceVal() {
         const itemId = select.val();
         const selectedItem = game.items.get(itemId);
-        const itemCost = selectedItem.data.data.attributes.gp_value?.value;
-        if(!itemCost) ui.notifications.error("Item does not have the value attribute set.");
-        costInput.val(itemCost);
+        const itemPrice = selectedItem.data.data.attributes.gp_value?.value;
+        if(!itemPrice) ui.notifications.error("Item does not have the value attribute set.");
+        priceInput.val(itemPrice);
       }
+    }
+  }).render(true);
+}
+
+export async function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if(!actor) return ui.notifications.error("Select buying token.");
+  const merchantQty = +item.data.data.quantity || 0;
+
+  if ( merchantQty > 1 && !shownSplitDialog ) return itemSplitDialog(merchantQty, item, price, merchant);
+  if (!qty) qty = merchantQty;
+  item.data.data.quantity = qty;
+
+  await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+}
+
+function itemSplitDialog(maxQty, item, price, ...data) {
+  new Dialog({
+    title: `Buy ${item.name}`,
+    content: 
+      `<form>
+        <div class="form-group">
+          <label style="max-width:fit-content;max-width:-moz-fit-content;">How many?</label>
+          <span id="selectedQty" style="flex:1;text-align:center;"></span>
+          <input class="flex7" type="range" id="qty" min="1" max="${maxQty}" value="1">
+        </div>
+        <div class="form-group">
+          <label style="max-width:fit-content;max-width:-moz-fit-content;">Total price:</label>
+          <span id="price" style="flex:1;text-align:center;"></span>
+          <span class="flex7"></span>
+        </div>
+      </form>`,
+    buttons: {
+      one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: `Buy`,
+        callback: html => {
+          const quantity = +html.find('[id=qty]').val();
+          buyMacro(item, price, ...data, quantity, true);
+        }
+      },
+      two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "Cancel"
+      }
+    },
+    default: "one",
+    render: html => {
+      const qtySpan = html.find('[id=selectedQty]');
+      const qtyRange = html.find('[id=qty]');
+      const priceSpan = html.find('[id=price]');
+      qtySpan.html(+qtyRange.val());
+      priceSpan.html(+qtyRange.val() * price);
+      qtyRange.on("input", () => {
+        qtySpan.html(+qtyRange.val());
+        priceSpan.html(+qtyRange.val() * price);
+      });
     }
   }).render(true);
 }
