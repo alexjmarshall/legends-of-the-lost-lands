@@ -35,6 +35,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
+    items.forEach(item => item.data.totalWeight = Math.ceil(item.data.quantity * item.data.weight) || 0);
     context.data.equipment = this.sortEquipmentByType(items);
     context.hasEquipment = Object.values(context.data.equipment).flat().length > 0;
 

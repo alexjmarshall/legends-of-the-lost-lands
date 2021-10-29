@@ -51,8 +51,6 @@ export class EntitySheetHelper {
     // Modify attributes on items.
     if ( data.items ) {
       data.items.forEach(item => {
-        // total weight for each item
-        item.data.totalWeight = Math.ceil(item.data.quantity * item.data.weight);
         // Iterate over attributes.
         for ( let [k, v] of Object.entries(item.data.attributes) ) {
           // Grouped attributes.

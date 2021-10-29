@@ -16,6 +16,7 @@ export const playVoiceSound = (() => {
     if (speakingActorIds.has(actorId)) return;
     speakingActorIds.set(actorId);
     const soundsArr = Constant.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`);
+    if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
     
