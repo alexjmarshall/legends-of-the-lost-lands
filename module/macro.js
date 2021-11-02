@@ -696,6 +696,8 @@ function measureRange(token1, token2) {
 }
 
 export function macroChatMessage(token, data, chatBubble=true) {
+  if (!data.content) return;
+  data.content = `${token.actor.name} ` + data.content;
   ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
     content: data.content.trim(),
@@ -981,22 +983,109 @@ export function buyBasicEquipment() {
   }).render(true);
 }
 
-export async function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
+export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select buying token.");
-  const merchantQty = +item.data.data.quantity || 0;
-
-  if ( merchantQty > 1 && !shownSplitDialog ) return itemSplitDialog(merchantQty, item, price, merchant);
+  if (!actor) return ui.notifications.error("Select buying token.");
+  const merchantGold = +merchant.data.data.attributes.gold?.value;
+  if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set.");
+  const merchantQty = +item.data.data.quantity;
+  if (!merchantQty) return ui.notifications.error("No stock available.");
+  if (merchantQty > 1 && !shownSplitDialog) {
+    return itemSplitDialog(merchantQty, item, price, merchant);
+  }
   if (!qty) qty = merchantQty;
-  item.data.data.quantity = qty;
 
-  await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+  // pay for item
+  // note: 1 gp = 10 sp = 50 cp
+  const actorItems = actor.data.items;
+  const gpItem = actorItems.find(i => i.name === "Gold Pieces");
+  const gp = +gpItem?.data.data.quantity || 0;
+  const gpInCp = gp * 50;
+  const spItem = actorItems.find(i => i.name === "Silver Pieces");
+  const sp = +spItem?.data.data.quantity || 0;
+  const spInCp = sp * 5;
+  const cpItem = actorItems.find(i => i.name === "Copper Pieces");
+  const cp = +cpItem?.data.data.quantity || 0;
+  const totalMoneyInCp = gpInCp + spInCp + cp;
+  const totalPrice = price * qty;
+  const priceInCp = totalPrice * 50;
+  const priceInSp = totalPrice * 10;
+
+  // pay for item from actor
+  let cpUpdateQty = cp, spUpdateQty = sp, gpUpdateQty = gp;
+  // case 1: not enough money
+  if (priceInCp > totalMoneyInCp) {
+    const chatData = {
+      content: `tries to purchase ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${price} gp, but doesn't have enough money. The merchant appears annoyed.`,
+    };
+    return macroChatMessage(token, chatData, true);
+  }
+  // case 2: can pay with cp
+  if (cp >= priceInCp) {
+    cpUpdateQty = cpUpdateQty - priceInCp;
+  // case 3: can pay with cp and sp
+  } else if (cp + spInCp >= priceInCp) {
+    const cpInSp = Math.floor(cp / 5);
+    cpUpdateQty = cpUpdateQty - cpInSp * 5;
+    const priceLeftinSp = priceInSp - cpInSp;
+    spUpdateQty = spUpdateQty - priceLeftinSp;
+  // case 4: payment requires gp
+  } else {
+    const cpInSp = Math.floor(cp / 5);
+    const cpAndSpInGp = Math.floor((cpInSp + sp) / 10);
+    let priceLeft = totalPrice;
+    if (cpAndSpInGp) {
+      cpUpdateQty = cpUpdateQty - cpInSp * 5;
+      const priceLeftinSp = cpAndSpInGp * 10 - cpInSp;
+      spUpdateQty = spUpdateQty - priceLeftinSp;
+      priceLeft = priceLeft - cpAndSpInGp;
+    }
+    gpUpdateQty = gp - priceLeft;
+  }
+  const cpUpdate = {_id: cpItem?.data._id, "data.quantity": cpUpdateQty};
+  const spUpdate = {_id: spItem?.data._id, "data.quantity": spUpdateQty};
+  const gpUpdate = {_id: gpItem?.data._id, "data.quantity": gpUpdateQty};
+  cpUpdate._id && cpUpdateQty !== cp && actor.updateEmbeddedDocuments("Item", [cpUpdate]);
+  spUpdate._id && spUpdateQty !== sp && actor.updateEmbeddedDocuments("Item", [spUpdate]);
+  gpUpdate._id && gpUpdateQty !== gp && actor.updateEmbeddedDocuments("Item", [gpUpdate]);
+
+  // update merchant's item quantity and merchant's gold
+  merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+  merchant.update({"data.attributes.gold.value": merchantGold + totalPrice});
+
+  // add item to actor
+  const ownedItem = actorItems.find(i => i.data.type === item.data.type &&
+    i.data.name === item.data.name &&
+    i.data.img === item.data.img &&
+    i.data.data.macro === item.data.data.macro &&
+    foundry.utils.fastDeepEqual(i.data.data.attributes, item.data.data.attributes));
+  if (ownedItem) {
+    const ownedItemQty = +ownedItem.data.data.quantity;
+    const itemUpdate = { _id: ownedItem.data._id, "data.quantity": ownedItemQty + qty };
+    actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+  } else {
+    const itemData = {
+      data: foundry.utils.deepClone(item.data.data),
+      img: item.data.img,
+      name: item.data.name,
+      type: item.data.type,
+    };
+    itemData.data.quantity = qty;
+    actor.createEmbeddedDocuments("Item", [itemData]);
+  }
+
+  const chatData = {
+    content: `buys ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPrice} GP.`,
+    sound: 'coins'
+  }
+  
+  return macroChatMessage(token, chatData, true);
 }
 
-function itemSplitDialog(maxQty, item, price, ...data) {
+function itemSplitDialog(maxQty, itemData, price, ...data) {
   new Dialog({
-    title: `Buy ${item.name}`,
+    title: `Buy ${itemData.name}`,
     content: 
       `<form>
         <div class="form-group">
@@ -1016,7 +1105,7 @@ function itemSplitDialog(maxQty, item, price, ...data) {
         label: `Buy`,
         callback: html => {
           const quantity = +html.find('[id=qty]').val();
-          buyMacro(item, price, ...data, quantity, true);
+          buyMacro(itemData, price, ...data, quantity, true);
         }
       },
       two: {
