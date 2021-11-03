@@ -103,13 +103,11 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortFeaturesBySource(features, attrs) {
     const sortedFeatures = {};
-    const classKey = `${attrs.class?.value}` || 'Class';
-    const raceKey = `${attrs.race?.value}` || 'Race';
 
     const classArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'class');
-    if (classArr.length) sortedFeatures[classKey] = classArr;
+    if (classArr.length) sortedFeatures['Class'] = classArr;
     const raceArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'race');
-    if (raceArr.length) sortedFeatures[raceKey] = raceArr;
+    if (raceArr.length) sortedFeatures['Race'] = raceArr;
     const otherArr = features.filter(f => f.data.attributes.source?.value?.toLowerCase() !== 'class' && 
       f.data.attributes.source?.value?.toLowerCase() !== 'race');
     if (otherArr.length) sortedFeatures['Other'] = otherArr;
