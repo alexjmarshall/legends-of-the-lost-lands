@@ -235,7 +235,7 @@ export class SimpleActorSheet extends ActorSheet {
           // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
         if(!isPrepared === true) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `prepares ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -257,9 +257,9 @@ export class SimpleActorSheet extends ActorSheet {
           // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
         }
         if (!isWorn) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `dons ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} dons ${item.name}` });
         } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `doffs ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} doffs ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
@@ -274,22 +274,22 @@ export class SimpleActorSheet extends ActorSheet {
           //   if(heldItemsLimit > 1) break;
           // }
         }
-        if(!isHeld) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `wields ${item.name}` });
+        if (!isHeld) {
+          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
         } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `stows ${item.name}` });
+          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} stows ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
-        let itemMacroWithId = item.data.data.macro.replace('itemId', item._id);
+        let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
         let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro')
         if(event.ctrlKey && event.altKey && isLostlandsMacro) {
           // create alternate version of macro
-          itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true, showModDialog: true}');
+          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{applyDamage: true, showModDialog: true}');
         } else if(event.ctrlKey && isLostlandsMacro) {
-          itemMacroWithId = itemMacroWithId.replace('{}', '{applyDamage: true}');
+          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{applyDamage: true}');
         } else if(event.altKey && isLostlandsMacro) {
-          itemMacroWithId = itemMacroWithId.replace('{}', '{showModDialog: true}');
+          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{showModDialog: true}');
         }
         let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
         if (!macro && itemMacroWithId) {
