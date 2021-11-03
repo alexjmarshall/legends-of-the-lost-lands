@@ -18,7 +18,7 @@ export class MerchantActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @inheritdoc */
-  getData() {
+  async getData() {
     const context = super.getData();
     EntitySheetHelper.getAttributeData(context.data);
     context.shorthand = !!game.settings.get("lostlands", "macroShorthand");
@@ -26,13 +26,18 @@ export class MerchantActorSheet extends ActorSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
-
-    // derived value for items based on item gp_value and merchant attitude
+    // item price
+    const merchantActor = context.actor.isToken ? context.actor :
+      canvas.tokens.objects.children.find(t => t.actor.id === context.actor.id && t.data.actorLink === true)?.actor;
+    const character = game.user.character;
+    const attitude = merchantActor && character ? await game.lostlands.Macro.reactionRoll(merchantActor, character, {showModDialog: false}) :
+      Constant.ATTITUDES.UNCERTAIN;
+    const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
     const items = context.data.items.filter(i => i.type === 'item');
-    items.forEach(item => item.data.price = item.data.attributes.gp_value?.value);
+    const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
+    items.forEach(item => item.data.price = Math.round(+item.data.attributes.gp_value?.value * 
+      sellFactor * sellAdj));
     context.data.items = items;
-
-    // will buy back full price for 1 real time minute
 
     return context;
   }
@@ -51,6 +56,9 @@ export class MerchantActorSheet extends ActorSheet {
     // Item Controls
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
+
+    // Remove draggable from item rows if user is not GM
+    if(!game.user.isGM) html.find("li.item[data-item-id]").attr("draggable", false);
   }
 
   /* -------------------------------------------- */
@@ -74,10 +82,11 @@ export class MerchantActorSheet extends ActorSheet {
     // Handle different actions
     switch ( button.dataset.action ) {
       case "buy":
-        const displayPrice = $(li)?.find('.item-price').text();
-        const price = +displayPrice.match(/^\d+/);
+        const displayPrice = $(li)?.find('.item-price').text().trim();
+        const price = +displayPrice.match(/\d+/);
         return game.lostlands.Macro.buyMacro(item, price, this.actor);
       case "create":
+        if (!game.user.isGM) return;
         const cls = getDocumentClass("Item");
         return cls.create(data, {parent: this.actor});
       case "edit":
