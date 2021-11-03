@@ -32,7 +32,8 @@ Hooks.once("init", async function() {
 
   game.lostlands = {
     SimpleActor,
-    Macro
+    Macro,
+    Util
   };
 
   // Define custom Entity classes
@@ -192,9 +193,11 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
 });
 
 // Play 'what' voice sound on token selection
+// Deselect merchants on token selection
 Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
-  const actor = token ? token.actor : game.user.character;
+  if (!game.user.isGM && token.actor.type === "merchant") return token.release();
+  const actor = token.actor;
   const actorHp = actor.data.data.hp?.value;
   if ( !actorHp || actorHp < 1 ) return;
   Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
