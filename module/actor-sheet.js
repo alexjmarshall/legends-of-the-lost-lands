@@ -265,7 +265,7 @@ export class SimpleActorSheet extends ActorSheet {
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
         const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
         if(!isHeld && heldItems.length >= heldItemsLimit) {
-          return ui.notifications.error("Must release a handheld item first.");
+          return ui.notifications.error("Must release a held item first.");
           // if heldItemsLimit is 1, must clear all held items. Otherwise, just clear one.
           // for(const item of heldItems) {
           //   await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);
