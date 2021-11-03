@@ -62,15 +62,15 @@
                 <div></div>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
-                <span style="max-width:77px;"></span>
+                <span style="max-width:74px;"></span>
             </header>
             {{#each data.equipment as |type key|}}
             <header class="items-header flexrow">
                 <span style="text-align: center;">
-                    {{#ifeq key "holdable"}}Held{{else}}
-                    {{#ifeq key "wearable"}}Worn{{else}}
-                    {{#ifeq key "magic"}}Magic{{else}}
-                    {{#ifeq key "other"}}Other{{else}}
+                    {{#ifeq key "holdable"}}Holdable Items{{else}}
+                    {{#ifeq key "wearable"}}Wearable Items{{else}}
+                    {{#ifeq key "magic"}}Misc. Magic Items{{else}}
+                    {{#ifeq key "other"}}Other Items{{else}}
                     {{key}}
                     {{/ifeq}}
                     {{/ifeq}}
@@ -128,9 +128,9 @@
             {{#each data.spells as |spelltype key|}}
             <header class="spells-header flexrow">
                 <span style="text-align: center;">
-                    {{#ifeq key "spell_magic"}}Magic{{else}}
-                    {{#ifeq key "spell_cleric"}}Cleric{{else}}
-                    {{#ifeq key "spell_witch"}}Witch{{else}}
+                    {{#ifeq key "spell_magic"}}Magic Spells{{else}}
+                    {{#ifeq key "spell_cleric"}}Cleric Spells{{else}}
+                    {{#ifeq key "spell_witch"}}Witch Spells{{else}}
                     {{key}}
                     {{/ifeq}}
                     {{/ifeq}}
@@ -179,7 +179,7 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each data.features as |source key|}}
             <header class="features-header flexrow">
-                <span style="text-align: center;">{{key}}</span>
+                <span style="text-align: center;">{{key}} Features</span>
             </header>
             <ol class="item-list">
                 {{#each source as |feature id|}}

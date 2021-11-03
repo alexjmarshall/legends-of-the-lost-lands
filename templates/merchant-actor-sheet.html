@@ -33,9 +33,9 @@
           <header class="items-header flexrow">
               <div></div>
               <div></div>
-              <span class="item-column">Quantity</span>
-              <span class="item-column">Price (ea.)</span>
-              <span style="max-width:77px;"></span>
+              <span class="item-column merchant-item-column">Quantity</span>
+              <span class="item-column merchant-item-column">Price (ea.)</span>
+              <span style="max-width:74px;"></span>
           </header>
           <ol class="item-list">
               {{#each data.items as |item id|}}
@@ -47,8 +47,10 @@
                 </div>
                 <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                 <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
-                <span class="item-row item-column item-price" data-action="edit">{{item.data.price}} gp</span>
+                <span class="item-row item-column merchant-item-column" data-action="edit">{{item.data.quantity}}</span>
+                <span class="item-row item-column merchant-item-column item-price" data-action="edit">
+                    {{#if item.data.price}}{{item.data.price}} gp{{else}}{{item.data.attributes.gp_value.value}} gp{{/if}}
+                </span>
                 {{#if ../isGM}}
                 <div class="item-controls">
                     <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>

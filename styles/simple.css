@@ -124,6 +124,9 @@
   flex: 0 0 65px;
   margin-right: 5px;
 }
+.lostlands .items .merchant-item-column {
+  flex: 0 0 82px;
+}
 .lostlands .item-list .item {
   min-height: 30px;
   line-height: 24px;
