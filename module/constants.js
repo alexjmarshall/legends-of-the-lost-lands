@@ -9,7 +9,28 @@ export const MAX_SPELL_LEVELS = {
   [SPELL_TYPES.SPELL_MAGIC]: 9,
   [SPELL_TYPES.SPELL_WITCH]: 6
 };
-export const FIGHTER_XP_PROGRESSION = [ // put all class XP progressions in one base object
+export const ATTITUDES = {
+  HOSTILE: "hostile",
+  DISMISSIVE: "dismissive",
+  UNCERTAIN: "uncertain",
+  ACCEPTING: "accepting",
+  HELPFUL: "helpful"
+};
+export const ATTITUDE_SELL_ADJ = {
+  [ATTITUDES.HOSTILE]: 1.3,
+  [ATTITUDES.DISMISSIVE]: 1.1,
+  [ATTITUDES.UNCERTAIN]: 1,
+  [ATTITUDES.ACCEPTING]: 0.95,
+  [ATTITUDES.HELPFUL]: 0.85
+};
+export const ATTITUDE_BUY_ADJ = {
+  [ATTITUDES.HOSTILE]: 0.7,
+  [ATTITUDES.DISMISSIVE]: 0.9,
+  [ATTITUDES.UNCERTAIN]: 1,
+  [ATTITUDES.ACCEPTING]: 1.05,
+  [ATTITUDES.HELPFUL]: 1.15
+};
+export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
   {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
   {xpRequired: 60000, updateData: {"data.level": 7, "data.bab": 7, "data.st": 10, "data.xp.max": 120000}},

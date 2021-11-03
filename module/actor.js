@@ -99,10 +99,13 @@ export class SimpleActor extends Actor {
     const touchAc = 9 + updateData.dex_mod;
     updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
 
+    // attitude map
+    updateData.attitude_map = actorData.attitude_map || {};
+
     // update actor if any update data is different than existing data
     let shouldUpdate = false;
     for(const key of Object.keys(updateData)) {
-      if(updateData[key] !== actorData[key]) {
+      if(!foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
         shouldUpdate = true;
         break;
       }
