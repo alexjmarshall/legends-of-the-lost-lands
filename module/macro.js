@@ -172,13 +172,6 @@ export async function chargedItemMacro(itemId, options={}) {
   return actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
 }
 
-function getMultiAttacks(itemId, token) {
-  const actorItems = token.actor.data.items;
-  const MultiItem = actorItems.get(itemId) || actorItems.find(i => i.type === 'feature' && i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
-  const attrs = MultiItem?.data?.data?.attributes;
-  return attrs?.routine?.value || attrs?.weapons?.value;
-}
-// if(weapons[0].toLowerCase().replace(/\s/g,'') === 'attackroutine') options.offhand = false;
 export function twoWeaponFightingMacro(options) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
@@ -307,9 +300,9 @@ function chatInlineRoll(content) {
   return `<span style="font-style:normal;">[[${content}]]</span>`
 }
 
-export function thiefSkillMacro(skill, options={}) {
+export async function thiefSkillMacro(skill, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  if(!token) return ui.notifications.error("Select character(s) attempting the thief skill.");
+  if(!token) return ui.notifications.error("Select token attempting the thief skill.");
   const actor = token.actor;
 
   options.flavor = skill;
@@ -318,31 +311,35 @@ export function thiefSkillMacro(skill, options={}) {
   const lockPickItem = actor.items.find(i => i.type === 'item' && i.name.toLowerCase().replace(/\s/g,'') === 'lockpicks');
   switch(skill.toLowerCase().replace(/\s/g,'')) {
     case 'openlocks':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`No lock picks found on character.`);
-      options.failText = ` but may try again when their skill increases`;
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks.`);
+      options.failText = ` but may try again when their skill increases.`;
       options.critFailText = ` and the lock pick breaks!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
       break;
     case 'disarmtraps':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`No lock picks found on character.`);
-      options.failText = ` but may try again when their skill increases`;
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks.`);
+      options.failText = ` but may try again when their skill increases.`;
       options.critFailText = ` and the trap fires!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
       break;
     case 'pickpockets':
-      options.failText = ` but may try again when their skill increases`;
+      options.failText = ` but may try again when their skill increases.`;
       options.critFailText = ` and is immediately caught!`;
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
       break;
     case 'movesilently':
-      options.failText = ` but may hide to avoid detection`;
+      options.failText = ` but may hide to avoid detection.`;
       options.critFailText = ` and is immediately caught!`;
       break;
     case 'hideinshadows':
-      options.failText = ` and may be found if searched for`;
+      options.failText = ` and may be found if searched for.`;
       options.critFailText = ` and is immediately caught!`;
   }
+
   return saveMacro(0, options);
 }
 
@@ -417,24 +414,12 @@ export function backstabMacro(options) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for thief skills, misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells and voices for hooks, on click/ double click token 1/3 time, at start of combat 1/2 time, and on < 0 HP -- or just give players a voice tab
-  // XP progressions and other class/race features -- nah to auto level up
-  // players must be able to edit two weapon fighting list -- DONE
-  // do not show chat bubble for most macro actions -- looks good, but can set not pan to speaker globally? if not, don't have attack macro show chat bubble
+  if(!Array.isArray(weapons)) weapons = [weapons]; // need macro for misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells
+  // XP progressions and other class/race features -- YAH to auto level up
   // should use combat tracker? or nah
-  // how to abide by max HP limit? -- DONE
   // players cannot edit their XP or HP -- nah
   // if fragile weapon breaks, should reduce quantity!
-  // spells should say in chat who is being targeted? -- nah
-  // spell macro work for both spells and scrolls -- DONE
   // document all attribute properties
-  // save and attack should take in actors rather than tokens as arg
-  // replace buy basic items macro with merchant sheet
-  // need to refactor sound strings to use whole filename including filetype
-  // collections of sound profiles e.g. male_1, female_1 for player to choose
-  // sounds played automatically: click your token (ok), take damage (hurt), drop below 0 HP (death), cast spell (?), drag-move (ok), thief skill (ok)
-  // sounds: amused, angry, bored, death, dying, hurt, kill, lead, ok, party_death, party_fail, retreat, sleepy, toot, what. each has multiple which play randomly when icon clicked
-  // only show soundsets of the same type as the PC's class 
   // crossbow macro click alternates between firing and reloading
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
@@ -475,15 +460,15 @@ async function attack(attackers, targetToken, options) {
         if(attack.damage) {
           let targetHp = +targetToken.actor.data.data.hp?.value;
           const hpUpdate = targetHp - attack.damage;
-          if(!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
           (async () => {
               if ( hpUpdate > 0 ) {
-              await Util.playVoiceSound(Constant.VOICE_MOODS.HURT, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
+              await Util.playVoiceSound(Constant.VOICE_MOODS.HURT, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.5});
             } else if ( targetHp > 0 ) {
-              await Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.7});
+              await Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, targetToken.actor, targetToken, {push: true, chatBubble: true, chance: 0.5});
               await Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
             }
           })();
+          if(!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": targetHp - attack.damage});
         }
         // should wait unless last actors last weapon, or next weapon shows mod dialog
         // wait if NOT last weapon of final actor AND (NOT last weapon of this actor OR not showing mod dialog)
@@ -545,6 +530,17 @@ async function attack(attackers, targetToken, options) {
   const finesse = options.finesse == null ? weapAttrs.finesse?.value : options.finesse;
   const unwieldy = options.unwieldy == null ? weapAttrs.unwieldy?.value : options.unwieldy;
   const critMin = options.critMin == null ? (weapAttrs.crit_min?.value || 20) : options.critMin;
+  const reloadable = options.reloadable == null ? weapAttrs.reloadable?.value : options.reloadable;
+  const loaded =  weaponItem.data.data.loaded;
+
+  // reload crossbow
+  if ( reloadable && !loaded) {
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.loaded': true}]);
+    chatMsgData.content += `reloads ${weapName}<br>`;
+    weapons.shift();
+    attacker.offhand = true;
+    return attack(attackers, targetToken, options);
+  }
   
   // show attack choice dialogs
   // automate throw dialog
@@ -599,7 +595,10 @@ async function attack(attackers, targetToken, options) {
         attacker.offhand = true;
         return attack(attackers, targetToken, options);
       }
-      await token.actor.updateEmbeddedDocuments("Item", [{'_id': quiver.data._id, 'data.quantity': quiverQty - 1}]);
+      const itemsUpdate = [{'_id': quiver.data._id, 'data.quantity': quiverQty - 1}];
+      // set crossbow to unloaded
+      if (reloadable) await itemsUpdate.push({'_id': weaponItem.data._id, 'data.loaded': false});
+      await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
     }
   }
 
@@ -732,7 +731,8 @@ async function attack(attackers, targetToken, options) {
   if(fragile && atkType === 'melee' && d20Result === 1) {
     resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
     resultSound = 'weapon_break';
-    // reduce qty by 1
+    const weaponQty = weaponItem.data.data.quantity;
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.quantity': weaponQty - 1}]);
   }
 
   chatMsgData.content += `${attackText}${rangeText} ${chatInlineRoll(totalAtk)}${resultText}<br>`;
@@ -901,160 +901,6 @@ function throwDialog(options, ...data) {
   }).render(true);
 }
 
-// export function buyBasicEquipment() {
-//   let token = canvas.tokens.controlled[0];
-//   let actor = canvas.tokens.controlled[0]?.actor;
-//   if(!actor || !actor.isOwner){
-//     ui.notifications.error("Select the token of the character making the purchase.");
-//     return;
-//   }
-
-//   const basicItems = game.items.filter(i => i.folder?.parentFolder?.name == 'Basic Equipment');
-//   const armsAndArmor = basicItems.filter(i => i.folder?.name == 'Arms & Armor');
-//   const misc = basicItems.filter(i => i.folder?.name === 'Miscellaneous');
-  
-//   let armsAndArmorOptionsText = ``;
-//   for (const item of armsAndArmor) {
-//     armsAndArmorOptionsText += `<option value="${item.id}">${item.name}</option>`;
-//   }
-
-//   let miscOptionsText = ``;
-//   for (const item of misc) {
-//     miscOptionsText += `<option value="${item.id}">${item.name}</option>`;
-//   }
-//   const optionsText = `
-//     <optgroup label="Miscellaneous">${miscOptionsText}</optgroup>
-//     <optgroup label="Arms & Armor">${armsAndArmorOptionsText}</optgroup>
-//   `;
-
-//   async function resolvePurchase(itemId, itemName, qty, pricePoop) {
-//     qty = +qty;
-//     let price = +price;
-//     if(isNaN(qty) || qty < 0 || qty % 1 || isNaN(price) || price < 0 || price % 1){
-//       ui.notifications.error("Invalid input.");
-//       return;
-//     }
-
-//     const actorItems = actor.data.items, gpItem = actorItems.find(i => i.name === "Gold Pieces");
-//     const gpQty = +gpItem?.data.data.quantity || 0;
-//     const spItem = actorItems.find(i => i.name === "Silver Pieces");
-//     const spQty = +spItem?.data.data.quantity || 0;
-//     const cpItem = actorItems.find(i => i.name === "Copper Pieces");
-//     const cpQty = +cpItem?.data.data.quantity || 0;
-//     const totalMoney = Math.round((gpQty + spQty/10 + cpQty/50) * 100) / 100;
-
-//     if(price > totalMoney) {
-//       ChatMessage.create({
-//         speaker: ChatMessage.getSpeaker(token),
-//         content: `tries to purchase ${qty} ${itemName}${qty > 1 ? 's' : ''} for ${price} GP, but doesn't have enough money. The merchant appears annoyed.`,
-//         type: CONST.CHAT_MESSAGE_TYPES.EMOTE
-//       });
-//       return;
-//     }
-
-//     // add item to actor
-//     const ownedItem = actorItems.find(i => i.name === itemName);
-//     if(ownedItem) {
-//       const ownedItemQty = +ownedItem.data.data.quantity;
-//       const itemUpdate = { _id: ownedItem.data._id, "data.quantity": ownedItemQty + qty };
-//       await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
-//     } else {
-//       const itemData = game.items.get(itemId).clone({"data.quantity": qty});
-//       await actor.createEmbeddedDocuments("Item", [itemData.data]);
-//     }
-
-//     // pay for item from actor
-//     if(cpQty >= price*50) {
-//       const cpUpdate = { _id: cpItem?.data._id, "data.quantity": cpQty - price*50 };
-//       cpUpdate._id && await actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-//     } else if(Math.round((spQty/10 + cpQty/50) * 100) / 100 >= price) {
-//       const cpUpdate = { _id: cpItem?.data._id, "data.quantity": cpQty % 5 };
-//       cpUpdate._id && await actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-//       price = Math.round((price - Math.floor(cpQty / 5) * 5 / 50) * 100) / 100;
-//       const spUpdate = { _id: spItem?.data._id, "data.quantity": spQty - price*10 };
-//       spUpdate._id && await actor.updateEmbeddedDocuments("Item", [spUpdate]);
-//     } else {
-//       let change = Math.round((totalMoney - price) * 100) / 100;
-//       let gpChange = Math.floor(change);
-//       change = Math.round((change - gpChange) * 10 * 100) / 100;
-//       let spChange = Math.floor(change);
-//       change = Math.round((change - spChange) * 5 * 100) / 100;
-//       const gpUpdate = { _id: gpItem?.data._id, "data.quantity": gpChange };
-//       gpUpdate._id && await actor.updateEmbeddedDocuments("Item", [gpUpdate]);
-//       const spUpdate = { _id: spItem?.data._id, "data.quantity": spChange };
-//       spUpdate._id && await actor.updateEmbeddedDocuments("Item", [spUpdate]);
-//       const cpUpdate = { _id: cpItem?.data._id, "data.quantity": change };
-//       cpUpdate._id && await actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-//     }
-
-//     const content = `buys ${qty} ${itemName}${qty > 1 ? 's' : ''} for ${price} GP.`;
-//     ChatMessage.create({
-//       speaker: ChatMessage.getSpeaker(token),
-//       content: content,
-//       type: CONST.CHAT_MESSAGE_TYPES.EMOTE
-//     });
-//   }
-
-//   new Dialog({
-//     title: "Buy Basic Equipment",
-//     content: 
-//       `<p><form id="purchase-form">
-//         <div class="flexrow">
-//           <div class="flexcol flex1">
-//             <label for="qty">Quantity</label>
-//             <input id="qty" type="number" value="1"/>
-//           </div>
-//           <div class="flexcol flex2" style="padding-right:2px">
-//             <label for="select">Item</label>
-//             <select id="select" style="padding:1px">
-//               ${optionsText}
-//             </select>
-//           </div>
-//           <div class="flexcol flex1">
-//             <label for="price">Price</label>
-//             <input id="price" type="number"/>
-//           </div>
-//         </div>
-//       </form></p>`,
-//     buttons: {
-//       one: {
-//         icon: '<i class="fas fa-check"></i>',
-//         label: "Buy",
-//         callback: html => {
-//           const itemId = html.find("#select").val();
-//           const itemName = html.find("#select option:selected").text();
-//           const qty = html.find("#qty").val();
-//           const unitPrice = html.find("#price").val();
-//           const price = qty && unitPrice ? qty * unitPrice : undefined;
-//           resolvePurchase(itemId, itemName, qty, price);
-//         }
-//       },
-//       two: {
-//         icon: '<i class="fas fa-times"></i>',
-//         label: "Cancel"
-//       }
-//     },
-//     default: "two",
-//     render: html => {
-//       const select = html.find("#select");
-//       const priceInput = html.find("#price");
-//       syncPriceVal();
-
-//       select.change(function() {
-//         syncPriceVal();
-//       })
-
-//       function syncPriceVal() {
-//         const itemId = select.val();
-//         const selectedItem = game.items.get(itemId);
-//         const itemPrice = selectedItem.data.data.attributes.gp_value?.value;
-//         if(!itemPrice) ui.notifications.error("Item does not have the value attribute set.");
-//         priceInput.val(itemPrice);
-//       }
-//     }
-//   }).render(true);
-// }
-// selected token represents reacting actor. targeted token represents character they are reacting to.
 export function reactionRollMacro(options) {
   if (!game.user.isGM) return;
   if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token.");
@@ -1208,7 +1054,6 @@ export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
   const cpPaidText = ` ${cp - cpUpdateQty} cp,`;
   const spPaidText = ` ${sp - spUpdateQty} sp,`;
   const gpPaidText = ` ${gp - gpUpdateQty} gp`;
-  // create chat message
   const chatData = {
     content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPrice} GP, paying${cpPaidText}${spPaidText}${gpPaidText}.`,
     sound: 'coins'
