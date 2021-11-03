@@ -45,7 +45,7 @@
             {{!-- Handle other input types. --}}
             {{else}}
             <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" value="{{attr.value}}"
-                data-dtype="{{attr.dtype}}" placeholder="{{localize "SIMPLE.AttributeValue"}}" />
+                data-dtype="{{attr.dtype}}" placeholder="{{localize "SIMPLE.AttributeValue"}}" {{#if ../isPlayer}}readonly{{/if}} />
             {{/if}}
             {{/if}}
             <select class="attribute-dtype" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.dtype" {{#if ../isPlayer}}style="display:none;"{{/if}}>
