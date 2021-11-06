@@ -82,19 +82,16 @@
                 {{#each type as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
-                        {{#if item.data.macro}}
-                        <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
-                        {{/if}}
-                    </div>
-                    <div class="item-toggle">
-                        {{#if item.data.attributes.wearable.value}}
-                        <a class="item-control {{#if item.data.worn}}{{else}}opacity-50{{/if}}" title="Wear Item" data-type="{{item.type}}" data-action="wear">
-                            <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-breastplate.png"/>
-                        </a>
-                        {{else if item.data.attributes.holdable.value}}
+                        {{#if item.data.attributes.holdable.value}}
                         <a class="item-control {{#if item.data.held}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold">
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
+                        {{else if item.data.attributes.wearable.value}}
+                        <a class="item-control {{#if item.data.worn}}{{else}}opacity-50{{/if}}" title="Wear Item" data-type="{{item.type}}" data-action="wear">
+                            <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-breastplate.png"/>
+                        </a>
+                        {{else if item.data.macro}}
+                        <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
                         {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
@@ -110,7 +107,7 @@
             </ol>
             {{/each}}
             <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:46px;">
+                <span style="max-width:23px;">
                 </span>
                 <span>
                     {{#if isGM}}
