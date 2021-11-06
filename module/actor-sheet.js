@@ -51,7 +51,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     context.data.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     context.data.voiceMoods = [];
-    for (const [key, value] of Constant.VOICE_MOOD_ICONS) {
+    for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
       context.data.voiceMoods.push( { mood: key, icon: value } );
     }
     context.hasVoice = !!context.systemData.voice;
@@ -225,14 +225,11 @@ export class SimpleActorSheet extends ActorSheet {
           i.data.data.attributes.lvl?.value === spellLevel && 
           i.data.data.prepared);
         const slotsMax = actorSlotsAttr?.max || 0;
-        if(slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level.");
-        if(!isPrepared && preparedSpells.length >= slotsMax) {
+        if (slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level.");
+        if ( !isPrepared && preparedSpells.length >= slotsMax ) {
           return ui.notifications.error("Cannot prepare any more spells of this level.");
-          // // clear up a slot by unpreparing first prepared spell
-          // const firstPreparedSpellId = preparedSpells[0].data._id;
-          // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstPreparedSpellId, "data.prepared": false}]);
         }
-        if(!isPrepared === true) {
+        if (!isPrepared) {
           game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
@@ -250,47 +247,34 @@ export class SimpleActorSheet extends ActorSheet {
         const slotLimit = itemSlot === 'ring' ? 10 : 1;
         if ( itemSlot && !isWorn && wornItemsInSlot.length >= slotLimit ) {
           return ui.notifications.error(`Must remove an item from this slot (${itemSlot}) first.`);
-          // clear up the slot
-          // const firstSlotItemId = slotItems[0].data._id;
-          // await this.actor.updateEmbeddedDocuments("Item", [{_id: firstSlotItemId, "data.worn": false}]);
         }
-        if (!isWorn) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} dons ${item.name}` });
-        } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} doffs ${item.name}` });
-        }
+        let verb = isWorn ? 'doffs' : 'dons';
+        game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.data.data.held);
         const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
-        if(!isHeld && heldItems.length >= heldItemsLimit) {
+        if ( !isHeld && heldItems.length >= heldItemsLimit ) {
           return ui.notifications.error("Must release a held item first.");
-          // if heldItemsLimit is 1, must clear all held items. Otherwise, just clear one.
-          // for(const item of heldItems) {
-          //   await this.actor.updateEmbeddedDocuments("Item", [{_id: item.data._id, "data.held": false}]);
-          //   if(heldItemsLimit > 1) break;
-          // }
         }
         if (!isHeld) {
           game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
-        } else {
-          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} stows ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
       case "use":
         let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
-        let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro')
-        if(event.ctrlKey && event.altKey && isLostlandsMacro) {
-          // create alternate version of macro
-          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{applyDamage: true, showModDialog: true}');
-        } else if(event.ctrlKey && isLostlandsMacro) {
-          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{applyDamage: true}');
-        } else if(event.altKey && isLostlandsMacro) {
-          itemMacroWithId = itemMacroWithId.replace(/{}/g, '{showModDialog: true}');
+        let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
+        if (isLostlandsMacro) {
+          let optionsParam = '';
+          if (event.ctrlKey) optionsParam += 'applyEffect: true,';
+          if (event.shiftKey) optionsParam += 'showModDialog: true,';
+          if (event.altKey) optionsParam += 'showAltDialog: true,';
+          optionsParam = `{${optionsParam}}`;
+          itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
         }
-        let macro = game.macros.find(m => (m.name === item.name && m.data.command === itemMacroWithId));
-        if (!macro && itemMacroWithId) {
+        let macro = game.macros.find(m => ( m.name === item.name && m.data.command === itemMacroWithId ));
+        if ( !macro ) {
           macro = await Macro.create({
             name: item.name,
             type: "script",
@@ -298,7 +282,7 @@ export class SimpleActorSheet extends ActorSheet {
             flags: { "lostlands.attrMacro": true }
           });
         }
-        return await macro.execute();
+        return macro.execute();
     }
   }
 
