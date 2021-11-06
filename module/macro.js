@@ -746,6 +746,28 @@ async function attack(attackers, targetToken, options) {
     sound: resultSound,
     damage: thisAttackDamage
   });
+
+  // check if this weapon item has any other macros to execute
+  let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
+  let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
+  if (isLostlandsMacro) {
+    let optionsParam = '';
+    if (options.applyEffect) optionsParam += 'applyEffect: true,';
+    if (options.showModDialog) optionsParam += 'showModDialog: true,';
+    if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
+    optionsParam = `{${optionsParam}}`;
+    itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
+  }
+  let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
+  if ( !macro ) {
+    macro = await Macro.create({
+      name: weaponItem.name,
+      type: "script",
+      command: itemMacroWithId,
+      flags: { "lostlands.attrMacro": true }
+    });
+  }
+  macro.execute();
   weapons.shift();
 
   return attack(attackers, targetToken, options);
