@@ -116,7 +116,7 @@ async function consumeItem(itemId, options={}) {
   if (!itemQty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
 
   const healFormula = item.data.data.attributes.heal?.value;
-  if (options.applyDamage && healFormula) {
+  if (options.applyEffect && healFormula) {
     try {
       const healPoints = await new Roll(healFormula).evaluate().total;
       const currentHp = +actor.data.data.hp?.value;
@@ -143,7 +143,7 @@ async function consumeItem(itemId, options={}) {
   }
   canvas.hud.bubbles.say(token, `${actor.name} ${options.verb || 'consumes'} ${item.name}.`, {emote: true});
   const qtyUpdate = itemQty - 1;
-  return actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.quantity': qtyUpdate}]);
+  return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': qtyUpdate}]);
 }
 
 export async function chargedItemMacro(itemId, options={}) {
@@ -169,19 +169,18 @@ export async function chargedItemMacro(itemId, options={}) {
   }, false);
   canvas.hud.bubbles.say(token, `${actor.name} expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from ${item.name}.`, {emote: true});
   
-  return actor.updateEmbeddedDocuments("Item", [{'_id': item.data._id, 'data.attributes.charges.value': chargesLeft}]);
+  return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.attributes.charges.value': chargesLeft}]);
 }
 
-export function twoWeaponFightingMacro(options) {
+export function heldWeaponAttackMacro(options) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
   const targetToken = [...game.user.targets][0];
-  options.throwable = false;
 
   const attackers = [];
   for(const token of selectedTokens) {
-    const weapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
+    let weapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
     if (!weapons.length) {
       ui.notifications.error(`${token.actor.name} is not holding any weapons.`);
       continue;
@@ -193,6 +192,12 @@ export function twoWeaponFightingMacro(options) {
         arr.push(w);
       }
     });
+    // check if sufficient dexterity to use multiple weapons
+    const dexScore = +token.actor.data.data.attributes.ability_scores.dex?.value;
+    if (weapons.length > 1 && dexScore < 13) {
+      ui.notifications.error(`${token.actor.name} does not have high enough dexterity to fight with more than one weapon.`);
+      weapons = [weapons[0]];
+    }
     // extract item ids and flag weapons after the first as offhand
     const weapIds = weapons.map((w, i) => {
       return Object.create({
@@ -204,7 +209,7 @@ export function twoWeaponFightingMacro(options) {
     attackers.push({
       token: token,
       weapons: weapIds,
-      chatMsgData: {content: '', flavor: `Two-Weapon Fighting (${weaponsString})`, sound: options.sound},
+      chatMsgData: {content: '', flavor: `${weaponsString}`, sound: options.sound},
       attacks: []
     })
   }
@@ -261,7 +266,7 @@ async function save(tokens, damage, options) {
   }
   options.skipDmgDialog = true;
   const modDialogFlavor = options.flavor || 'Save';
-  if(options.showModDialog && !options.shownModDialog) return modDialog(options, modDialogFlavor, save, tokens, damage, options);
+  if(options.showModDialog && !options.shownModDialog) return modDialog(options, modDialogFlavor, () => save(tokens, damage, options));
   const actorSaveMod = +actor.data.data.save_mod || 0;
   const d20Result = await new Roll("d20").evaluate().total;
   let dialogAtkMod = '';
@@ -282,11 +287,11 @@ async function save(tokens, damage, options) {
     const itemQty = +options.critFailBrokenItem.data.data.quantity;
     const qtyUpdate = itemQty - 1;
     options.sound = options.critFailSound || options.sound;
-    await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem.data._id, 'data.quantity': qtyUpdate}]);
+    await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
   }
   const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  let content = `<div style="line-height:1.6em;">${actor.name} ${options.verb || 'saves'} ${chatInlineRoll(saveText)}${resultText}`;
+  let content = `${actor.name} ${options.verb || 'saves'} ${chatInlineRoll(saveText)}${resultText}`;
   content += `${damage ? ` and takes ${chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}</div>`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   macroChatMessage(token, {
@@ -357,7 +362,7 @@ export function backstabMacro(options) {
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
   const targetToken = [...game.user.targets][0];
   options.atkMod = 4;
-  options.throwable = false;
+  options.showAltDialog = false;
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -387,7 +392,7 @@ export function backstabMacro(options) {
     }
     attackers.push({
       token: token,
-      weapons: [{id: weapon.id}],
+      weapons: [{id: weapon.id, dmgType: 'stab'}],
       chatMsgData: {content: '', flavor: `Backstab (${weapon.name})`, sound: options.sound},
       attacks: [],
       dmgMulti: dmgMulti
@@ -407,7 +412,7 @@ export function backstabMacro(options) {
 *  skipThrowDialog: true/false
 *  dialogAtkMod: (value)
 *  dialogDmgMod: (value)
-*  applyDamage: true/false
+*  applyEffect: true/false
 *  throwable: true/false -- item attribute
 *  reach: true/false -- item attribute
 *  hasHook: true/false -- item attribute
@@ -428,11 +433,17 @@ export async function attackMacro(weapons, options={}) {
   // XP progressions and other class/race features -- YAH to auto level up
   // should use combat tracker? or nah
   // players cannot edit their XP or HP?
-  // document all attribute properties
-  // combine throw and hook into attack Form dialog and show it with shift!
+  // document all attribute properties -- rationalize with sheet
+  // combine throw and hook into attack Form dialog and show it with alt!
   // instead of throwable/has_hook, each weapon has an alt attack form -- can be alt damage type, throw or hook
   // clean up chat messages -- move target name to flavor after vs., and attack form/verb to flavor
-  // switch to shift for modifier dialog, and alt for alt attack form. for click chat numbers, ctrl to apply damage, alt to heal, and ctrl-alt to save for half
+  // alt brings up alt attk form dialog, allowing more than 1 alt attack form per weapon. the attack form is 'sticky' -- becomes the standard attack until changed
+  // buckler +1 to melee, medium +2 melee +1 missile, large +2 melee +1 missile +1 adjacent. buckler 1d3 bash damage 2 weapon fighting
+  // med and large shields worn not held. still can't use 2 weapon fighting while wearing something in shield slot though
+  // item must have qty 1 to hold, except javelins (can hold 2)
+  // if attack with quick draw weapon not yet wielded, wields and then does a slash attack
+  // drag drop to sell merchant, timer to sell back at same price to merchant
+  // remove d20 icon from each weapon, use attack skill/feature that attacks with whatever weapon is held -- automatically uses 1 or both held weapons depending on dex score
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -463,112 +474,105 @@ async function attack(attackers, targetToken, options) {
   const range = measureRange(token, targetToken);
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
-  if(!weapons.length) {
-    if(chatMsgData.content) {
-      chatMsgData.content = `<div style="line-height:1.6em;">${chatMsgData.content}</div>`;
-      macroChatMessage(token, chatMsgData);
-      for(const attack of attacks) {
-        attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
-        if (attack.damage) {
-          const targetHp = +targetToken.actor.data.data.hp?.value;
-          const hpUpdate = targetHp - attack.damage;
-          if (!isNaN(hpUpdate)) await targetToken.actor.update({"data.hp.value": hpUpdate});
-          if (hpUpdate < 1 && targetHp > 0) Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
+  if (!weapons.length) {
+    macroChatMessage(token, chatMsgData);
+    for (const attack of attacks) {
+      attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
+      const targetHp = +targetToken?.actor.data.data.hp?.value;
+      const hpUpdate = targetHp - attack.damage;
+      if ( hpUpdate < targetHp ) {
+        await targetToken.actor.update({"data.hp.value": hpUpdate});
+        if ( hpUpdate < 1 && targetHp > 0 ) {
+          Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
         }
-        // wait if there are more attacks or more attackers left to handle
-        if ( attacks.indexOf(attack) < attacks.length - 1 || attackers.length > 1 ) await Util.wait(500);
       }
+      // wait if there are more attacks or more attackers left to handle
+      if ( attacks.indexOf(attack) < attacks.length - 1 || attackers.length > 1 ) await Util.wait(500);
     }
     attackers.shift();
     return attack(attackers, targetToken, options);
   }
 
-  // get weapon and its properties
+  // get weapon and its properties -- skip item search if unarmed
   const actorItems = token.actor.data.items;
-  // weapon.id can be an item id or a weapon name
   const weaponItem = actorItems.get(weapon.id) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weapon.id?.toLowerCase().replace(/\s/g,''));
-  if(!weaponItem) {
+  if (!weaponItem) {
     ui.notifications.error("Could not find item on this character.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if(weaponItem.data.data.quantity < 1) {
+  if (weaponItem.data.data.quantity < 1) {
     ui.notifications.error("Item must have a quantity greater than zero to use.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if(weaponItem.data.data.attributes.holdable && weaponItem.data.data.held !== true) {
+  if (weaponItem.data.data.attributes.holdable && weaponItem.data.data.held !== true) {
     ui.notifications.error("Item must be held to use.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const weapName = weaponItem.name || '';
+  const weapName = weaponItem.name;
+  weapon.name = weapName;
   chatMsgData.flavor = chatMsgData.flavor || weapName;
   const weapAttrs = weaponItem.data.data.attributes;
-  const weapAtkMod = weapAttrs.atk_mod?.value || 0;
+  const weapAtkMod = weapAttrs.atk_mod?.value;
   const weapDmg = weapAttrs.dmg?.value;
-  if(!weapDmg) {
+  if (!weapDmg) {
     ui.notifications.error("Damage not set for item.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  
   const offhand = options.offhand == null ? weapon.offhand : options.offhand;
-  if(offhand === true && !weapAttrs.light?.value) {
+  if ( offhand === true && weapAttrs.light?.value !== true ) {
     ui.notifications.error("Weapon used in the offhand must be light.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const throwable = options.throwable == null ? weapAttrs.throwable?.value : options.throwable;
-  const hasHook = weapAttrs.has_hook?.value;
-  const atkType = weapon.atkType == null ? weapAttrs.atk_type?.value : weapon.atkType;
-  if (atkType === 'touch') attacker.skipDmgDialog = true;
-  const maxRange = atkType === 'melee' ? (weapAttrs.reach?.value ? 10 : 5) : weapAttrs.max_range?.value;
-  const dmgType = weapon.dmgType == null ? weapAttrs.dmg_type?.value : weapon.dmgType;
   const fragile = weapAttrs.fragile?.value;
   const finesse = weapAttrs.finesse?.value;
   const unwieldy = weapAttrs.unwieldy?.value;
-  const critMin = weapAttrs.crit_min?.value || 20;
+  const critMin = weapAttrs.impale?.value ? 19 : 20;
   const reloadable = weapAttrs.reloadable?.value;
   const loaded =  weaponItem.data.data.loaded;
   // reload item if needed
   if ( reloadable && !loaded ) {
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.loaded': true}]);
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
     chatMsgData.content += `reloads ${weapName}<br>`;
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  
+  const dmgTypes = weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
   // show attack choice dialogs
-  // automate throw dialog if have target range
-  if ( range && throwable && !options.skipThrowDialog && !weapon.shownThrowDialog ) {
-    if (range > 5) {
-      weapon.atkType = 'throw';
-      weapon.dmgType = 'throw';
-    }
-    weapon.shownThrowDialog = true;
-    return attack(attackers, targetToken, options);
+  if ( dmgTypes.length > 1 && options.showAltDialog && !weapon.shownAltDialog ) {
+    return dmgTypeDialog(weapon, dmgTypes, () => attack(attackers, targetToken, options))
   }
-  if ( throwable && !options.skipThrowDialog && !weapon.shownThrowDialog ) return throwDialog(weapon, weapName, attackers, targetToken, options);
-  if ( hasHook && !options.skipHookDialog && !weapon.shownHookDialog ) return hookDialog(weapon, weapName, attackers, targetToken, options);
-  if ( options.showModDialog && !options.shownModDialog ) return modDialog(options, 'Attack', attack, attackers, targetToken, options);
+  if ( weapon.dmgDialogType && weapon.dmgDialogType !== weaponItem.data.data.dmg_type ) {
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.dmgDialogType}]);
+  }
+  const dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
+  const atkType = Constant.ATK_TYPE_BY_DMG_TYPE[dmgType] || 'melee';
+  const maxRange = atkType === 'melee' ? (weapAttrs.reach?.value ? 10 : 5) : weapAttrs.range_max?.value;
+  if (atkType === 'touch') attacker.skipDmgDialog = true;
+  if ( options.showModDialog && !options.shownModDialog ) {
+    return modDialog(options, 'Attack', () => attack(attackers, targetToken, options));
+  }
   let dialogAtkMod = '', dialogDmgMod = '';
   try {
-    dialogAtkMod = attacker.dialogAtkMod ? await new Roll(attacker.dialogAtkMod).evaluate().total : '';
-    dialogDmgMod = attacker.dialogDmgMod ? await new Roll(attacker.dialogDmgMod).evaluate().total : '';
+    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+    dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
   } catch {
     ui.notifications.error("Invalid input to modifier dialog.");
     options.shownModDialog = false;
     return attack(attackers, targetToken, options);
   }
-  
+
   // get actor and its properties
   const rollData = token.actor.getRollData();
   const bab = rollData.bab || 0;
   const strMod = rollData.str_mod || 0;
   const dexMod = rollData.dex_mod || 0;
   const offhandAtkPenalty = offhand ? -2 : 0;
-  const attrAtkMod = (atkType === 'missile' || atkType === 'throw' || finesse) ? dexMod : strMod;
+  const attrAtkMod = (atkType === 'missile' || finesse) ? dexMod : strMod;
   const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
   const actorAtkMod = rollData.atk_mod || 0;
   const actorDmgMod = rollData.dmg_mod || 0;
@@ -576,19 +580,19 @@ async function attack(attackers, targetToken, options) {
   // get target's properties
   const preventCrit = targetToken?.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
 
-  if(range > +maxRange) {
+  if (range > +maxRange) {
     ui.notifications.error("Target is beyond maximum range for this weapon.");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
   // determine range penalty and reduce qty of thrown weapon/missile
   let rangePenalty;
-  if(atkType === 'missile' || atkType === 'throw') {
+  if (atkType === 'missile') {
     rangePenalty = -Math.abs(Math.floor(range / 10));
     // reduce qty of thrown weapon/missile
-    if(atkType === 'throw') {
+    if (dmgType === 'throw') {
       const weaponQty = weaponItem.data.data.quantity;
-      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.quantity': weaponQty - 1}]);
+      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
     } else {
       const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value?.toLowerCase() === 'quiver');
       const quiverQty = quiver?.data.data.quantity;
@@ -599,9 +603,9 @@ async function attack(attackers, targetToken, options) {
         weapons.shift();
         return attack(attackers, targetToken, options);
       }
-      const itemsUpdate = [{'_id': quiver.data._id, 'data.quantity': quiverQty - 1}];
+      const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
       // set crossbow to unloaded
-      if (reloadable) await itemsUpdate.push({'_id': weaponItem.data._id, 'data.loaded': false});
+      if (reloadable) await itemsUpdate.push({'_id': weaponItem._id, 'data.loaded': false});
       await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
     }
   }
@@ -616,9 +620,9 @@ async function attack(attackers, targetToken, options) {
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
   let dmgText = `${totalDmg ? ` for ${chatInlineRoll(totalDmg)}` : ''}`;
   const isCrit = atkType !== 'touch' && d20Result >= critMin && !preventCrit;
-  if(isCrit) dmgText += ` + ${chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
+  if (isCrit) dmgText += ` + ${chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
   dmgText += ' damage';
-  if(atkType === 'touch') dmgText = '';
+  if (atkType === 'touch') dmgText = '';
 
   let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
   let rangeText = range && rangePenalty ? ` (${range}')` : '';
@@ -670,7 +674,6 @@ async function attack(attackers, targetToken, options) {
       attackText = `punches${targetNameText}`;
       break;
   }
-
   let resultText = '';
   let resultSound = missSound;
   let isHit = true;
@@ -686,7 +689,7 @@ async function attack(attackers, targetToken, options) {
     const largeShieldMod = Math.max(...largeShieldMods, 0);
     targetAc = targetRollData.ac + largeShieldMod;
     const touchAc = targetRollData.touch_ac || targetRollData.ac;
-    if (atkType === 'missile' || atkType === 'throw') {
+    if (atkType === 'missile') {
       // disregard bucklers, add +1 for each large shield held
       const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.small?.value);
       bucklersHeld.forEach(i => targetAc -= +i.data.data.attributes.ac_mod?.value || 0);
@@ -727,14 +730,14 @@ async function attack(attackers, targetToken, options) {
     resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
     resultSound = 'weapon_break';
     const weaponQty = weaponItem.data.data.quantity;
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem.data._id, 'data.quantity': weaponQty - 1}]);
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
   }
 
   chatMsgData.content += `${attackText}${rangeText} ${chatInlineRoll(totalAtk)}${resultText}<br>`;
 
   // add sound and damage
   let thisAttackDamage;
-  if ( isHit && targetToken && options.applyDamage === true && game.user.isGM ) {
+  if ( isHit && targetToken && options.applyEffect === true && game.user.isGM ) {
     const totalDmgRoll = new Roll(totalDmg);
     await totalDmgRoll.evaluate();
     thisAttackDamage = totalDmgRoll.total;
@@ -743,7 +746,6 @@ async function attack(attackers, targetToken, options) {
     sound: resultSound,
     damage: thisAttackDamage
   });
-
   weapons.shift();
 
   return attack(attackers, targetToken, options);
@@ -763,6 +765,10 @@ function measureRange(token1, token2) {
 
 export function macroChatMessage(token, data, chatBubble=true) {
   if (!data.content) return;
+  // if content includes inline rolls, increase line height
+  if (/\[\[.*\d.*]]/.test(data.content)) {
+    data.content = `<div style="line-height:1.6em;">${data.content}</div>`;
+  }
   ChatMessage.create({
     speaker: ChatMessage.getSpeaker(token),
     content: data.content.trim(),
@@ -772,35 +778,27 @@ export function macroChatMessage(token, data, chatBubble=true) {
   }, {chatBubble: chatBubble});
 }
 
-function hookDialog(weapon, label, ...data) {
+function dmgTypeDialog(weapon, dmgTypes, callback) {
   return new Dialog({
-    title: `${label} Form of Attack`,
+    title: `${weapon.name} Form of Attack`,
     content: ``,
-    buttons: {
-      one: {
-        icon: '<i class="fas fa-user-friends"></i>',
-        label: "Standard",
-        callback: () => {
-          weapon.shownHookDialog = true;
-          attack(...data);
-        }
-      },
-      two: {
-        icon: '<i class="fas fa-candy-cane"></i>',
-        label: "Hook",
-        callback: () => {
-          weapon.shownHookDialog = true;
-          weapon.atkType = 'touch';
-          weapon.dmgType = 'hook';
-          attack(...data);
-        }
-      }
-    },
-    default: "one"
+    buttons: dmgTypeButtons(),
+    default: dmgTypes[0]
   }).render(true);
+
+  function dmgTypeButtons() {
+    return Object.fromEntries(dmgTypes.map(dmgType => [dmgType, {
+      label: dmgType,
+      callback: () => {
+        weapon.shownAltDialog = true;
+        weapon.dmgDialogType = dmgType;
+        callback();
+      }
+    }]));
+  }
 }
 
-function modDialog(mods, label, callback, ...data) {
+function modDialog(mods, label, callback) {
   new Dialog({
     title: `${label} Modifiers`,
     content: 
@@ -815,23 +813,23 @@ function modDialog(mods, label, callback, ...data) {
         </div>`}
       </form>`,
     buttons: {
-      one: {
+      '1': {
         icon: '<i class="fas fa-check"></i>',
         label: `${label}`,
         callback: html => {
           mods.shownModDialog = true;
           mods.dialogAtkMod = html.find('[id=atkMod]')[0]?.value;
           mods.dialogDmgMod = html.find('[id=dmgMod]')[0]?.value;
-          callback(...data);
+          callback();
         }
       },
-      two: {
+      '2': {
         icon: '<i class="fas fa-times"></i>',
         label: "Cancel",
         callback: () => console.log("Cancelled modifier dialog")
       }
     },
-    default: "one"
+    default: '1'
   }).render(true);
 }
 
@@ -865,34 +863,34 @@ function chargesUsedDialog(item, label, ...data) {
   }).render(true);
 }
 
-function throwDialog(weapon, label, ...data) {
-  new Dialog({
-    title: `${label} Form of Attack`,
-    content: ``,
-    buttons: {
-      one: {
-        icon: '<i class="fas fa-user-friends"></i>',
-        label: "Melee",
-        callback: () => {
-          weapon.shownThrowDialog = true;
-          weapon.atkType = 'melee';
-          attack(...data);
-        }
-      },
-      two: {
-        icon: '<i class="fas fa-people-arrows"></i>',
-        label: "Throw",
-        callback: () => {
-          weapon.shownThrowDialog = true;
-          weapon.atkType = 'throw';
-          weapon.dmgType = 'throw';
-          attack(...data);
-        }
-      }
-    },
-    default: "one"
-  }).render(true);
-}
+// function throwDialog(weapon, label, ...data) {
+//   new Dialog({
+//     title: `${label} Form of Attack`,
+//     content: ``,
+//     buttons: {
+//       one: {
+//         icon: '<i class="fas fa-user-friends"></i>',
+//         label: "Melee",
+//         callback: () => {
+//           weapon.shownThrowDialog = true;
+//           weapon.atkType = 'melee';
+//           attack(...data);
+//         }
+//       },
+//       two: {
+//         icon: '<i class="fas fa-people-arrows"></i>',
+//         label: "Throw",
+//         callback: () => {
+//           weapon.shownThrowDialog = true;
+//           weapon.atkType = 'throw';
+//           weapon.dmgType = 'throw';
+//           attack(...data);
+//         }
+//       }
+//     },
+//     default: "one"
+//   }).render(true);
+// }
 
 export function reactionRollMacro(options) {
   if (!game.user.isGM) return;
@@ -915,7 +913,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
   if ( options.override === true || !attitude || targetLevel > attitudeObj.lvl ) {
     if ( options.showModDialog && !options.shownModDialog ) {
       options.skipDmgDialog = true;
-      return modDialog(options, options.flavor || 'Reaction Roll', reactionRoll, reactingActor, targetActor, options);
+      return modDialog(options, options.flavor || 'Reaction Roll', () => reactionRoll(reactingActor, targetActor, options));
     }
     options.shownModDialog = false;
     const chaMod = +targetActor.data.data.cha_mod;
@@ -953,7 +951,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
 
     const chatData = {
-      content: `<div style="line-height:1.6em;">${reactingActor.name} reacts to ${targetActor.name} ${chatInlineRoll(rxnText)} ${attitudeText}</div>`,
+      content: `${reactingActor.name} reacts to ${targetActor.name} ${chatInlineRoll(rxnText)} ${attitudeText}`,
       flavor: 'Reaction Roll'
     }
     macroChatMessage(reactingActor, chatData, true);
@@ -1024,9 +1022,9 @@ export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
     }
     gpUpdateQty = gp - priceLeft;
   }
-  const cpUpdate = {_id: cpItem?.data._id, "data.quantity": cpUpdateQty};
-  const spUpdate = {_id: spItem?.data._id, "data.quantity": spUpdateQty};
-  const gpUpdate = {_id: gpItem?.data._id, "data.quantity": gpUpdateQty};
+  const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty};
+  const spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty};
+  const gpUpdate = {_id: gpItem?._id, "data.quantity": gpUpdateQty};
   cpUpdate._id && cpUpdateQty !== cp && actor.updateEmbeddedDocuments("Item", [cpUpdate]);
   spUpdate._id && spUpdateQty !== sp && actor.updateEmbeddedDocuments("Item", [spUpdate]);
   gpUpdate._id && gpUpdateQty !== gp && actor.updateEmbeddedDocuments("Item", [gpUpdate]);
