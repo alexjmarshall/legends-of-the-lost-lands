@@ -41,6 +41,51 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
+export const ATK_TYPE_BY_DMG_TYPE = {
+  "arrow": "missile",
+  "bash": "melee",
+  "bolt": "missile",
+  "chop": "melee",
+  "hook": "touch",
+  "slash": "melee",
+  "stab": "melee",
+  "stone": "missile",
+  "throw": "missile"
+};
+export const VOICE_MOODS = {
+  AMUSED: "amused",
+  ANGRY: "angry",
+  BORED: "bored",
+  DEATH: "death",
+  DYING: "dying",
+  HURT: "hurt",
+  KILL: "kill",
+  LEAD: "lead",
+  OK: "ok",
+  PARTY_DEATH: "party_death",
+  PARTY_FAIL: "party_fail",
+  RETREAT: "retreat",
+  SLEEPY: "sleepy",
+  TOOT: "toot",
+  WHAT: "what"
+};
+export const VOICE_MOOD_ICONS = {
+  [VOICE_MOODS.AMUSED]: "https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png",
+  [VOICE_MOODS.ANGRY]: "https://img.icons8.com/ios/50/000000/battle.png",
+  [VOICE_MOODS.BORED]: "https://img.icons8.com/ios/50/000000/bored.png",
+  [VOICE_MOODS.DEATH]: "https://img.icons8.com/ios/50/000000/dying.png",
+  [VOICE_MOODS.DYING]: "https://img.icons8.com/ios/50/000000/wound.png",
+  [VOICE_MOODS.HURT]: "https://img.icons8.com/ios/50/000000/action.png",
+  [VOICE_MOODS.KILL]:"https://img.icons8.com/ios/50/000000/murder.png",
+  [VOICE_MOODS.LEAD]: "https://img.icons8.com/ios/50/000000/leadership.png",
+  [VOICE_MOODS.OK]: "https://img.icons8.com/ios/50/000000/easy.png",
+  [VOICE_MOODS.PARTY_DEATH]: "https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png",
+  [VOICE_MOODS.PARTY_FAIL]: "https://img.icons8.com/ios/50/000000/facepalm.png",
+  [VOICE_MOODS.RETREAT]: "https://img.icons8.com/ios/50/000000/running-rabbit.png",
+  [VOICE_MOODS.SLEEPY]: "https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png",
+  [VOICE_MOODS.TOOT]: "https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png",
+  [VOICE_MOODS.WHAT]: "https://img.icons8.com/ios/50/000000/question-mark--v1.png"
+};
 const VOICE_PROFILES = [
   "F_Barb", 
   "F_Bard", 
@@ -84,42 +129,8 @@ const VOICE_PROFILES = [
   "MThief1",
   "MThief2"
 ];
-export const VOICE_MOODS = {
-  AMUSED: "amused",
-  ANGRY: "angry",
-  BORED: "bored",
-  DEATH: "death",
-  DYING: "dying",
-  HURT: "hurt",
-  KILL: "kill",
-  LEAD: "lead",
-  OK: "ok",
-  PARTY_DEATH: "party_death",
-  PARTY_FAIL: "party_fail",
-  RETREAT: "retreat",
-  SLEEPY: "sleepy",
-  TOOT: "toot",
-  WHAT: "what"
-};
-export const VOICE_MOOD_ICONS = new Map([
-  [VOICE_MOODS.AMUSED,"https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png"],
-  [VOICE_MOODS.ANGRY,"https://img.icons8.com/ios/50/000000/battle.png"],
-  [VOICE_MOODS.BORED,"https://img.icons8.com/ios/50/000000/bored.png"],
-  [VOICE_MOODS.DEATH,"https://img.icons8.com/ios/50/000000/dying.png"],
-  [VOICE_MOODS.DYING,"https://img.icons8.com/ios/50/000000/wound.png"],
-  [VOICE_MOODS.HURT,"https://img.icons8.com/ios/50/000000/action.png"],
-  [VOICE_MOODS.KILL,"https://img.icons8.com/ios/50/000000/murder.png"],
-  [VOICE_MOODS.LEAD,"https://img.icons8.com/ios/50/000000/leadership.png"],
-  [VOICE_MOODS.OK,"https://img.icons8.com/ios/50/000000/easy.png"],
-  [VOICE_MOODS.PARTY_DEATH,"https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png"],
-  [VOICE_MOODS.PARTY_FAIL,"https://img.icons8.com/ios/50/000000/facepalm.png"],
-  [VOICE_MOODS.RETREAT,"https://img.icons8.com/ios/50/000000/running-rabbit.png"],
-  [VOICE_MOODS.SLEEPY,"https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png"],
-  [VOICE_MOODS.TOOT,"https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png"],
-  [VOICE_MOODS.WHAT,"https://img.icons8.com/ios/50/000000/question-mark--v1.png"]
-]);
 export const VOICE_SOUNDS = new Map();
-// populate voice sound file paths
+// populate voice sounds on startup
 (async function() {
   for (const voice of VOICE_PROFILES) {
     const moodMap = new Map();
