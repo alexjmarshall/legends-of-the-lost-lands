@@ -1,4 +1,5 @@
 import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 export class EntitySheetHelper {
 
@@ -545,9 +546,9 @@ export class EntitySheetHelper {
 
     // set type and level if creating a spell
     if(parentFolderName && documentName === 'Item') {
-      if (parentFolderName.toLowerCase() === 'magic spells') type = types[Constant.SPELL_TYPES.SPELL_MAGIC];
-      if (parentFolderName.toLowerCase() === 'cleric spells') type = types[Constant.SPELL_TYPES.SPELL_CLERIC];
-      if (parentFolderName.toLowerCase() === 'witch spells') type = types[Constant.SPELL_TYPES.SPELL_WITCH];
+      if (Util.stringMatch(parentFolderName, 'magic spells')) type = types[Constant.SPELL_TYPES.SPELL_MAGIC];
+      if (Util.stringMatch(parentFolderName, 'cleric spells')) type = types[Constant.SPELL_TYPES.SPELL_CLERIC];
+      if (Util.stringMatch(parentFolderName, 'witch spells')) type = types[Constant.SPELL_TYPES.SPELL_WITCH];
     }
     if ( folderName && Object.values(Constant.SPELL_TYPES).includes(type) ) {
       const level = +folderName.split('Level ').pop();

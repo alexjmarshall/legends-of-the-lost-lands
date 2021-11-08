@@ -6,6 +6,26 @@ export async function wait(ms) {
   });
 }
 
+export function stringMatch(str1, str2) {
+  if (typeof str1 !== 'string' || typeof str2 !== 'string') {
+    return false;
+  }
+  return str1.toLowerCase().replace(/\s/g,'').normalize() === str2.toLowerCase().replace(/\s/g,'').normalize();
+}
+
+export function expandPrice(priceInCps) {
+  const gp = Math.floor(priceInCps / 50);
+  priceInCps -= gp * 50;
+  const sp = Math.floor(priceInCps / 5);
+  const cp = priceInCps - sp * 5;
+  return {gp, sp, cp};
+}
+
+export function getPriceString(priceInCps) {
+  const priceObj = expandPrice(priceInCps);
+  return `${priceObj.gp ? `${priceObj.gp} gp, ` : ''}${priceObj.sp ? `${priceObj.sp} sp, ` : ''}${priceObj.cp ? `${priceObj.cp} cp, ` : ''}`.replace(/,\s*$/, '');
+}
+
 export const playVoiceSound = (() => {
   const speakingActorIds = new Map();
 
