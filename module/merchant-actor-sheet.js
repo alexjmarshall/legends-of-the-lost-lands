@@ -37,7 +37,7 @@ export class MerchantActorSheet extends ActorSheet {
     const items = context.data.items.filter(i => i.type === 'item');
     const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
     items.forEach(item => {
-      let priceInCps = Math.round(+item.data.attributes.gp_value?.value * sellFactor * sellAdj * 50);
+      let priceInCps = Math.ceil(+item.data.attributes.gp_value?.value * sellFactor * sellAdj * 50);
       item.data.price = Util.expandPrice(priceInCps);
     });
     context.data.items = items;
