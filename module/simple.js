@@ -33,7 +33,8 @@ Hooks.once("init", async function() {
   game.lostlands = {
     SimpleActor,
     Macro,
-    Util
+    Util,
+    Constant
   };
 
   // Define custom Entity classes
@@ -196,10 +197,10 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
 // Deselect merchants on token selection
 Hooks.on("controlToken", (token, selected) => {
   if (!selected) return;
-  if (!game.user.isGM && token.actor.type === "merchant") return token.release();
+  if (!game.user.isGM && token.actor.type === 'merchant') return token.release();
   const actor = token.actor;
-  const actorHp = actor.data.data.hp;
-  if ( +actorHp.value < 1 ) return;
+  const actorHp = actor.data.data.hp?.value;
+  if ( +actorHp < 1 ) return;
   Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
 });
 
@@ -211,7 +212,7 @@ Hooks.on("updateToken", (token, moved, data) => {
 
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
-  const hpUpdate = change.data.hp?.value;
+  const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const halfMaxHp = actor.data.data.hp?.max / 2;
   // return if update does not decrease hp, or if actor is already unconscious
