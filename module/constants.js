@@ -47,6 +47,7 @@ export const ATK_TYPE_BY_DMG_TYPE = {
   "bolt": "missile",
   "chop": "melee",
   "hook": "touch",
+  "punch": "melee",
   "slash": "melee",
   "stab": "melee",
   "stone": "missile",
