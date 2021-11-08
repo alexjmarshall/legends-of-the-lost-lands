@@ -986,11 +986,12 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     macroChatMessage(reactingActor, chatData, true);
   }
-  
+
   return attitude;
 }
 
 export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
+  if (!priceInCp) return;
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = game.user.character || token?.actor;
   const sameActor = actor?.isToken ? merchant.isToken && actor.token.id === merchant.token.id :
@@ -1025,7 +1026,8 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   // case 1: not enough money
   if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
-      content: `${actor.name} tries to purchase ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
+      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
+      flavor: `Buy`
     };
     return macroChatMessage(actor, chatData, true);
   }
@@ -1052,28 +1054,55 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   // add to updates if item has id and update quantity is different than existing quantity
   const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u._id &&
     u["data.quantity.quantity"] !== actorItems.get(u._id)?.data.data.quantity);
-  await actor.updateEmbeddedDocuments("Item", updates);
-
-  // update merchant's item quantity and merchant's gold
-  await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
-  await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / 50)});
-
-  // add item to actor
-  const itemData = {
-    data: foundry.utils.deepClone(item.data.data),
-    img: item.data.img,
-    name: item.data.name,
-    type: item.data.type,
-  };
-  itemData.data.quantity = qty;
-  await actor.createEmbeddedDocuments("Item", [itemData]);
-
-  // crete chat message
-  const chatData = {
-    content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}.`,
-    sound: 'coins'
+  
+  // show confirmation dialog if haven't shown split item dialog
+  if (!options.shownSplitDialog) {
+    return Dialog.confirm({
+      title: "Confirm",
+      content: `<p>Buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${Util.getPriceString(totalPriceInCp)}?</p>`,
+      yes: async () => {
+        return finalizePurchase();
+      },
+      no: () => {},
+      defaultYes: true
+    });
   }
-  return macroChatMessage(actor, chatData, true);
+  return finalizePurchase();
+
+  async function finalizePurchase() {
+    await actor.updateEmbeddedDocuments("Item", updates);
+    await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / 50)});
+
+    // add item to actor
+    const itemData = {
+      data: foundry.utils.deepClone(item.data.data),
+      img: item.data.img,
+      name: item.data.name,
+      type: item.data.type,
+    };
+    itemData.data.quantity = qty;
+    const targetItem = actor.items.find(i => {
+      return i.data.type === itemData.type &&
+      i.data.name === itemData.name &&
+      i.data.data.macro === itemData.data.macro &&
+      foundry.utils.fastDeepEqual(i.data.data.attributes, itemData.data.attributes);
+    });
+    if (targetItem) {
+      const currentTargetQty = +targetItem.data.data.quantity;
+      await actor.updateEmbeddedDocuments("Item", [{ "_id": targetItem._id, "data.quantity": currentTargetQty + qty }]);
+    } else {
+      await actor.createEmbeddedDocuments("Item", [itemData]);
+    }
+    
+    // create chat message
+    const chatData = {
+      content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}.`,
+      sound: 'coins',
+      flavor: 'Buy'
+    }
+    return macroChatMessage(actor, chatData, true);
+  }
 }
 
 function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
@@ -1082,14 +1111,13 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
     content: 
       `<form>
         <div class="form-group">
-          <label style="max-width:fit-content;max-width:-moz-fit-content;">How many?</label>
+          <label style="max-width:fit-content;max-width:-moz-fit-content;margin-right:0.5em">How many?</label>
           <span id="selectedQty" style="flex:1;text-align:center;"></span>
           <input class="flex7" type="range" id="qty" min="1" max="${maxQty}" value="1">
         </div>
         <div class="form-group">
-          <label style="max-width:fit-content;max-width:-moz-fit-content;">Total price:</label>
-          <span id="price" style="flex:1;text-align:center;"></span>
-          <span class="flex7"></span>
+          <label style="max-width:fit-content;max-width:-moz-fit-content;margin-right:0.5em">Total price:</label>
+          <span id="price"></span>
         </div>
       </form>`,
     buttons: {
