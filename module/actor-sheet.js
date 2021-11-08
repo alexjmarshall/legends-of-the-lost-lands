@@ -64,9 +64,9 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortEquipmentByType(items) {    
     const equipment = {};
-    const heldArr = items.filter(i => i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    const heldArr = items.filter(i => i.data.attributes.holdable?.value);
     if (heldArr.length) equipment.holdable = heldArr;
-    const wornArr = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
+    const wornArr = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value);
     if (wornArr.length) equipment.wearable = wornArr;
     const magicArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
     if (magicArr.length) equipment.magic = magicArr
@@ -101,15 +101,15 @@ export class SimpleActorSheet extends ActorSheet {
     return sortedSpells;
   }
 
-  sortFeaturesBySource(features, attrs) {
+  sortFeaturesBySource(features) {
     const sortedFeatures = {};
 
-    const classArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'class');
+    const classArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'class'));
     if (classArr.length) sortedFeatures['Class'] = classArr;
-    const raceArr = features.filter( f => f.data.attributes.source?.value?.toLowerCase() === 'race');
+    const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
     if (raceArr.length) sortedFeatures['Race'] = raceArr;
-    const otherArr = features.filter(f => f.data.attributes.source?.value?.toLowerCase() !== 'class' && 
-      f.data.attributes.source?.value?.toLowerCase() !== 'race');
+    const otherArr = features.filter(f => !Util.stringMatch(f.data.attributes.source?.value, 'class') && 
+      !Util.stringMatch(f.data.attributes.source?.value, 'race'));
     if (otherArr.length) sortedFeatures['Other'] = otherArr;
 
     return sortedFeatures;
@@ -167,6 +167,7 @@ export class SimpleActorSheet extends ActorSheet {
     const item = this.actor.items.get(itemId);
     const type = button.dataset.type;
     const data = {name: game.i18n.localize("SIMPLE.ItemNew"), type: type};
+    const itemQty = +item?.data.data.quantity || 0;
     
     // Handle different actions
     switch ( button.dataset.action ) {
@@ -177,7 +178,6 @@ export class SimpleActorSheet extends ActorSheet {
         return item.sheet.render(true);
       case "delete":
         const actor = this.actor;
-        const itemQty = +item.data.data.quantity || 0;
         if(itemQty <= 1) return item.delete();
         return new Dialog({
           title: "Delete Item",
@@ -235,28 +235,45 @@ export class SimpleActorSheet extends ActorSheet {
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
-        // return error if trying to stack rings of protection
-        const wornItems = this.actor.data.items.filter(i => i.data.data.worn);
+        // can't wear a shield while holding a small shield
+        const isShield = Util.stringMatch(item.data.data.attributes.slot?.value, 'shield');
+        const holdingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.held && Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
+        if ( isShield && holdingShield ) {
+          return ui.notifications.error("Cannot wear a shield while using a small shield.");
+        }
+        // can't stack rings of protection
+        const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
         const stackingRingofProt = !!item.data.name.toLowerCase().includes('ring of protection') &&
           !!wornItems.find(i => i.data.name.toLowerCase().includes('ring of protection'));
         if ( !isWorn && stackingRingofProt ) {
           return ui.notifications.error("Cannot wear more than one ring of protection.");
         }
-        const itemSlot = item.data.data.attributes.slot?.value?.toLowerCase();
+        const itemSlot = item.data.data.attributes.slot?.value;
         const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
-        const slotLimit = itemSlot === 'ring' ? 10 : 1;
+        const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
         if ( itemSlot && !isWorn && wornItemsInSlot.length >= slotLimit ) {
-          return ui.notifications.error(`Must remove an item from this slot (${itemSlot}) first.`);
+          return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first.`);
         }
         let verb = isWorn ? 'doffs' : 'dons';
         game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
-        const heldItems = this.actor.data.items.filter(i => i.data.data.held);
+        const heldItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.held);
         const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
+        // can't hold a small shield while wearing a shield
+        const isSmallShield = Util.stringMatch(item.data.data.attributes.size?.value, 'small');
+        const wearingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+        if ( isSmallShield && wearingShield ) {
+          return ui.notifications.error("Cannot use a small shield while wearing a shield.");
+        }
         if ( !isHeld && heldItems.length >= heldItemsLimit ) {
           return ui.notifications.error("Must release a held item first.");
+        }
+        const heldQtyLimit = item.name.toLowerCase().includes('javelin') ? 3 :
+          item.data.data.attributes.light?.value ? 2 : 1;
+        if ( !isHeld && itemQty > heldQtyLimit ) {
+          return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand.`);
         }
         if (!isHeld) {
           game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
