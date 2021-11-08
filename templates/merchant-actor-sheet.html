@@ -33,8 +33,8 @@
           <header class="items-header flexrow">
               <div></div>
               <div></div>
-              <span class="item-column merchant-item-column">Quantity</span>
-              <span class="item-column merchant-item-column">Price (ea.)</span>
+              <span class="item-column">Quantity</span>
+              <span class="item-column item-price-column">Price (ea.)</span>
               <span style="max-width:74px;"></span>
           </header>
           <ol class="item-list">
@@ -47,8 +47,8 @@
                 </div>
                 <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                 <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                <span class="item-row item-column merchant-item-column" data-action="edit">{{item.data.quantity}}</span>
-                <span class="item-row item-column merchant-item-column item-price" data-action="edit">
+                <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
+                <span class="item-row item-column item-price-column item-price" data-action="edit">
                     {{#if item.data.price}}
                     {{#if item.data.price.gp}}<span class="gold-price">{{item.data.price.gp}}</span> gp{{/if}}
                     {{#if item.data.price.sp}}<span class="silver-price">{{item.data.price.sp}}</span> sp{{/if}}
