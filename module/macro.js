@@ -181,10 +181,6 @@ export function heldWeaponAttackMacro(options) {
   const attackers = [];
   for(const token of selectedTokens) {
     let weapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
-    if (!weapons.length) {
-      ui.notifications.error(`${token.actor.name} is not holding any weapons.`);
-      continue;
-    }
     // if weapons includes a light weapon, move it to end of array
     weapons.forEach((w, i, arr) => {
       if (w.data.data.attributes.light?.value) {
@@ -192,11 +188,15 @@ export function heldWeaponAttackMacro(options) {
         arr.push(w);
       }
     });
-    // check if sufficient dexterity to use multiple weapons
-    const dexScore = +token.actor.data.data.attributes.ability_scores.dex?.value;
-    if (weapons.length > 1 && dexScore < 13) {
-      ui.notifications.error(`${token.actor.name} does not have high enough dexterity to fight with more than one weapon.`);
-      weapons = [weapons[0]];
+    // add two dummy weapon objects if unarmed
+    const unarmed = !weapons.length;
+    unarmed && weapons.push({id:'1', name:'Fist'}, {id:'2', name: 'Fist'});
+    
+    if ( weapons.length > 1 ) {
+      // can only use multiple weapons if Dex > 13 and not wearing a shield
+      const dexScore = +token.actor.data.data.attributes.ability_scores?.dex.value;
+      const wearingShield = !!token.actor.data.items.find(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+      if (dexScore < 13 || wearingShield) weapons = [weapons[0]];
     }
     // extract item ids and flag weapons after the first as offhand
     const weapIds = weapons.map((w, i) => {
@@ -205,14 +205,15 @@ export function heldWeaponAttackMacro(options) {
         offhand: i > 0
       })
     });
-    const weaponsString = weapons.reduce((a,b) => a + `${b.name}, `, '').replace(/,\s*$/,'');
     attackers.push({
       token: token,
       weapons: weapIds,
-      chatMsgData: {content: '', flavor: `${weaponsString}`, sound: options.sound},
-      attacks: []
+      chatMsgData: {content: '', flavor: '', sound: options.sound},
+      attacks: [],
+      unarmed
     })
   }
+
   return attack(attackers, targetToken, options);
 }
 
@@ -225,7 +226,7 @@ export function attackRoutineMacro(options) {
 
   const attackers = [];
   for(const token of selectedTokens) {
-    const atkRoutineItem = token.actor.items.find(i => i.type === 'feature' && i.name === 'Attack Routine');
+    const atkRoutineItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Attack Routine'));
     if(!atkRoutineItem) {
       ui.notifications.error(`Attack Routine feature not found on this character.`);
       continue;
@@ -240,7 +241,7 @@ export function attackRoutineMacro(options) {
     attackers.push({
       token: token,
       weapons: attacks,
-      chatMsgData: {content: '', flavor: `Attack Routine (${atksString})`, sound: options.sound},
+      chatMsgData: {content: '', flavor: '', sound: options.sound},
       attacks: []
     })
   }
@@ -321,8 +322,8 @@ export async function thiefSkillMacro(skill, options={}) {
   options.flavor = skill;
   options.attrMod = +actor.data.data.dex_mod;
   options.verb = `attempts to ${skill}`;
-  const lockPickItem = actor.items.find(i => i.type === 'item' && i.name.toLowerCase().replace(/\s/g,'') === 'lockpicks');
-  switch(skill.toLowerCase().replace(/\s/g,'')) {
+  const lockPickItem = actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, 'lockpicks'));
+  switch (skill.toLowerCase().replace(/\s/g,'')) {
     case 'openlocks':
       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks.`);
       options.failText = ` but may try again when their skill increases.`;
@@ -361,12 +362,10 @@ export function backstabMacro(options) {
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
   const targetToken = [...game.user.targets][0];
-  options.atkMod = 4;
-  options.showAltDialog = false;
 
   const attackers = [];
-  for(const token of selectedTokens) {
-    const backstabItem = token.actor.items.find(i => i.type === 'feature' && i.name === 'Backstab');
+  for (const token of selectedTokens) {
+    const backstabItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Backstab'));
     const dmgMulti = +backstabItem.data.data.attributes.dmg_multi?.value;
     if(!dmgMulti) {
       ui.notifications.error(`${token.actor.name} has no damage multiplier set on backstab feature.`);
@@ -390,12 +389,16 @@ export function backstabMacro(options) {
       ui.notifications.error(`${token.actor.name} cannot backstab with this weapon.`);
       continue;
     }
+    options.flavor = `Backstab (${weapon.name})`;
     attackers.push({
       token: token,
       weapons: [{id: weapon.id, dmgType: 'stab'}],
-      chatMsgData: {content: '', flavor: `Backstab (${weapon.name})`, sound: options.sound},
+      chatMsgData: {content: '', flavor: options.flavor, sound: options.sound},
       attacks: [],
-      dmgMulti: dmgMulti
+      dmgMulti: dmgMulti,
+      showAltDialog: false,
+      atkMod: 4,
+      throwable: false
     })
   }
 
@@ -434,16 +437,13 @@ export async function attackMacro(weapons, options={}) {
   // should use combat tracker? or nah
   // players cannot edit their XP or HP?
   // document all attribute properties -- rationalize with sheet
-  // combine throw and hook into attack Form dialog and show it with alt!
-  // instead of throwable/has_hook, each weapon has an alt attack form -- can be alt damage type, throw or hook
   // clean up chat messages -- move target name to flavor after vs., and attack form/verb to flavor
-  // alt brings up alt attk form dialog, allowing more than 1 alt attack form per weapon. the attack form is 'sticky' -- becomes the standard attack until changed
-  // buckler +1 to melee, medium +2 melee +1 missile, large +2 melee +1 missile +1 adjacent. buckler 1d3 bash damage 2 weapon fighting
-  // med and large shields worn not held. still can't use 2 weapon fighting while wearing something in shield slot though
-  // item must have qty 1 to hold, except javelins (can hold 2)
-  // if attack with quick draw weapon not yet wielded, wields and then does a slash attack
+  // weapons with quick draw tag say 'draws' instead of 'wields', and if press alt and hold button, makes immediate attack!
   // drag drop to sell merchant, timer to sell back at same price to merchant
-  // remove d20 icon from each weapon, use attack skill/feature that attacks with whatever weapon is held -- automatically uses 1 or both held weapons depending on dex score
+  // weapon light flag, two-hand flag
+  // shields size small, medium and large -- medium and large shields are wearable with slot of shield, small shields are holdable and still have a slot of shield
+  // armor type leather, chain and plate
+  // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
@@ -454,7 +454,7 @@ export async function attackMacro(weapons, options={}) {
     attackers.push({
       token: token,
       weapons: weapons,
-      chatMsgData: { content: '', flavor: options.flavor, sound: options.sound },
+      chatMsgData: { content: '', flavor: '', sound: options.sound },
       attacks: []
     })
   }
@@ -468,13 +468,15 @@ async function attack(attackers, targetToken, options) {
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
   const attacks = attacker.attacks;
-  const targetRollData = targetToken?.actor?.getRollData();
+  const targetRollData = targetToken?.actor.getRollData();
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
+    chatMsgData.flavor = options.flavor || chatMsgData.flavor;
+    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     macroChatMessage(token, chatMsgData);
     for (const attack of attacks) {
       attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
@@ -493,9 +495,25 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  // get weapon and its properties -- skip item search if unarmed
+  // get weapon and its properties
   const actorItems = token.actor.data.items;
-  const weaponItem = actorItems.get(weapon.id) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weapon.id?.toLowerCase().replace(/\s/g,''));
+  let weaponItem = actorItems.get(weapon.id) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weapon.id?.toLowerCase().replace(/\s/g,''));
+  if (attacker.unarmed) {
+    weaponItem = {
+      name: 'Fist',
+      data:{
+        data: {
+          attributes: {
+            atk_mod: { value: 0},
+            dmg: { value: '1d2'},
+            dmg_types: { value: 'punch'},
+            light: { value: true}
+          },
+          quantity: 1
+        }
+      }
+    }
+  }
   if (!weaponItem) {
     ui.notifications.error("Could not find item on this character.");
     weapons.shift();
@@ -513,26 +531,15 @@ async function attack(attackers, targetToken, options) {
   }
   const weapName = weaponItem.name;
   weapon.name = weapName;
-  chatMsgData.flavor = chatMsgData.flavor || weapName;
   const weapAttrs = weaponItem.data.data.attributes;
   const weapAtkMod = weapAttrs.atk_mod?.value;
   const weapDmg = weapAttrs.dmg?.value;
-  if (!weapDmg) {
-    ui.notifications.error("Damage not set for item.");
-    weapons.shift();
-    return attack(attackers, targetToken, options);
-  }
-  const offhand = options.offhand == null ? weapon.offhand : options.offhand;
-  if ( offhand === true && weapAttrs.light?.value !== true ) {
-    ui.notifications.error("Weapon used in the offhand must be light.");
-    weapons.shift();
-    return attack(attackers, targetToken, options);
-  }
   const fragile = weapAttrs.fragile?.value;
   const finesse = weapAttrs.finesse?.value;
   const unwieldy = weapAttrs.unwieldy?.value;
   const critMin = weapAttrs.impale?.value ? 19 : 20;
   const reloadable = weapAttrs.reloadable?.value;
+  const throwable = attacker.throwable == null ? weapAttrs.throwable?.value : attacker.throwable;
   const loaded =  weaponItem.data.data.loaded;
   // reload item if needed
   if ( reloadable && !loaded ) {
@@ -541,9 +548,30 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
+  if (!weapDmg) {
+    ui.notifications.error("Damage not set for item.");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+  const meleeRange = weapAttrs.reach?.value ? 10 : 5;
+  if ( range > meleeRange && throwable && !weapon.dmgType ) {
+    weapon.dmgType = 'throw';
+    attacker.showAltDialog = false;
+  }
+  const offhand = options.offhand == null ? weapon.offhand : options.offhand;
+  // throwing offhand weapon is not allowed
+  if ( offhand === true && weapon.dmgType === 'throw' ) {
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+  if ( offhand === true && weapAttrs.light?.value !== true ) {
+    ui.notifications.error("Weapon used in the offhand must be light.");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
   const dmgTypes = weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
   // show attack choice dialogs
-  if ( dmgTypes.length > 1 && options.showAltDialog && !weapon.shownAltDialog ) {
+  if ( dmgTypes.length > 1 && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     return dmgTypeDialog(weapon, dmgTypes, () => attack(attackers, targetToken, options))
   }
   if ( weapon.dmgDialogType && weapon.dmgDialogType !== weaponItem.data.data.dmg_type ) {
@@ -551,7 +579,12 @@ async function attack(attackers, targetToken, options) {
   }
   const dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
   const atkType = Constant.ATK_TYPE_BY_DMG_TYPE[dmgType] || 'melee';
-  const maxRange = atkType === 'melee' ? (weapAttrs.reach?.value ? 10 : 5) : weapAttrs.range_max?.value;
+  const maxRange = atkType === 'melee' ? meleeRange : (weapAttrs.max_range?.value || 0);
+  if (range > +maxRange) {
+    ui.notifications.error("Target is beyond maximum range for this weapon.");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
   if (atkType === 'touch') attacker.skipDmgDialog = true;
   if ( options.showModDialog && !options.shownModDialog ) {
     return modDialog(options, 'Attack', () => attack(attackers, targetToken, options));
@@ -573,18 +606,14 @@ async function attack(attackers, targetToken, options) {
   const dexMod = rollData.dex_mod || 0;
   const offhandAtkPenalty = offhand ? -2 : 0;
   const attrAtkMod = (atkType === 'missile' || finesse) ? dexMod : strMod;
-  const attrDmgMod = (atkType === 'missile' || offhand) ? 0 : strMod;
+  const attrDmgMod = (atkType === 'missile' && dmgType !== 'throw' || offhand) ? 0 : strMod;
   const actorAtkMod = rollData.atk_mod || 0;
   const actorDmgMod = rollData.dmg_mod || 0;
+  const attackerAtkMod = attacker.atkMod;
 
   // get target's properties
-  const preventCrit = targetToken?.actor.items.find(i => i.data.data.worn && i.data.data.attributes.prevent_crit?.value === true);
+  const preventCrit = targetToken?.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'helmet'));
 
-  if (range > +maxRange) {
-    ui.notifications.error("Target is beyond maximum range for this weapon.");
-    weapons.shift();
-    return attack(attackers, targetToken, options);
-  }
   // determine range penalty and reduce qty of thrown weapon/missile
   let rangePenalty;
   if (atkType === 'missile') {
@@ -594,7 +623,7 @@ async function attack(attackers, targetToken, options) {
       const weaponQty = weaponItem.data.data.quantity;
       await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
     } else {
-      const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value?.toLowerCase() === 'quiver');
+      const quiver = token.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'quiver'));
       const quiverQty = quiver?.data.data.quantity;
       const matchWeap = dmgType === 'bolt' ? quiver?.name?.toLowerCase()?.includes('bolt') :
         dmgType === 'arrow' ? quiver?.name?.toLowerCase()?.includes('arrow') : true;
@@ -615,7 +644,7 @@ async function attack(attackers, targetToken, options) {
   const weapDmgResult = await new Roll(weapDmg).evaluate().total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
-  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${options.atkMod ? `+${options.atkMod}` : ''}`;
+  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${attackerAtkMod ? `+${attackerAtkMod}` : ''}`;
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
   let dmgText = `${totalDmg ? ` for ${chatInlineRoll(totalDmg)}` : ''}`;
@@ -697,9 +726,10 @@ async function attack(attackers, targetToken, options) {
       largeShieldsHeld.forEach((i) => targetAc += 1);
     }
     // handle bonus for bash vs. metal armor
-    const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && i.data.data.attributes.slot?.value === 'armor');
-    const targetArmorType = targetArmor?.data.data.attributes.type?.value.toLowerCase();
-    if ( (targetArmorType === 'chain' || targetArmorType === 'plate') && dmgType === 'bash' ) {
+    const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
+    const targetArmorType = targetArmor?.data.data.attributes.type?.value;
+    if ( (Util.stringMatch(targetArmorType, 'chain') || Util.stringMatch(targetArmorType, 'plate')) &&
+      dmgType === 'bash' ) {
       targetAc -= 2;
     }
     // disregard shield mods if weapon is unwieldy, e.g. flail
@@ -734,6 +764,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   chatMsgData.content += `${attackText}${rangeText} ${chatInlineRoll(totalAtk)}${resultText}<br>`;
+  chatMsgData.flavor += `${weapName}, `;
 
   // add sound and damage
   let thisAttackDamage;
@@ -748,26 +779,30 @@ async function attack(attackers, targetToken, options) {
   });
 
   // check if this weapon item has any other macros to execute
-  let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
-  let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
-  if (isLostlandsMacro) {
-    let optionsParam = '';
-    if (options.applyEffect) optionsParam += 'applyEffect: true,';
-    if (options.showModDialog) optionsParam += 'showModDialog: true,';
-    if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
-    optionsParam = `{${optionsParam}}`;
-    itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
+  const itemMacro = weaponItem.data.data.macro;
+  if (itemMacro) {
+    let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
+    let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
+    if (isLostlandsMacro) {
+      let optionsParam = '';
+      if (options.applyEffect) optionsParam += 'applyEffect: true,';
+      if (options.showModDialog) optionsParam += 'showModDialog: true,';
+      if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
+      optionsParam = `{${optionsParam}}`;
+      itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
+    }
+    let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
+    if ( !macro ) {
+      macro = await Macro.create({
+        name: weaponItem.name,
+        type: "script",
+        command: itemMacroWithId,
+        flags: { "lostlands.attrMacro": true }
+      });
+    }
+    macro.execute();
   }
-  let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
-  if ( !macro ) {
-    macro = await Macro.create({
-      name: weaponItem.name,
-      type: "script",
-      command: itemMacroWithId,
-      flags: { "lostlands.attrMacro": true }
-    });
-  }
-  macro.execute();
+
   weapons.shift();
 
   return attack(attackers, targetToken, options);
@@ -885,35 +920,6 @@ function chargesUsedDialog(item, label, ...data) {
   }).render(true);
 }
 
-// function throwDialog(weapon, label, ...data) {
-//   new Dialog({
-//     title: `${label} Form of Attack`,
-//     content: ``,
-//     buttons: {
-//       one: {
-//         icon: '<i class="fas fa-user-friends"></i>',
-//         label: "Melee",
-//         callback: () => {
-//           weapon.shownThrowDialog = true;
-//           weapon.atkType = 'melee';
-//           attack(...data);
-//         }
-//       },
-//       two: {
-//         icon: '<i class="fas fa-people-arrows"></i>',
-//         label: "Throw",
-//         callback: () => {
-//           weapon.shownThrowDialog = true;
-//           weapon.atkType = 'throw';
-//           weapon.dmgType = 'throw';
-//           attack(...data);
-//         }
-//       }
-//     },
-//     default: "one"
-//   }).render(true);
-// }
-
 export function reactionRollMacro(options) {
   if (!game.user.isGM) return;
   if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token.");
@@ -961,7 +967,10 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       attitude_map: {
         [targetActor.id]: {attitude: attitude, lvl: targetLevel}}
     };
-    reactingActor.update({data: attitudeMapUpdate});
+    await reactingActor.update({data: attitudeMapUpdate});
+    console.log(`Reaction Roll: ${reactingActor.name} is ${attitude} towards ${targetActor.name}`);
+
+    if (options.showChatMsg === false) return attitude;
 
     const attitudeColours = {
       [Constant.ATTITUDES.HOSTILE]: "#EE6363",
@@ -971,18 +980,17 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       [Constant.ATTITUDES.HELPFUL]: "#7CCD7C",
     }
     const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
-
     const chatData = {
       content: `${reactingActor.name} reacts to ${targetActor.name} ${chatInlineRoll(rxnText)} ${attitudeText}`,
       flavor: 'Reaction Roll'
     }
     macroChatMessage(reactingActor, chatData, true);
   }
-  console.log(`Reaction Roll: ${reactingActor.name} is ${attitude} towards ${targetActor.name}`)
+  
   return attitude;
 }
 
-export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
+export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = game.user.character || token?.actor;
   const sameActor = actor?.isToken ? merchant.isToken && actor.token.id === merchant.token.id :
@@ -992,68 +1000,63 @@ export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
   if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set.");
   const merchantQty = +item.data.data.quantity;
   if (!merchantQty) return ui.notifications.error("No stock available.");
-  if (merchantQty > 1 && !shownSplitDialog) {
-    return itemSplitDialog(merchantQty, item, price, merchant);
+  if (merchantQty > 1 && !options.shownSplitDialog) {
+    return itemSplitDialog(merchantQty, item, priceInCp, merchant, options);
   }
   if (!qty) qty = merchantQty;
 
   // pay for item
   // note: 1 gp = 10 sp = 50 cp
   const actorItems = actor.data.items;
-  const gpItem = actorItems.find(i => i.name === "Gold Pieces");
+  const gpItem = actorItems.find(i => Util.stringMatch(i.name, 'Gold Pieces'));
   const gp = +gpItem?.data.data.quantity || 0;
   const gpInCp = gp * 50;
-  const spItem = actorItems.find(i => i.name === "Silver Pieces");
+  const spItem = actorItems.find(i => Util.stringMatch(i.name, 'Silver Pieces'));
   const sp = +spItem?.data.data.quantity || 0;
   const spInCp = sp * 5;
-  const cpItem = actorItems.find(i => i.name === "Copper Pieces");
+  const cpItem = actorItems.find(i => Util.stringMatch(i.name, 'Copper Pieces'));
   const cp = +cpItem?.data.data.quantity || 0;
   const totalMoneyInCp = gpInCp + spInCp + cp;
-  const totalPrice = price * qty;
-  const priceInCp = totalPrice * 50;
-  const priceInSp = totalPrice * 10;
+  const totalPriceInCp = priceInCp * qty;
+  const totalPriceString = Util.getPriceString(totalPriceInCp);
 
   // pay for item from actor
   let cpUpdateQty = cp, spUpdateQty = sp, gpUpdateQty = gp;
   // case 1: not enough money
-  if (priceInCp > totalMoneyInCp) {
+  if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
-      content: `${actor.name} tries to purchase ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${price} gp, but doesn't have enough money. The merchant appears annoyed.`,
+      content: `${actor.name} tries to purchase ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
     };
     return macroChatMessage(actor, chatData, true);
   }
   // case 2: can pay with cp
-  if (cp >= priceInCp) {
-    cpUpdateQty = cpUpdateQty - priceInCp;
+  if (cp >= totalPriceInCp) {
+    cpUpdateQty = cp - totalPriceInCp;
   // case 3: can pay with cp and sp
-  } else if (cp + spInCp >= priceInCp) {
-    const cpInSp = Math.floor(cp / 5);
-    cpUpdateQty = cpUpdateQty - cpInSp * 5;
-    const priceLeftinSp = priceInSp - cpInSp;
-    spUpdateQty = spUpdateQty - priceLeftinSp;
+  } else if (cp + spInCp >= totalPriceInCp) {
+    const cpAndSpInCp = cp + spInCp;
+    let changeInCp = cpAndSpInCp - totalPriceInCp;
+    spUpdateQty = Math.floor(changeInCp / 5);
+    cpUpdateQty = changeInCp - spUpdateQty * 5;
   // case 4: payment requires gp
   } else {
-    const cpInSp = Math.floor(cp / 5);
-    const cpAndSpInGp = Math.floor((cpInSp + sp) / 10);
-    let priceLeft = totalPrice;
-    if (cpAndSpInGp) {
-      cpUpdateQty = cpUpdateQty - cpInSp * 5;
-      const priceLeftinSp = cpAndSpInGp * 10 - cpInSp;
-      spUpdateQty = spUpdateQty - priceLeftinSp;
-      priceLeft = priceLeft - cpAndSpInGp;
-    }
-    gpUpdateQty = gp - priceLeft;
+    let changeInCp = totalMoneyInCp - totalPriceInCp;
+    gpUpdateQty = Math.floor(changeInCp / 50);
+    changeInCp -= gpUpdateQty * 50;
+    spUpdateQty = Math.floor(changeInCp / 5);
+    cpUpdateQty = changeInCp - spUpdateQty * 5;
   }
-  const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty};
-  const spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty};
-  const gpUpdate = {_id: gpItem?._id, "data.quantity": gpUpdateQty};
-  cpUpdate._id && cpUpdateQty !== cp && actor.updateEmbeddedDocuments("Item", [cpUpdate]);
-  spUpdate._id && spUpdateQty !== sp && actor.updateEmbeddedDocuments("Item", [spUpdate]);
-  gpUpdate._id && gpUpdateQty !== gp && actor.updateEmbeddedDocuments("Item", [gpUpdate]);
+  const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty},
+        spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty},
+        gpUpdate = {_id: gpItem?._id, "data.quantity": gpUpdateQty};
+  // add to updates if item has id and update quantity is different than existing quantity
+  const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u._id &&
+    u["data.quantity.quantity"] !== actorItems.get(u._id)?.data.data.quantity);
+  await actor.updateEmbeddedDocuments("Item", updates);
 
   // update merchant's item quantity and merchant's gold
-  merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
-  merchant.update({"data.attributes.gold.value": merchantGold + totalPrice});
+  await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+  await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / 50)});
 
   // add item to actor
   const itemData = {
@@ -1063,19 +1066,17 @@ export function buyMacro(item, price, merchant, qty, shownSplitDialog=false) {
     type: item.data.type,
   };
   itemData.data.quantity = qty;
-  actor.createEmbeddedDocuments("Item", [itemData]);
+  await actor.createEmbeddedDocuments("Item", [itemData]);
 
-  const cpPaidText = ` ${cp - cpUpdateQty} cp,`;
-  const spPaidText = ` ${sp - spUpdateQty} sp,`;
-  const gpPaidText = ` ${gp - gpUpdateQty} gp`;
+  // crete chat message
   const chatData = {
-    content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPrice} GP, paying${cpPaidText}${spPaidText}${gpPaidText}.`,
+    content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}.`,
     sound: 'coins'
   }
   return macroChatMessage(actor, chatData, true);
 }
 
-function itemSplitDialog(maxQty, itemData, price, ...data) {
+function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   new Dialog({
     title: `Buy ${itemData.name}`,
     content: 
@@ -1097,7 +1098,8 @@ function itemSplitDialog(maxQty, itemData, price, ...data) {
         label: `Buy`,
         callback: html => {
           const quantity = +html.find('[id=qty]').val();
-          buyMacro(itemData, price, ...data, quantity, true);
+          options.shownSplitDialog = true;
+          buyMacro(itemData, priceInCps, merchant, quantity, options);
         }
       },
       two: {
@@ -1107,14 +1109,14 @@ function itemSplitDialog(maxQty, itemData, price, ...data) {
     },
     default: "one",
     render: html => {
-      const qtySpan = html.find('[id=selectedQty]');
-      const qtyRange = html.find('[id=qty]');
-      const priceSpan = html.find('[id=price]');
+      const qtyRange = html.find('[id=qty]'),
+            qtySpan = html.find('[id=selectedQty]'),
+            priceSpan = html.find('[id=price]');
       qtySpan.html(+qtyRange.val());
-      priceSpan.html(+qtyRange.val() * price);
+      priceSpan.html(Util.getPriceString(+qtyRange.val() * priceInCps));
       qtyRange.on("input", () => {
         qtySpan.html(+qtyRange.val());
-        priceSpan.html(+qtyRange.val() * price);
+        priceSpan.html(Util.getPriceString(+qtyRange.val() * priceInCps));
       });
     }
   }).render(true);

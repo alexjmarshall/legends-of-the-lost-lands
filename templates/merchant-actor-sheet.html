@@ -49,7 +49,12 @@
                 <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
                 <span class="item-row item-column merchant-item-column" data-action="edit">{{item.data.quantity}}</span>
                 <span class="item-row item-column merchant-item-column item-price" data-action="edit">
-                    {{#if item.data.price}}{{item.data.price}} gp{{else}}{{item.data.attributes.gp_value.value}} gp{{/if}}
+                    {{#if item.data.price}}
+                    {{#if item.data.price.gp}}<span class="gold-price">{{item.data.price.gp}}</span> gp{{/if}}
+                    {{#if item.data.price.sp}}<span class="silver-price">{{item.data.price.sp}}</span> sp{{/if}}
+                    {{#if item.data.price.cp}}<span class="copper-price">{{item.data.price.cp}}</span> cp{{/if}}
+                    {{else}}
+                    {{item.data.attributes.gp_value.value}} gp{{/if}}
                 </span>
                 {{#if ../isGM}}
                 <div class="item-controls">

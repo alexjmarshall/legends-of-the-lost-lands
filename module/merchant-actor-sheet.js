@@ -1,5 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 export class MerchantActorSheet extends ActorSheet {
   /** @inheritdoc */
@@ -30,13 +31,15 @@ export class MerchantActorSheet extends ActorSheet {
     const merchantActor = context.actor.isToken ? context.actor :
       canvas.tokens.objects.children.find(t => t.actor.id === context.actor.id && t.data.actorLink === true)?.actor;
     const character = game.user.character;
-    const attitude = merchantActor && character ? await game.lostlands.Macro.reactionRoll(merchantActor, character, {showModDialog: false}) :
+    const attitude = merchantActor && character ? await game.lostlands.Macro.reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
       Constant.ATTITUDES.UNCERTAIN;
     const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
     const items = context.data.items.filter(i => i.type === 'item');
     const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
-    items.forEach(item => item.data.price = Math.round(+item.data.attributes.gp_value?.value * 
-      sellFactor * sellAdj));
+    items.forEach(item => {
+      let priceInCps = Math.round(+item.data.attributes.gp_value?.value * sellFactor * sellAdj * 50);
+      item.data.price = Util.expandPrice(priceInCps);
+    });
     context.data.items = items;
 
     return context;
@@ -82,9 +85,15 @@ export class MerchantActorSheet extends ActorSheet {
     // Handle different actions
     switch ( button.dataset.action ) {
       case "buy":
-        const displayPrice = $(li)?.find('.item-price').text().trim();
-        const price = +displayPrice.match(/\d+/);
-        return game.lostlands.Macro.buyMacro(item, price, this.actor);
+        const itemPrice = $(li)?.find('.item-price');
+        const goldPrice = +itemPrice?.find('.gold-price').text(),
+              silverPrice = +itemPrice?.find('.silver-price').text(),
+              copperPrice = +itemPrice?.find('.copper-price').text();
+        if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
+          return ui.notifications.error("There was a problem reading the price of this item.");
+        }
+        const totalPriceInCp = Math.round((copperPrice + silverPrice * 5 + goldPrice * 50));
+        return game.lostlands.Macro.buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;
         const cls = getDocumentClass("Item");
