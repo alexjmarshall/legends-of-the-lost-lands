@@ -106,6 +106,12 @@ export function scrollMacro(itemId, options={}) {
   return consumeItem(itemId, options);
 }
 
+export function eatItemMacro(itemId, options={}) {
+  options.verb = 'eats';
+  options.sound = 'eat_food';
+  return consumeItem(itemId, options);
+}
+
 async function consumeItem(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
@@ -116,32 +122,34 @@ async function consumeItem(itemId, options={}) {
   if (!itemQty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
 
   const healFormula = item.data.data.attributes.heal?.value;
-  if (options.applyEffect && healFormula) {
+  const chatBubbleString = `${actor.name} ${options.verb || 'consumes'} ${item.name}.`;
+  if (healFormula) {
     try {
       const healPoints = await new Roll(healFormula).evaluate().total;
-      const currentHp = +actor.data.data.hp?.value;
-      const maxHp = +actor.data.data.hp?.max;
-      let hpUpdate = currentHp + +healPoints;
-      if ( hpUpdate > maxHp ) hpUpdate = maxHp;
-      if(!isNaN(hpUpdate) && hpUpdate !== currentHp) await actor.update({'data.hp.value': hpUpdate});
       macroChatMessage(token, { 
-        content: `${actor.name} is healed ${chatInlineRoll(healPoints)} points of damage.`, 
+        content: `${chatInlineRoll(healPoints)} points of healing.`, 
         flavor: item.name, 
         sound: options.sound
       }, false);
+      if (options.applyEffect) {
+        const currentHp = +actor.data.data.hp?.value;
+        const maxHp = +actor.data.data.hp?.max;
+        let hpUpdate = currentHp + +healPoints;
+        if ( hpUpdate > maxHp ) hpUpdate = maxHp;
+        if(!isNaN(hpUpdate) && hpUpdate !== currentHp) await actor.update({'data.hp.value': hpUpdate});
+      }
     } catch {
-      return ui.notifications.error("Invalid heal formula.");
+      ui.notifications.error("Invalid heal formula.");
     }
   } else {
-    if(!item.data.data.description) return ui.notifications.error("Item has no description set.");
     macroChatMessage(token, { 
-      content: item.data.data.description, 
-      flavor: item.name, 
-      sound: options.sound,
-      type: CONST.CHAT_MESSAGE_TYPES.IC
+      content: item.data.data.description || chatBubbleString,
+      flavor: item.name,
+      type: item.data.data.description ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE
     }, false);
   }
-  canvas.hud.bubbles.say(token, `${actor.name} ${options.verb || 'consumes'} ${item.name}.`, {emote: true});
+  options.sound && AudioHelper.play({src: `systems/lostlands/sounds/${options.sound}.mp3`, volume: 1, loop: false}, true);
+  canvas.hud.bubbles.say(token, chatBubbleString, {emote: true});
   const qtyUpdate = itemQty - 1;
   return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': qtyUpdate}]);
 }
@@ -175,8 +183,9 @@ export async function chargedItemMacro(itemId, options={}) {
 export function heldWeaponAttackMacro(options) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
-  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
-  const targetToken = [...game.user.targets][0];
+  const targets = [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetToken = targets[ranTargetIndex];
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -220,8 +229,9 @@ export function heldWeaponAttackMacro(options) {
 export function attackRoutineMacro(options) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
-  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
-  const targetToken = [...game.user.targets][0];
+  const targets = [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetToken = targets[ranTargetIndex];
   options.offhand = false;
 
   const attackers = [];
@@ -266,9 +276,11 @@ async function save(tokens, damage, options) {
     return save(tokens, damage, options);
   }
   options.skipDmgDialog = true;
-  const modDialogFlavor = options.flavor || 'Save';
+  const modDialogFlavor = options.flavor || 'Saving Throw';
   if(options.showModDialog && !options.shownModDialog) return modDialog(options, modDialogFlavor, () => save(tokens, damage, options));
-  const actorSaveMod = +actor.data.data.save_mod || 0;
+  const actorSaveMod = +actor.data.data.sv_mod || 0;
+  const saveAttr = options.saveAttr == null ? 'wis' : options.saveAttr;
+  const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
   const d20Result = await new Roll("d20").evaluate().total;
   let dialogAtkMod = '';
   try {
@@ -278,7 +290,7 @@ async function save(tokens, damage, options) {
     options.shownModDialog = false;
     return save(tokens, damage, options);
   }
-  const saveText = `${d20Result}${options.attrMod ? `+${options.attrMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
+  const saveText = `${d20Result}${saveAttrMod ? `+${saveAttrMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
   const success = savingThrow.total >= saveTarget;
@@ -292,8 +304,8 @@ async function save(tokens, damage, options) {
   }
   const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  let content = `${actor.name} ${options.verb || 'saves'} ${chatInlineRoll(saveText)}${resultText}`;
-  content += `${damage ? ` and takes ${chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}</div>`;
+  let content = `${chatInlineRoll(saveText)}${resultText}`;
+  content += `${damage ? ` for ${chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   macroChatMessage(token, {
     content: content, 
@@ -320,8 +332,7 @@ export async function thiefSkillMacro(skill, options={}) {
   const actor = token.actor;
 
   options.flavor = skill;
-  options.attrMod = +actor.data.data.dex_mod;
-  options.verb = `attempts to ${skill}`;
+  options.saveAttr = 'dex';
   const lockPickItem = actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, 'lockpicks'));
   switch (skill.toLowerCase().replace(/\s/g,'')) {
     case 'openlocks':
@@ -360,8 +371,9 @@ export async function thiefSkillMacro(skill, options={}) {
 export function backstabMacro(options) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
-  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
-  const targetToken = [...game.user.targets][0];
+  const targets = [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetToken = targets[ranTargetIndex];
 
   const attackers = [];
   for (const token of selectedTokens) {
@@ -389,16 +401,18 @@ export function backstabMacro(options) {
       ui.notifications.error(`${token.actor.name} cannot backstab with this weapon.`);
       continue;
     }
-    options.flavor = `Backstab (${weapon.name})`;
+    const flavor = `${weapon.name} (backstab)`;
     attackers.push({
       token: token,
       weapons: [{id: weapon.id, dmgType: 'stab'}],
-      chatMsgData: {content: '', flavor: options.flavor, sound: options.sound},
+      chatMsgData: {content: '', flavor: '', sound: ''},
+      flavor,
       attacks: [],
       dmgMulti: dmgMulti,
       showAltDialog: false,
       atkMod: 4,
-      throwable: false
+      throwable: false,
+      hitText: `<span style="${resultStyle('#FFFF5C')}">BACKSTAB</span>`
     })
   }
 
@@ -444,10 +458,14 @@ export async function attackMacro(weapons, options={}) {
   // shields size small, medium and large -- medium and large shields are wearable with slot of shield, small shields are holdable and still have a slot of shield
   // armor type leather, chain and plate
   // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
+  // macro for eat and drink (dont reduce qty)
+  // macro for disease, starvation, thirts etc.
+  // wis affects all saving throws, except thief skills (dex)
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
-  if([...game.user.targets].length > 1) return ui.notifications.error("Select a single target.");
-  const targetToken = [...game.user.targets][0];
+  const targets= [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetToken = targets[ranTargetIndex];
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -475,7 +493,7 @@ async function attack(attackers, targetToken, options) {
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
-    chatMsgData.flavor = options.flavor || chatMsgData.flavor;
+    chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     macroChatMessage(token, chatMsgData);
     for (const attack of attacks) {
@@ -579,7 +597,7 @@ async function attack(attackers, targetToken, options) {
   }
   const dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
   const atkType = Constant.ATK_TYPE_BY_DMG_TYPE[dmgType] || 'melee';
-  const maxRange = atkType === 'melee' ? meleeRange : (weapAttrs.max_range?.value || 0);
+  const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
   if (range > +maxRange) {
     ui.notifications.error("Target is beyond maximum range for this weapon.");
     weapons.shift();
@@ -740,9 +758,10 @@ async function attack(attackers, targetToken, options) {
     }
     const totalAtkRoll = new Roll(totalAtk);
     await totalAtkRoll.evaluate();
-    isHit = totalAtkRoll.total >= (atkType === 'touch' ? touchAc : targetAc);
+    if (atkType === 'touch') targetAc = touchAc;
+    isHit = totalAtkRoll.total >= targetAc;
     if (isHit) {
-      resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#7CCD7C')}">HIT</span>`;
+      resultText = ` vs. AC ${targetAc} ${attacker.hitText ? attacker.hitText : `<span style="${resultStyle('#7CCD7C')}">HIT</span>`}`;
       resultSound = hitSound;
     } else {
       resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#EE6363')}">MISS</span>`;
@@ -764,7 +783,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   chatMsgData.content += `${attackText}${rangeText} ${chatInlineRoll(totalAtk)}${resultText}<br>`;
-  chatMsgData.flavor += `${weapName}, `;
+  chatMsgData.flavor += `${weapName} (${dmgType}), `;
 
   // add sound and damage
   let thisAttackDamage;
@@ -861,11 +880,11 @@ function modDialog(mods, label, callback) {
     content: 
       `<form>
         <div class="form-group">
-          <label>${label} modifiers</label>
+          <label>${mods.skipDmgDialog ? 'M' : `${label} m`}odifiers?</label>
           <input type="text" id="atkMod" placeholder="e.g. -4">
         </div>
-        ${mods.skipDmgDialog === true ? '' : `<div class="form-group">
-          <label>Damage modifiers</label>
+        ${mods.skipDmgDialog ? '' : `<div class="form-group">
+          <label>Damage modifiers?</label>
           <input type="text" id="dmgMod" placeholder="e.g. 2d6">
         </div>`}
       </form>`,
@@ -924,8 +943,10 @@ export function reactionRollMacro(options) {
   if (!game.user.isGM) return;
   if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token.");
   const reactingActor = canvas.tokens.controlled[0].actor;
-  if ([...game.user.targets].length !== 1) return ui.notifications.error("Select a single target.");
-  const targetActor = [...game.user.targets][0].actor;
+  const targets = [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetActor = targets[ranTargetIndex]?.actor;
+  if (!targetActor) return ui.notifications.error("Select a target.");
   options.override = true;
 
   return reactionRoll(reactingActor, targetActor, options);
@@ -1094,7 +1115,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
     } else {
       await actor.createEmbeddedDocuments("Item", [itemData]);
     }
-    
+
     // create chat message
     const chatData = {
       content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}.`,

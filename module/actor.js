@@ -1,4 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
+import * as Util from "./utils.js";
+import * as Constant from "./constants.js";
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -90,14 +92,23 @@ export class SimpleActor extends Actor {
     - belt
     - boots
     */
-    const wornOrHeldItems = items.filter(i => i.data.data.worn === true || i.data.data.held === true);
-    const acMods = wornOrHeldItems.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
-    const maxDexBonus = Math.min(...wornOrHeldItems.map(i => i.data.data.attributes.max_dex_bonus?.value || Infinity));
-    const wornAc = 9 + acMods + Math.min(updateData.dex_mod, maxDexBonus);
-    updateData.ac = attributes.ac?.value ?? wornAc;
+    const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
+     i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
+    const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
+    const wornArmors = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
+      i.data.data.attributes.ac_mod?.value);
+    const armorAcMods = wornArmors.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
+    const maxDexBonus = Math.min(...wornArmors.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity));
+    const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + Math.min(updateData.dex_mod, maxDexBonus);
+    updateData.ac = attributes.ac?.value ?? ac;
+
+    // sv_mod
+    const svItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.sv_mod?.value);
+    const sv_mod = svItems.reduce((a, b) => a + (b.data.data.attributes.sv_mod?.value || 0), 0);
+    updateData.sv_mod = sv_mod + (+attributes.sv_mod?.value || 0);
 
     // touch AC
-    const touchAc = 9 + updateData.dex_mod;
+    const touchAc = Constant.AC_MIN + shieldAcMods + Math.min(updateData.dex_mod, maxDexBonus);
     updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
 
     // attitude map
