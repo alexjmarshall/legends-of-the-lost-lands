@@ -204,7 +204,8 @@ export function heldWeaponAttackMacro(options) {
     if ( weapons.length > 1 ) {
       // can only use multiple weapons if Dex > 13 and not wearing a shield
       const dexScore = +token.actor.data.data.attributes.ability_scores?.dex.value;
-      const wearingShield = !!token.actor.data.items.find(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+      const wearingShield = !!token.actor.data.items.find(i => i.type === 'item' &&
+      i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
       if (dexScore < 13 || wearingShield) weapons = [weapons[0]];
     }
     // extract item ids and flag weapons after the first as offhand
@@ -217,7 +218,7 @@ export function heldWeaponAttackMacro(options) {
     attackers.push({
       token: token,
       weapons: weapIds,
-      chatMsgData: {content: '', flavor: '', sound: options.sound},
+      chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: [],
       unarmed
     })
@@ -251,7 +252,7 @@ export function attackRoutineMacro(options) {
     attackers.push({
       token: token,
       weapons: attacks,
-      chatMsgData: {content: '', flavor: '', sound: options.sound},
+      chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: []
     })
   }
@@ -278,7 +279,7 @@ async function save(tokens, damage, options) {
   options.skipDmgDialog = true;
   const modDialogFlavor = options.flavor || 'Saving Throw';
   if(options.showModDialog && !options.shownModDialog) return modDialog(options, modDialogFlavor, () => save(tokens, damage, options));
-  const actorSaveMod = +actor.data.data.sv_mod || 0;
+  const actorSaveMod = +actor.data.data.st_mod || 0;
   const saveAttr = options.saveAttr == null ? 'wis' : options.saveAttr;
   const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
   const d20Result = await new Roll("d20").evaluate().total;
@@ -405,7 +406,7 @@ export function backstabMacro(options) {
     attackers.push({
       token: token,
       weapons: [{id: weapon.id, dmgType: 'stab'}],
-      chatMsgData: {content: '', flavor: '', sound: ''},
+      chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
       flavor,
       attacks: [],
       dmgMulti: dmgMulti,
@@ -436,7 +437,7 @@ export function backstabMacro(options) {
 *  light: true/false -- item attribute
 *  maxRange: (value) -- item attribute
 *  atkType: melee/missile/throw/touch  -- item attribute
-*  dmgType: slash/stab/bash/throw/stone/arrow/bolt/punch/grapple/hook  -- item attribute
+*  dmgType: slash/stab/bash/throw/slingstone/arrow/bolt/punch/grapple/hook  -- item attribute
 *  fragile: true/false -- item attribute
 *  finesse: true/false -- item attribute
 *  unwieldly: true/false -- item attribute
@@ -472,7 +473,7 @@ export async function attackMacro(weapons, options={}) {
     attackers.push({
       token: token,
       weapons: weapons,
-      chatMsgData: { content: '', flavor: '', sound: options.sound },
+      chatMsgData: { content: '', flavor: '', sound: '', bubbleString: '' },
       attacks: []
     })
   }
@@ -495,7 +496,10 @@ async function attack(attackers, targetToken, options) {
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
-    macroChatMessage(token, chatMsgData);
+    chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
+    macroChatMessage(token, chatMsgData, false);
+    const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
+    canvas.hud.bubbles.say(token, chatBubbleString, {emote: true});
     for (const attack of attacks) {
       attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
       const targetHp = +targetToken?.actor.data.data.hp?.value;
@@ -596,7 +600,7 @@ async function attack(attackers, targetToken, options) {
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.dmgDialogType}]);
   }
   const dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
-  const atkType = Constant.ATK_TYPE_BY_DMG_TYPE[dmgType] || 'melee';
+  const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE|| 'melee';
   const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
   if (range > +maxRange) {
     ui.notifications.error("Target is beyond maximum range for this weapon.");
@@ -670,91 +674,53 @@ async function attack(attackers, targetToken, options) {
   if (isCrit) dmgText += ` + ${chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
   dmgText += ' damage';
   if (atkType === 'touch') dmgText = '';
-
-  let targetNameText = targetToken?.actor?.name ? ` ${targetToken.actor.name}` : '';
-  let rangeText = range && rangePenalty ? ` (${range}')` : '';
-  let attackText = `attacks${targetNameText}`;
-  let hitSound, missSound;
-  switch (dmgType) {
-    case 'slash':
-      attackText = `slashes${targetNameText}`;
-      hitSound = 'slash_hit';
-      missSound = 'slash_miss';
-      break;
-    case 'stab':
-      attackText = `stabs${targetNameText}`;
-      hitSound = 'stab_hit';
-      missSound = 'stab_miss';
-      break;
-    case 'bash':
-      attackText = `bashes${targetNameText}`;
-      hitSound = 'bash_hit';
-      missSound = 'bash_miss';
-      break;
-    case 'stone':
-      attackText = `slings a stone${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'stone_hit';
-      missSound = 'stone_miss';
-      break;
-    case 'arrow':
-      attackText = `shoots an arrow${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'arrow_hit';
-      missSound = 'arrow_miss';
-      break;
-    case 'bolt':
-      attackText = `shoots a bolt${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'bolt_hit';
-      missSound = 'bolt_miss';
-      break;
-    case 'throw':
-      attackText = `throws ${weapName}${targetNameText ? ` at${targetNameText}` : ''}`;
-      hitSound = 'throw_hit';
-      missSound = 'throw_miss';
-      break;
-    case 'grapple':
-      attackText = `grapples${targetNameText}`;
-      break;
-    case 'hook':
-      attackText = `hooks${targetNameText} with ${weapName}`;
-      break;
-    case 'punch':
-      attackText = `punches${targetNameText}`;
-      break;
-  }
+  let rangeText = range && rangePenalty ? ` ${range}'` : '';
+  let hitSound = Constant.DMG_TYPES[dmgType].HIT_SOUND, missSound = Constant.DMG_TYPES[dmgType].MISS_SOUND;
   let resultText = '';
   let resultSound = missSound;
   let isHit = true;
-  let targetAc;
-  if (!isNaN(targetRollData?.ac)) {
-    // check for friendly adjacent tokens wearing a Large Shield
-    // note this doesn't work for monsters
-    const adjacentFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 && measureRange(targetToken, t) === 5);
-    const largeShieldMods = adjacentFriendlyTokens.map(t => 
-      t.actor.items.filter(i => i.data.data.held && i.data.data.attributes.large?.value)
-      .map(i => i.data.data.attributes.ac_mod?.value)
+  let targetAc = targetRollData?.ac;
+  let touchAc = targetRollData?.touch_ac || Constant.AC_MIN;
+  if (!isNaN(targetAc)) {
+    // handle situational AC mods
+    // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
+    const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
+      measureRange(targetToken, t) < 10);
+    const adjLargeShieldMods = adjFriendlyTokens.map(t => 
+      t.actor.items.filter(i => i.data.data.worn &&
+        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
+        Util.stringMatch(i.data.data.attributes.size?.value, 'large')
+      ).map(i => i.data.data.attributes.ac_mod?.value)
     ).flat();
-    const largeShieldMod = Math.max(...largeShieldMods, 0);
-    targetAc = targetRollData.ac + largeShieldMod;
-    const touchAc = targetRollData.touch_ac || targetRollData.ac;
+    const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
+    targetAc += shieldWallMod;
+    touchAc += shieldWallMod;
     if (atkType === 'missile') {
-      // disregard bucklers, add +1 for each large shield held
-      const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.small?.value);
-      bucklersHeld.forEach(i => targetAc -= +i.data.data.attributes.ac_mod?.value || 0);
-      const largeShieldsHeld = targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.large?.value);
-      largeShieldsHeld.forEach((i) => targetAc += 1);
+      // disregard bucklers
+      const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held &&
+        Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
+      bucklersHeld.forEach(i =>{
+        const mod = +i.data.data.attributes.ac_mod?.value || 0;
+        targetAc -= mod;
+        touchAc -= mod;
+      });
+      // +1 for each large shield worn
+      const largeShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
+        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
+        Util.stringMatch(i.data.data.attributes.size?.value, 'large'));
+      largeShieldsWorn.forEach((i) => {
+        targetAc += 1;
+        touchAc += 1;
+      });
     }
-    // handle bonus for bash vs. metal armor
-    const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
-    const targetArmorType = targetArmor?.data.data.attributes.type?.value;
-    if ( (Util.stringMatch(targetArmorType, 'chain') || Util.stringMatch(targetArmorType, 'plate')) &&
-      dmgType === 'bash' ) {
-      targetAc -= 2;
-    }
-    // disregard shield mods if weapon is unwieldy, e.g. flail
-    if ( unwieldy && atkType === 'melee' ) {
-      const shieldMods = largeShieldMod + targetToken.actor.items.filter(i => i.data.data.held && i.data.data.attributes.ac_mod?.value > 0)
-        .reduce((a,b) => a + b.data.data.attributes.ac_mod.value, 0);
-      targetAc -= shieldMods;
+    if (unwieldy) {
+      // disregard shield mods if weapon is unwieldy, e.g. flail
+      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn === true &&
+        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
+        i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
+      const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
+      targetAc -= shieldAcMods;
+      touchAc -= shieldAcMods;
     }
     const totalAtkRoll = new Roll(totalAtk);
     await totalAtkRoll.evaluate();
@@ -781,9 +747,9 @@ async function attack(attackers, targetToken, options) {
     const weaponQty = weaponItem.data.data.quantity;
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
   }
-
-  chatMsgData.content += `${attackText}${rangeText} ${chatInlineRoll(totalAtk)}${resultText}<br>`;
-  chatMsgData.flavor += `${weapName} (${dmgType}), `;
+  chatMsgData.content += `${chatInlineRoll(totalAtk)}${resultText}<br>`;
+  chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
+  chatMsgData.bubbleString += `${getAttackChatBubble(token.actor.name, targetToken?.actor.name, weapName, dmgType)}<br>`;
 
   // add sound and damage
   let thisAttackDamage;
@@ -825,6 +791,33 @@ async function attack(attackers, targetToken, options) {
   weapons.shift();
 
   return attack(attackers, targetToken, options);
+}
+
+function getAttackChatBubble(attackerName, targetName, weapName, dmgType) {
+  switch (dmgType) {
+    case "arrow":
+      return `${attackerName} shoots an arrow${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+    case "bash":
+      return `${attackerName} bashes${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "bolt":
+      return `${attackerName} shoots a bolt${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+    case "chop":
+      return `${attackerName} chops${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "grapple":
+      return `${attackerName} grapples${targetName ? ` ${targetName}` : ''} `;
+    case "hook":
+      return `${attackerName} hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "punch":
+      return `${attackerName} punches${targetName ? ` ${targetName}` : ''}`;
+    case "slash":
+      return `${attackerName} slashes${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "stab":
+      return `${attackerName} stabs${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "slingstone":
+      return `${attackerName} slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+    case "throw":
+      return `${attackerName} throws ${weapName}${targetName ? ` at ${targetName}` : ''} `;
+  }
 }
 
 function resultStyle(bgColour) {
@@ -1002,10 +995,11 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
     const chatData = {
-      content: `${reactingActor.name} reacts to ${targetActor.name} ${chatInlineRoll(rxnText)} ${attitudeText}`,
-      flavor: 'Reaction Roll'
+      content: `${chatInlineRoll(rxnText)} ${attitudeText}`,
+      flavor: `Reaction Roll vs. ${targetActor.name}`
     }
-    macroChatMessage(reactingActor, chatData, true);
+    macroChatMessage(reactingActor, chatData, false);
+    canvas.hud.bubbles.say(token, `${reactingActor.name} considers ${targetActor.name}...`, {emote: true});
   }
 
   return attitude;

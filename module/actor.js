@@ -94,22 +94,23 @@ export class SimpleActor extends Actor {
     */
     const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
      i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
-    const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
+    const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
     const wornArmors = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
       i.data.data.attributes.ac_mod?.value);
-    const armorAcMods = wornArmors.reduce((a, b) => a + (b.data.data.attributes.ac_mod?.value || 0), 0);
-    const maxDexBonus = Math.min(...wornArmors.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity));
-    const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + Math.min(updateData.dex_mod, maxDexBonus);
+    const armorAcMods = wornArmors.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
+    const maxDexBonuses = wornArmors.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
+    const dexAcBonus = Math.min(actorData.dex_mod, ...maxDexBonuses);
+    const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
     updateData.ac = attributes.ac?.value ?? ac;
 
-    // sv_mod
-    const svItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.sv_mod?.value);
-    const sv_mod = svItems.reduce((a, b) => a + (b.data.data.attributes.sv_mod?.value || 0), 0);
-    updateData.sv_mod = sv_mod + (+attributes.sv_mod?.value || 0);
-
     // touch AC
-    const touchAc = Constant.AC_MIN + shieldAcMods + Math.min(updateData.dex_mod, maxDexBonus);
+    const touchAc = Constant.AC_MIN + shieldAcMods + dexAcBonus;
     updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
+
+    // st_mod
+    const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
+    const st_mod = stItems.reduce((a, b) => a + (b.data.data.attributes.st_mod?.value || 0), 0);
+    updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
     // attitude map
     updateData.attitude_map = actorData.attitude_map || {};

@@ -42,17 +42,69 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-export const ATK_TYPE_BY_DMG_TYPE = {
-  "arrow": "missile",
-  "bash": "melee",
-  "bolt": "missile",
-  "chop": "melee",
-  "hook": "touch",
-  "punch": "melee",
-  "slash": "melee",
-  "stab": "melee",
-  "stone": "missile",
-  "throw": "missile"
+    // // handle bonus for bash vs. metal armor
+    // const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
+    // const targetArmorType = targetArmor?.data.data.attributes.type?.value;
+    // if ( (Util.stringMatch(targetArmorType, 'chain') || Util.stringMatch(targetArmorType, 'plate')) &&
+    //   dmgType === 'bash' ) {
+    //   targetAc -= 2;
+    // }
+export const DMG_TYPES = {
+  "arrow": {
+    ATK_TYPE: "missile",
+    HIT_SOUND: "arrow_hit",
+    MISS_SOUND: "arrow_miss"
+  },
+  "bash": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "bash_hit",
+    MISS_SOUND: "bash_miss"
+  },
+  "bolt": {
+    ATK_TYPE: "missile",
+    HIT_SOUND: "bolt_hit",
+    MISS_SOUND: "bolt_miss"
+  },
+  "chop": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "chop_hit",
+    MISS_SOUND: "chop_miss"
+  },
+  "grapple": {
+    ATK_TYPE: "touch",
+    HIT_SOUND: undefined,
+    MISS_SOUND: undefined
+  },
+  "hook": {
+    ATK_TYPE: "touch",
+    HIT_SOUND: undefined,
+    MISS_SOUND: undefined
+  },
+  "punch": {
+    ATK_TYPE: "touch",
+    HIT_SOUND: undefined,
+    MISS_SOUND: undefined
+  },
+  "slash": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "slash_hit",
+    MISS_SOUND: "slash_miss"
+  },
+  "stab": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "stab_hit",
+    MISS_SOUND: "stab_miss"
+  },
+  "slingstone": {
+    ATK_TYPE: "missile",
+    HIT_SOUND: "slingstone_hit",
+    MISS_SOUND: "slingstone_miss"
+  },
+  "throw": {
+    ATK_TYPE: "missile",
+    HIT_SOUND: "throw_hit",
+    MISS_SOUND: "throw_miss"
+  }
 };
 export const VOICE_MOODS = {
   AMUSED: "amused",
