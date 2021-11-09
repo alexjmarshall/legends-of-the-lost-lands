@@ -180,7 +180,7 @@ export async function chargedItemMacro(itemId, options={}) {
   return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.attributes.charges.value': chargesLeft}]);
 }
 
-export function heldWeaponAttackMacro(options) {
+export function heldWeaponAttackMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets = [...game.user.targets];
@@ -227,7 +227,35 @@ export function heldWeaponAttackMacro(options) {
   return attack(attackers, targetToken, options);
 }
 
-export function attackRoutineMacro(options) {
+export function quickDrawAttackMacro(itemId, options={}) {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if (!actor) return ui.notifications.error("Select character using the weapon.");
+  const weapon = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  if (!weapon) return ui.notifications.error("Could not find weapon on this character.");
+  const dmgTypes = weapon.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
+  const canQuickDraw = weapon.data.data.attributes.quick_draw?.value && dmgTypes.includes('cut');
+  if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack.");
+  const targets = [...game.user.targets];
+  const ranTargetIndex = Math.floor(Math.random() * targets.length);
+  const targetToken = targets[ranTargetIndex];
+
+  const attackers = [];
+  const flavor = `${weapon.name} (quick draw)`;
+  attackers.push({
+    token: token,
+    weapons: [{id: itemId, dmgType: 'cut'}],
+    chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
+    flavor,
+    attacks: [],
+    showAltDialog: false,
+    throwable: false
+  })
+
+  return attack(attackers, targetToken, options);
+}
+
+export function attackRoutineMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets = [...game.user.targets];
@@ -266,7 +294,7 @@ export async function saveMacro(damage=0, options={}) {
   return save(tokens, damage, options);
 }
 
-async function save(tokens, damage, options) {
+async function save(tokens, damage, options={}) {
   if(!tokens.length) return;
   const token = tokens[0];
   const actor = token.actor;
@@ -369,7 +397,7 @@ export async function thiefSkillMacro(skill, options={}) {
   return saveMacro(0, options);
 }
 
-export function backstabMacro(options) {
+export function backstabMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets = [...game.user.targets];
@@ -451,16 +479,12 @@ export async function attackMacro(weapons, options={}) {
   // should use combat tracker? or nah
   // players cannot edit their XP or HP?
   // document all attribute properties -- rationalize with sheet
-  // clean up chat messages -- move target name to flavor after vs., and attack form/verb to flavor
   // weapons with quick draw tag say 'draws' instead of 'wields', and if press alt and hold button, makes immediate attack!
-  // drag drop to sell merchant, timer to sell back at same price to merchant
   // weapon light flag, two-hand flag
-  // shields size small, medium and large -- medium and large shields are wearable with slot of shield, small shields are holdable and still have a slot of shield
   // armor type leather, chain and plate
   // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
   // macro for eat and drink (dont reduce qty)
   // macro for disease, starvation, thirts etc.
-  // wis affects all saving throws, except thief skills (dex)
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets= [...game.user.targets];

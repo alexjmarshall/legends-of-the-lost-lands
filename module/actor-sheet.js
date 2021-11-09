@@ -275,10 +275,21 @@ export class SimpleActorSheet extends ActorSheet {
         if ( !isHeld && itemQty > heldQtyLimit ) {
           return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand.`);
         }
+        await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
         if (!isHeld) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
+          // handle quick draw attack
+          const dmgTypes = item.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
+          const canQuickDraw = item.data.data.attributes.quick_draw?.value && dmgTypes.includes('cut');
+          if (canQuickDraw) {
+            if (event.altKey) {
+              return game.lostlands.Macro.quickDrawAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
+            }
+            game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} draws ${item.name}` });
+          } else {
+            game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
+          }
         }
-        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
+        return;
       case "use":
         let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
         let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
