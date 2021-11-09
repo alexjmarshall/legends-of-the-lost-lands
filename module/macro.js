@@ -405,7 +405,7 @@ export function backstabMacro(options) {
     const flavor = `${weapon.name} (backstab)`;
     attackers.push({
       token: token,
-      weapons: [{id: weapon.id, dmgType: 'stab'}],
+      weapons: [{id: weapon.id, dmgType: 'thrust'}],
       chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
       flavor,
       attacks: [],
@@ -433,11 +433,10 @@ export function backstabMacro(options) {
 *  applyEffect: true/false
 *  throwable: true/false -- item attribute
 *  reach: true/false -- item attribute
-*  hasHook: true/false -- item attribute
 *  light: true/false -- item attribute
 *  maxRange: (value) -- item attribute
 *  atkType: melee/missile/throw/touch  -- item attribute
-*  dmgType: slash/stab/bash/throw/slingstone/arrow/bolt/punch/grapple/hook  -- item attribute
+*  dmgType: cut/thrust/hew/bludgeon/throw/slingstone/arrow/bolt/punch/grapple/hook  -- item attribute
 *  fragile: true/false -- item attribute
 *  finesse: true/false -- item attribute
 *  unwieldly: true/false -- item attribute
@@ -531,7 +530,7 @@ async function attack(attackers, targetToken, options) {
             dmg_types: { value: 'punch'},
             light: { value: true}
           },
-          quantity: 1
+          quantity: 2
         }
       }
     }
@@ -599,8 +598,15 @@ async function attack(attackers, targetToken, options) {
   if ( weapon.dmgDialogType && weapon.dmgDialogType !== weaponItem.data.data.dmg_type ) {
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.dmgDialogType}]);
   }
-  const dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
-  const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE|| 'melee';
+  let dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
+  if (!Object.keys(Constant.DMG_TYPES).includes(dmgType)) dmgType = 'attack';
+  const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE || 'melee';
+  const targetArmorItem = targetToken?.actor.items.find(i => i.data.data.worn &&
+    Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
+  const targetArmorType = targetArmorItem?.data.data.attributes.type?.value ||
+    targetToken?.actor.data.data.attributes.armor_type?.value ||
+    'none';
+  const vsACMod = Constant.DMG_TYPES[dmgType].VS_AC_MODS[targetArmorType];
   const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
   if (range > +maxRange) {
     ui.notifications.error("Target is beyond maximum range for this weapon.");
@@ -665,7 +671,7 @@ async function attack(attackers, targetToken, options) {
   const d20Result = await new Roll("d20").evaluate().total;
   const weapDmgResult = await new Roll(weapDmg).evaluate().total;
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
-  totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}`;
+  totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}${vsACMod ? `+${vsACMod}` : ''}`;
   totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${attackerAtkMod ? `+${attackerAtkMod}` : ''}`;
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
@@ -685,12 +691,14 @@ async function attack(attackers, targetToken, options) {
     // handle situational AC mods
     // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
     const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
+      t.actor.id !== targetToken.actor.id &&
+      t.actor.id !== token.actor.id &&
       measureRange(targetToken, t) < 10);
     const adjLargeShieldMods = adjFriendlyTokens.map(t => 
       t.actor.items.filter(i => i.data.data.worn &&
         Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
         Util.stringMatch(i.data.data.attributes.size?.value, 'large')
-      ).map(i => i.data.data.attributes.ac_mod?.value)
+      ).map(i => +i.data.data.attributes.ac_mod?.value || 0)
     ).flat();
     const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
     targetAc += shieldWallMod;
@@ -797,22 +805,24 @@ function getAttackChatBubble(attackerName, targetName, weapName, dmgType) {
   switch (dmgType) {
     case "arrow":
       return `${attackerName} shoots an arrow${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
-    case "bash":
-      return `${attackerName} bashes${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "attack":
+      return `${attackerName} attacks${targetName ? ` ${targetName}` : ''}`;
+    case "bludgeon":
+      return `${attackerName} bludgeons${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "bolt":
       return `${attackerName} shoots a bolt${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
-    case "chop":
-      return `${attackerName} chops${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "hew":
+      return `${attackerName} hews${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "grapple":
       return `${attackerName} grapples${targetName ? ` ${targetName}` : ''} `;
     case "hook":
       return `${attackerName} hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "punch":
       return `${attackerName} punches${targetName ? ` ${targetName}` : ''}`;
-    case "slash":
-      return `${attackerName} slashes${targetName ? ` ${targetName}` : ''} with ${weapName}`;
-    case "stab":
-      return `${attackerName} stabs${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "cut":
+      return `${attackerName} cuts${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+    case "thrust":
+      return `${attackerName} thrusts ${weapName}${targetName ? ` at ${targetName}` : ''} `;
     case "slingstone":
       return `${attackerName} slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
     case "throw":

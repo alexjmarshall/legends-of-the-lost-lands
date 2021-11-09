@@ -42,68 +42,138 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-    // // handle bonus for bash vs. metal armor
-    // const targetArmor = targetToken.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
-    // const targetArmorType = targetArmor?.data.data.attributes.type?.value;
-    // if ( (Util.stringMatch(targetArmorType, 'chain') || Util.stringMatch(targetArmorType, 'plate')) &&
-    //   dmgType === 'bash' ) {
-    //   targetAc -= 2;
-    // }
 export const DMG_TYPES = {
   "arrow": {
     ATK_TYPE: "missile",
     HIT_SOUND: "arrow_hit",
-    MISS_SOUND: "arrow_miss"
+    MISS_SOUND: "arrow_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 2,
+      "chain": 0,
+      "plate": -2
+    }
   },
-  "bash": {
+  "attack": {
     ATK_TYPE: "melee",
-    HIT_SOUND: "bash_hit",
-    MISS_SOUND: "bash_miss"
+    HIT_SOUND: undefined,
+    MISS_SOUND: undefined,
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 0,
+      "chain": 0,
+      "plate": 0
+    }
+  },
+  "bludgeon": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "bludgeon_hit",
+    MISS_SOUND: "bludgeon_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 0,
+      "chain": 2,
+      "plate": 4
+    }
   },
   "bolt": {
     ATK_TYPE: "missile",
     HIT_SOUND: "bolt_hit",
-    MISS_SOUND: "bolt_miss"
+    MISS_SOUND: "bolt_miss",
+    VS_AC_MODS: {
+      "none": -2,
+      "leather": 0,
+      "chain": 2,
+      "plate": 0
+    }
   },
-  "chop": {
+  "hew": {
     ATK_TYPE: "melee",
-    HIT_SOUND: "chop_hit",
-    MISS_SOUND: "chop_miss"
+    HIT_SOUND: "hew_hit",
+    MISS_SOUND: "hew_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 2,
+      "chain": 0,
+      "plate": -2
+    }
   },
   "grapple": {
     ATK_TYPE: "touch",
     HIT_SOUND: undefined,
-    MISS_SOUND: undefined
+    MISS_SOUND: undefined,
+    VS_AC_MODS: {
+      "none": -2,
+      "leather": 0,
+      "chain": 0,
+      "plate": 2
+    }
   },
   "hook": {
     ATK_TYPE: "touch",
     HIT_SOUND: undefined,
-    MISS_SOUND: undefined
+    MISS_SOUND: undefined,
+    VS_AC_MODS: {
+      "none": -2,
+      "leather": 0,
+      "chain": 0,
+      "plate": 2
+    }
   },
   "punch": {
-    ATK_TYPE: "touch",
+    ATK_TYPE: "melee",
     HIT_SOUND: undefined,
-    MISS_SOUND: undefined
+    MISS_SOUND: undefined,
+    VS_AC_MODS: {
+      "none": 2,
+      "leather": 0,
+      "chain": 0,
+      "plate": -2
+    }
   },
-  "slash": {
+  "cut": {
     ATK_TYPE: "melee",
-    HIT_SOUND: "slash_hit",
-    MISS_SOUND: "slash_miss"
+    HIT_SOUND: "cut_hit",
+    MISS_SOUND: "cut_miss",
+    VS_AC_MODS: {
+      "none": 2,
+      "leather": 0,
+      "chain": -2,
+      "plate": -4
+    }
   },
-  "stab": {
+  "thrust": {
     ATK_TYPE: "melee",
-    HIT_SOUND: "stab_hit",
-    MISS_SOUND: "stab_miss"
+    HIT_SOUND: "thrust_hit",
+    MISS_SOUND: "thrust_miss",
+    VS_AC_MODS: {
+      "none": -2,
+      "leather": 0,
+      "chain": 2,
+      "plate": 0
+    }
   },
   "slingstone": {
     ATK_TYPE: "missile",
     HIT_SOUND: "slingstone_hit",
-    MISS_SOUND: "slingstone_miss"
+    MISS_SOUND: "slingstone_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 0,
+      "chain": 2,
+      "plate": 4
+    }
   },
   "throw": {
     ATK_TYPE: "missile",
     HIT_SOUND: "throw_hit",
-    MISS_SOUND: "throw_miss"
+    MISS_SOUND: "throw_miss",
+    VS_AC_MODS: {
+      "none": 2,
+      "leather": 0,
+      "chain": 0,
+      "plate": -2
+    }
   }
 };
 export const VOICE_MOODS = {
