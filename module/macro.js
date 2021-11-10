@@ -60,18 +60,11 @@ export function voiceMacro(mood) {
   return Util.playVoiceSound(mood, actor, token);
 }
 
-export async function toggleHungerClock() {
+export async function toggleFatigueClock() {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
-  const clockActive = game.lostlands.hungerClock;
-  const characters = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
-  const currentTime = game.time.worldTime;
-  if ( clockActive === false) {
-    for (const character of characters) {
-      await character.update({"data.last_eat_time": currentTime});
-    }
-  }
-  game.lostlands.hungerClock = !clockActive;
-  ui.notifications.info(`Set hungerClock to ${!clockActive}`);
+  const clockActive = game.lostlands.fatigueClock;
+  game.lostlands.fatigueClock = !clockActive;
+  ui.notifications.info(`Set fatigueClock to ${!clockActive}`);
 }
 
 export async function spellMacro(spellId) {
@@ -109,9 +102,10 @@ export async function spellMacro(spellId) {
   return actor.update(updateData);
 }
 
-export function potionMacro(itemId, options={}) {
+export async function potionMacro(itemId, options={}) {
   options.verb = 'quaffs';
   options.sound = 'drink_potion';
+  await drinkItemMacro();
   return consumeItem(itemId, options);
 }
 
@@ -120,16 +114,20 @@ export function scrollMacro(itemId, options={}) {
   return consumeItem(itemId, options);
 }
 
-export function eatItemMacro(itemId, options={}) {
+export async function drinkItemMacro() {
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = game.user.character ?? token?.actor;
+  if (!actor) return ui.notifications.error("Select character drinking the item.");
+  await actor.update({"data.last_drink_time": game.time.worldTime});
+}
+
+export async function eatItemMacro(itemId, options={}) {
   options.verb = 'eats';
   options.sound = 'eat_food';
-
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = token ? token.actor : game.user.character;
+  const actor = game.user.character ?? token?.actor;
   if (!actor) return ui.notifications.error("Select character eating the item.");
-
-
-
+  await actor.update({"data.last_eat_time": game.time.worldTime});
   return consumeItem(itemId, options);
 }
 
@@ -505,7 +503,11 @@ export async function attackMacro(weapons, options={}) {
   // armor type leather, chain and plate
   // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
   // macro for eat and drink (dont reduce qty)
-  // macro for disease, starvation, thirts etc.
+  // macro for disease, starvation, thirts etc. -- show colour bars on char sheet for fatigued/very fatigued (max hp less than/less than half max max hp), hungry (after 3 days since no food), thirsty (after 1 day with no water), diseased, cold
+  // rename hungerClock to fatigueClock, if time advances more than 1 hour while fatigue clock is paused, open party heal dialog to GM
+  // update and extract out func for getting token and actor, make sure to use right method for diff macros, prioritize game.user.character or selected token
+  // e.g. allow players to have their other owned characters e.g. horse, use an item, but that char must own the used item
+  // add GM-only tab to characters for fatigue stuff -- show and reset of last eat/drink times, choose or reset disease, reset cold, edit max max HP
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets= [...game.user.targets];

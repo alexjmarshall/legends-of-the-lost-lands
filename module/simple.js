@@ -35,7 +35,7 @@ Hooks.once("init", async function() {
     Macro,
     Util,
     Constant,
-    hungerClock: true
+    fatigueClock: true
   };
 
   // Define custom Entity classes
@@ -227,40 +227,60 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
-// timeout of 10s to ensure SimpleCalendar has loaded
-setTimeout(() => {
-  Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
-    if (game.lostlands.hungerClock === false) return;
-    const PCs = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
+const checkSimpleCalendarLoad = setInterval(onSimpleCalendarLoad, 1000);
+function onSimpleCalendarLoad() {
+  if (!SimpleCalendar) return;
+  clearInterval(checkSimpleCalendarLoad);
+  Hooks.on(SimpleCalendar.Hooks.Ready, () => {
+    console.log(`Simple Calendar is ready!`);
     const secondsinOneDay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
-    const secondsInOneWeek = SimpleCalendar.api.timestampPlusInterval(0, {day: 7});
-    const timeDiff = data.diff;
-    const currentTime = game.time.worldTime
-    const newTime = game.time.worldTime + timeDiff;
     const timeInDays = time => Math.floor(time / secondsinOneDay);
-    const timeInWeeks = time => Math.floor(time / secondsInOneWeek);
-
-    for (const PC of PCs) {
-      const lastEatTime = PC.data.data.last_eat_time;
-      if (!lastEatTime || newTime <= lastEatTime) continue;
-      const timeSinceEaten = currentTime - lastEatTime;
-      const newTimeSinceEaten = newTime - lastEatTime;
-      const diffDaysSinceEaten = timeInDays(newTimeSinceEaten) - timeInDays(timeSinceEaten);
-      const diffWeeksSinceEaten = timeInWeeks(newTimeSinceEaten) - timeInWeeks(timeSinceEaten);
-      const isHungry = diffDaysSinceEaten > 0;
-      const isStarving = diffWeeksSinceEaten > 0;
-
-      if (isHungry) {
-        AudioHelper.play({src: `systems/lostlands/sounds/stomach_rumble.mp3`, volume: 1, loop: false}, true);
-        const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
-        canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
+    const timeInWeeks = time => Math.floor(time / (secondsinOneDay * 7));
+    const applyFatigueDamage = async (PC, currentTime, timeDiff, propName, dmgDiceFunc) => {
+      const targetHp = PC.data.data.hp?.value;
+      if (targetHp < 0) return;
+      const lastTime = PC.data.data[propName];
+      const newTime = currentTime + timeDiff;
+      if (!lastTime || newTime < lastTime) {
+        console.log(lastTime, newTime);
+        return await PC.update({data: { [propName]: newTime }});
       }
-      if (isStarving) {
-        console.log(`Applying ${diffWeeksSinceEaten} weeks of starvation damage!`);
-        const damage = await new Roll(`${diffWeeksSinceEaten}d6`).evaluate().total;
-        const targetHp = PC.data.data.hp?.value;
-        await PC.update({"data.hp.value": targetHp - damage});
+      const timeSince = currentTime - lastTime;
+      const newTimeSince = newTime - lastTime;
+      const diffDaysSince = timeInDays(newTimeSince) - timeInDays(timeSince);
+      const fatigued = diffDaysSince > 0;
+      if (!fatigued) return;
+      const damageDice = dmgDiceFunc(timeSince, newTimeSince);
+      if (damageDice) {
+        const damage = await new Roll(`${damageDice}d6`).evaluate().total;
+        return await PC.update({"data.hp.value": targetHp - damage});
       }
-    }
+      AudioHelper.play({src: `systems/lostlands/sounds/stomach_rumble.mp3`, volume: 1, loop: false}, true);
+      const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
+      canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
+    };
+    const applyHungerDamage = async (...args) => {
+      const propName = "last_eat_time";
+      const dmgFunc = (timeSince, newTimeSince) => timeInWeeks(newTimeSince) - timeInWeeks(timeSince);
+      return await applyFatigueDamage(...args, propName, dmgFunc);
+    };
+    const applyThirstDamage = async (...args) => {
+      const propName = "last_drink_time";
+      const dmgFunc = (timeSince, newTimeSince) => timeInDays(newTimeSince) > 1 ? timeInDays(newTimeSince) - timeInDays(timeSince) : 0;
+      return await applyFatigueDamage(...args, propName, dmgFunc);
+    };
+
+    Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
+      if (game.lostlands.fatigueClock === false) return;
+      if (!game.user.isGM) return;
+      const PCs = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
+      const currentTime = game.time.worldTime;
+      const timeDiff = data.diff;
+      const timeArgs = [currentTime, timeDiff];
+      for (const PC of PCs) {
+        await applyHungerDamage(PC, ...timeArgs);
+        await applyThirstDamage(PC, ...timeArgs);
+      }
+    });
   });
-}, 10000);
+};

@@ -34,6 +34,10 @@ export class SimpleActor extends Actor {
     const attributes = actorData.attributes;
     const updateData = {};
 
+    // initialize last eat/drink time
+    updateData.last_eat_time = actorData.last_eat_time || game.time.worldTime;
+    updateData.last_drink_time = actorData.last_drink_time || game.time.worldTime;
+
     // level up sound
     if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
       AudioHelper.play({src: "systems/lostlands/sounds/level_up.mp3", volume: 1, loop: false}, false);
