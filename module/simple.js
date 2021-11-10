@@ -34,7 +34,8 @@ Hooks.once("init", async function() {
     SimpleActor,
     Macro,
     Util,
-    Constant
+    Constant,
+    hungerClock: true
   };
 
   // Define custom Entity classes
@@ -225,3 +226,41 @@ Hooks.on("preUpdateActor", (actor, change) => {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, null, {push: true, chatBubble: true, chance: 0.5});
   }
 });
+
+// timeout of 10s to ensure SimpleCalendar has loaded
+setTimeout(() => {
+  Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
+    if (game.lostlands.hungerClock === false) return;
+    const PCs = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
+    const secondsinOneDay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
+    const secondsInOneWeek = SimpleCalendar.api.timestampPlusInterval(0, {day: 7});
+    const timeDiff = data.diff;
+    const currentTime = game.time.worldTime
+    const newTime = game.time.worldTime + timeDiff;
+    const timeInDays = time => Math.floor(time / secondsinOneDay);
+    const timeInWeeks = time => Math.floor(time / secondsInOneWeek);
+
+    for (const PC of PCs) {
+      const lastEatTime = PC.data.data.last_eat_time;
+      if (!lastEatTime || newTime <= lastEatTime) continue;
+      const timeSinceEaten = currentTime - lastEatTime;
+      const newTimeSinceEaten = newTime - lastEatTime;
+      const diffDaysSinceEaten = timeInDays(newTimeSinceEaten) - timeInDays(timeSinceEaten);
+      const diffWeeksSinceEaten = timeInWeeks(newTimeSinceEaten) - timeInWeeks(timeSinceEaten);
+      const isHungry = diffDaysSinceEaten > 0;
+      const isStarving = diffWeeksSinceEaten > 0;
+
+      if (isHungry) {
+        AudioHelper.play({src: `systems/lostlands/sounds/stomach_rumble.mp3`, volume: 1, loop: false}, true);
+        const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
+        canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
+      }
+      if (isStarving) {
+        console.log(`Applying ${diffWeeksSinceEaten} weeks of starvation damage!`);
+        const damage = await new Roll(`${diffWeeksSinceEaten}d6`).evaluate().total;
+        const targetHp = PC.data.data.hp?.value;
+        await PC.update({"data.hp.value": targetHp - damage});
+      }
+    }
+  });
+}, 10000);

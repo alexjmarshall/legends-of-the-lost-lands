@@ -60,6 +60,20 @@ export function voiceMacro(mood) {
   return Util.playVoiceSound(mood, actor, token);
 }
 
+export async function toggleHungerClock() {
+  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
+  const clockActive = game.lostlands.hungerClock;
+  const characters = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
+  const currentTime = game.time.worldTime;
+  if ( clockActive === false) {
+    for (const character of characters) {
+      await character.update({"data.last_eat_time": currentTime});
+    }
+  }
+  game.lostlands.hungerClock = !clockActive;
+  ui.notifications.info(`Set hungerClock to ${!clockActive}`);
+}
+
 export async function spellMacro(spellId) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
@@ -109,6 +123,13 @@ export function scrollMacro(itemId, options={}) {
 export function eatItemMacro(itemId, options={}) {
   options.verb = 'eats';
   options.sound = 'eat_food';
+
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = token ? token.actor : game.user.character;
+  if (!actor) return ui.notifications.error("Select character eating the item.");
+
+
+
   return consumeItem(itemId, options);
 }
 
@@ -1032,6 +1053,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       content: `${chatInlineRoll(rxnText)} ${attitudeText}`,
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
+    const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
     macroChatMessage(reactingActor, chatData, false);
     canvas.hud.bubbles.say(token, `${reactingActor.name} considers ${targetActor.name}...`, {emote: true});
   }

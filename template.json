@@ -19,7 +19,8 @@
       "value": 0,
       "min": 0,
       "max": 1000
-    }
+    },
+    "last_eat_time": null
   },
   "monster": {
     "templates": ["basicProps"],
