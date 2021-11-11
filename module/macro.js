@@ -97,7 +97,7 @@ export async function castSpell(spellId, options={}) {
     }};
     await actor.update(updateData);
     // await play sound based on spell school first
-    useItem(spellId, {
+    await useItem(spellId, {
       sound: spellSound,
       verb: `casts`
     });
@@ -119,7 +119,7 @@ async function useItem(itemId, data={
     const actor = char.actor;
     const token = char.token;
     const item = Util.getItemFromActor(itemId, actor);
-    const sound = data.sound;
+    const sound = data.sound || item.data.data.attributes.sound?.value;
     const flavor = data.flavor || item.name;
     const desc = item.data.data.description
     const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
@@ -155,7 +155,7 @@ export async function drinkPotion(itemId, options={}) {
       }
     }
 
-    useItem(itemId, {
+    await useItem(itemId, {
       sound: 'drink_potion',
       verb: `quaffs`,
       chatMsgContent,
@@ -169,9 +169,9 @@ export async function drinkPotion(itemId, options={}) {
   }
 }
 
-export function readScroll(itemId, options={}) {
+export async function readScroll(itemId, options={}) {
   try {
-    useItem(itemId, {
+    await useItem(itemId, {
       sound: 'read_scroll',
       verb: `reads`
     }, true);
@@ -187,7 +187,7 @@ export async function drinkWater(itemId, options={}) {
     const actor = char.actor;
     const currentTime = game.time.worldTime;
 
-    useItem(itemId, {
+    await useItem(itemId, {
       sound: 'drink_water',
       verb: `drinks from`
     }, false);
@@ -208,7 +208,7 @@ export async function eatFood(itemId, options={}) {
     const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
     const currentTime = game.time.worldTime;
 
-    useItem(itemId, {
+    await useItem(itemId, {
       sound: 'eat_food',
       verb: `eats`
     }, true);
@@ -229,18 +229,21 @@ export async function useChargedItem(itemId, options={}) {
     const actor = char.actor;
     const item = Util.getItemFromActor(itemId, actor);
     const charges = +item.data.data.attributes.charges?.value;
+    const sound = item.data.data.attributes.sound?.value || null; // generic use charges sound?
     if (!charges) throw new Error(`${item.name} has no charges remaining`);
 
-    if(!options.numChargesUsed && !options.shownChargesUsedDialog && options.showModDialog) {
-      return chargesUsedDialog(options, item.name, itemId, options);
+    if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
+      const field = {label: 'Charges used?', key: 'numChargesUsed'};
+      return modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
     }
     const numChargesUsed = +options.numChargesUsed || 1;
     const chargesLeft = charges - numChargesUsed;
     const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
 
-    useItem(itemId, {
-      sound: 'eat_food',
-      verb: `eats`
+    await useItem(itemId, {
+      sound,
+      flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
+      verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
     }, false);
 
     await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
@@ -374,22 +377,24 @@ async function save(tokens, damage, options={}) {
     tokens.shift();
     return save(tokens, damage, options);
   }
-  options.skipDmgDialog = true;
   const modDialogFlavor = options.flavor || 'Saving Throw';
-  if(options.showModDialog && !options.shownModDialog) return modDialog(options, modDialogFlavor, () => save(tokens, damage, options));
+  if (options.showModDialog && !options.shownModDialog) {
+    const field = {label: 'Save modifiers?', key: 'dialogMod'};
+    return modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
+  }
   const actorSaveMod = +actor.data.data.st_mod || 0;
   const saveAttr = options.saveAttr == null ? 'wis' : options.saveAttr;
   const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
   const d20Result = await new Roll("d20").evaluate().total;
-  let dialogAtkMod = '';
+  let dialogMod = '';
   try {
-    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+    dialogMod = options.dialogMod ? await new Roll(options.dialogMod).evaluate().total : '';
   } catch {
     ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
     return save(tokens, damage, options);
   }
-  const saveText = `${d20Result}${saveAttrMod ? `+${saveAttrMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
+  const saveText = `${d20Result}${saveAttrMod ? `+${saveAttrMod}` : ''}${dialogMod ? `+${dialogMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
   const success = savingThrow.total >= saveTarget;
@@ -669,7 +674,6 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
   if (!weapDmg) {
-    ui.notifications.error("Damage not set for item");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -714,7 +718,11 @@ async function attack(attackers, targetToken, options) {
   }
   if (atkType === 'touch') attacker.skipDmgDialog = true;
   if ( options.showModDialog && !options.shownModDialog ) {
-    return modDialog(options, 'Attack', () => attack(attackers, targetToken, options));
+    const fields = [
+      {label: 'Attack modifiers?', key: 'dialogAtkMod'}
+    ];
+    if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers?', key: 'dialogDmgMod'});
+    return modDialog(options, 'Attack', fields, () => attack(attackers, targetToken, options));
   }
   let dialogAtkMod = '', dialogDmgMod = '';
   try {
@@ -871,29 +879,29 @@ async function attack(attackers, targetToken, options) {
   });
 
   // check if this weapon item has any other macros to execute
-  const itemMacro = weaponItem.data.data.macro;
-  if (itemMacro) {
-    let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
-    let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
-    if (isLostlandsMacro) {
-      let optionsParam = '';
-      if (options.applyEffect) optionsParam += 'applyEffect: true,';
-      if (options.showModDialog) optionsParam += 'showModDialog: true,';
-      if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
-      optionsParam = `{${optionsParam}}`;
-      itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
-    }
-    let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
-    if ( !macro ) {
-      macro = await Macro.create({
-        name: weaponItem.name,
-        type: "script",
-        command: itemMacroWithId,
-        flags: { "lostlands.attrMacro": true }
-      });
-    }
-    macro.execute();
-  }
+  // const itemMacro = weaponItem.data.data.macro;
+  // if (itemMacro) {
+  //   let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
+  //   let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
+  //   if (isLostlandsMacro) {
+  //     let optionsParam = '';
+  //     if (options.applyEffect) optionsParam += 'applyEffect: true,';
+  //     if (options.showModDialog) optionsParam += 'showModDialog: true,';
+  //     if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
+  //     optionsParam = `{${optionsParam}}`;
+  //     itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
+  //   }
+  //   let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
+  //   if ( !macro ) {
+  //     macro = await Macro.create({
+  //       name: weaponItem.name,
+  //       type: "script",
+  //       command: itemMacroWithId,
+  //       flags: { "lostlands.attrMacro": true }
+  //     });
+  //   }
+  //   macro.execute();
+  // }
 
   weapons.shift();
 
@@ -961,28 +969,27 @@ function dmgTypeDialog(weapon, dmgTypes, callback) {
   }
 }
 
-function modDialog(mods, label, callback) {
+function modDialog(mods, title, fields=[{label:'', key:''}], callback) {
+  let formFields = ``;
+  fields.forEach(field => {
+    formFields += `<div class="form-group">
+                    <label>${field.label}</label>
+                    <input type="text" id="${field.key}" placeholder="e.g. -4, 2d6 etc.">
+                  </div>`;
+  });
+  const content = `<form>${formFields}</form>`;
   new Dialog({
-    title: `${label} Modifiers`,
-    content: 
-      `<form>
-        <div class="form-group">
-          <label>${mods.skipDmgDialog ? 'M' : `${label} m`}odifiers?</label>
-          <input type="text" id="atkMod" placeholder="e.g. -4">
-        </div>
-        ${mods.skipDmgDialog ? '' : `<div class="form-group">
-          <label>Damage modifiers?</label>
-          <input type="text" id="dmgMod" placeholder="e.g. 2d6">
-        </div>`}
-      </form>`,
+    title,
+    content,
     buttons: {
       '1': {
         icon: '<i class="fas fa-check"></i>',
-        label: `${label}`,
+        label: `Submit`,
         callback: html => {
           mods.shownModDialog = true;
-          mods.dialogAtkMod = html.find('[id=atkMod]')[0]?.value;
-          mods.dialogDmgMod = html.find('[id=dmgMod]')[0]?.value;
+          fields.forEach(field => {
+            mods[field.key] = html.find(`[id=${field.key}]`).val();
+          });
           callback();
         }
       },
@@ -993,36 +1000,6 @@ function modDialog(mods, label, callback) {
       }
     },
     default: '1'
-  }).render(true);
-}
-
-function chargesUsedDialog(item, label, ...data) {
-  new Dialog({
-    title: `${label} Charges Used`,
-    content: 
-      `<form>
-        <div class="form-group">
-          <label>Charges used</label>
-          <input type="number" id="chargesUsed" value="1">
-        </div>
-      </form>`,
-    buttons: {
-      one: {
-        icon: '<i class="fas fa-check"></i>',
-        label: `Use`,
-        callback: html => {
-          item.shownChargesUsedDialog = true;
-          item.numChargesUsed = +html.find('[id=chargesUsed]')[0]?.value;
-          chargedItemMacro(...data);
-        }
-      },
-      two: {
-        icon: '<i class="fas fa-times"></i>',
-        label: "Cancel",
-        callback: () => console.log("Cancelled chargesUsed dialog")
-      }
-    },
-    default: "one"
   }).render(true);
 }
 
@@ -1045,24 +1022,27 @@ export async function reactionRoll(reactingActor, targetActor, options) {
   const attitudeMap = reactingActor.data.data.attitude_map;
   const attitudeObj = attitudeMap[targetActor.id];
   let attitude = attitudeObj?.attitude;
+  const flavor = options.flavor || 'Reaction Roll'
 
   if ( options.override === true || !attitude || targetLevel > attitudeObj.lvl ) {
     if ( options.showModDialog && !options.shownModDialog ) {
-      options.skipDmgDialog = true;
-      return modDialog(options, options.flavor || 'Reaction Roll', () => reactionRoll(reactingActor, targetActor, options));
+      const fields = [
+        {label: `${flavor} modifiers?`, key: 'dialogMod'}
+      ];
+      return modDialog(options, flavor, fields, () => reactionRoll(reactingActor, targetActor, options));
     }
     options.shownModDialog = false;
     const chaMod = +targetActor.data.data.cha_mod;
     const targetRxnMod = +targetActor.data.data.attributes.rxn_mod?.value;
     const base2d6Result = await new Roll("2d6").evaluate().total;
-    let dialogAtkMod = '';
+    let dialogMod = '';
     try {
-      dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
+      dialogMod = options.dialogMod ? await new Roll(options.dialogMod).evaluate().total : '';
     } catch {
       ui.notifications.error("Invalid input to modifier dialog");
       return reactionRoll(reactingActor, targetActor, options);
     }
-    const rxnText = `${base2d6Result}${chaMod ? `+${chaMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${targetRxnMod ? `+${targetRxnMod}` : ''}`;
+    const rxnText = `${base2d6Result}${chaMod ? `+${chaMod}` : ''}${dialogMod ? `+${dialogMod}` : ''}${targetRxnMod ? `+${targetRxnMod}` : ''}`;
     const rxnRollResult = await new Roll(rxnText).evaluate().total;
     if (isNaN(rxnRollResult)) return;
 
@@ -1136,7 +1116,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   // case 1: not enough money
   if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
-      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
+      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money`,
       flavor: `Buy`
     };
     return Util.macroChatMessage(actor, chatData, true);
