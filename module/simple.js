@@ -34,8 +34,7 @@ Hooks.once("init", async function() {
     SimpleActor,
     Macro,
     Util,
-    Constant,
-    fatigueClock: true
+    Constant
   };
 
   // Define custom Entity classes
@@ -56,6 +55,16 @@ Hooks.once("init", async function() {
   game.settings.register("lostlands", "macroShorthand", {
     name: "SETTINGS.SimpleMacroShorthandN",
     hint: "SETTINGS.SimpleMacroShorthandL",
+    scope: "world",
+    type: Boolean,
+    default: true,
+    config: true
+  });
+
+  // Register Fatigue Clock setting
+  game.settings.register("lostlands", "fatigueClock", {
+    name: "Fatigue Clock",
+    hint: "Whether the fatigue clock is active (true) or paused (false)",
     scope: "world",
     type: Boolean,
     default: true,
@@ -228,52 +237,103 @@ Hooks.on("preUpdateActor", (actor, change) => {
 });
 
 const checkSimpleCalendarLoad = setInterval(onSimpleCalendarLoad, 1000);
+
 function onSimpleCalendarLoad() {
+
   if (!SimpleCalendar) return;
   clearInterval(checkSimpleCalendarLoad);
+
   Hooks.on(SimpleCalendar.Hooks.Ready, () => {
+
     console.log(`Simple Calendar is ready!`);
-    const timeInDays = time => Math.floor(time / Constant.SECONDS_IN_A_DAY);
-    const timeInWeeks = time => Math.floor(time / (Constant.SECONDS_IN_A_DAY * 7));
-    const applyFatigueDamage = async (PC, currentTime, timeDiff, propName, numDmgDice) => {
+    const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
+    const timeInDays = time => Math.floor(time / secondsInADay);
+    const timeInWeeks = time => Math.floor(time / (secondsInADay * 7));
+    async function applyFatigueDamage (PC, currentTime, timeDiff, propName, 
+      dmg={
+        dice: '',
+        flavor: '',
+        interval: () => {}
+      }, 
+      emit={
+        sound: '',
+        bubbleText: '',
+        interval: () => {}
+      }
+    ){
+
       try {
+        const dice = dmg.dice || 'd6';
+        const flavor = dmg.flavor || 'fatigue';
+        const dmgInterval = dmg.interval;
+        const sound = emit.sound || 'stomach_rumble';
+        const bubbleText = emit.bubbleText || '';
+        const emitInterval = emit.interval;
         const targetHp = PC.data.data.hp?.value;
         if (targetHp < 0) return;
         const lastTime = PC.data.data[propName];
         const newTime = currentTime + timeDiff;
+        if (newTime < currentTime) return;
         if (!lastTime || newTime < lastTime) {
           return await PC.update({data: { [propName]: newTime }});
         }
         const timeSince = currentTime - lastTime;
         const newTimeSince = newTime - lastTime;
-        const diffDaysSince = timeInDays(newTimeSince) - timeInDays(timeSince);
-        const fatigued = diffDaysSince < 1;
-        if (!fatigued) return;
-        const damageDice = numDmgDice(timeSince, newTimeSince);
-        if (damageDice) {
-          const damage = await new Roll(`${damageDice}d6`).evaluate().total;
-          return await PC.update({"data.hp.value": targetHp - damage});
+        const token = Util.getTokenFromActor(PC);
+
+        // emit sound/bubble
+        const doEmit = !!emitInterval(timeSince, newTimeSince);
+        if (doEmit) {
+          sound && Util.playSound(sound, token, {push: true, bubble: !bubbleText});
+          bubbleText && Util.chatBubble(token, `${PC.name} ${bubbleText}`);
         }
-        const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
-        Util.playSound('stomach_rumble', token, {push: true, bubble: true});
+
+        // apply damage
+        const numDmgDice = dmgInterval(timeSince, newTimeSince);
+        if (numDmgDice) {
+          const formula = `${numDmgDice}${dice}`;
+          const result = await Util.rollDice(`${formula}`);
+          await PC.update({"data.hp.value": targetHp - result});
+          Util.macroChatMessage(token, {
+            content: `${PC.name} takes [[${result}]] damage from ${flavor.toLowerCase()}!`,
+            flavor
+          }, false);
+        }
+        
       } catch (error) {
         ui.notifications.error(`Problem applying fatigue damage to ${PC.name}.`);
         console.error(error);
       }
     };
-    const perWeek = (timeSince, newTimeSince) => timeInWeeks(newTimeSince) - timeInWeeks(timeSince);
-    const perDayAfterFirst = (timeSince, newTimeSince) => timeInDays(newTimeSince) > 1 ? timeInDays(newTimeSince) - timeInDays(timeSince) : 0;
-    const applyHungerDamage = async (...args) => await applyFatigueDamage(...args, "last_eat_time", perWeek);
-    const applyThirstDamage = async (...args) => await applyFatigueDamage(...args, "last_drink_time", perDayAfterFirst);
+
+    const weeksSince = (t1, t2) => timeInWeeks(t2) - timeInWeeks(t1);
+    const daysSince = (t1, t2) => timeInDays(t2) - timeInDays(t1);
+    const daysSinceAfterFirst = (t1, t2) => timeInDays(t2) > 1 ? timeInDays(t2) - timeInDays(t1) : 0;
+
+    const applyHungerDamage = async (...args) => await applyFatigueDamage(
+      ...args,
+      "last_eat_time",
+      {dice: 'd6', flavor: 'Hunger', interval: weeksSince},
+      {sound: 'stomach_rumble', interval: daysSince}
+    );
+    const applyThirstDamage = async (...args) => await applyFatigueDamage(
+      ...args, 
+      "last_drink_time", 
+      {dice: 'd6', flavor: 'Thirst', interval: daysSinceAfterFirst},
+      {bubbleText: 'feels thirsty...', interval: daysSince}
+    );
 
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
-      if (game.lostlands.fatigueClock === false) return;
-      if (!game.user.isGM) return;
+
+      const clockIsActive = game.settings.get("lostlands", "fatigueClock");
+      if ( !clockIsActive || !game.user.isGM ) return;
       const PCs = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
       const currentTime = game.time.worldTime;
       const timeDiff = data.diff;
       const timeArgs = [currentTime, timeDiff];
+
       for (const PC of PCs) {
+
         await applyHungerDamage(PC, ...timeArgs);
         await applyThirstDamage(PC, ...timeArgs);
       }

@@ -66,9 +66,9 @@ export function playVoice(mood) {
 
 export function toggleFatigueClock() {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
-  const clockActive = game.lostlands.fatigueClock;
+  const clockActive = game.settings.get("lostlands", "fatigueClock");
 
-  game.lostlands.fatigueClock = !clockActive;
+  game.settings.set("lostlands", "fatigueClock", !clockActive);
   
   return ui.notifications.info(`Set fatigueClock to ${!clockActive}`);
 }
@@ -168,33 +168,51 @@ export function readScroll(itemId, options={}) {
   });
 }
 
-export function drinkWater(itemId, options={}) {
-  useItem(itemId, {
-    sound: 'drink_water',
-    verb: `drinks from`
-  }, false);
+export async function drinkWater(itemId, options={}) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const currentTime = game.time.worldTime;
+    await actor.update({
+      "data.last_drink_time": currentTime
+    });
+    useItem(itemId, {
+      sound: 'drink_water',
+      verb: `drinks from`
+    }, false);
+  } catch (error) {
+    ui.notifications.error(`Drink Water ${error}`);
+  }
 }
 
 export async function eatFood(itemId, options={}) {
   try {
     const char = Util.selectedCharacter();
     const actor = char.actor;
+    const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
+    const currentTime = game.time.worldTime;
     await actor.update({
-      "data.last_eat_time": game.time.worldTime, 
-      "data.last_drink_time": game.time.worldTime - Constant.SECONDS_IN_A_DAY
+      "data.last_eat_time": currentTime, 
+      "data.last_drink_time": currentTime - secondsInADay
     });
     useItem(itemId, {
       sound: 'eat_food',
       verb: `eats`
     });
-  } catch {
+  } catch (error) {
     ui.notifications.error(`Eat Food ${error}`);
   }
 }
 
 export async function chargedItemMacro(itemId, options={}) {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = token ? token.actor : game.user.character;
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const item = Util.getItemFromActor(itemId, actor);
+
+  } catch (error) {
+    ui.notifications.error(`Use Charged Item ${error}`);
+  }
   if(!actor) return ui.notifications.error("Select character using the item.");
   const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
   if(!item) return ui.notifications.error("Could not find item on this character.");
@@ -527,6 +545,7 @@ export async function attackMacro(weapons, options={}) {
   // update and extract out func for getting token and actor, make sure to use right method for diff macros, prioritize game.user.character or selected token
   // e.g. allow players to have their other owned characters e.g. horse, use an item, but that char must own the used item
   // add GM-only tab to characters for fatigue stuff -- show and reset of last eat/drink times, choose or reset disease, reset cold, edit max max HP
+  // what about holding items to use them, like must hold a potion? add use button back beside hold/wear?
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
   const targets= [...game.user.targets];
