@@ -202,13 +202,13 @@ Hooks.on("controlToken", (token, selected) => {
   const actor = token.actor;
   const actorHp = actor.data.data.hp?.value;
   if ( +actorHp < 1 ) return;
-  Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, chatBubble: false, chance: 0.5});
+  Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, bubble: false, chance: 0.5});
 });
 
 // Play 'ok' voice sound on token movement
 Hooks.on("updateToken", (token, moved, data) => {
   if ( !moved.x && !moved.y ) return;
-  Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: true, chatBubble: false, chance: 0.7});
+  Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
 });
 
 // Play 'hurt'/'death' voice sounds on HP decrease
@@ -219,11 +219,11 @@ Hooks.on("preUpdateActor", (actor, change) => {
   // return if update does not decrease hp, or if actor is already unconscious
   if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
   if (hpUpdate < 1) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, null, {push: true, chatBubble: true, chance: 1});
+    Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, null, {push: true, bubble: true, chance: 1});
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, null, {push: true, chatBubble: true, chance: 0.7});
+    Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, null, {push: true, bubble: true, chance: 0.7});
   } else {
-    Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, null, {push: true, chatBubble: true, chance: 0.5});
+    Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, null, {push: true, bubble: true, chance: 0.5});
   }
 });
 
@@ -233,42 +233,38 @@ function onSimpleCalendarLoad() {
   clearInterval(checkSimpleCalendarLoad);
   Hooks.on(SimpleCalendar.Hooks.Ready, () => {
     console.log(`Simple Calendar is ready!`);
-    const secondsinOneDay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
-    const timeInDays = time => Math.floor(time / secondsinOneDay);
-    const timeInWeeks = time => Math.floor(time / (secondsinOneDay * 7));
-    const applyFatigueDamage = async (PC, currentTime, timeDiff, propName, dmgDiceFunc) => {
-      const targetHp = PC.data.data.hp?.value;
-      if (targetHp < 0) return;
-      const lastTime = PC.data.data[propName];
-      const newTime = currentTime + timeDiff;
-      if (!lastTime || newTime < lastTime) {
-        console.log(lastTime, newTime);
-        return await PC.update({data: { [propName]: newTime }});
+    const timeInDays = time => Math.floor(time / Constant.SECONDS_IN_A_DAY);
+    const timeInWeeks = time => Math.floor(time / (Constant.SECONDS_IN_A_DAY * 7));
+    const applyFatigueDamage = async (PC, currentTime, timeDiff, propName, numDmgDice) => {
+      try {
+        const targetHp = PC.data.data.hp?.value;
+        if (targetHp < 0) return;
+        const lastTime = PC.data.data[propName];
+        const newTime = currentTime + timeDiff;
+        if (!lastTime || newTime < lastTime) {
+          return await PC.update({data: { [propName]: newTime }});
+        }
+        const timeSince = currentTime - lastTime;
+        const newTimeSince = newTime - lastTime;
+        const diffDaysSince = timeInDays(newTimeSince) - timeInDays(timeSince);
+        const fatigued = diffDaysSince < 1;
+        if (!fatigued) return;
+        const damageDice = numDmgDice(timeSince, newTimeSince);
+        if (damageDice) {
+          const damage = await new Roll(`${damageDice}d6`).evaluate().total;
+          return await PC.update({"data.hp.value": targetHp - damage});
+        }
+        const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
+        Util.playSound('stomach_rumble', token, {push: true, bubble: true});
+      } catch (error) {
+        ui.notifications.error(`Problem applying fatigue damage to ${PC.name}.`);
+        console.error(error);
       }
-      const timeSince = currentTime - lastTime;
-      const newTimeSince = newTime - lastTime;
-      const diffDaysSince = timeInDays(newTimeSince) - timeInDays(timeSince);
-      const fatigued = diffDaysSince > 0;
-      if (!fatigued) return;
-      const damageDice = dmgDiceFunc(timeSince, newTimeSince);
-      if (damageDice) {
-        const damage = await new Roll(`${damageDice}d6`).evaluate().total;
-        return await PC.update({"data.hp.value": targetHp - damage});
-      }
-      AudioHelper.play({src: `systems/lostlands/sounds/stomach_rumble.mp3`, volume: 1, loop: false}, true);
-      const token = canvas.tokens.objects.children.find(t => t.actor.id === PC.id);
-      canvas.hud.bubbles.say(token, `<i class="fas fa-volume-up"></i>`, {emote: true});
     };
-    const applyHungerDamage = async (...args) => {
-      const propName = "last_eat_time";
-      const dmgFunc = (timeSince, newTimeSince) => timeInWeeks(newTimeSince) - timeInWeeks(timeSince);
-      return await applyFatigueDamage(...args, propName, dmgFunc);
-    };
-    const applyThirstDamage = async (...args) => {
-      const propName = "last_drink_time";
-      const dmgFunc = (timeSince, newTimeSince) => timeInDays(newTimeSince) > 1 ? timeInDays(newTimeSince) - timeInDays(timeSince) : 0;
-      return await applyFatigueDamage(...args, propName, dmgFunc);
-    };
+    const perWeek = (timeSince, newTimeSince) => timeInWeeks(newTimeSince) - timeInWeeks(timeSince);
+    const perDayAfterFirst = (timeSince, newTimeSince) => timeInDays(newTimeSince) > 1 ? timeInDays(newTimeSince) - timeInDays(timeSince) : 0;
+    const applyHungerDamage = async (...args) => await applyFatigueDamage(...args, "last_eat_time", perWeek);
+    const applyThirstDamage = async (...args) => await applyFatigueDamage(...args, "last_drink_time", perDayAfterFirst);
 
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
       if (game.lostlands.fatigueClock === false) return;

@@ -230,7 +230,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error("Cannot prepare any more spells of this level.");
         }
         if (!isPrepared) {
-          game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
+          Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
         }
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -255,7 +255,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first.`);
         }
         let verb = isWorn ? 'doffs' : 'dons';
-        game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
+        Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
         return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
@@ -284,9 +284,9 @@ export class SimpleActorSheet extends ActorSheet {
             if (event.altKey) {
               return game.lostlands.Macro.quickDrawAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
             }
-            game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} draws ${item.name}` });
+            Util.macroChatMessage(this, { content: `${this.actor.name} draws ${item.name}` });
           } else {
-            game.lostlands.Macro.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
+            Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
           }
         }
         return;
@@ -339,7 +339,7 @@ export class SimpleActorSheet extends ActorSheet {
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
-    AudioHelper.play({src: soundsArr[trackNum], volume: 1, loop: false}, false);
+    Util.playSound(soundsArr[trackNum], null, {push: false, bubble: false});
   }
 
   _onVoiceSelect(event) {

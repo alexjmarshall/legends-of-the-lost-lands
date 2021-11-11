@@ -29,7 +29,7 @@ export async function createLostlandsMacro(data, slot) {
   // case 3: voice button
   if (data.mood) {
     macroData.name = `Voice: ${data.mood}`;
-    macroData.command = `game.lostlands.Macro.voiceMacro("${data.mood}")`;
+    macroData.command = `game.lostlands.Macro.playVoice("${data.mood}")`;
     macroData.type = "script";
   }
   let macro = game.macros.find(m => (m.name === macroData.name && m.data.command === macroData.command));
@@ -51,126 +51,145 @@ export async function createLostlandsMacro(data, slot) {
   return false;
 }
 
-export function voiceMacro(mood) {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select speaking token.");
-  const voice = actor.data.data.voice;
-  if(!voice) return ui.notifications.error("Character does not have a selected voice.");
-  return Util.playVoiceSound(mood, actor, token);
+export function playVoice(mood) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const token = char.token;
+    const voice = actor.data.data.voice;
+    if (!voice) return ui.notifications.error("Character does not have a selected voice.");
+    Util.playVoiceSound(mood, actor, token);
+  } catch (error) {
+    ui.notifications.error(`Play Voice ${error}`);
+  }
 }
 
-export async function toggleFatigueClock() {
+export function toggleFatigueClock() {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
   const clockActive = game.lostlands.fatigueClock;
+
   game.lostlands.fatigueClock = !clockActive;
-  ui.notifications.info(`Set fatigueClock to ${!clockActive}`);
+  
+  return ui.notifications.info(`Set fatigueClock to ${!clockActive}`);
 }
 
-export async function spellMacro(spellId) {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = token ? token.actor : game.user.character;
-  if(!actor) return ui.notifications.error("Select spellcasting token.");
-  const spell = actor.data.items.get(spellId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === spellId?.toLowerCase().replace(/\s/g,''));
-  if(!spell) return ui.notifications.error("Could not find spell on this character.");
-  const isPrepared = !!spell.data.data.prepared;
-  if(!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
-  const spellLevel = spell.data.data.attributes.lvl?.value;
-  if(!spellLevel) return ui.notifications.error("Spell does not have level set.");
-
-  let actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
-  if(actorSpellSlots <= 0) return ui.notifications.error("No spells remaining of this level.");
-  const updateData = { data: {
-    attributes: {
-      [`${spell.type}`]: {
-        [`lvl_${spellLevel}`]: {
-          value: (actorSpellSlots - 1)
+export async function castSpell(spellId, options={}) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const spell = Util.getItemFromActor(spellId, actor, 'spell');
+    const spellSound = spell.data.data.attributes.sound?.value || null; // need generic spell sound here
+    const isPrepared = !!spell.data.data.prepared;
+    if (!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
+    const spellLevel = spell.data.data.attributes.lvl?.value;
+    if (!spellLevel) return ui.notifications.error("Spell does not have level set.");
+    const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
+    if (actorSpellSlots <= 0) return ui.notifications.error("No spells remaining of this level.");
+    const updateData = { data: {
+      attributes: {
+        [`${spell.type}`]: {
+          [`lvl_${spellLevel}`]: {
+            value: (actorSpellSlots - 1)
+          }
         }
       }
-    }
-  }};
-  
-  if(!spell.data.data.description) return ui.notifications.error("Spell has no description set.");
-  macroChatMessage(token, { 
-    content: spell.data.data.description, 
-    flavor: spell.name, 
-    sound: spell.data.data.attributes.sound?.value,
-    type: CONST.CHAT_MESSAGE_TYPES.IC
-  }, false);
-  canvas.hud.bubbles.say(token, `${actor.name} casts ${spell.name}.`, {emote: true});
-
-  return actor.update(updateData);
+    }};
+    await actor.update(updateData);
+    // await play sound based on spell school first
+    useItem(spellId, {
+      sound: spellSound,
+      verb: `casts`
+    }, false);
+  } catch (error) {
+    ui.notifications.error(`Cast Spell ${error}`);
+  }
 }
 
-export async function potionMacro(itemId, options={}) {
-  options.verb = 'quaffs';
-  options.sound = 'drink_potion';
-  await drinkItemMacro();
-  return consumeItem(itemId, options);
+async function useItem(itemId, options={
+  sound: '', 
+  flavor: '', 
+  verb: '', 
+  chatMsgContent: '',
+  chatMsgType: CONST.CHAT_MESSAGE_TYPES.EMOTE
+}, consumable=true) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const token = char.token;
+    const item = Util.getItemFromActor(itemId, actor);
+    const sound = options.sound;
+    const flavor = options.flavor || item.name;
+    const desc = item.data.data.description
+    const chatBubbleText = `${actor.name} ${options.verb || 'uses'} ${item.name}.`;
+    const content = options.chatMsgContent || desc || chatBubbleText;
+    const type = options.chatMsgType || desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE;
+    consumable && await Util.reduceItemQty(item, actor);
+    Util.macroChatMessage(token, {content, flavor, sound, type}, false);
+    Util.chatBubble(token, chatBubbleText);
+  } catch (error) {
+    throw error;
+  }
 }
 
-export function scrollMacro(itemId, options={}) {
-  options.verb = 'reads';
-  return consumeItem(itemId, options);
-}
+export async function drinkPotion(itemId, options={}) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const item = Util.getItemFromActor(itemId, actor);
+    const healFormula = item.data.data.attributes.heal?.value;
+    let chatMsgContent, chatMsgType;
 
-export async function drinkItemMacro() {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = game.user.character ?? token?.actor;
-  if (!actor) return ui.notifications.error("Select character drinking the item.");
-  await actor.update({"data.last_drink_time": game.time.worldTime});
-}
-
-export async function eatItemMacro(itemId, options={}) {
-  options.verb = 'eats';
-  options.sound = 'eat_food';
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = game.user.character ?? token?.actor;
-  if (!actor) return ui.notifications.error("Select character eating the item.");
-  await actor.update({"data.last_eat_time": game.time.worldTime});
-  return consumeItem(itemId, options);
-}
-
-async function consumeItem(itemId, options={}) {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = token ? token.actor : game.user.character;
-  if (!actor) return ui.notifications.error("Select character using the item.");
-  const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
-  if (!item) return ui.notifications.error("Could not find item on this character.");
-  const itemQty = +item.data.data.quantity;
-  if (!itemQty) return ui.notifications.error("Item must have a quantity greater than zero to use.");
-
-  const healFormula = item.data.data.attributes.heal?.value;
-  const chatBubbleString = `${actor.name} ${options.verb || 'consumes'} ${item.name}.`;
-  if (healFormula) {
-    try {
-      const healPoints = await new Roll(healFormula).evaluate().total;
-      macroChatMessage(token, { 
-        content: `${chatInlineRoll(healPoints)} points of healing.`, 
-        flavor: item.name, 
-        sound: options.sound
-      }, false);
+    if (healFormula) {
+      const healPoints = await Util.rollDice(healFormula);
+      chatMsgContent = `${chatInlineRoll(healPoints)} points of healing.`;
+      chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
       if (options.applyEffect) {
         const currentHp = +actor.data.data.hp?.value;
         const maxHp = +actor.data.data.hp?.max;
-        let hpUpdate = currentHp + +healPoints;
-        if ( hpUpdate > maxHp ) hpUpdate = maxHp;
-        if(!isNaN(hpUpdate) && hpUpdate !== currentHp) await actor.update({'data.hp.value': hpUpdate});
+        const hpUpdate = currentHp + healPoints;
+        !isNaN(hpUpdate) && hpUpdate !== currentHp && await actor.update({'data.hp.value': Math.min(maxHp, hpUpdate)});
       }
-    } catch {
-      ui.notifications.error("Invalid heal formula.");
     }
-  } else {
-    macroChatMessage(token, { 
-      content: item.data.data.description || chatBubbleString,
-      flavor: item.name,
-      type: item.data.data.description ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE
-    }, false);
+    useItem(itemId, {
+      sound: 'drink_potion',
+      verb: `quaffs`,
+      chatMsgContent,
+      chatMsgType
+    });
+  } catch (error) {
+    ui.notifications.error(`Drink Potion ${error}`);
   }
-  options.sound && AudioHelper.play({src: `systems/lostlands/sounds/${options.sound}.mp3`, volume: 1, loop: false}, true);
-  canvas.hud.bubbles.say(token, chatBubbleString, {emote: true});
-  const qtyUpdate = itemQty - 1;
-  return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': qtyUpdate}]);
+}
+
+export function readScroll(itemId, options={}) {
+  useItem(itemId, {
+    sound: 'read_scroll',
+    verb: `reads`
+  });
+}
+
+export function drinkWater(itemId, options={}) {
+  useItem(itemId, {
+    sound: 'drink_water',
+    verb: `drinks from`
+  }, false);
+}
+
+export async function eatFood(itemId, options={}) {
+  try {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    await actor.update({
+      "data.last_eat_time": game.time.worldTime, 
+      "data.last_drink_time": game.time.worldTime - Constant.SECONDS_IN_A_DAY
+    });
+    useItem(itemId, {
+      sound: 'eat_food',
+      verb: `eats`
+    });
+  } catch {
+    ui.notifications.error(`Eat Food ${error}`);
+  }
 }
 
 export async function chargedItemMacro(itemId, options={}) {
@@ -188,7 +207,7 @@ export async function chargedItemMacro(itemId, options={}) {
   const chargesLeft = charges - numChargesUsed;
   
   if(!item.data.data.description) return ui.notifications.error("Item has no description set.");
-  macroChatMessage(token, { 
+  Util.macroChatMessage(token, { 
     content: item.data.data.description, 
     flavor: `${item.name}: ${chargesLeft} charges`,
     sound: item.data.data.attributes.sound?.value,
@@ -355,7 +374,7 @@ async function save(tokens, damage, options={}) {
   let content = `${chatInlineRoll(saveText)}${resultText}`;
   content += `${damage ? ` for ${chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
-  macroChatMessage(token, {
+  Util.macroChatMessage(token, {
     content: content, 
     flavor: flavor,
     sound: options.sound
@@ -389,7 +408,7 @@ export async function thiefSkillMacro(skill, options={}) {
       options.critFailText = ` and the lock pick breaks!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'disarmtraps':
       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks.`);
@@ -397,12 +416,12 @@ export async function thiefSkillMacro(skill, options={}) {
       options.critFailText = ` and the trap fires!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'pickpockets':
       options.failText = ` but may try again when their skill increases.`;
       options.critFailText = ` and is immediately caught!`;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, chatBubble: true, chance: 0.7});
+      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'movesilently':
       options.failText = ` but may hide to avoid detection.`;
@@ -543,17 +562,17 @@ async function attack(attackers, targetToken, options) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
-    macroChatMessage(token, chatMsgData, false);
+    Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
-    canvas.hud.bubbles.say(token, chatBubbleString, {emote: true});
+    Util.chatBubble(token, chatBubbleString, true);
     for (const attack of attacks) {
-      attack.sound && AudioHelper.play({src: `systems/lostlands/sounds/${attack.sound}.mp3`, volume: 1, loop: false}, true);
+      attack.sound && Util.playSound(`${attack.sound}`, token, {push: true, bubble: false});
       const targetHp = +targetToken?.actor.data.data.hp?.value;
       const hpUpdate = targetHp - attack.damage;
       if ( hpUpdate < targetHp ) {
         await targetToken.actor.update({"data.hp.value": hpUpdate});
         if ( hpUpdate < 1 && targetHp > 0 ) {
-          Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, chatBubble: true, chance: 0.7});
+          Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, bubble: true, chance: 0.7});
         }
       }
       // wait if there are more attacks or more attackers left to handle
@@ -889,21 +908,6 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / 5) * 5;
 }
 
-export function macroChatMessage(token, data, chatBubble=true) {
-  if (!data.content) return;
-  // if content includes inline rolls, increase line height
-  if (/\[\[.*\d.*]]/.test(data.content)) {
-    data.content = `<div style="line-height:1.6em;">${data.content}</div>`;
-  }
-  ChatMessage.create({
-    speaker: ChatMessage.getSpeaker(token),
-    content: data.content.trim(),
-    type: data.type || CONST.CHAT_MESSAGE_TYPES.EMOTE,
-    flavor: data.flavor,
-    sound: data.sound ? `systems/lostlands/sounds/${data.sound}.mp3` : undefined
-  }, {chatBubble: chatBubble});
-}
-
 function dmgTypeDialog(weapon, dmgTypes, callback) {
   return new Dialog({
     title: `${weapon.name} Form of Attack`,
@@ -1056,7 +1060,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
     const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
-    macroChatMessage(reactingActor, chatData, false);
+    Util.macroChatMessage(reactingActor, chatData, false);
     canvas.hud.bubbles.say(token, `${reactingActor.name} considers ${targetActor.name}...`, {emote: true});
   }
 
@@ -1102,7 +1106,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
       flavor: `Buy`
     };
-    return macroChatMessage(actor, chatData, true);
+    return Util.macroChatMessage(actor, chatData, true);
   }
   // case 2: can pay with cp
   if (cp >= totalPriceInCp) {
@@ -1174,7 +1178,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       sound: 'coins',
       flavor: 'Buy'
     }
-    return macroChatMessage(actor, chatData, true);
+    return Util.macroChatMessage(actor, chatData, true);
   }
 }
 

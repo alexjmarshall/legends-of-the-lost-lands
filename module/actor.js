@@ -40,7 +40,7 @@ export class SimpleActor extends Actor {
 
     // level up sound
     if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
-      AudioHelper.play({src: "systems/lostlands/sounds/level_up.mp3", volume: 1, loop: false}, false);
+      Util.playSound('level_up', null, {push: false, bubble: false});
       updateData.islevelup = true;
     } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
       updateData.islevelup = false;

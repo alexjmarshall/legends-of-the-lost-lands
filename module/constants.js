@@ -5,6 +5,7 @@ export const SPELL_TYPES = {
   SPELL_MAGIC: "spell_magic",
   SPELL_WITCH: "spell_witch"
 };
+export const SECONDS_IN_A_DAY = 86400;
 export const MAX_SPELL_LEVELS = {
   [SPELL_TYPES.SPELL_CLERIC]: 5,
   [SPELL_TYPES.SPELL_MAGIC]: 9,
