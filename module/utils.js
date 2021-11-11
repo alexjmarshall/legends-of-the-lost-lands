@@ -98,13 +98,13 @@ export async function rollDice(formula) {
 export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
   const item = actor.data.items.get(itemIdOrName) || 
     actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemIdOrName?.toLowerCase().replace(/\s/g,''));
-  if (!item) throw new Error(`${itemType} ${itemIdOrName} not found on ${actor.name}.`);
+  if (!item) throw new Error(`${itemType} ${itemIdOrName} not found on ${actor.name}`);
   return item;
 }
 
 export async function reduceItemQty(item, actor) {
   const itemQty = +item.data.data.quantity;
-  if (!itemQty) throw new Error(`${item.name} must have quantity greater than zero.`);
+  if (!itemQty) throw new Error(`${item.name} must have quantity greater than zero`);
   return actor.updateEmbeddedDocuments("Item", [{
     '_id': item._id, 
     'data.quantity': itemQty - 1

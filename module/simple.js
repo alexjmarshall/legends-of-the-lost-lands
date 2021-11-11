@@ -64,7 +64,7 @@ Hooks.once("init", async function() {
   // Register Fatigue Clock setting
   game.settings.register("lostlands", "fatigueClock", {
     name: "Fatigue Clock",
-    hint: "Whether the fatigue clock is active (true) or paused (false)",
+    hint: "Untick to deactivate the Fatigue Clock",
     scope: "world",
     type: Boolean,
     default: true,
@@ -301,7 +301,7 @@ function onSimpleCalendarLoad() {
         }
         
       } catch (error) {
-        ui.notifications.error(`Problem applying fatigue damage to ${PC.name}.`);
+        ui.notifications.error(`Problem applying fatigue damage to ${PC.name}`);
         console.error(error);
       }
     };

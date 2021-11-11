@@ -90,7 +90,7 @@ export class MerchantActorSheet extends ActorSheet {
               silverPrice = +itemPrice?.find('.silver-price').text(),
               copperPrice = +itemPrice?.find('.copper-price').text();
         if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
-          return ui.notifications.error("There was a problem reading the price of this item.");
+          return ui.notifications.error("There was a problem reading the price of this item");
         }
         const totalPriceInCp = Math.round((copperPrice + silverPrice * 5 + goldPrice * 50));
         return game.lostlands.Macro.buyMacro(item, totalPriceInCp, this.actor);

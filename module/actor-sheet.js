@@ -225,9 +225,9 @@ export class SimpleActorSheet extends ActorSheet {
           i.data.data.attributes.lvl?.value === spellLevel && 
           i.data.data.prepared);
         const slotsMax = actorSlotsAttr?.max || 0;
-        if (slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level.");
+        if (slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level");
         if ( !isPrepared && preparedSpells.length >= slotsMax ) {
-          return ui.notifications.error("Cannot prepare any more spells of this level.");
+          return ui.notifications.error("Cannot prepare any more spells of this level");
         }
         if (!isPrepared) {
           Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
@@ -239,20 +239,20 @@ export class SimpleActorSheet extends ActorSheet {
         const isShield = Util.stringMatch(item.data.data.attributes.slot?.value, 'shield');
         const holdingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.held && Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
         if ( isShield && holdingShield ) {
-          return ui.notifications.error("Cannot wear a shield while using a small shield.");
+          return ui.notifications.error("Cannot wear a shield while using a small shield");
         }
         // can't stack rings of protection
         const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
         const stackingRingofProt = !!item.data.name.toLowerCase().includes('ring of protection') &&
           !!wornItems.find(i => i.data.name.toLowerCase().includes('ring of protection'));
         if ( !isWorn && stackingRingofProt ) {
-          return ui.notifications.error("Cannot wear more than one ring of protection.");
+          return ui.notifications.error("Cannot wear more than one ring of protection");
         }
         const itemSlot = item.data.data.attributes.slot?.value;
         const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
         const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
         if ( itemSlot && !isWorn && wornItemsInSlot.length >= slotLimit ) {
-          return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first.`);
+          return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
         }
         let verb = isWorn ? 'doffs' : 'dons';
         Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
@@ -265,15 +265,15 @@ export class SimpleActorSheet extends ActorSheet {
         const isSmallShield = Util.stringMatch(item.data.data.attributes.size?.value, 'small');
         const wearingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
         if ( isSmallShield && wearingShield ) {
-          return ui.notifications.error("Cannot use a small shield while wearing a shield.");
+          return ui.notifications.error("Cannot use a small shield while wearing a shield");
         }
         if ( !isHeld && heldItems.length >= heldItemsLimit ) {
-          return ui.notifications.error("Must release a held item first.");
+          return ui.notifications.error("Must release a held item first");
         }
         const heldQtyLimit = item.name.toLowerCase().includes('javelin') ? 3 :
           item.data.data.attributes.light?.value ? 2 : 1;
         if ( !isHeld && itemQty > heldQtyLimit ) {
-          return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand.`);
+          return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand`);
         }
         await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
         if (!isHeld) {

@@ -43,7 +43,7 @@ export async function createLostlandsMacro(data, slot) {
       });
     }
     else {
-      ui.notifications.error("Could not find a macro for this.");
+      ui.notifications.error("Could not find a macro for this");
       return false;
     }
   }
@@ -57,10 +57,11 @@ export function playVoice(mood) {
     const actor = char.actor;
     const token = char.token;
     const voice = actor.data.data.voice;
-    if (!voice) return ui.notifications.error("Character does not have a selected voice.");
+    if (!voice) throw new Error(`${actor.name} does not have a selected voice`);
     Util.playVoiceSound(mood, actor, token);
   } catch (error) {
     ui.notifications.error(`Play Voice ${error}`);
+    console.error(error);
   }
 }
 
@@ -80,11 +81,11 @@ export async function castSpell(spellId, options={}) {
     const spell = Util.getItemFromActor(spellId, actor, 'spell');
     const spellSound = spell.data.data.attributes.sound?.value || null; // need generic spell sound here
     const isPrepared = !!spell.data.data.prepared;
-    if (!isPrepared) return ui.notifications.error("Cannot cast a spell that was not prepared.");
+    if (!isPrepared) throw new Error(`${spell.name} was not prepared`);
     const spellLevel = spell.data.data.attributes.lvl?.value;
-    if (!spellLevel) return ui.notifications.error("Spell does not have level set.");
+    if (!spellLevel) throw new Error(`${spell.name} has no level set`);
     const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
-    if (actorSpellSlots <= 0) return ui.notifications.error("No spells remaining of this level.");
+    if (actorSpellSlots <= 0) throw new Error(`No spells remaining of level ${spellLevel}`);
     const updateData = { data: {
       attributes: {
         [`${spell.type}`]: {
@@ -99,30 +100,34 @@ export async function castSpell(spellId, options={}) {
     useItem(spellId, {
       sound: spellSound,
       verb: `casts`
-    }, false);
+    });
   } catch (error) {
     ui.notifications.error(`Cast Spell ${error}`);
+    console.error(error);
   }
 }
 
-async function useItem(itemId, options={
+async function useItem(itemId, data={
   sound: '', 
   flavor: '', 
   verb: '', 
   chatMsgContent: '',
   chatMsgType: CONST.CHAT_MESSAGE_TYPES.EMOTE
-}, consumable=true) {
+}, consumable=false) {
   try {
     const char = Util.selectedCharacter();
     const actor = char.actor;
     const token = char.token;
     const item = Util.getItemFromActor(itemId, actor);
-    const sound = options.sound;
-    const flavor = options.flavor || item.name;
+    const sound = data.sound;
+    const flavor = data.flavor || item.name;
     const desc = item.data.data.description
-    const chatBubbleText = `${actor.name} ${options.verb || 'uses'} ${item.name}.`;
-    const content = options.chatMsgContent || desc || chatBubbleText;
-    const type = options.chatMsgType || desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE;
+    const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
+    const content = data.chatMsgContent || desc || chatBubbleText;
+    const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
+    if (item.data.data.attributes.holdable && item.data.data.held !== true) {
+      throw new Error(`${item.name} must be held to use`);
+    }
     consumable && await Util.reduceItemQty(item, actor);
     Util.macroChatMessage(token, {content, flavor, sound, type}, false);
     Util.chatBubble(token, chatBubbleText);
@@ -137,35 +142,43 @@ export async function drinkPotion(itemId, options={}) {
     const actor = char.actor;
     const item = Util.getItemFromActor(itemId, actor);
     const healFormula = item.data.data.attributes.heal?.value;
-    let chatMsgContent, chatMsgType;
+    let chatMsgContent, chatMsgType, hpUpdate;
 
     if (healFormula) {
       const healPoints = await Util.rollDice(healFormula);
-      chatMsgContent = `${chatInlineRoll(healPoints)} points of healing.`;
+      chatMsgContent = `${chatInlineRoll(healPoints)} points of healing`;
       chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
       if (options.applyEffect) {
         const currentHp = +actor.data.data.hp?.value;
         const maxHp = +actor.data.data.hp?.max;
-        const hpUpdate = currentHp + healPoints;
-        !isNaN(hpUpdate) && hpUpdate !== currentHp && await actor.update({'data.hp.value': Math.min(maxHp, hpUpdate)});
+        hpUpdate = Math.min(maxHp, currentHp + healPoints);
       }
     }
+
     useItem(itemId, {
       sound: 'drink_potion',
       verb: `quaffs`,
       chatMsgContent,
       chatMsgType
-    });
+    }, true);
+
+    !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
   } catch (error) {
     ui.notifications.error(`Drink Potion ${error}`);
+    console.error(error);
   }
 }
 
 export function readScroll(itemId, options={}) {
-  useItem(itemId, {
-    sound: 'read_scroll',
-    verb: `reads`
-  });
+  try {
+    useItem(itemId, {
+      sound: 'read_scroll',
+      verb: `reads`
+    }, true);
+  } catch (error) {
+    ui.notifications.error(`Read Scroll ${error}`);
+    console.error(error);
+  }
 }
 
 export async function drinkWater(itemId, options={}) {
@@ -173,15 +186,18 @@ export async function drinkWater(itemId, options={}) {
     const char = Util.selectedCharacter();
     const actor = char.actor;
     const currentTime = game.time.worldTime;
-    await actor.update({
-      "data.last_drink_time": currentTime
-    });
+
     useItem(itemId, {
       sound: 'drink_water',
       verb: `drinks from`
     }, false);
+
+    await actor.update({
+      "data.last_drink_time": currentTime
+    });
   } catch (error) {
     ui.notifications.error(`Drink Water ${error}`);
+    console.error(error);
   }
 }
 
@@ -191,54 +207,52 @@ export async function eatFood(itemId, options={}) {
     const actor = char.actor;
     const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
     const currentTime = game.time.worldTime;
+
+    useItem(itemId, {
+      sound: 'eat_food',
+      verb: `eats`
+    }, true);
+
     await actor.update({
       "data.last_eat_time": currentTime, 
       "data.last_drink_time": currentTime - secondsInADay
     });
-    useItem(itemId, {
-      sound: 'eat_food',
-      verb: `eats`
-    });
   } catch (error) {
     ui.notifications.error(`Eat Food ${error}`);
+    console.error(error);
   }
 }
 
-export async function chargedItemMacro(itemId, options={}) {
+export async function useChargedItem(itemId, options={}) {
   try {
     const char = Util.selectedCharacter();
     const actor = char.actor;
     const item = Util.getItemFromActor(itemId, actor);
+    const charges = +item.data.data.attributes.charges?.value;
+    if (!charges) throw new Error(`${item.name} has no charges remaining`);
 
+    if(!options.numChargesUsed && !options.shownChargesUsedDialog && options.showModDialog) {
+      return chargesUsedDialog(options, item.name, itemId, options);
+    }
+    const numChargesUsed = +options.numChargesUsed || 1;
+    const chargesLeft = charges - numChargesUsed;
+    const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
+
+    useItem(itemId, {
+      sound: 'eat_food',
+      verb: `eats`
+    }, false);
+
+    await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
   } catch (error) {
     ui.notifications.error(`Use Charged Item ${error}`);
+    console.error(error);
   }
-  if(!actor) return ui.notifications.error("Select character using the item.");
-  const item = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
-  if(!item) return ui.notifications.error("Could not find item on this character.");
-  const charges = +item.data.data.attributes.charges?.value;
-  if(!charges) return ui.notifications.error("Item has no charges remaining.");
-  if(item.data.data.attributes.holdable && item.data.data.held !== true) return ui.notifications.error("Item must be held to use.");
-
-  if(!options.numChargesUsed && !options.shownChargesUsedDialog && options.showModDialog) return chargesUsedDialog(options, item.name, itemId, options);
-  const numChargesUsed = +options.numChargesUsed || 1;
-  const chargesLeft = charges - numChargesUsed;
-  
-  if(!item.data.data.description) return ui.notifications.error("Item has no description set.");
-  Util.macroChatMessage(token, { 
-    content: item.data.data.description, 
-    flavor: `${item.name}: ${chargesLeft} charges`,
-    sound: item.data.data.attributes.sound?.value,
-    type: CONST.CHAT_MESSAGE_TYPES.IC
-  }, false);
-  canvas.hud.bubbles.say(token, `${actor.name} expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from ${item.name}.`, {emote: true});
-  
-  return actor.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.attributes.charges.value': chargesLeft}]);
 }
 
 export function heldWeaponAttackMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
+  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -286,12 +300,12 @@ export function heldWeaponAttackMacro(options={}) {
 export function quickDrawAttackMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
-  if (!actor) return ui.notifications.error("Select character using the weapon.");
+  if (!actor) return ui.notifications.error("Select character using the weapon");
   const weapon = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
-  if (!weapon) return ui.notifications.error("Could not find weapon on this character.");
+  if (!weapon) return ui.notifications.error("Could not find weapon on this character");
   const dmgTypes = weapon.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
   const canQuickDraw = weapon.data.data.attributes.quick_draw?.value && dmgTypes.includes('cut');
-  if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack.");
+  if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -313,7 +327,7 @@ export function quickDrawAttackMacro(itemId, options={}) {
 
 export function attackRoutineMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
+  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -323,13 +337,13 @@ export function attackRoutineMacro(options={}) {
   for(const token of selectedTokens) {
     const atkRoutineItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Attack Routine'));
     if(!atkRoutineItem) {
-      ui.notifications.error(`Attack Routine feature not found on this character.`);
+      ui.notifications.error(`Attack Routine feature not found on this character`);
       continue;
     }
     const atksString = atkRoutineItem.data.data.attributes.routine?.value;
     const attackNames = atksString?.split(',');
     if (!atksString || !attackNames.length) {
-      ui.notifications.error(`${token.actor.name}'s Attack Routine has a missing or incorrectly formatted attack list.`);
+      ui.notifications.error(`${token.actor.name}'s Attack Routine has a missing or incorrectly formatted attack list`);
       continue;
     }
     const attacks = attackNames.map(a => Object.create({id: a}));
@@ -345,7 +359,7 @@ export function attackRoutineMacro(options={}) {
 
 export async function saveMacro(damage=0, options={}) {
   const tokens = canvas.tokens.controlled;
-  if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw.");
+  if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw");
   
   return save(tokens, damage, options);
 }
@@ -356,7 +370,7 @@ async function save(tokens, damage, options={}) {
   const actor = token.actor;
   const saveTarget = +token.actor.data.data.attributes.st?.value;
   if(!saveTarget) {
-    ui.notifications.error(`${actor.name} has no save target number set.`);
+    ui.notifications.error(`${actor.name} has no save target number set`);
     tokens.shift();
     return save(tokens, damage, options);
   }
@@ -371,7 +385,7 @@ async function save(tokens, damage, options={}) {
   try {
     dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
   } catch {
-    ui.notifications.error("Invalid input to modifier dialog.");
+    ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
     return save(tokens, damage, options);
   }
@@ -413,7 +427,7 @@ function chatInlineRoll(content) {
 
 export async function thiefSkillMacro(skill, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  if(!token) return ui.notifications.error("Select token attempting the thief skill.");
+  if(!token) return ui.notifications.error("Select token attempting the thief skill");
   const actor = token.actor;
 
   options.flavor = skill;
@@ -421,32 +435,32 @@ export async function thiefSkillMacro(skill, options={}) {
   const lockPickItem = actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, 'lockpicks'));
   switch (skill.toLowerCase().replace(/\s/g,'')) {
     case 'openlocks':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks.`);
-      options.failText = ` but may try again when their skill increases.`;
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks`);
+      options.failText = ` but may try again when their skill increases`;
       options.critFailText = ` and the lock pick breaks!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'disarmtraps':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks.`);
-      options.failText = ` but may try again when their skill increases.`;
+      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks`);
+      options.failText = ` but may try again when their skill increases`;
       options.critFailText = ` and the trap fires!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'pickpockets':
-      options.failText = ` but may try again when their skill increases.`;
+      options.failText = ` but may try again when their skill increases`;
       options.critFailText = ` and is immediately caught!`;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'movesilently':
-      options.failText = ` but may hide to avoid detection.`;
+      options.failText = ` but may hide to avoid detection`;
       options.critFailText = ` and is immediately caught!`;
       break;
     case 'hideinshadows':
-      options.failText = ` and may be found if searched for.`;
+      options.failText = ` and may be found if searched for`;
       options.critFailText = ` and is immediately caught!`;
   }
 
@@ -455,7 +469,7 @@ export async function thiefSkillMacro(skill, options={}) {
 
 export function backstabMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
+  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -465,25 +479,25 @@ export function backstabMacro(options={}) {
     const backstabItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Backstab'));
     const dmgMulti = +backstabItem.data.data.attributes.dmg_multi?.value;
     if(!dmgMulti) {
-      ui.notifications.error(`${token.actor.name} has no damage multiplier set on backstab feature.`);
+      ui.notifications.error(`${token.actor.name} has no damage multiplier set on backstab feature`);
       continue;
     }
     if(!backstabItem) {
-      ui.notifications.error(`Backstab feature not found on this character.`);
+      ui.notifications.error(`Backstab feature not found on this character`);
       continue;
     }
     const heldWeapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
     if (!heldWeapons.length) {
-      ui.notifications.error(`${token.actor.name} is not holding any weapons.`);
+      ui.notifications.error(`${token.actor.name} is not holding any weapons`);
       continue;
     }
     if (heldWeapons.length > 1) {
-      ui.notifications.error(`${token.actor.name} must be holding only one weapon to backstab.`);
+      ui.notifications.error(`${token.actor.name} must be holding only one weapon to backstab`);
       continue;
     }
     const weapon = heldWeapons[0];
     if(!weapon.data.data.attributes.light?.value) {
-      ui.notifications.error(`${token.actor.name} cannot backstab with this weapon.`);
+      ui.notifications.error(`${token.actor.name} cannot backstab with this weapon`);
       continue;
     }
     const flavor = `${weapon.name} (backstab)`;
@@ -547,7 +561,7 @@ export async function attackMacro(weapons, options={}) {
   // add GM-only tab to characters for fatigue stuff -- show and reset of last eat/drink times, choose or reset disease, reset cold, edit max max HP
   // what about holding items to use them, like must hold a potion? add use button back beside hold/wear?
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s).");
+  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -621,17 +635,17 @@ async function attack(attackers, targetToken, options) {
     }
   }
   if (!weaponItem) {
-    ui.notifications.error("Could not find item on this character.");
+    ui.notifications.error("Could not find item on this character");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
   if (weaponItem.data.data.quantity < 1) {
-    ui.notifications.error("Item must have a quantity greater than zero to use.");
+    ui.notifications.error("Item must have a quantity greater than zero to use");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
   if (weaponItem.data.data.attributes.holdable && weaponItem.data.data.held !== true) {
-    ui.notifications.error("Item must be held to use.");
+    ui.notifications.error("Item must be held to use");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -655,7 +669,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
   if (!weapDmg) {
-    ui.notifications.error("Damage not set for item.");
+    ui.notifications.error("Damage not set for item");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -671,7 +685,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
   if ( offhand === true && weapAttrs.light?.value !== true ) {
-    ui.notifications.error("Weapon used in the offhand must be light.");
+    ui.notifications.error("Weapon used in the offhand must be light");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -694,7 +708,7 @@ async function attack(attackers, targetToken, options) {
   const vsACMod = Constant.DMG_TYPES[dmgType].VS_AC_MODS[targetArmorType];
   const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
   if (range > +maxRange) {
-    ui.notifications.error("Target is beyond maximum range for this weapon.");
+    ui.notifications.error("Target is beyond maximum range for this weapon");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -707,7 +721,7 @@ async function attack(attackers, targetToken, options) {
     dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
     dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
   } catch {
-    ui.notifications.error("Invalid input to modifier dialog.");
+    ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
     return attack(attackers, targetToken, options);
   }
@@ -741,7 +755,7 @@ async function attack(attackers, targetToken, options) {
       const matchWeap = dmgType === 'bolt' ? quiver?.name?.toLowerCase()?.includes('bolt') :
         dmgType === 'arrow' ? quiver?.name?.toLowerCase()?.includes('arrow') : true;
       if(!quiver || !quiverQty || !matchWeap) {
-        ui.notifications.error("Nothing found to shoot from this weapon.");
+        ui.notifications.error("Nothing found to shoot from this weapon");
         weapons.shift();
         return attack(attackers, targetToken, options);
       }
@@ -1014,12 +1028,12 @@ function chargesUsedDialog(item, label, ...data) {
 
 export function reactionRollMacro(options) {
   if (!game.user.isGM) return;
-  if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token.");
+  if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token");
   const reactingActor = canvas.tokens.controlled[0].actor;
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetActor = targets[ranTargetIndex]?.actor;
-  if (!targetActor) return ui.notifications.error("Select a target.");
+  if (!targetActor) return ui.notifications.error("Select a target");
   options.override = true;
 
   return reactionRoll(reactingActor, targetActor, options);
@@ -1045,7 +1059,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     try {
       dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
     } catch {
-      ui.notifications.error("Invalid input to modifier dialog.");
+      ui.notifications.error("Invalid input to modifier dialog");
       return reactionRoll(reactingActor, targetActor, options);
     }
     const rxnText = `${base2d6Result}${chaMod ? `+${chaMod}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${targetRxnMod ? `+${targetRxnMod}` : ''}`;
@@ -1092,11 +1106,11 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   const actor = game.user.character || token?.actor;
   const sameActor = actor?.isToken ? merchant.isToken && actor.token.id === merchant.token.id :
     actor?.id === merchant.id;
-  if ( !actor || sameActor ) return ui.notifications.error("Select buying token.");
+  if ( !actor || sameActor ) return ui.notifications.error("Select buying token");
   const merchantGold = +merchant.data.data.attributes.gold?.value;
-  if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set.");
+  if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set");
   const merchantQty = +item.data.data.quantity;
-  if (!merchantQty) return ui.notifications.error("No stock available.");
+  if (!merchantQty) return ui.notifications.error("No stock available");
   if (merchantQty > 1 && !options.shownSplitDialog) {
     return itemSplitDialog(merchantQty, item, priceInCp, merchant, options);
   }
@@ -1193,7 +1207,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
 
     // create chat message
     const chatData = {
-      content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}.`,
+      content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}`,
       sound: 'coins',
       flavor: 'Buy'
     }
