@@ -89,7 +89,7 @@ export function selectedCharacter() {
 
 export async function rollDice(formula) {
   try {
-    return await new Roll(formula).evaluate().total;
+    return new Roll(formula).evaluate().total;
   } catch {
     throw new Error(`Problem rolling dice: ${formula}`);
   }
@@ -119,8 +119,12 @@ export function macroChatMessage(token, data, chatBubble=true) {
   const speaker = ChatMessage.getSpeaker(token);
   let content = data.content.trim();
   // if content includes inline rolls, increase line height
-  if (/\[\[.*\d.*]]/.test(data.content)) {
+  if (/[[.*\d.*]]/.test(data.content)) {
     content = `<div style="line-height:1.6em;">${content}</div>`;
   }
   return ChatMessage.create({speaker, content, type, flavor, sound}, {chatBubble: chatBubble});
+}
+
+export function chatInlineRoll(content) {
+  return `<span style="font-style:normal;">[[${content}]]</span>`
 }

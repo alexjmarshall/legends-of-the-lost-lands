@@ -68,10 +68,67 @@ export function playVoice(mood) {
 export function toggleFatigueClock() {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
   const clockActive = game.settings.get("lostlands", "fatigueClock");
+  const setting = !clockActive;
 
-  game.settings.set("lostlands", "fatigueClock", !clockActive);
+  game.settings.set("lostlands", "fatigueClock", setting);
   
-  return ui.notifications.info(`Set fatigueClock to ${!clockActive}`);
+  return ui.notifications.info(`Turned Fatigue Clock ${setting ? 'on' : 'off'}`);
+}
+
+export async function partyRest(options={}) {
+  const pcTokens = canvas.tokens.objects.children.filter(t => t.actor.type === 'character' && t.actor.hasPlayerOwner);
+  const formula = options.formula;
+  const numDays = options.numDays;
+
+  try {
+    if ( !options.shownModDialog && options.showModDialog ) {
+      const fields = [
+        {label: 'Dice formula?', default: 'd3', key: 'formula'},
+        {label: 'Number of days?', default: `${numDays || '1'}`, key: 'numDays'}
+      ];
+      return modDialog(options, `Party Rest`, fields, () => partyRest(options));
+    }
+  
+    for (const token of pcTokens) {
+      await rest(token, formula, numDays);
+    }
+  } catch (error) {
+    ui.notifications.error(`Party Rest ${error}`);
+    console.error(error);
+  }
+}
+
+async function rest(token, formula='d3', numDays='1', flavor='Rest') {
+  const actor = token.actor;
+  const hp = +actor.data.data.hp?.value;
+  const maxHp = +actor.data.data.hp?.max;
+  const maxMaxHp = +actor.data.data.hp?.max_max;
+  let diceTermString = '';
+  for (let i = 0; i < numDays; i++) {
+    diceTermString += `${formula}+`;
+  }
+  diceTermString = diceTermString.replace(/\+$/, '');
+
+  try {
+    const result = await Util.rollDice(diceTermString);
+    if (hp < 0 || maxMaxHp < 1) return;
+    const maxHpUpdate = Math.min(maxMaxHp, maxHp + result);
+    const hpUpdate =  Math.min(maxHpUpdate, hp + result);
+    
+    await actor.update({
+      "data.hp.value": hpUpdate,
+      "data.hp.max": maxHpUpdate
+    });
+
+    Util.chatBubble(token, `zzz...`, false);
+    Util.macroChatMessage(token, {
+      content: `${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of healing`,
+      flavor
+    }, false);
+
+  } catch (error) {
+    throw `${actor.name} ${error}`;
+  }
 }
 
 export async function castSpell(spellId, options={}) {
@@ -146,12 +203,13 @@ export async function drinkPotion(itemId, options={}) {
 
     if (healFormula) {
       const healPoints = await Util.rollDice(healFormula);
-      chatMsgContent = `${chatInlineRoll(healPoints)} points of healing`;
+      chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
       chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
       if (options.applyEffect) {
         const currentHp = +actor.data.data.hp?.value;
         const maxHp = +actor.data.data.hp?.max;
-        hpUpdate = Math.min(maxHp, currentHp + healPoints);
+        // can only drink a potion if conscious
+        if (currentHp > 0) hpUpdate = Math.min(maxHp, currentHp + healPoints);
       }
     }
 
@@ -230,15 +288,23 @@ export async function useChargedItem(itemId, options={}) {
     const item = Util.getItemFromActor(itemId, actor);
     const charges = +item.data.data.attributes.charges?.value;
     const sound = item.data.data.attributes.sound?.value || null; // generic use charges sound?
+    const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
+    const chargesLeft = charges - numChargesUsed;
+    const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
+
     if (!charges) throw new Error(`${item.name} has no charges remaining`);
 
     if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
       const field = {label: 'Charges used?', key: 'numChargesUsed'};
       return modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
     }
-    const numChargesUsed = +options.numChargesUsed || 1;
-    const chargesLeft = charges - numChargesUsed;
-    const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
+
+    if (chargesLeft > charges) {
+      ui.notifications.error(`Cannot increase charges through use (but nice try)`);
+      options.shownModDialog = false;
+      options.showModDialog = true;
+      return useChargedItem(itemId, options);
+    }
 
     await useItem(itemId, {
       sound,
@@ -246,7 +312,7 @@ export async function useChargedItem(itemId, options={}) {
       verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
     }, false);
 
-    await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+    chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
   } catch (error) {
     ui.notifications.error(`Use Charged Item ${error}`);
     console.error(error);
@@ -408,8 +474,8 @@ async function save(tokens, damage, options={}) {
   }
   const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  let content = `${chatInlineRoll(saveText)}${resultText}`;
-  content += `${damage ? ` for ${chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
+  let content = `${Util.chatInlineRoll(saveText)}${resultText}`;
+  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   Util.macroChatMessage(token, {
     content: content, 
@@ -424,10 +490,6 @@ async function save(tokens, damage, options={}) {
   
   tokens.shift();
   return save(tokens, damage, options);
-}
-
-function chatInlineRoll(content) {
-  return `<span style="font-style:normal;">[[${content}]]</span>`
 }
 
 export async function thiefSkillMacro(skill, options={}) {
@@ -554,17 +616,16 @@ export async function attackMacro(weapons, options={}) {
   // should use combat tracker? or nah
   // players cannot edit their XP or HP?
   // document all attribute properties -- rationalize with sheet
-  // weapons with quick draw tag say 'draws' instead of 'wields', and if press alt and hold button, makes immediate attack!
   // weapon light flag, two-hand flag
   // armor type leather, chain and plate
   // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
-  // macro for eat and drink (dont reduce qty)
   // macro for disease, starvation, thirts etc. -- show colour bars on char sheet for fatigued/very fatigued (max hp less than/less than half max max hp), hungry (after 3 days since no food), thirsty (after 1 day with no water), diseased, cold
   // rename hungerClock to fatigueClock, if time advances more than 1 hour while fatigue clock is paused, open party heal dialog to GM
-  // update and extract out func for getting token and actor, make sure to use right method for diff macros, prioritize game.user.character or selected token
   // e.g. allow players to have their other owned characters e.g. horse, use an item, but that char must own the used item
   // add GM-only tab to characters for fatigue stuff -- show and reset of last eat/drink times, choose or reset disease, reset cold, edit max max HP
-  // what about holding items to use them, like must hold a potion? add use button back beside hold/wear?
+  // set default settings in day night cycle based on season in simple calendar
+  // in rules doc, set categories for rest quality conditions, buy bedroll to improve quality when sleeping outside -- also poor quality sleep in armor!
+  // apply rough resting each day when time changes -- if fatigue clock is OFF, party is in a safe place, so ask what quality of rest
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
@@ -782,9 +843,9 @@ async function attack(attackers, targetToken, options) {
   totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${attackerAtkMod ? `+${attackerAtkMod}` : ''}`;
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
-  let dmgText = `${totalDmg ? ` for ${chatInlineRoll(totalDmg)}` : ''}`;
+  let dmgText = `${totalDmg ? ` for ${Util.chatInlineRoll(totalDmg)}` : ''}`;
   const isCrit = atkType !== 'touch' && d20Result >= critMin && !preventCrit;
-  if (isCrit) dmgText += ` + ${chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
+  if (isCrit) dmgText += ` + ${Util.chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
   dmgText += ' damage';
   if (atkType === 'touch') dmgText = '';
   let rangeText = range && rangePenalty ? ` ${range}'` : '';
@@ -862,7 +923,7 @@ async function attack(attackers, targetToken, options) {
     const weaponQty = weaponItem.data.data.quantity;
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
   }
-  chatMsgData.content += `${chatInlineRoll(totalAtk)}${resultText}<br>`;
+  chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
   chatMsgData.bubbleString += `${getAttackChatBubble(token.actor.name, targetToken?.actor.name, weapName, dmgType)}<br>`;
 
@@ -877,31 +938,6 @@ async function attack(attackers, targetToken, options) {
     sound: resultSound,
     damage: thisAttackDamage
   });
-
-  // check if this weapon item has any other macros to execute
-  // const itemMacro = weaponItem.data.data.macro;
-  // if (itemMacro) {
-  //   let itemMacroWithId = weaponItem.data.data.macro.replace(/itemId/g, weaponItem._id);
-  //   let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
-  //   if (isLostlandsMacro) {
-  //     let optionsParam = '';
-  //     if (options.applyEffect) optionsParam += 'applyEffect: true,';
-  //     if (options.showModDialog) optionsParam += 'showModDialog: true,';
-  //     if (options.showAltDialog) optionsParam += 'showAltDialog: true,';
-  //     optionsParam = `{${optionsParam}}`;
-  //     itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
-  //   }
-  //   let macro = game.macros.find(m => ( m.name === weaponItem.name && m.data.command === itemMacroWithId ));
-  //   if ( !macro ) {
-  //     macro = await Macro.create({
-  //       name: weaponItem.name,
-  //       type: "script",
-  //       command: itemMacroWithId,
-  //       flags: { "lostlands.attrMacro": true }
-  //     });
-  //   }
-  //   macro.execute();
-  // }
 
   weapons.shift();
 
@@ -969,12 +1005,12 @@ function dmgTypeDialog(weapon, dmgTypes, callback) {
   }
 }
 
-function modDialog(mods, title, fields=[{label:'', key:''}], callback) {
+function modDialog(mods, title, fields=[{label:'', default:'', key:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {
     formFields += `<div class="form-group">
                     <label>${field.label}</label>
-                    <input type="text" id="${field.key}" placeholder="e.g. -4, 2d6 etc.">
+                    <input type="text" id="${field.key}" value="${field.default}" placeholder="e.g. -4, 2d6 etc.">
                   </div>`;
   });
   const content = `<form>${formFields}</form>`;
@@ -1069,7 +1105,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
     const chatData = {
-      content: `${chatInlineRoll(rxnText)} ${attitudeText}`,
+      content: `${Util.chatInlineRoll(rxnText)} ${attitudeText}`,
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
     const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
