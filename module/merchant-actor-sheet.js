@@ -1,6 +1,7 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
+import { buyMacro, reactionRoll } from "./macro.js";
 
 export class MerchantActorSheet extends ActorSheet {
   /** @inheritdoc */
@@ -31,7 +32,7 @@ export class MerchantActorSheet extends ActorSheet {
     const merchantActor = context.actor.isToken ? context.actor :
       canvas.tokens.objects.children.find(t => t.actor.id === context.actor.id && t.data.actorLink === true)?.actor;
     const character = game.user.character;
-    const attitude = merchantActor && character ? await game.lostlands.Macro.reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
+    const attitude = merchantActor && character ? await reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
       Constant.ATTITUDES.UNCERTAIN;
     const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
     const items = context.data.items.filter(i => i.type === 'item');
@@ -93,7 +94,7 @@ export class MerchantActorSheet extends ActorSheet {
           return ui.notifications.error("There was a problem reading the price of this item");
         }
         const totalPriceInCp = Math.round((copperPrice + silverPrice * 5 + goldPrice * 50));
-        return game.lostlands.Macro.buyMacro(item, totalPriceInCp, this.actor);
+        return buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;
         const cls = getDocumentClass("Item");
