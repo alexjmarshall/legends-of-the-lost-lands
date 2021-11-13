@@ -232,7 +232,7 @@ export class SimpleActorSheet extends ActorSheet {
         if (!isPrepared) {
           Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
         }
-        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
+        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
         // can't wear a shield while holding a small shield
@@ -256,7 +256,7 @@ export class SimpleActorSheet extends ActorSheet {
         }
         let verb = isWorn ? 'doffs' : 'dons';
         Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
-        return await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
+        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.held);
