@@ -10,7 +10,7 @@ import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
-import {setTimeHooks} from "./time-hooks.js";
+import {timeChangeHandlers} from "./time-change.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -225,8 +225,11 @@ Hooks.on("updateToken", (token, moved, data) => {
 Hooks.on("preUpdateActor", (actor, change) => {
   const cloUpdate = change.data?.clo;
   const targetClo = actor.data.data.clo;
-
-  // update last_warm_time if targetClo was sufficient but cloUpdate is not
+  const reqClo = Util.reqClo();
+  // add last_warm_time to update if targetClo was sufficient but cloUpdate is not
+  if (targetClo >= reqClo && cloUpdate < reqClo) {
+    change.data.last_warm_time = game.time.worldTime;
+  }
 
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
@@ -256,6 +259,8 @@ function onSimpleCalendarLoad() {
   Hooks.on(SimpleCalendar.Hooks.Ready, () => {
 
     console.log(`Simple Calendar is ready!`);
-    setTimeHooks();
+    Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
+      timeChangeHandlers(data);
+    })
   })
 }
