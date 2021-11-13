@@ -128,3 +128,10 @@ export function macroChatMessage(token, data, chatBubble=true) {
 export function chatInlineRoll(content) {
   return `<span style="font-style:normal;">[[${content}]]</span>`
 }
+
+export function reqClo() {
+  // weather?
+  const season = SimpleCalendar.api.getCurrentSeason()?.name.toLowerCase();
+  const reqClo = Constant.REQ_CLO_BY_SEASON[season];
+  return reqClo;
+}
