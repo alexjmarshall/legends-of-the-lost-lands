@@ -97,12 +97,11 @@ export class SimpleActor extends Actor {
     - boots
     */
     const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
-     i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
+      i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
     const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
-    const wornArmors = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
-      i.data.data.attributes.ac_mod?.value);
-    const armorAcMods = wornArmors.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
-    const maxDexBonuses = wornArmors.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
+    const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+    const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
+    const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
     const dexAcBonus = Math.min(actorData.dex_mod, ...maxDexBonuses);
     const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
     updateData.ac = attributes.ac?.value ?? ac;
@@ -110,6 +109,10 @@ export class SimpleActor extends Actor {
     // touch AC
     const touchAc = Constant.AC_MIN + shieldAcMods + dexAcBonus;
     updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
+
+    // worn clo
+    const totalWornClo = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.clo?.value || 0), 0);
+    updateData.clo = attributes.clo?.value ?? totalWornClo;
 
     // st_mod
     const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
