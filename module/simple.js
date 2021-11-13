@@ -10,6 +10,7 @@ import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
+import {setTimeHooks} from "./time-hooks.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -64,14 +65,14 @@ Hooks.once("init", async function() {
   // Register Fatigue Clock setting
   game.settings.register("lostlands", "fatigueClock", {
     name: "Fatigue Clock",
-    hint: "Untick to deactivate the Fatigue Clock",
+    hint: "Untick to turn off the Fatigue Clock",
     scope: "world",
     type: Boolean,
     default: true,
     config: true
   });
 
-  // Register initiative setting.
+  // Register initiative setting
   game.settings.register("lostlands", "initFormula", {
     name: "SETTINGS.SimpleInitFormulaN",
     hint: "SETTINGS.SimpleInitFormulaL",
@@ -82,12 +83,12 @@ Hooks.once("init", async function() {
     onChange: formula => _simpleUpdateInit(formula, true)
   });
 
-  // Retrieve and assign the initiative formula setting.
+  // Retrieve and assign the initiative formula setting
   const initFormula = game.settings.get("lostlands", "initFormula");
   _simpleUpdateInit(initFormula);
 
   /**
-   * Update the initiative formula.
+   * Update the initiative formula
    * @param {string} formula - Dice formula to evaluate.
    * @param {boolean} notify - Whether or not to post notifications.
    */
@@ -101,7 +102,7 @@ Hooks.once("init", async function() {
   }
 
   /**
-   * Slugify a string.
+   * Slugify a string
    */
   Handlebars.registerHelper('slugify', function(value) {
     return value.slugify({strict: true});
@@ -133,12 +134,12 @@ Hooks.once("init", async function() {
 });
 
 /**
- * Macrobar hook.
+ * Macrobar hook
  */
 Hooks.on("hotbarDrop", (bar, data, slot) => Macro.createLostlandsMacro(data, slot));
 
 /**
- * Adds the actor template context menu.
+ * Adds the actor template context menu
  */
 Hooks.on("getActorDirectoryEntryContext", (html, options) => {
   // Define an actor as a template.
@@ -155,7 +156,7 @@ Hooks.on("getActorDirectoryEntryContext", (html, options) => {
     }
   });
 
-  // Undefine an actor as a template.
+  // Undefine an actor as a template
   options.push({
     name: game.i18n.localize("SIMPLE.UnsetTemplate"),
     icon: '<i class="fas fa-times"></i>',
@@ -171,10 +172,10 @@ Hooks.on("getActorDirectoryEntryContext", (html, options) => {
 });
 
 /**
- * Adds the item template context menu.
+ * Adds the item template context menu
  */
 Hooks.on("getItemDirectoryEntryContext", (html, options) => {
-  // Define an item as a template.
+  // Define an item as a template
   options.push({
     name: game.i18n.localize("SIMPLE.DefineTemplate"),
     icon: '<i class="fas fa-stamp"></i>',
@@ -188,7 +189,7 @@ Hooks.on("getItemDirectoryEntryContext", (html, options) => {
     }
   });
 
-  // Undefine an item as a template.
+  // Undefine an item as a template
   options.push({
     name: game.i18n.localize("SIMPLE.UnsetTemplate"),
     icon: '<i class="fas fa-times"></i>',
@@ -222,121 +223,39 @@ Hooks.on("updateToken", (token, moved, data) => {
 
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
+  const cloUpdate = change.data?.clo;
+  const targetClo = actor.data.data.clo;
+
+  // update last_warm_time if targetClo was sufficient but cloUpdate is not
+
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const halfMaxHp = actor.data.data.hp?.max / 2;
+  const token = Util.getTokenFromActor(actor);
+
   // return if update does not decrease hp, or if actor is already unconscious
   if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
-  if (hpUpdate < 1) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, null, {push: true, bubble: true, chance: 1});
+  if (hpUpdate < 0) {
+    Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
+    Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, null, {push: true, bubble: true, chance: 0.7});
+    Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
   } else {
-    Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, null, {push: true, bubble: true, chance: 0.5});
+    Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
   }
 });
 
-const checkSimpleCalendarLoad = setInterval(onSimpleCalendarLoad, 1000);
 
+
+const checkSimpleCalendarLoadInterval = setInterval(onSimpleCalendarLoad, 1000);
 function onSimpleCalendarLoad() {
 
   if (!SimpleCalendar) return;
-  clearInterval(checkSimpleCalendarLoad);
+  clearInterval(checkSimpleCalendarLoadInterval);
 
   Hooks.on(SimpleCalendar.Hooks.Ready, () => {
 
     console.log(`Simple Calendar is ready!`);
-    const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
-    const timeInDays = time => Math.floor(time / secondsInADay);
-    const timeInWeeks = time => Math.floor(time / (secondsInADay * 7));
-    async function applyFatigueDamage (PC, currentTime, timeDiff, propName, 
-      dmg={
-        dice: '',
-        flavor: '',
-        interval: () => {}
-      }, 
-      emit={
-        sound: '',
-        bubbleText: '',
-        interval: () => {}
-      }
-    ){
-
-      try {
-        const dice = dmg.dice || 'd6';
-        const flavor = dmg.flavor || 'fatigue';
-        const dmgInterval = dmg.interval;
-        const sound = emit.sound || 'stomach_rumble';
-        const bubbleText = emit.bubbleText || '';
-        const emitInterval = emit.interval;
-        const targetHp = PC.data.data.hp?.value;
-        if (targetHp < 0) return;
-        const lastTime = PC.data.data[propName];
-        const newTime = currentTime + timeDiff;
-        if (newTime < currentTime) return;
-        if (!lastTime || newTime < lastTime) {
-          return await PC.update({data: { [propName]: newTime }});
-        }
-        const timeSince = currentTime - lastTime;
-        const newTimeSince = newTime - lastTime;
-        const token = Util.getTokenFromActor(PC);
-
-        // emit sound/bubble
-        const doEmit = !!emitInterval(timeSince, newTimeSince);
-        if (doEmit) {
-          sound && Util.playSound(sound, token, {push: true, bubble: !bubbleText});
-          bubbleText && Util.chatBubble(token, `${PC.name} ${bubbleText}`);
-        }
-
-        // apply damage
-        const numDmgDice = dmgInterval(timeSince, newTimeSince);
-        if (numDmgDice) {
-          const formula = `${numDmgDice}${dice}`;
-          const result = await Util.rollDice(`${formula}`);
-          await PC.update({"data.hp.value": targetHp - result});
-          Util.macroChatMessage(token, {
-            content: `${PC.name} takes [[${result}]] damage from ${flavor.toLowerCase()}!`,
-            flavor
-          }, false);
-        }
-        
-      } catch (error) {
-        ui.notifications.error(`Problem applying fatigue damage to ${PC.name}`);
-        console.error(error);
-      }
-    };
-
-    const weeksSince = (t1, t2) => timeInWeeks(t2) - timeInWeeks(t1);
-    const daysSince = (t1, t2) => timeInDays(t2) - timeInDays(t1);
-    const daysSinceAfterFirst = (t1, t2) => timeInDays(t2) > 1 ? timeInDays(t2) - timeInDays(t1) : 0;
-
-    const applyHungerDamage = async (...args) => await applyFatigueDamage(
-      ...args,
-      "last_eat_time",
-      {dice: 'd6', flavor: 'Hunger', interval: weeksSince},
-      {sound: 'stomach_rumble', interval: daysSince}
-    );
-    const applyThirstDamage = async (...args) => await applyFatigueDamage(
-      ...args, 
-      "last_drink_time", 
-      {dice: 'd6', flavor: 'Thirst', interval: daysSinceAfterFirst},
-      {bubbleText: 'feels thirsty...', interval: daysSince}
-    );
-
-    Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
-
-      const clockIsActive = game.settings.get("lostlands", "fatigueClock");
-      if ( !clockIsActive || !game.user.isGM ) return;
-      const PCs = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner === true);
-      const currentTime = game.time.worldTime;
-      const timeDiff = data.diff;
-      const timeArgs = [currentTime, timeDiff];
-
-      for (const PC of PCs) {
-
-        await applyHungerDamage(PC, ...timeArgs);
-        await applyThirstDamage(PC, ...timeArgs);
-      }
-    });
-  });
-};
+    setTimeHooks();
+  })
+}
