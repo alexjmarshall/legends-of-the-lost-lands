@@ -1,5 +1,11 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const AC_MIN = 9;
+export const REQ_CLO_BY_SEASON = {
+  "summer": 1,
+  "fall": 2,
+  "spring": 2,
+  "winter": 3
+};
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
