@@ -34,11 +34,6 @@ export class SimpleActor extends Actor {
     const attributes = actorData.attributes;
     const updateData = {};
 
-    // initialize last eat/drink/warm time
-    updateData.last_eat_time = actorData.last_eat_time || game.time.worldTime;
-    updateData.last_drink_time = actorData.last_drink_time || game.time.worldTime;
-    updateData.last_warm_time = actorData.last_warm_time || game.time.worldTime;
-
     // level up sound
     if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
       Util.playSound('level_up', null, {push: false, bubble: false});
