@@ -20,10 +20,7 @@
       "value": 0,
       "min": 0,
       "max": 1000
-    },
-    "last_eat_time": null,
-    "last_drink_time": null,
-    "last_warm_time": null
+    }
   },
   "monster": {
     "templates": ["basicProps"],
