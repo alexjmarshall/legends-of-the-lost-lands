@@ -10,7 +10,7 @@ import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
-import {timeChangeHandlers} from "./time-change.js";
+import { timeQueue } from './time-queue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -70,6 +70,15 @@ Hooks.once("init", async function() {
     type: Boolean,
     default: true,
     config: true
+  });
+
+  // Register time queue
+  game.settings.register("lostlands", "timeQueue", {
+    name: "Time Queue",
+    hint: "Don't touch this",
+    scope: "Client",
+    type: String,
+    config: false
   });
 
   // Register initiative setting
@@ -132,6 +141,28 @@ Hooks.once("init", async function() {
   // Preload template partials
   await preloadHandlebarsTemplates();
 });
+
+
+Hooks.on("ready", () => {
+  
+  timeQueue.init();
+
+  Hooks.on(SimpleCalendar.Hooks.Ready, () => {
+
+    console.log(`Simple Calendar is ready!`);
+    Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
+
+      const newTime =  SimpleCalendar.api.dateToTimestamp(data.date)
+      const pastEvents = timeQueue.pastEvents(newTime);
+      for (const event of pastEvents) {
+
+        let macro = game.macros.find(m => m.id === event.macroId);
+        macro && macro.execute();
+      }
+    })
+  });
+});
+
 
 /**
  * Macrobar hook
@@ -223,13 +254,6 @@ Hooks.on("updateToken", (token, moved, data) => {
 
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
-  const cloUpdate = change.data?.clo;
-  const targetClo = actor.data.data.clo;
-  const reqClo = Util.reqClo();
-  // add last_warm_time to update if targetClo was sufficient but cloUpdate is not
-  if (targetClo >= reqClo && cloUpdate < reqClo) {
-    change.data.last_warm_time = game.time.worldTime;
-  }
 
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
@@ -240,27 +264,12 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
   if (hpUpdate < 0) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
-    Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
+    if (actor.type === 'character') {
+      Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
+    }
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
   } else {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
   }
 });
-
-
-
-const checkSimpleCalendarLoadInterval = setInterval(onSimpleCalendarLoad, 1000);
-function onSimpleCalendarLoad() {
-
-  if (!SimpleCalendar) return;
-  clearInterval(checkSimpleCalendarLoadInterval);
-
-  Hooks.on(SimpleCalendar.Hooks.Ready, () => {
-
-    console.log(`Simple Calendar is ready!`);
-    Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async data => {
-      timeChangeHandlers(data);
-    })
-  })
-}

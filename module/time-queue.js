@@ -1,40 +1,58 @@
-import { PriorityQueue } from './priority-queue.js';
+import { BinaryHeap } from './binary-heap.js';
 
-class TimeQueue extends PriorityQueue {
+class TimeQueue {
 
   constructor() {
-
-    super((a, b) => a[0] > b[0]);
+    this._heap = new BinaryHeap(x => x[0]);
   }
 
   init() {
+    const storedHeapString = game.settings.get("lostlands", "timeQueue");
+    let storedHeap = JSON.parse(storedHeapString);
+    if (!Array.isArray(storedHeap)) storedHeap = [];
+    this._heap.content = storedHeap;
+    console.log(`TimeQueue initialized with ${this._heap.size()} pending events`)
+  }
 
-    try {
-
-      const string = game.settings.get("lostlands", "timeQueue");
-      this._heap = JSON.parse(string);
-      if (!Array.isArray(this._heap)) {
-        throw new Error('Problem parsing saved time queue. Clearing queue.');
-      }
-      console.log(`Time Queue initialized with: ${timeQueue.size()} pending events`);
-    } catch (error) {
-
-      console.error(error);
-      this.clear();
-      this.save();
-      this.init();
-    }
+  next() {
+     return this._heap.peek() || [];
   }
 
   save() {
-
-    const string = JSON.stringify(this._heap);
-    game.settings.set("lostlands", "timeQueue", string);
+    const heapString = JSON.stringify(this._heap.content);
+    game.settings.set("lostlands", "timeQueue", heapString);
+    console.log('TimeQueue saved', heapString);
   }
 
   clear() {
+    this._heap = new BinaryHeap(x => x[0]);
+    this.save();
+    console.log('TimeQueue cleared');
+  }
 
-    this._heap = [];
+  doAt(timestamp, macroId) {
+    const event = [timestamp, macroId];
+    this._heap.push(event);
+    this.save();
+    console.log('TimeQueue event added', event);
+    return this._heap.size();
+  }
+
+  pastEvents(timestamp) {
+    let events = [];
+    let doSave = false;
+    let nextEventTime = this.next()[0];
+    while (nextEventTime <= timestamp) {
+      const poppedVal = this._heap.pop();
+      doSave = true;
+      events.push({
+        timestamp: poppedVal[0],
+        macroId: poppedVal[1]
+      });
+      nextEventTime = this.next()[0];
+    }
+    doSave && this.save();
+    return events;
   }
 }
 
