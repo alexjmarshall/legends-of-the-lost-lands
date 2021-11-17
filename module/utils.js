@@ -135,3 +135,14 @@ export function reqClo() {
   const reqClo = Constant.REQ_CLO_BY_SEASON[season];
   return reqClo;
 }
+
+export function uniqueId() {
+  function chr4() {
+    return Math.random().toString(16).slice(-4);
+  }
+  return chr4() + chr4() +
+    '-' + chr4() +
+    '-' + chr4() +
+    '-' + chr4() +
+    '-' + chr4() + chr4() + chr4();
+}
