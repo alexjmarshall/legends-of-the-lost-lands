@@ -1,59 +1,100 @@
 import { BinaryHeap } from './binary-heap.js';
+import * as Util from './utils.js';
 
-class TimeQueue {
+class TimeQ {
 
   constructor() {
-    this._heap = new BinaryHeap(x => x[0]);
+    this._newHeap = () => new BinaryHeap(x => x['timestamp']);
+    this._heap = this._newHeap();
   }
 
   init() {
-    const storedHeapString = game.settings.get("lostlands", "timeQueue");
+    const storedHeapString = game.settings.get("lostlands", "timeQ");
     let storedHeap = JSON.parse(storedHeapString);
     if (!Array.isArray(storedHeap)) storedHeap = [];
     this._heap.content = storedHeap;
-    console.log(`TimeQueue initialized with ${this._heap.size()} pending events`)
+    console.log(`TimeQ initialized with ${this._heap.size()} pending events`)
   }
 
   next() {
-     return this._heap.peek() || [];
+    return this._heap.peek();
   }
 
-  save() {
+  async save() {
     const heapString = JSON.stringify(this._heap.content);
-    game.settings.set("lostlands", "timeQueue", heapString);
-    console.log('TimeQueue saved', heapString);
+    await game.settings.set("lostlands", "timeQ", heapString);
+    console.log('TimeQ saved', game.settings.get("lostlands", "timeQ"));
   }
 
   clear() {
-    this._heap = new BinaryHeap(x => x[0]);
+    this._heap = this._newHeap();
     this.save();
-    console.log('TimeQueue cleared');
+    console.log('TimeQ cleared');
   }
 
-  doAt(timestamp, macroId) {
-    const event = [timestamp, macroId];
+  cancel(id) {
+    this._heap.remove(id, e => e.id);
+    console.log('TimeQ event cancelled by id', id);
+  }
+
+  doAt( timestamp, macro={ id:'', scope:{} }, id=Util.uniqueId() ) {
+    if (!macro.id) return;
+    const event = { timestamp, macro, id };
     this._heap.push(event);
     this.save();
-    console.log('TimeQueue event added', event);
-    return this._heap.size();
+    console.log('TimeQ event scheduled', event);
+    return event.id;
   }
 
-  pastEvents(timestamp) {
-    let events = [];
+  doIn( interval={ day:0, hour:0, minute:0, second:0 }, macro={ id:'', scope:{} } ) {
+    const currentTime = game.time.worldTime;
+    const timestamp = SimpleCalendar.api.timestampPlusInterval(currentTime, interval);
+    return this.doAt(timestamp, macro);
+  }
+
+  async doEvery( interval={day:0, hour:0, minute:0, second:0}, macro={ id:'', scope:{} } ) {
+    const seconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+    const currentTime = game.time.worldTime;
+    return this.doFrom(seconds, currentTime, macro);
+  }
+
+  async doFrom( seconds, start, macro={ id:'', scope:{} }, id=Util.uniqueId() ) {
+    const nextTime = seconds + start;
+    // schedule given macro
+    this.doAt(nextTime, macro);
+    // create and schedule new macro to reschedule given macro
+    const macroData = {
+      name: `TimeQ | doFrom`,
+      type: 'script',
+      command: `return game.lostlands.TimeQ.doFrom(seconds, start, macro, id);`,
+      flags: { "lostlands.attrMacro": true }
+    };
+    let doFromMacro = game.macros.find(m => (m.name === macroData.name && m.data.command === macroData.command));
+    if (!doFromMacro) {
+      doFromMacro = await Macro.create(macroData);
+    }
+    const doFromMacroData = {
+      id: doFromMacro.id, 
+      scope: {
+        seconds, 
+        start: nextTime, 
+        macro, 
+        id
+      }
+    };
+    return this.doAt(nextTime, doFromMacroData, id);
+  }
+
+  * eventsBefore(timestamp) {
     let doSave = false;
-    let nextEventTime = this.next()[0];
-    while (nextEventTime <= timestamp) {
-      const poppedVal = this._heap.pop();
+    let nextEventTs = this.next()?.timestamp;
+    while (nextEventTs <= timestamp) {
+      yield this._heap.pop();
       doSave = true;
-      events.push({
-        timestamp: poppedVal[0],
-        macroId: poppedVal[1]
-      });
-      nextEventTime = this.next()[0];
+      nextEventTs = this.next()?.timestamp;
     }
     doSave && this.save();
-    return events;
   }
 }
 
-export const timeQueue = new TimeQueue();
+export const instance = new TimeQ();

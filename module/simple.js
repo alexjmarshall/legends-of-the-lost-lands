@@ -10,7 +10,7 @@ import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
-import { timeQueue } from './time-queue.js';
+import { instance as TimeQ } from './time-queue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -29,13 +29,6 @@ Hooks.once("init", async function() {
   CONFIG.Combat.initiative = {
     formula: "1d6",
     decimals: 2
-  };
-
-  game.lostlands = {
-    SimpleActor,
-    Macro,
-    Util,
-    Constant
   };
 
   // Define custom Entity classes
@@ -72,15 +65,6 @@ Hooks.once("init", async function() {
     config: true
   });
 
-  // Register time queue
-  game.settings.register("lostlands", "timeQueue", {
-    name: "Time Queue",
-    hint: "Don't touch this",
-    scope: "Client",
-    type: String,
-    config: false
-  });
-
   // Register initiative setting
   game.settings.register("lostlands", "initFormula", {
     name: "SETTINGS.SimpleInitFormulaN",
@@ -109,6 +93,23 @@ Hooks.once("init", async function() {
     }
     CONFIG.Combat.initiative.formula = formula;
   }
+
+  // Register time queue JSON
+  game.settings.register("lostlands", "timeQ", {
+    name: "Time Queue",
+    hint: "Don't touch this",
+    scope: "Client",
+    type: String,
+    config: false
+  });
+
+  game.lostlands = {
+    SimpleActor,
+    Macro,
+    Util,
+    Constant,
+    TimeQ
+  };
 
   /**
    * Slugify a string
@@ -145,7 +146,8 @@ Hooks.once("init", async function() {
 
 Hooks.on("ready", () => {
   
-  timeQueue.init();
+  TimeQ.init();
+  // initial events for new characters?
 
   Hooks.on(SimpleCalendar.Hooks.Ready, () => {
 
@@ -153,11 +155,11 @@ Hooks.on("ready", () => {
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
 
       const newTime =  SimpleCalendar.api.dateToTimestamp(data.date)
-      const pastEvents = timeQueue.pastEvents(newTime);
-      for (const event of pastEvents) {
-
-        let macro = game.macros.find(m => m.id === event.macroId);
-        macro && macro.execute();
+      const events = TimeQ.eventsBefore(newTime);
+      for (const event of events) {
+        
+        let macro = game.macros.find(m => m.id === event.macro.id);
+        macro && await macro.execute(event.macro.scope);
       }
     })
   });
