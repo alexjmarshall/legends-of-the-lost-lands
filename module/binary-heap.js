@@ -1,5 +1,5 @@
 /*
-  This Binary Heap implementation is from Eloquent Javascript (first edition), by Marijn Haverbeke 
+  This Binary Heap implementation is from "Eloquent JavaScript" (first edition), by Marijn Haverbeke 
 */
 
 export function BinaryHeap(scoreFunction){
@@ -29,12 +29,12 @@ BinaryHeap.prototype = {
     return result;
   },
 
-  remove: function(node) {
+  remove: function(nodeId, identify) {
     var length = this.content.length;
     // To remove a value, we must search through the array to find
     // it.
     for (var i = 0; i < length; i++) {
-      if (this.content[i] != node) continue;
+      if (identify(this.content[i]) !== nodeId) continue;
       // When it is found, the process seen in 'pop' is repeated
       // to fill up the hole.
       var end = this.content.pop();
