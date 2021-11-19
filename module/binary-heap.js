@@ -40,14 +40,15 @@ BinaryHeap.prototype = {
       var end = this.content.pop();
       // If the element we popped was the one we needed to remove,
       // we're done.
-      if (i == length - 1) break;
+      if (i == length - 1) return end;
       // Otherwise, we replace the removed element with the popped
       // one, and allow it to float up or sink down as appropriate.
       this.content[i] = end;
       this.bubbleUp(i);
       this.sinkDown(i);
-      break;
+      return end;
     }
+    return null;
   },
 
   size: function() {
