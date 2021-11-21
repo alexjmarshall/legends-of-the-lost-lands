@@ -10,7 +10,7 @@ import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
-import { instance as TimeQ } from './time-queue.js';
+import { TimeQ } from './time-queue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -55,14 +55,22 @@ Hooks.once("init", async function() {
     config: true
   });
 
-  // Register Fatigue Clock setting
-  game.settings.register("lostlands", "fatigueClock", {
-    name: "Fatigue Clock",
-    hint: "Untick to turn off the Fatigue Clock",
+  // Register Rest Mode and restDice settings
+  game.settings.register("lostlands", "restMode", {
+    name: "Rest Mode",
+    hint: "Tick to turn on Rest Mode",
     scope: "world",
     type: Boolean,
-    default: true,
+    default: false,
     config: true
+  });
+  game.settings.register("lostlands", "restDice", {
+    name: "Rest Dice",
+    hint: "Select dice to heal while resting",
+    scope: "world",
+    type: String,
+    default: Constant.DEFAULT_REST_DICE,
+    config: false
   });
 
   // Register initiative setting
@@ -94,14 +102,22 @@ Hooks.once("init", async function() {
     CONFIG.Combat.initiative.formula = formula;
   }
 
-  // Register time queue JSON
+  // Register time queue and fatigue clock interval Id settings
   game.settings.register("lostlands", "timeQ", {
     name: "Time Queue",
     hint: "Don't touch this",
-    scope: "Client",
+    scope: "world",
     type: String,
     config: false
   });
+  game.settings.register("lostlands", "fatigueClockId", {
+    name: "Fatigue Clock Interval Id",
+    hint: "Don't touch this",
+    scope: "world",
+    type: String,
+    config: false
+  });
+  
 
   game.lostlands = {
     SimpleActor,
@@ -145,23 +161,78 @@ Hooks.once("init", async function() {
 
 
 Hooks.on("ready", () => {
-  
-  TimeQ.init();
-  // initial events for new characters?
 
-  Hooks.on(SimpleCalendar.Hooks.Ready, () => {
+  Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
+    if (SimpleCalendar.api.isPrimaryGM()) {
+      await TimeQ.init();
+      await startFatigueClocks(Util.now());
+    }
+    
     console.log(`Simple Calendar is ready!`);
+
+    let locked = false;
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
 
-      const newTime =  SimpleCalendar.api.dateToTimestamp(data.date)
-      const events = TimeQ.eventsBefore(newTime);
-      for (const event of events) {
-        
-        let macro = game.macros.find(m => m.id === event.macro.id);
-        macro && await macro.execute(event.macro.scope);
+      if (locked || !SimpleCalendar.api.isPrimaryGM()) return;
+      locked = true;
+
+      const newTime =  SimpleCalendar.api.dateToTimestamp(data.date);
+
+      // clear event queue and restart fatigue clocks if going back in time
+      if (data.diff < 0) {
+        TimeQ.clear();
+        locked = false;
+        await Macro.toggleRestMode(false);
+        return startFatigueClocks(newTime);
       }
-    })
+      
+      for (const event of TimeQ.eventsBefore(newTime)) { // use check every second method for hunger/thirst warnings, also cold damage, and healing if > 6 hours :()
+        // could simple schedule events similar to scheduleFatigueDamage, but less often, e.g. every hour, or each day at noon and midnight, etc.
+        // can run non-rest mode sleep healing every 8 hours and just police only sleep once each day
+        let macro = game.macros.find(m => m.id === event.macroId);
+        macro && await macro.execute(event.scope);
+      }
+
+      await TimeQ.save();
+      locked = false;    
+    });
+
+    async function startFatigueClocks(currentTime) {
+      // await scheduleHungerWarning();
+      await scheduleHungerDamage({hour: 6}, currentTime);
+      // await scheduleThirstWarning();
+      // await scheduleThirstDamage();
+      return TimeQ.save();
+    }
+
+    async function scheduleHungerDamage(interval, currentTime) {
+      const start = startTimestamp(interval, currentTime);
+
+      // reset PC hunger flags if they are in the future
+      const pCs = Util.pCTokens().map(t => t.actor);
+      for (const pc of pCs) {
+        const lastTime = pc.getFlag("lostlands", `hunger_start_time`);
+        if (lastTime > currentTime) {
+          pc.setFlag("lostlands", `hunger_start_time`, currentTime);
+        }
+      }
+
+      let intervalId = game.settings.get("lostlands", "fatigueClockId");
+      intervalId && TimeQ.cancel(intervalId);
+      const macro = await Util.getMacroByCommand(`applyHungerDamage`,`return game.lostlands.Macro.applyHungerDamage(execTime,seconds);`);
+      intervalId = await TimeQ.doEvery(interval, start, macro.id);
+
+      return game.settings.set("lostlands", "fatigueClockId", intervalId);
+    }
+
+    function startTimestamp(interval, currentTime) {
+      const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+      const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0});
+      
+
+      return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
+    }
   });
 });
 
@@ -261,6 +332,13 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const targetHp = actor.data.data.hp?.value;
   const halfMaxHp = actor.data.data.hp?.max / 2;
   const token = Util.getTokenFromActor(actor);
+
+  // if update brings hp above zero, reset hunger/thirst times
+  if (targetHp < 1 && hpUpdate > 0) {
+    const now = Util.now();
+    actor.setFlag("lostlands", "hunger_start_time", now - Util.secondsInDay() + 5);
+    actor.setFlag("lostlands", "thirst_start_time", now - Util.secondsInDay() + 5);
+  }
 
   // return if update does not decrease hp, or if actor is already unconscious
   if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
