@@ -1,4 +1,5 @@
 import * as Constant from "./constants.js";
+import { TimeQ } from "./time-queue.js";
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -140,9 +141,47 @@ export function uniqueId() {
   function chr4() {
     return Math.random().toString(16).slice(-4);
   }
-  return chr4() + chr4() +
-    '-' + chr4() +
-    '-' + chr4() +
-    '-' + chr4() +
-    '-' + chr4() + chr4() + chr4();
+  return chr4() + chr4() + chr4() + chr4();
+}
+
+export async function getMacroByCommand(name, command) {
+
+  let macro = game.macros.find(m => (m.data.command === command));
+  if (!macro) {
+    macro = await Macro.create({
+      name,
+      command,
+      type: 'script',
+      flags: { "lostlands.attrMacro": true }
+    });
+  }
+  return macro;
+}
+
+export function charsOwnedByUser() {
+  if (game.user.isGM) {
+    return game.actors.filter(a => !a.hasPlayerOwner && a.isOwner && a.type === 'character');
+  } else {
+    return game.actors.filter(a => a.isOwner && a.type === 'character');
+  }
+}
+
+export function isOwned(actor) {
+  return !!charsOwnedByUser().find(a => a.id === actor.id);
+}
+
+export function pCTokens() {
+  return canvas.tokens.objects.children.filter(t => t.actor.type === 'character' && t.actor.hasPlayerOwner);
+}
+
+export function upperCaseFirst(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function now() {
+  return SimpleCalendar.api.timestamp();
+}
+
+export function secondsInDay() {
+  return SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
 }
