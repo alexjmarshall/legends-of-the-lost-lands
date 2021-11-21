@@ -1,5 +1,6 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const AC_MIN = 9;
+export const DEFAULT_REST_DICE = 'd3';
 export const REQ_CLO_BY_SEASON = {
   "summer": 1,
   "fall": 2,
