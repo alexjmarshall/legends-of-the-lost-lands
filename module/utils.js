@@ -14,6 +14,7 @@ export function stringMatch(str1, str2) {
 }
 
 export function expandPrice(priceInCps) {
+  if (!priceInCps) return;
   const gp = Math.floor(priceInCps / 50);
   priceInCps -= gp * 50;
   const sp = Math.floor(priceInCps / 5);
@@ -22,6 +23,7 @@ export function expandPrice(priceInCps) {
 }
 
 export function getPriceString(priceInCps) {
+  if (!priceInCps) return;
   const priceObj = expandPrice(priceInCps);
   return `${priceObj.gp ? `${priceObj.gp} gp, ` : ''}${priceObj.sp ? `${priceObj.sp} sp, ` : ''}${priceObj.cp ? `${priceObj.cp} cp, ` : ''}`.replace(/,\s*$/, '');
 }
@@ -50,11 +52,9 @@ export const playVoiceSound = (() => {
   }
 })();
 
-export function playSound(sound, token, options={push: true, bubble: true}) {
-  const push = options.push ?? true;
-  const bubble = options.bubble ?? true;
-  const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.mp3`;
+export function playSound(sound, token, {push = true, bubble = true}={}) {
   if (!sound) return;
+  const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.mp3`;
   if (token && bubble) {
     chatBubble(token, '<i class="fas fa-volume-up"></i>');
   }
@@ -63,7 +63,9 @@ export function playSound(sound, token, options={push: true, bubble: true}) {
 }
 
 export function chatBubble(token, text, emote=true) {
-  if (!text) return;
+  token = token || canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] :
+          getTokenFromActor(game.user.character);
+  if ( !token || !text ) return
   return canvas.hud.bubbles.say(token, text, {emote});
 }
 
@@ -120,6 +122,7 @@ export function macroChatMessage(token, data, chatBubble=true) {
 }
 
 export function chatInlineRoll(content) {
+  if (!content) return;
   return `<span style="font-style:normal;">[[${content}]]</span>`
 }
 
@@ -138,6 +141,7 @@ export function uniqueId() {
 }
 
 export async function getMacroByCommand(name, command) {
+  if ( !name || !command ) return;
   let macro = game.macros.find(m => (m.data.command === command));
   if (!macro) {
     macro = await Macro.create({
@@ -183,17 +187,17 @@ export function secondsInHour() {
   return SimpleCalendar.api.timestampPlusInterval(0, {hour: 1});
 }
 
-export async function resetHunger(actor, time) {
+export async function resetHunger(actor, time=now()) {
   await actor.setFlag("lostlands", "hunger_start_time", time);
   return actor.setFlag("lostlands", "hungry", false);
 }
 
-export async function resetThirst(actor, time) {
+export async function resetThirst(actor, time=now()) {
   await actor.setFlag("lostlands", "thirst_start_time", time);
   return actor.setFlag("lostlands", "thirsty", false);
 }
 
-export async function resetSleep(actor, time) {
+export async function resetSleep(actor, time=now()) {
   await actor.setFlag("lostlands", "wake_start_time", time);
   // remove active effect for sleepy
 }
