@@ -1,4 +1,5 @@
 import * as Constant from "./constants.js";
+import { TimeQ } from "./time-queue.js";
 import * as Util from "./utils.js";
 
 /**
@@ -32,136 +33,71 @@ export async function createLostlandsMacro(data, slot) {
     macroData.command = `game.lostlands.Macro.playVoice("${data.mood}")`;
     macroData.type = "script";
   }
+  if (!macroData.command) {
+    ui.notifications.error("Could not find a macro for this");
+    return false;
+  }
+  macroData.flags = { "lostlands.attrMacro": true };
   let macro = game.macros.find(m => (m.name === macroData.name && m.data.command === macroData.command));
   if (!macro) {
-    if (macroData.command) {
-      macro = await Macro.create({
-        name: macroData.name,
-        type: macroData.type,
-        command: macroData.command,
-        flags: { "lostlands.attrMacro": true }
-      });
-    }
-    else {
-      ui.notifications.error("Could not find a macro for this");
-      return false;
-    }
+    macro = await Macro.create(macroData);
   }
   game.user.assignHotbarMacro(macro, slot);
   return false;
 }
 
 export function playVoice(mood) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const token = char.token;
-    const voice = actor.data.data.voice;
-    if (!voice) throw new Error(`${actor.name} does not have a selected voice`);
-    Util.playVoiceSound(mood, actor, token);
-  } catch (error) {
-    ui.notifications.error(`Play Voice ${error}`);
-    console.error(error);
-  }
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const token = char.token;
+  const voice = actor.data.data.voice;
+  if (!voice) return ui.notifications.error(`${actor.name} does not have a selected voice`);
+  Util.playVoiceSound(mood, actor, token);
 }
 
-export function toggleFatigueClock() {
+export async function toggleRestMode(value, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
-  const clockActive = game.settings.get("lostlands", "fatigueClock");
-  const setting = !clockActive;
 
-  game.settings.set("lostlands", "fatigueClock", setting);
-  
-  return ui.notifications.info(`Turned Fatigue Clock ${setting ? 'on' : 'off'}`);
-}
+  const restMode = value != null ? !!value : !game.settings.get("lostlands", "restMode");
+  const notify = value == null;
+  const restDice = options.altDialogChoice || Constant.DEFAULT_REST_DICE;
 
-export async function partyRest(options={}) {
-  const pcTokens = canvas.tokens.objects.children.filter(t => t.actor.type === 'character' && t.actor.hasPlayerOwner);
-  const formula = options.formula;
-  const numDays = options.numDays;
-
-  try {
-    if ( !options.shownModDialog && options.showModDialog ) {
-      const fields = [
-        {label: 'Dice formula?', default: 'd3', key: 'formula'},
-        {label: 'Number of days?', default: `${numDays || '1'}`, key: 'numDays'}
-      ];
-      return modDialog(options, `Party Rest`, fields, () => partyRest(options));
-    }
-  
-    for (const token of pcTokens) {
-      await rest(token, formula, numDays);
-    }
-  } catch (error) {
-    ui.notifications.error(`Party Rest ${error}`);
-    console.error(error);
+  if (options.showAltDialog && !options.shownAltDialog) {
+    const choices = ['d3', 'd4', 'd6', 'd8'];
+    return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(value, options));
   }
-}
 
-async function rest(token, formula='d3', numDays='1', flavor='Rest') {
-  const actor = token.actor;
-  const hp = +actor.data.data.hp?.value;
-  const maxHp = +actor.data.data.hp?.max;
-  const maxMaxHp = +actor.data.data.hp?.max_max;
-  let diceTermString = '';
-  for (let i = 0; i < numDays; i++) {
-    diceTermString += `${formula}+`;
-  }
-  diceTermString = diceTermString.replace(/\+$/, '');
-
-  try {
-    const result = await Util.rollDice(diceTermString);
-    if (hp < 0 || maxMaxHp < 1) return;
-    const maxHpUpdate = Math.min(maxMaxHp, maxHp + result);
-    const hpUpdate =  Math.min(maxHpUpdate, hp + result);
-    
-    await actor.update({
-      "data.hp.value": hpUpdate,
-      "data.hp.max": maxHpUpdate
-    });
-
-    Util.chatBubble(token, `zzz...`, false);
-    Util.macroChatMessage(token, {
-      content: `${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of healing`,
-      flavor
-    }, false);
-
-  } catch (error) {
-    throw `${actor.name} ${error}`;
-  }
+  await game.settings.set("lostlands", "restDice", restDice);
+  await game.settings.set("lostlands", "restMode", restMode);
+  notify && ui.notifications.info(`Rest Mode is ${restMode ? 'on' : 'off'} (${restDice} hp/night)`);
 }
 
 export async function castSpell(spellId, options={}) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const spell = Util.getItemFromActor(spellId, actor, 'spell');
-    const spellSound = spell.data.data.attributes.sound?.value || null; // need generic spell sound here
-    const isPrepared = !!spell.data.data.prepared;
-    if (!isPrepared) throw new Error(`${spell.name} was not prepared`);
-    const spellLevel = spell.data.data.attributes.lvl?.value;
-    if (!spellLevel) throw new Error(`${spell.name} has no level set`);
-    const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
-    if (actorSpellSlots <= 0) throw new Error(`No spells remaining of level ${spellLevel}`);
-    const updateData = { data: {
-      attributes: {
-        [`${spell.type}`]: {
-          [`lvl_${spellLevel}`]: {
-            value: (actorSpellSlots - 1)
-          }
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const spell = Util.getItemFromActor(spellId, actor, 'spell');
+  const spellSound = spell.data.data.attributes.sound?.value || null; // need generic spell sound here
+  const isPrepared = !!spell.data.data.prepared;
+  if (!isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
+  const spellLevel = spell.data.data.attributes.lvl?.value;
+  if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
+  const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
+  if (actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
+  const updateData = { data: {
+    attributes: {
+      [`${spell.type}`]: {
+        [`lvl_${spellLevel}`]: {
+          value: (actorSpellSlots - 1)
         }
       }
-    }};
-    await actor.update(updateData);
-    // await play sound based on spell school first
-    await useItem(spellId, {
-      sound: spellSound,
-      verb: `casts`
-    });
-  } catch (error) {
-    ui.notifications.error(`Cast Spell ${error}`);
-    console.error(error);
-  }
+    }
+  }};
+  await actor.update(updateData);
+  // await play sound based on spell school first
+  await useItem(spellId, {
+    sound: spellSound,
+    verb: `casts`
+  });
 }
 
 async function useItem(itemId, data={
@@ -171,152 +107,130 @@ async function useItem(itemId, data={
   chatMsgContent: '',
   chatMsgType: CONST.CHAT_MESSAGE_TYPES.EMOTE
 }, consumable=false) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const token = char.token;
-    const item = Util.getItemFromActor(itemId, actor);
-    const sound = data.sound || item.data.data.attributes.sound?.value;
-    const flavor = data.flavor || item.name;
-    const desc = item.data.data.description
-    const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
-    const content = data.chatMsgContent || desc || chatBubbleText;
-    const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
-    if (item.data.data.attributes.holdable && item.data.data.held !== true) {
-      throw new Error(`${item.name} must be held to use`);
-    }
-    consumable && await Util.reduceItemQty(item, actor);
-    Util.macroChatMessage(token, {content, flavor, sound, type}, false);
-    Util.chatBubble(token, chatBubbleText);
-  } catch (error) {
-    throw error;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const token = char.token;
+  const item = Util.getItemFromActor(itemId, actor);
+  const sound = data.sound || item.data.data.attributes.sound?.value;
+  const flavor = data.flavor || item.name;
+  const desc = item.data.data.description
+  const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
+  const content = data.chatMsgContent || desc || chatBubbleText;
+  const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
+  if (item.data.data.attributes.holdable && item.data.data.held !== true) {
+    return ui.notifications.error(`${item.name} must be held to use`);
   }
+  consumable && await Util.reduceItemQty(item, actor);
+  Util.macroChatMessage(token, {content, flavor, sound, type}, false);
+  Util.chatBubble(token, chatBubbleText);
 }
 
 export async function drinkPotion(itemId, options={}) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const item = Util.getItemFromActor(itemId, actor);
-    const healFormula = item.data.data.attributes.heal?.value;
-    let chatMsgContent, chatMsgType, hpUpdate;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const item = Util.getItemFromActor(itemId, actor);
+  const healFormula = item.data.data.attributes.heal?.value;
+  let chatMsgContent, chatMsgType, hpUpdate;
 
-    if (healFormula) {
-      const healPoints = await Util.rollDice(healFormula);
-      chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
-      chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
-      if (options.applyEffect) {
-        const currentHp = +actor.data.data.hp?.value;
-        const maxHp = +actor.data.data.hp?.max;
-        // can only drink a potion if conscious
-        if (currentHp > 0) hpUpdate = Math.min(maxHp, currentHp + healPoints);
-      }
+  if (healFormula) {
+    const healPoints = await Util.rollDice(healFormula);
+    chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
+    chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
+    if (options.applyEffect) {
+      const currentHp = +actor.data.data.hp?.value;
+      const maxHp = +actor.data.data.hp?.max;
+      // can only drink a potion if conscious
+      if (currentHp > 0) hpUpdate = Math.min(maxHp, currentHp + healPoints);
     }
-
-    await useItem(itemId, {
-      sound: 'drink_potion',
-      verb: `quaffs`,
-      chatMsgContent,
-      chatMsgType
-    }, true);
-
-    !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
-  } catch (error) {
-    ui.notifications.error(`Drink Potion ${error}`);
-    console.error(error);
   }
+
+  await useItem(itemId, {
+    sound: 'drink_potion',
+    verb: `quaffs`,
+    chatMsgContent,
+    chatMsgType
+  }, true);
+
+  await actor.setFlag("lostlands", "thirst_start_time", Util.now());
+
+  !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
 }
 
 export async function readScroll(itemId, options={}) {
-  try {
-    await useItem(itemId, {
-      sound: 'read_scroll',
-      verb: `reads`
-    }, true);
-  } catch (error) {
-    ui.notifications.error(`Read Scroll ${error}`);
-    console.error(error);
+  await useItem(itemId, {
+    sound: 'read_scroll',
+    verb: `reads`
+  }, true);
+}
+
+export async function sleep(itemId, options={}) {
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+
+  const value = !!actor.getFlag("lostlands", "sleeping");
+  await actor.setFlag("lostlands", "sleeping", !value);
+
+  if (!value) {
+    Util.chatBubble(char.token, 'zZz...', true);
   }
 }
 
 export async function drinkWater(itemId, options={}) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const currentTime = game.time.worldTime;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
 
-    await useItem(itemId, {
-      sound: 'drink_water',
-      verb: `drinks from`
-    }, false);
+  await useItem(itemId, {
+    sound: 'drink_water',
+    verb: `drinks from`
+  }, false);
 
-    await actor.update({
-      "data.last_drink_time": currentTime
-    });
-  } catch (error) {
-    ui.notifications.error(`Drink Water ${error}`);
-    console.error(error);
-  }
+  await actor.setFlag("lostlands", "thirst_start_time", Util.now());
 }
 
 export async function eatFood(itemId, options={}) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const secondsInADay = SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
-    const currentTime = game.time.worldTime;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
 
-    await useItem(itemId, {
-      sound: 'eat_food',
-      verb: `eats`
-    }, true);
+  await useItem(itemId, {
+    sound: 'eat_food',
+    verb: `eats`
+  }, true);
 
-    await actor.update({
-      "data.last_eat_time": currentTime, 
-      "data.last_drink_time": currentTime - secondsInADay
-    });
-  } catch (error) {
-    ui.notifications.error(`Eat Food ${error}`);
-    console.error(error);
-  }
+  await actor.setFlag("lostlands", "hunger_start_time", Util.now());
+  await actor.setFlag("lostlands", "thirst_start_time", Util.now() - Util.secondsInDay());
 }
 
 export async function useChargedItem(itemId, options={}) {
-  try {
-    const char = Util.selectedCharacter();
-    const actor = char.actor;
-    const item = Util.getItemFromActor(itemId, actor);
-    const charges = +item.data.data.attributes.charges?.value;
-    const sound = item.data.data.attributes.sound?.value || null; // generic use charges sound?
-    const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
-    const chargesLeft = charges - numChargesUsed;
-    const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const item = Util.getItemFromActor(itemId, actor);
+  const charges = +item.data.data.attributes.charges?.value;
+  const sound = item.data.data.attributes.sound?.value || null; // generic use charges sound?
+  const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
+  const chargesLeft = charges - numChargesUsed;
+  const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
 
-    if (!charges) throw new Error(`${item.name} has no charges remaining`);
+  if (!charges) return ui.notifications.error(`${item.name} has no charges remaining`);
 
-    if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
-      const field = {label: 'Charges used?', key: 'numChargesUsed'};
-      return modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
-    }
-
-    if (chargesLeft > charges) {
-      ui.notifications.error(`Cannot increase charges through use (but nice try)`);
-      options.shownModDialog = false;
-      options.showModDialog = true;
-      return useChargedItem(itemId, options);
-    }
-
-    await useItem(itemId, {
-      sound,
-      flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
-      verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
-    }, false);
-
-    chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
-  } catch (error) {
-    ui.notifications.error(`Use Charged Item ${error}`);
-    console.error(error);
+  if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
+    const field = {label: 'Charges used?', key: 'numChargesUsed'};
+    return modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
   }
+
+  if (chargesLeft > charges) {
+    ui.notifications.error(`Cannot increase charges through use (but nice try)`);
+    options.shownModDialog = false;
+    options.showModDialog = true;
+    return useChargedItem(itemId, options);
+  }
+
+  await useItem(itemId, {
+    sound,
+    flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
+    verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
+  }, false);
+
+  chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
 }
 
 export function heldWeaponAttackMacro(options={}) {
@@ -757,10 +671,15 @@ async function attack(attackers, targetToken, options) {
   const dmgTypes = weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
   // show attack choice dialogs
   if ( dmgTypes.length > 1 && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
-    return dmgTypeDialog(weapon, dmgTypes, () => attack(attackers, targetToken, options))
+    return altDialog(
+      weapon, 
+      `${weapon.name} Form of Attack`, 
+      dmgTypes, 
+      () => attack(attackers, targetToken, options)
+    );
   }
-  if ( weapon.dmgDialogType && weapon.dmgDialogType !== weaponItem.data.data.dmg_type ) {
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.dmgDialogType}]);
+  if ( weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.dmg_type ) {
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.altDialogChoice}]);
   }
   let dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
   if (!Object.keys(Constant.DMG_TYPES).includes(dmgType)) dmgType = 'attack';
@@ -985,27 +904,47 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / 5) * 5;
 }
 
-function dmgTypeDialog(weapon, dmgTypes, callback) {
+// function dmgTypeDialog(weapon, dmgTypes, callback) {
+//   return new Dialog({
+//     title: `${weapon.name} Form of Attack`,
+//     content: ``,
+//     buttons: dmgTypeButtons(),
+//     default: dmgTypes[0]
+//   }).render(true);
+
+//   function dmgTypeButtons() {
+//     return Object.fromEntries(dmgTypes.map(dmgType => [dmgType, {
+//       label: dmgType,
+//       callback: () => {
+//         weapon.shownAltDialog = true;
+//         weapon.dmgDialogType = dmgType;
+//         callback();
+//       }
+//     }]));
+//   }
+// }
+
+function altDialog(options, title, buttons, callback) {
   return new Dialog({
-    title: `${weapon.name} Form of Attack`,
+    title,
     content: ``,
-    buttons: dmgTypeButtons(),
-    default: dmgTypes[0]
+    buttons: getButtons(),
+    default: buttons[0]
   }).render(true);
 
-  function dmgTypeButtons() {
-    return Object.fromEntries(dmgTypes.map(dmgType => [dmgType, {
-      label: dmgType,
+  function getButtons() {
+    return Object.fromEntries(buttons.map(button => [button, {
+      label: Util.upperCaseFirst(button),
       callback: () => {
-        weapon.shownAltDialog = true;
-        weapon.dmgDialogType = dmgType;
+        options.shownAltDialog= true;
+        options.altDialogChoice = button;
         callback();
       }
     }]));
   }
 }
 
-function modDialog(mods, title, fields=[{label:'', default:'', key:''}], callback) {
+function modDialog(options, title, fields=[{label:'', default:'', key:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {
     formFields += `<div class="form-group">
@@ -1022,9 +961,9 @@ function modDialog(mods, title, fields=[{label:'', default:'', key:''}], callbac
         icon: '<i class="fas fa-check"></i>',
         label: `Submit`,
         callback: html => {
-          mods.shownModDialog = true;
+          options.shownModDialog = true;
           fields.forEach(field => {
-            mods[field.key] = html.find(`[id=${field.key}]`).val();
+            options[field.key] = html.find(`[id=${field.key}]`).val();
           });
           callback();
         }
@@ -1274,4 +1213,166 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
       });
     }
   }).render(true);
+}
+
+// async function applyDiseaseDamage(execTime) {
+
+// }
+
+// async function applyColdDamage(execTime) {
+
+// }
+
+export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
+  const pCs = Util.pCTokens().map(t => t.actor);
+
+  return Promise.all(pCs.map(async (pc) => {
+    await applyRest(pc, execTime, seconds, newTime, oldTime);
+    // await applyHungerDamage(pc, execTime, seconds);
+    // await applyThirstDamage(pc, execTime, seconds);
+  }))
+}
+
+export async function applyRest(pc, execTime, newTime, oldTime) { // if feel sleepy, set Active Effect for tired?
+  // cannot heal anything if hungry or thirsty -- get/set flag for this? will make it easier for screens also
+  // do not play chat msgs for warnings, just sounds
+  // move math for doDamage and doWarning somewhere else, take in simply hour it's been since
+  const restMode = game.settings.get("lostlands", "restMode");
+  const flavor = 'Rest';
+  const warningSound = 'sleepy';
+  const warningText = 'feels sleepy...';
+  const applyAsHeal = true;
+  const lastWakeTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['rest']);
+  let dice = restMode ? game.settings.get("lostlands", "restDice") : 'd2';
+  let damageText = '';
+  let doHeal = execTime - Util.secondsInDay() >= lastWakeTime &&
+               newTime - oldTime >= SimpleCalendar.api.timestampPlusInterval(0, {hour: 6});
+  let doWarning = execTime - Util.secondsInHour() * 12 >= lastWakeTime;
+
+  if (restMode) {
+    // if Rest Mode is active, reset hunger and thirst start times each rest
+    await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['hunger'], execTime);
+    await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['thirst'], execTime);
+  } else {
+    // if Rest Mode is inactive, must be sleeping and not hungry/thirsty to rest
+    const isSleeping = !!pc.getFlag("lostlands", "sleeping");
+    const isHungry = !!pc.getFlag("lostlands", "hungry");
+    const isThirsty = !!pc.getFlag("lostlands", "thirsty");
+    doHeal = doHeal && isSleeping && !isHungry && !isThirsty;
+    if (isSleeping && !doHeal) {
+      damageText = 'slept poorly...';
+    }
+    const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
+    if (!hasBedroll) dice = '1';
+  }
+
+  doHeal && await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['rest'], execTime);
+
+  return applyFatigue(pc, {
+    dice,
+    flavor,
+    damageText,
+    warningSound,
+    warningText,
+    doWarning,
+    doDamage: doHeal,
+    applyAsHeal
+  });
+}
+
+export async function applyHungerDamage(pc, execTime, seconds) {
+  const dice = 'd2';
+  const flavor = 'Hunger';
+  const warningSound = 'stomach_rumble';
+  const warningText = 'feels hungry...';
+  const lastEatTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['hunger']);
+  const doWarning = execTime - Util.secondsInDay() >= lastEatTime;
+  const doDamage = execTime - Util.secondsInDay() * 2 >= lastEatTime &&
+                   (execTime - lastEatTime) % (Util.secondsInDay() * 2) < seconds;
+
+  return applyFatigue(pc, execTime, {
+    dice,
+    flavor,
+    warningSound,
+    warningText,
+    doWarning,
+    doDamage
+  });
+}
+
+export async function applyThirstDamage(pc, execTime, seconds) {
+  const dice = 'd6';
+  const flavor = 'Thirst';
+  const warningSound = '';
+  const warningText = 'feels thirsty...';
+  const lastDrinkTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['thirst']);
+  const doWarning = execTime - Util.secondsInHour() * 12 >= lastDrinkTime;
+  const doDamage = execTime - Util.secondsInDay() * 2 >= lastDrinkTime &&
+                   (execTime - lastDrinkTime) % Util.secondsInDay() < seconds;
+
+  return applyFatigue(pc, execTime, {
+    dice,
+    flavor,
+    damageText,
+    warningSound,
+    warningText,
+    doWarning,
+    doDamage
+  });
+}
+
+async function applyFatigue(actor, 
+  { 
+    dice = 'd6', 
+    flavor = 'Fatigue', 
+    damageText = '',
+    warningSound = '', 
+    warningText = '',
+    doWarning = true,
+    doDamage = true,
+    applyAsHeal = false
+  } = {}
+) {
+  const hp = actor.data.data.hp?.value,
+        maxHp = actor.data.data.hp?.max,
+        maxMaxHp = actor.data.data.hp?.max_max;
+  if ( hp < 0 || maxHp < 1 ) return;
+  const token = Util.getTokenFromActor(actor);
+  let result;
+
+  if (doDamage) {
+
+    result = await Util.rollDice(dice);
+    const hpResult = applyAsHeal ? hp + result : hp - result;
+    const hpUpdate = Math.min(maxHp, hpResult);
+    const maxHpResult = maxHp - result + 1;
+    const hpMaxUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+    const updates = {"data.hp.value": hpUpdate};
+    applyToMaxHp && Object.assign(updates, {"data.hp.max": hpMaxUpdate});
+
+    damageText = damageText || 
+                 `${Util.chatInlineRoll(result)} ${applyAsHeal ? 'points of healing' : 'damage'} from ${flavor.toLowerCase()}!`;
+    Util.macroChatMessage(token, {
+      content: damageText,
+      flavor
+    }, false);
+
+    return actor.update(updates);
+  }
+  
+  const isSleeping = !!actor.getFlag("lostlands", "sleeping");
+  if (doWarning && !isSleeping) {
+
+    if (Object.values(Constant.VOICE_MOODS).includes(warningSound)) {
+      Util.playVoiceSound(warningSound, actor, token, {push: true, bubble: true, chance: 1});
+    } else {
+      Util.playSound(`${warningSound}`, token, {push: true, bubble: true});
+    }
+
+    if (!warningText) return;
+    return Util.macroChatMessage(token, {
+      content: `${actor.name} ${warningText}`,
+      flavor
+    }, false);
+  }
 }
