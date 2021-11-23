@@ -180,19 +180,23 @@ Hooks.on("ready", () => {
                     `return game.lostlands.Macro.applyPartyFatigue(execTime,seconds,newTime,oldTime);`);
       intervalId = await TimeQ.doEvery(interval, start, macro.id);
       await game.settings.set("lostlands", "fatigue_clock_interval_id", intervalId);
+      await TimeQ.save();
 
       // reset PC flags if non-existent or in the future
       const pCs = Util.pCTokens().map(t => t.actor);
-      for (const pc of pCs) {
-        for (const flag of Object.values(Constant.FATIGUE_FLAGS)) {
-          const lastTime = pc.getFlag("lostlands", flag);
+      const fatigueResets = new Map([
+        [ (pc) => pc.getFlag("lostlands", "hunger_start_time"), Util.resetHunger ],
+        [ (pc) => pc.getFlag("lostlands", "thirst_start_time"), Util.resetThirst ],
+        [ (pc) => pc.getFlag("lostlands", "wake_start_time"), Util.resetSleep ],
+      ]);
+      return Promise.all(pCs.map(async (pc) => {
+        for (const [getStartTime, resetTime] of fatigueResets) {
+          const lastTime = getStartTime(pc);
           if (!lastTime || lastTime > currentTime) {
-            await pc.setFlag("lostlands", flag, lastMidnight);
+            await resetTime(pc, lastMidnight);
           }
         }
-      }
-
-      return TimeQ.save();
+      }));
     };
 
     const startFatigueClock = async (currentTime) => {
@@ -335,10 +339,10 @@ Hooks.on("preUpdateActor", (actor, change) => {
 
   // if update brings hp above zero, reset fatigue start times
   if (targetHp < 1 && hpUpdate > 0) {
-    const now = Util.now();
-    for (const flag of Object.values(Constant.FATIGUE_FLAGS)) {
-      actor.setFlag("lostlands", flag, now - Util.secondsInDay());
-    }
+    const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0});
+    Util.resetHunger(actor, lastMidnight - Util.secondsInDay());
+    Util.resetThirst(actor, lastMidnight - Util.secondsInDay());
+    Util.resetSleep(actor, lastMidnight - Util.secondsInDay());
   }
 
   // return if update does not decrease hp, or if actor is already unconscious
