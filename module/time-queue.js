@@ -12,18 +12,12 @@ class TimeQueue {
     this._heap = this._newHeap();
   }
 
-  async init() {
-    try {
-      const storedHeapString = game.settings.get("lostlands", "timeQ");
-      let storedHeap = JSON.parse(storedHeapString);
-      if (!Array.isArray(storedHeap)) storedHeap = [];
-      this._heap.content = storedHeap;
-      console.log(`TimeQ initialized with ${this._heap.size()} pending events`)
-    } catch (error) {
-      console.error(error);
-      this.clear();
-      this.save();
-    }
+  init() {
+    const storedHeapString = game.settings.get("lostlands", "timeQ");
+    let storedHeap = JSON.parse(storedHeapString);
+    if (!Array.isArray(storedHeap)) storedHeap = [];
+    this._heap.content = storedHeap;
+    console.log(`TimeQ initialized with ${this._heap.size()} pending events`)
   }
 
   next() {
@@ -82,7 +76,7 @@ class TimeQueue {
     return this._scheduleDoEvery(seconds, from, newMacro.id, scope, id);
   }
 
-  async _scheduleDoEvery(seconds, start, macroId, scope, id=Util.uniqueId()) {
+  _scheduleDoEvery(seconds, start, macroId, scope, id=Util.uniqueId()) {
     const nextTime = seconds + start;
     scope = {
       ...scope,
