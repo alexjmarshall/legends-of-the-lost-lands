@@ -110,14 +110,13 @@ Hooks.once("init", async function() {
     type: String,
     config: false
   });
-  game.settings.register("lostlands", "fatigueClockId", {
+  game.settings.register("lostlands", "fatigue_clock_interval_id", {
     name: "Fatigue Clock Interval Id",
     hint: "Don't touch this",
     scope: "world",
     type: String,
     config: false
   });
-  
 
   game.lostlands = {
     SimpleActor,
@@ -164,9 +163,45 @@ Hooks.on("ready", () => {
 
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
+    const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0});
+
+    const startTimestamp = (interval, currentTime) => {
+      const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+      
+      return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
+    };
+
+    const scheduleFatigueDamage = async (interval, currentTime) => {
+
+      const start = startTimestamp(interval, currentTime);
+      let intervalId = game.settings.get("lostlands", "fatigue_clock_interval_id");
+      intervalId && TimeQ.cancel(intervalId);
+      const macro = await Util.getMacroByCommand("applyPartyFatigue", 
+                    `return game.lostlands.Macro.applyPartyFatigue(execTime,seconds,newTime,oldTime);`);
+      intervalId = await TimeQ.doEvery(interval, start, macro.id);
+      await game.settings.set("lostlands", "fatigue_clock_interval_id", intervalId);
+
+      // reset PC flags if non-existent or in the future
+      const pCs = Util.pCTokens().map(t => t.actor);
+      for (const pc of pCs) {
+        for (const flag of Object.values(Constant.FATIGUE_FLAGS)) {
+          const lastTime = pc.getFlag("lostlands", flag);
+          if (!lastTime || lastTime > currentTime) {
+            await pc.setFlag("lostlands", flag, lastMidnight);
+          }
+        }
+      }
+
+      return TimeQ.save();
+    };
+
+    const startFatigueClock = async (currentTime) => {
+      return scheduleFatigueDamage({hour: 4}, currentTime);
+    }
+
     if (SimpleCalendar.api.isPrimaryGM()) {
-      await TimeQ.init();
-      await startFatigueClocks(Util.now());
+      TimeQ.init();
+      await startFatigueClock(Util.now());
     }
     
     console.log(`Simple Calendar is ready!`);
@@ -177,62 +212,27 @@ Hooks.on("ready", () => {
       if (locked || !SimpleCalendar.api.isPrimaryGM()) return;
       locked = true;
 
-      const newTime =  SimpleCalendar.api.dateToTimestamp(data.date);
+      const oldTime = game.time.worldTime,
+            newTime =  SimpleCalendar.api.dateToTimestamp(data.date);
 
       // clear event queue and restart fatigue clocks if going back in time
       if (data.diff < 0) {
         TimeQ.clear();
         locked = false;
-        await Macro.toggleRestMode(false);
-        return startFatigueClocks(newTime);
+        return startFatigueClock(newTime);
       }
       
-      for (const event of TimeQ.eventsBefore(newTime)) { // use check every second method for hunger/thirst warnings, also cold damage, and healing if > 6 hours :()
+      for (const event of TimeQ.eventsBefore(newTime)) {
         // could simple schedule events similar to scheduleFatigueDamage, but less often, e.g. every hour, or each day at noon and midnight, etc.
-        // can run non-rest mode sleep healing every 8 hours and just police only sleep once each day
         let macro = game.macros.find(m => m.id === event.macroId);
+        // add oldTime and newTime to macro scope
+        Object.assign(event.scope, {oldTime, newTime});
         macro && await macro.execute(event.scope);
       }
 
       await TimeQ.save();
       locked = false;    
     });
-
-    async function startFatigueClocks(currentTime) {
-      // await scheduleHungerWarning();
-      await scheduleHungerDamage({hour: 6}, currentTime);
-      // await scheduleThirstWarning();
-      // await scheduleThirstDamage();
-      return TimeQ.save();
-    }
-
-    async function scheduleHungerDamage(interval, currentTime) {
-      const start = startTimestamp(interval, currentTime);
-
-      // reset PC hunger flags if they are in the future
-      const pCs = Util.pCTokens().map(t => t.actor);
-      for (const pc of pCs) {
-        const lastTime = pc.getFlag("lostlands", `hunger_start_time`);
-        if (lastTime > currentTime) {
-          pc.setFlag("lostlands", `hunger_start_time`, currentTime);
-        }
-      }
-
-      let intervalId = game.settings.get("lostlands", "fatigueClockId");
-      intervalId && TimeQ.cancel(intervalId);
-      const macro = await Util.getMacroByCommand(`applyHungerDamage`,`return game.lostlands.Macro.applyHungerDamage(execTime,seconds);`);
-      intervalId = await TimeQ.doEvery(interval, start, macro.id);
-
-      return game.settings.set("lostlands", "fatigueClockId", intervalId);
-    }
-
-    function startTimestamp(interval, currentTime) {
-      const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-      const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0});
-      
-
-      return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
-    }
   });
 });
 
@@ -333,11 +333,12 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const halfMaxHp = actor.data.data.hp?.max / 2;
   const token = Util.getTokenFromActor(actor);
 
-  // if update brings hp above zero, reset hunger/thirst times
+  // if update brings hp above zero, reset fatigue start times
   if (targetHp < 1 && hpUpdate > 0) {
     const now = Util.now();
-    actor.setFlag("lostlands", "hunger_start_time", now - Util.secondsInDay() + 5);
-    actor.setFlag("lostlands", "thirst_start_time", now - Util.secondsInDay() + 5);
+    for (const flag of Object.values(Constant.FATIGUE_FLAGS)) {
+      actor.setFlag("lostlands", flag, now - Util.secondsInDay());
+    }
   }
 
   // return if update does not decrease hp, or if actor is already unconscious
