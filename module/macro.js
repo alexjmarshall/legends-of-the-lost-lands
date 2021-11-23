@@ -151,7 +151,7 @@ export async function drinkPotion(itemId, options={}) {
     chatMsgType
   }, true);
 
-  await actor.setFlag("lostlands", "thirst_start_time", Util.now());
+  await Util.resetThirst(actor, Util.now());
 
   !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
 }
@@ -166,12 +166,18 @@ export async function readScroll(itemId, options={}) {
 export async function sleep(itemId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
+  const token = char.token;
 
-  const value = !!actor.getFlag("lostlands", "sleeping");
-  await actor.setFlag("lostlands", "sleeping", !value);
+  const wasSleeping = !!actor.getFlag("lostlands", "sleeping");
+  await actor.setFlag("lostlands", "sleeping", !wasSleeping);
 
-  if (!value) {
-    Util.chatBubble(char.token, 'zZz...', true);
+  if (!wasSleeping) {
+    const macro = await Util.getMacroByCommand("sleeping", "return game.lostlands.Util.chatBubble(token, 'zZz...', true);")
+    const newIntervalId = await TimeQ.doEvery({second: 6}, Util.now(), macro.id, {token});
+    await actor.setFlag("lostlands", "sleeping_interval_id", newIntervalId);
+  } else {
+    const intervalId = actor.getFlag("lostlands", "sleeping_interval_id");
+    TimeQ.cancel(intervalId);
   }
 }
 
@@ -184,7 +190,7 @@ export async function drinkWater(itemId, options={}) {
     verb: `drinks from`
   }, false);
 
-  await actor.setFlag("lostlands", "thirst_start_time", Util.now());
+  await Util.resetThirst(actor, Util.now());
 }
 
 export async function eatFood(itemId, options={}) {
@@ -196,8 +202,8 @@ export async function eatFood(itemId, options={}) {
     verb: `eats`
   }, true);
 
-  await actor.setFlag("lostlands", "hunger_start_time", Util.now());
-  await actor.setFlag("lostlands", "thirst_start_time", Util.now() - Util.secondsInDay());
+  await Util.resetHunger(actor, Util.now());
+  await Util.resetThirst(actor, Util.now() - Util.secondsInDay());
 }
 
 export async function useChargedItem(itemId, options={}) {
@@ -1230,19 +1236,16 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
     await applyRest(pc, execTime, seconds, newTime, oldTime);
     // await applyHungerDamage(pc, execTime, seconds);
     // await applyThirstDamage(pc, execTime, seconds);
-  }))
+  }));
 }
 
-export async function applyRest(pc, execTime, newTime, oldTime) { // if feel sleepy, set Active Effect for tired?
-  // cannot heal anything if hungry or thirsty -- get/set flag for this? will make it easier for screens also
-  // do not play chat msgs for warnings, just sounds
-  // move math for doDamage and doWarning somewhere else, take in simply hour it's been since
+export async function applyRest(pc, execTime, newTime, oldTime) {
   const restMode = game.settings.get("lostlands", "restMode");
   const flavor = 'Rest';
   const warningSound = 'sleepy';
   const warningText = 'feels sleepy...';
   const applyAsHeal = true;
-  const lastWakeTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['rest']);
+  const lastWakeTime = pc.getFlag("lostlands", "wake_start_time");
   let dice = restMode ? game.settings.get("lostlands", "restDice") : 'd2';
   let damageText = '';
   let doHeal = execTime - Util.secondsInDay() >= lastWakeTime &&
@@ -1251,8 +1254,8 @@ export async function applyRest(pc, execTime, newTime, oldTime) { // if feel sle
 
   if (restMode) {
     // if Rest Mode is active, reset hunger and thirst start times each rest
-    await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['hunger'], execTime);
-    await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['thirst'], execTime);
+    await Util.resetHunger(pc, execTime);
+    await Util.resetThirst(pc, execTime);
   } else {
     // if Rest Mode is inactive, must be sleeping and not hungry/thirsty to rest
     const isSleeping = !!pc.getFlag("lostlands", "sleeping");
@@ -1266,7 +1269,8 @@ export async function applyRest(pc, execTime, newTime, oldTime) { // if feel sle
     if (!hasBedroll) dice = '1';
   }
 
-  doHeal && await pc.setFlag("lostlands", Constant.FATIGUE_FLAGS['rest'], execTime);
+  doHeal && await Util.resetSleep(pc, execTime);
+  // doWarning && apply active effect for sleepy
 
   return applyFatigue(pc, {
     dice,
@@ -1285,10 +1289,12 @@ export async function applyHungerDamage(pc, execTime, seconds) {
   const flavor = 'Hunger';
   const warningSound = 'stomach_rumble';
   const warningText = 'feels hungry...';
-  const lastEatTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['hunger']);
+  const lastEatTime = pc.getFlag("lostlands", "hunger_start_time");
   const doWarning = execTime - Util.secondsInDay() >= lastEatTime;
   const doDamage = execTime - Util.secondsInDay() * 2 >= lastEatTime &&
                    (execTime - lastEatTime) % (Util.secondsInDay() * 2) < seconds;
+
+  doWarning && await pc.setFlag("lostlands", "hungry", true);
 
   return applyFatigue(pc, execTime, {
     dice,
@@ -1305,10 +1311,12 @@ export async function applyThirstDamage(pc, execTime, seconds) {
   const flavor = 'Thirst';
   const warningSound = '';
   const warningText = 'feels thirsty...';
-  const lastDrinkTime = pc.getFlag("lostlands", Constant.FATIGUE_FLAGS['thirst']);
+  const lastDrinkTime = pc.getFlag("lostlands", "thirst_start_time");
   const doWarning = execTime - Util.secondsInHour() * 12 >= lastDrinkTime;
   const doDamage = execTime - Util.secondsInDay() * 2 >= lastDrinkTime &&
                    (execTime - lastDrinkTime) % Util.secondsInDay() < seconds;
+
+  doWarning && await pc.setFlag("lostlands", "thirsty", true);
 
   return applyFatigue(pc, execTime, {
     dice,
@@ -1347,8 +1355,7 @@ async function applyFatigue(actor,
     const hpUpdate = Math.min(maxHp, hpResult);
     const maxHpResult = maxHp - result + 1;
     const hpMaxUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
-    const updates = {"data.hp.value": hpUpdate};
-    applyToMaxHp && Object.assign(updates, {"data.hp.max": hpMaxUpdate});
+    const updates = {"data.hp.value": hpUpdate, "data.hp.max": hpMaxUpdate};
 
     damageText = damageText || 
                  `${Util.chatInlineRoll(result)} ${applyAsHeal ? 'points of healing' : 'damage'} from ${flavor.toLowerCase()}!`;
