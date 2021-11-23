@@ -182,3 +182,18 @@ export function secondsInDay() {
 export function secondsInHour() {
   return SimpleCalendar.api.timestampPlusInterval(0, {hour: 1});
 }
+
+export async function resetHunger(actor, time) {
+  await actor.setFlag("lostlands", "hunger_start_time", time);
+  return actor.setFlag("lostlands", "hungry", false);
+}
+
+export async function resetThirst(actor, time) {
+  await actor.setFlag("lostlands", "thirst_start_time", time);
+  return actor.setFlag("lostlands", "thirsty", false);
+}
+
+export async function resetSleep(actor, time) {
+  await actor.setFlag("lostlands", "wake_start_time", time);
+  // remove active effect for sleepy
+}
