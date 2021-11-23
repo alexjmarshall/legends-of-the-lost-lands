@@ -172,8 +172,9 @@ export async function sleep(itemId, options={}) {
   await actor.setFlag("lostlands", "sleeping", !wasSleeping);
 
   if (!wasSleeping) {
-    const macro = await Util.getMacroByCommand("sleeping", "return game.lostlands.Util.chatBubble(token, 'zZz...', true);")
-    const newIntervalId = await TimeQ.doEvery({second: 6}, Util.now(), macro.id, {token});
+    const macro = await Util.getMacroByCommand("sleeping", "return game.lostlands.Util.chatBubble(null, 'zZz...', true);")
+    macro.execute();
+    const newIntervalId = await TimeQ.doEvery({second: 5}, Util.now(), macro.id);
     await actor.setFlag("lostlands", "sleeping_interval_id", newIntervalId);
   } else {
     const intervalId = actor.getFlag("lostlands", "sleeping_interval_id");
