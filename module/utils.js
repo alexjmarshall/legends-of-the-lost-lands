@@ -1,5 +1,4 @@
 import * as Constant from "./constants.js";
-import { TimeQ } from "./time-queue.js";
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -30,17 +29,15 @@ export function getPriceString(priceInCps) {
 export const playVoiceSound = (() => {
   const speakingActorIds = new Map();
 
-  return async function(mood, actor, token, options={push: true, bubble: true, chance: 1}) {
-    const push = options.push ?? true;
-    const bubble = options.bubble ?? true;
-    const chance = options.chance ?? 1;
-    const voice = actor.data.data.voice;
+  return async function(mood, actor, token, {push = true, bubble = true, chance = 1}={}) {
+    const isSleeping = !!actor.getFlag("lostlands", "sleeping");
+    if (isSleeping) return;
     token = token || getTokenFromActor(actor);
-    if (!voice) return;
+    const voice = actor.data.data.voice;
     const actorId = actor.isToken ? actor.token.id : actor.id;
     if (speakingActorIds.has(actorId)) return;
     speakingActorIds.set(actorId);
-    const soundsArr = Constant.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`);
+    const soundsArr = Constant.VOICE_SOUNDS.get(`${voice}`)?.get(`${mood}`);
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
@@ -89,11 +86,7 @@ export function selectedCharacter() {
 }
 
 export async function rollDice(formula) {
-  try {
-    return new Roll(formula).evaluate().total;
-  } catch {
-    throw new Error(`Problem rolling dice: ${formula}`);
-  }
+  return new Roll(formula).evaluate().total;
 }
 
 export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
@@ -145,7 +138,6 @@ export function uniqueId() {
 }
 
 export async function getMacroByCommand(name, command) {
-
   let macro = game.macros.find(m => (m.data.command === command));
   if (!macro) {
     macro = await Macro.create({
@@ -155,6 +147,7 @@ export async function getMacroByCommand(name, command) {
       flags: { "lostlands.attrMacro": true }
     });
   }
+
   return macro;
 }
 
@@ -184,4 +177,8 @@ export function now() {
 
 export function secondsInDay() {
   return SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
+}
+
+export function secondsInHour() {
+  return SimpleCalendar.api.timestampPlusInterval(0, {hour: 1});
 }
