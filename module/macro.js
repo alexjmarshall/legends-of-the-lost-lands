@@ -163,25 +163,6 @@ export async function readScroll(itemId, options={}) {
   }, true);
 }
 
-export async function sleep(itemId, options={}) {
-  const char = Util.selectedCharacter();
-  const actor = char.actor;
-  const token = char.token;
-
-  const wasSleeping = !!actor.getFlag("lostlands", "sleeping");
-  await actor.setFlag("lostlands", "sleeping", !wasSleeping);
-
-  if (!wasSleeping) {
-    const macro = await Util.getMacroByCommand("sleeping", "return game.lostlands.Util.chatBubble(null, 'zZz...', true);")
-    macro.execute();
-    const newIntervalId = await TimeQ.doEvery({second: 5}, Util.now(), macro.id);
-    await actor.setFlag("lostlands", "sleeping_interval_id", newIntervalId);
-  } else {
-    const intervalId = actor.getFlag("lostlands", "sleeping_interval_id");
-    TimeQ.cancel(intervalId);
-  }
-}
-
 export async function drinkWater(itemId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
@@ -204,7 +185,13 @@ export async function eatFood(itemId, options={}) {
   }, true);
 
   await Util.resetHunger(actor, Util.now());
-  await Util.resetThirst(actor, Util.now() - Util.secondsInDay());
+  // reset thirst to one day ago if this time is later than last drink time
+  await Util.removeCondition("Thirsty", actor, {warn: false});
+  const oneDayAgo = Util.now() - Util.secondsInDay();
+  const lastDrinkTime = actor.getFlag("lostlands", "last_drink_time");
+  if (oneDayAgo > lastDrinkTime) {
+    await actor.setFlag("lostlands", "last_drink_time", oneDayAgo);
+  } 
 }
 
 export async function useChargedItem(itemId, options={}) {
@@ -1226,57 +1213,67 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 
 // }
 
-// async function applyColdDamage(execTime) {
+// async function applyColdDamage(execTime) { cold damage doesn't apply to max HP
 
 // }
 
-export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
+export async function applyPartyFatigue(execTime, seconds) {
   const pCs = Util.pCTokens().map(t => t.actor);
 
   return Promise.all(pCs.map(async (pc) => {
-    await applyRest(pc, execTime, seconds, newTime, oldTime);
-    // await applyHungerDamage(pc, execTime, seconds);
-    // await applyThirstDamage(pc, execTime, seconds);
+    const hp = pc.data.data.hp?.value,
+        maxHp = pc.data.data.hp?.max;
+    if ( hp < 0 || maxHp < 1 ) return;
+
+    await applyRest(pc, execTime);
+    await applyHungerDamage(pc, execTime, seconds);
+    await applyThirstDamage(pc, execTime, seconds);
   }));
 }
 
-export async function applyRest(pc, execTime, newTime, oldTime) {
+export async function applyRest(pc, execTime) {
   const restMode = game.settings.get("lostlands", "restMode");
   const flavor = 'Rest';
   const warningSound = 'sleepy';
-  const warningText = 'feels sleepy...';
+  const warningText = '';
   const applyAsHeal = true;
-  const lastWakeTime = pc.getFlag("lostlands", "wake_start_time");
-  let dice = restMode ? game.settings.get("lostlands", "restDice") : 'd2';
-  let damageText = '';
-  let doHeal = execTime - Util.secondsInDay() >= lastWakeTime &&
-               newTime - oldTime >= SimpleCalendar.api.timestampPlusInterval(0, {hour: 6});
-  let doWarning = execTime - Util.secondsInHour() * 12 >= lastWakeTime;
+  const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
+  const lastSleepTime = pc.getFlag("lostlands", "last_sleep_time");
+  const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
+  const isSleeping = !!asleepEffect;
+  const startSleepTime = asleepEffect?.data.duration.startTime;
+  let dice = restMode ? game.settings.get("lostlands", "restDice") : '1';
+  // do heal if execution time is at least 1 day after last rest time
+  //    and pc has been sleeping at least 6 hours    
+  let doHeal = execTime - Util.secondsInDay() >= lastRestTime &&
+               execTime - Util.secondsInHour() * 6 >= startSleepTime;
+  // pc becomes sleepy if awake and execution time is at least 18 hours after last sleep time
+  let doWarning = !isSleeping && execTime - Util.secondsInHour() * 18 >= lastSleepTime;
 
   if (restMode) {
-    // if Rest Mode is active, reset hunger and thirst start times each rest
+    // if Rest Mode is active, reset hunger, thirst and sleep start times each rest
     await Util.resetHunger(pc, execTime);
     await Util.resetThirst(pc, execTime);
+    await Util.resetSleep(pc, execTime);
   } else {
-    // if Rest Mode is inactive, must be sleeping and not hungry/thirsty to rest
-    const isSleeping = !!pc.getFlag("lostlands", "sleeping");
-    const isHungry = !!pc.getFlag("lostlands", "hungry");
-    const isThirsty = !!pc.getFlag("lostlands", "thirsty");
-    doHeal = doHeal && isSleeping && !isHungry && !isThirsty;
-    if (isSleeping && !doHeal) {
-      damageText = 'slept poorly...';
-    }
+    // if Rest Mode is inactive, must be sleeping and not hungry/thirsty before sleeping
+    const hungryEffect = pc.data.effects.find(e => e.data.label === 'Hungry');
+    const wasHungry = !!hungryEffect && hungryEffect.data.duration.startTime < startSleepTime;
+    const thirstyEffect = pc.data.effects.find(e => e.data.label === 'Thirsty');
+    const wasThirsty = !!thirstyEffect && thirstyEffect.data.duration.startTime < startSleepTime;
+    doHeal = doHeal && isSleeping && !wasHungry && !wasThirsty;
+
     const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-    if (!hasBedroll) dice = '1';
+    if (hasBedroll) dice = 'd2';
   }
 
-  doHeal && await Util.resetSleep(pc, execTime);
-  // doWarning && apply active effect for sleepy
+  doHeal && await Util.resetRest(pc, execTime);
+  const isSleepy = game.cub.hasCondition("Sleepy", pc);
+  doWarning && !isSleepy && await Util.addCondition("Sleepy", pc);
 
   return applyFatigue(pc, {
     dice,
     flavor,
-    damageText,
     warningSound,
     warningText,
     doWarning,
@@ -1289,15 +1286,16 @@ export async function applyHungerDamage(pc, execTime, seconds) {
   const dice = 'd2';
   const flavor = 'Hunger';
   const warningSound = 'stomach_rumble';
-  const warningText = 'feels hungry...';
-  const lastEatTime = pc.getFlag("lostlands", "hunger_start_time");
-  const doWarning = execTime - Util.secondsInDay() >= lastEatTime;
+  const warningText = '';
+  const lastEatTime = pc.getFlag("lostlands", "last_eat_time");
+  const doWarning = execTime - Util.secondsInHour() * 18 >= lastEatTime;
   const doDamage = execTime - Util.secondsInDay() * 2 >= lastEatTime &&
                    (execTime - lastEatTime) % (Util.secondsInDay() * 2) < seconds;
 
-  doWarning && await pc.setFlag("lostlands", "hungry", true);
+  const isHungry = game.cub.hasCondition("Hungry", pc);
+  doWarning && !isHungry && await Util.addCondition("Hungry", pc);
 
-  return applyFatigue(pc, execTime, {
+  return applyFatigue(pc, {
     dice,
     flavor,
     warningSound,
@@ -1311,18 +1309,18 @@ export async function applyThirstDamage(pc, execTime, seconds) {
   const dice = 'd6';
   const flavor = 'Thirst';
   const warningSound = '';
-  const warningText = 'feels thirsty...';
-  const lastDrinkTime = pc.getFlag("lostlands", "thirst_start_time");
+  const warningText = '';
+  const lastDrinkTime = pc.getFlag("lostlands", "last_drink_time");
   const doWarning = execTime - Util.secondsInHour() * 12 >= lastDrinkTime;
   const doDamage = execTime - Util.secondsInDay() * 2 >= lastDrinkTime &&
                    (execTime - lastDrinkTime) % Util.secondsInDay() < seconds;
 
-  doWarning && await pc.setFlag("lostlands", "thirsty", true);
+  const isThirsty = game.cub.hasCondition("Thirsty", pc);
+  doWarning && !isThirsty && await Util.addCondition("Thirsty", pc);
 
-  return applyFatigue(pc, execTime, {
+  return applyFatigue(pc, {
     dice,
     flavor,
-    damageText,
     warningSound,
     warningText,
     doWarning,
@@ -1368,8 +1366,7 @@ async function applyFatigue(actor,
     return actor.update(updates);
   }
   
-  const isSleeping = !!actor.getFlag("lostlands", "sleeping");
-  if (doWarning && !isSleeping) {
+  if (doWarning) {
 
     if (Object.values(Constant.VOICE_MOODS).includes(warningSound)) {
       Util.playVoiceSound(warningSound, actor, token, {push: true, bubble: true, chance: 1});
