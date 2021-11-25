@@ -85,12 +85,15 @@ export class SimpleActor extends Actor {
     - cloak
     - armor
     - quiver
-    - tunic
+    - shirt (shift)
+    - tunic (dress, gambeson)
+    - breeches
+    - pants
     - bracers
-    - gauntlets
+    - gloves
     - ring
     - belt
-    - boots
+    - boots (shoes)
     */
     const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
       i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
