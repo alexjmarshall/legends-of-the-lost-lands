@@ -376,7 +376,7 @@ Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
     const now = Util.now();
     const startTime = activeEffect.data.duration.startTime;
     if (startTime <= now - Util.secondsInHour() * 2) {
-      Util.resetSleep(actor, now);
+      actor.setFlag("lostlands", "last_sleep_time", now);
     }
   }
 });
