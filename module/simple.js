@@ -163,16 +163,12 @@ Hooks.on("ready", () => {
 
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
-    const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
-
-    const startTimestamp = (interval, currentTime) => {
-      const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-      
-      return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
-    };
-
     const scheduleFatigueDamage = async (interval, currentTime) => {
-
+      const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
+      const startTimestamp = (interval, currentTime) => {
+        const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+        return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
+      };
       const start = startTimestamp(interval, currentTime);
       let intervalId = game.settings.get("lostlands", "fatigue_clock_interval_id");
       intervalId && TimeQ.cancel(intervalId);
@@ -187,6 +183,7 @@ Hooks.on("ready", () => {
         [ (pc) => pc.getFlag("lostlands", "last_eat_time"), Util.resetHunger ],
         [ (pc) => pc.getFlag("lostlands", "last_drink_time"), Util.resetThirst ],
         [ (pc) => pc.getFlag("lostlands", "last_rest_time"), Util.resetRest ],
+        [ (pc) => pc.getFlag("lostlands", "last_sleep_time"), Util.resetSleep ],
       ]);
       return Promise.all(pCs.map(async (pc) => {
         for (const [getStartTime, resetTime] of fatigueResets) {
@@ -199,12 +196,29 @@ Hooks.on("ready", () => {
     };
 
     const startFatigueClock = async (currentTime) => {
-      return scheduleFatigueDamage({hour: 2}, currentTime);
-    }
+      return scheduleFatigueDamage({hour: 4}, currentTime);
+    };
+
+    const removeAllConditions = async () => {
+      const pCs = Util.pCTokens().map(t => t.actor);
+      return Promise.all(pCs.map(async (pc) => {
+        try {
+          let conditions = game.cub.getConditions(pc, {warn: false})?.conditions;
+          if (conditions == null) return;
+          if (!Array.isArray(conditions)) conditions = [conditions];
+          for (const condition of conditions) {
+            await Util.removeCondition(condition.name, pc);
+          }
+        } catch (error) {
+          ui.notifications.error(`Problem removing conditions from ${pc.name}. Refresh!`);
+        }
+      }));
+    };
 
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
-      await startFatigueClock(Util.now());
+      const now = Util.now();
+      await startFatigueClock(now);
     }
     
     console.log(`Simple Calendar is ready!`);
@@ -212,7 +226,7 @@ Hooks.on("ready", () => {
     let locked = false;
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
 
-      if (locked || !SimpleCalendar.api.isPrimaryGM()) return;
+      if ( locked || !SimpleCalendar.api.isPrimaryGM() ) return;
       locked = true;
 
       const oldTime = game.time.worldTime;
@@ -220,8 +234,9 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
 
       // clear event queue and restart fatigue clocks if going back in time
-      if (timeDiff < 0) { // delete all active effects with start time > newTime
+      if (timeDiff < 0) {
         TimeQ.clear();
+        await removeAllConditions();
         locked = false;
         return startFatigueClock(newTime);
       }
@@ -335,14 +350,6 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const halfMaxHp = actor.data.data.hp?.max / 2;
   const token = Util.getTokenFromActor(actor);
 
-  // if update brings hp above zero, reset fatigue start times
-  if (targetHp < 1 && hpUpdate > 0) {
-    const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0});
-    Util.resetHunger(actor, lastMidnight - Util.secondsInDay());
-    Util.resetThirst(actor, lastMidnight - Util.secondsInDay());
-    Util.resetRest(actor, lastMidnight - Util.secondsInDay());
-  }
-
   // return if update does not decrease hp, or if actor is already unconscious
   if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
   if (hpUpdate < 0) {
@@ -357,10 +364,19 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
-Hooks.on("preCreateActiveEffect", (document, data, options, userId) => {
+Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
 });
 
-Hooks.on("preDeleteActiveEffect", (document, data, options, userId) => {
+Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
+  // if deleting Asleep, update last sleep time if started sleeping more than 2 hours ago
+  if (activeEffect.data.label === 'Asleep') {
+    const actor = activeEffect.parent;
+    const now = Util.now();
+    const startTime = activeEffect.data.duration.startTime;
+    if (startTime <= now - Util.secondsInHour() * 2) {
+      Util.resetSleep(actor, now);
+    }
+  }
 });
