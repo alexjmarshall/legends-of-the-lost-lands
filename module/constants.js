@@ -88,21 +88,21 @@ export const DMG_TYPES = {
     HIT_SOUND: "bolt_hit",
     MISS_SOUND: "bolt_miss",
     VS_AC_MODS: {
-      "none": -2,
+      "none": 0,
       "leather": 0,
       "chain": 2,
       "plate": 0
     }
   },
-  "hew": {
+  "cut": {
     ATK_TYPE: "melee",
-    HIT_SOUND: "hew_hit",
-    MISS_SOUND: "hew_miss",
+    HIT_SOUND: "cut_hit",
+    MISS_SOUND: "cut_miss",
     VS_AC_MODS: {
-      "none": 0,
-      "leather": 2,
-      "chain": 0,
-      "plate": -2
+      "none": 2,
+      "leather": 0,
+      "chain": -2,
+      "plate": -4
     }
   },
   "grapple": {
@@ -114,6 +114,17 @@ export const DMG_TYPES = {
       "leather": 0,
       "chain": 0,
       "plate": 2
+    }
+  },
+  "hew": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "hew_hit",
+    MISS_SOUND: "hew_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 2,
+      "chain": 0,
+      "plate": -2
     }
   },
   "hook": {
@@ -138,28 +149,6 @@ export const DMG_TYPES = {
       "plate": -2
     }
   },
-  "cut": {
-    ATK_TYPE: "melee",
-    HIT_SOUND: "cut_hit",
-    MISS_SOUND: "cut_miss",
-    VS_AC_MODS: {
-      "none": 2,
-      "leather": 0,
-      "chain": -2,
-      "plate": -4
-    }
-  },
-  "thrust": {
-    ATK_TYPE: "melee",
-    HIT_SOUND: "thrust_hit",
-    MISS_SOUND: "thrust_miss",
-    VS_AC_MODS: {
-      "none": -2,
-      "leather": 0,
-      "chain": 2,
-      "plate": 0
-    }
-  },
   "slingstone": {
     ATK_TYPE: "missile",
     HIT_SOUND: "slingstone_hit",
@@ -181,7 +170,18 @@ export const DMG_TYPES = {
       "chain": 0,
       "plate": -2
     }
-  }
+  },
+  "thrust": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "thrust_hit",
+    MISS_SOUND: "thrust_miss",
+    VS_AC_MODS: {
+      "none": -2,
+      "leather": 0,
+      "chain": 2,
+      "plate": 0
+    }
+  },
 };
 export const VOICE_MOODS = {
   AMUSED: "amused",
