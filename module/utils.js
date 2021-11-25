@@ -32,23 +32,28 @@ export const playVoiceSound = (() => {
   const speakingActorIds = new Map();
 
   return async function(mood, actor, token, {push = true, bubble = true, chance = 1}={}) {
-    const isSleeping = !!actor.getFlag("lostlands", "sleeping");
-    if (isSleeping) return;
-    token = token || getTokenFromActor(actor);
-    const voice = actor.data.data.voice;
+    
     const actorId = actor.isToken ? actor.token.id : actor.id;
     if (speakingActorIds.has(actorId)) return;
-    speakingActorIds.set(actorId);
+    const isSleeping = game.cub.hasCondition("Asleep", actor);
+    if (isSleeping) return;
+    const voice = actor.data.data.voice;
     const soundsArr = Constant.VOICE_SOUNDS.get(`${voice}`)?.get(`${mood}`);
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
-    
-    if ( Math.random() < chance ) {
+    if (Math.random() > chance) return;
+    token = token || getTokenFromActor(actor);
+
+    try {
+      speakingActorIds.set(actorId);
       const sound = await playSound(soundsArr[trackNum], token, {push, bubble});
-      await wait(sound.duration * 1000);
+      return await wait(sound.duration * 1000);
+    } catch (error) {
+      throw new Error(error);
+    } finally {
+      speakingActorIds.delete(actorId);
     }
-    speakingActorIds.delete(actorId);
   }
 })();
 
@@ -64,7 +69,7 @@ export function playSound(sound, token, {push = true, bubble = true}={}) {
 
 export function chatBubble(token, text, emote=true) {
   token = token || canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] :
-          getTokenFromActor(game.user.character);
+          game.user.character ? getTokenFromActor(game.user.character) : null;
   if ( !token || !text ) return
   return canvas.hud.bubbles.say(token, text, {emote});
 }
@@ -83,7 +88,10 @@ export function selectedCharacter() {
     actor = game.user.character;
     token = actor ? getTokenFromActor(actor) : null;
   }
-  if (!actor) throw new Error("Select a character");
+  if (!actor) {
+    ui.notifications.error("Select a character");
+    throw new Error("Select a character");
+  } 
   return {token, actor};
 }
 
@@ -188,16 +196,32 @@ export function secondsInHour() {
 }
 
 export async function resetHunger(actor, time=now()) {
-  await actor.setFlag("lostlands", "hunger_start_time", time);
-  return actor.setFlag("lostlands", "hungry", false);
+  await actor.setFlag("lostlands", "last_eat_time", time);
+  return removeCondition("Hungry", actor, {warn: false});
 }
 
 export async function resetThirst(actor, time=now()) {
-  await actor.setFlag("lostlands", "thirst_start_time", time);
-  return actor.setFlag("lostlands", "thirsty", false);
+  await actor.setFlag("lostlands", "last_drink_time", time);
+  return removeCondition("Thirsty", actor, {warn: false});
+}
+
+export async function resetRest(actor, time=now()) {
+  return actor.setFlag("lostlands", "last_rest_time", time);
 }
 
 export async function resetSleep(actor, time=now()) {
-  await actor.setFlag("lostlands", "wake_start_time", time);
-  // remove active effect for sleepy
+  await actor.setFlag("lostlands", "last_sleep_time", time);
+  return removeCondition("Sleepy", actor, {warn: false});
+}
+
+export async function removeCondition(condition, actor, {warn=false}={}) {
+  const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
+  await game.cub.removeCondition(condition, actor, {warn});
+  slow && await wait(500);
+}
+
+export async function addCondition(condition, actor, {warn=false}={}) {
+  const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
+  await game.cub.addCondition(condition, actor, {warn});
+  slow && await wait(500);
 }
