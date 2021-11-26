@@ -115,7 +115,7 @@ export async function reduceItemQty(item, actor) {
   }]);
 }
 
-export function macroChatMessage(token, data, chatBubble=true) {
+export async function macroChatMessage(token, data, chatBubble=true) {
   if (!data.content) return;
   const type = data.type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   const flavor = data.flavor;

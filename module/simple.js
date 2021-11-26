@@ -352,7 +352,6 @@ Hooks.on("updateToken", (token, moved, data) => {
 
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
-
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const halfMaxHp = actor.data.data.hp?.max / 2;
