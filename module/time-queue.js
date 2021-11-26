@@ -31,7 +31,6 @@ class TimeQueue {
 
   clear() {
     this._heap = this._newHeap();
-    this.save();
     console.log('TimeQ cleared');
   }
 
@@ -39,7 +38,6 @@ class TimeQueue {
     const result = this._heap.remove(id, e => e.id);
     if (result) {
       console.log('TimeQ event cancelled by id', id);
-      this.save();
     }
   }
 
@@ -49,8 +47,8 @@ class TimeQueue {
     scope.execTime = timestamp;
     const event = { timestamp, macroId, scope, id };
     this._heap.push(event);
-    console.log('TimeQ event scheduled', event);
-    this.save();
+    console.log(`TimeQ event scheduled at ${event.timestamp}`);
+
     return event.id;
   }
 
@@ -95,13 +93,12 @@ class TimeQueue {
 
   * eventsBefore(timestamp) {
     let nextEventTs = this.next()?.timestamp;
-    let doSave = false;
     while (nextEventTs <= timestamp) {
-      yield this._heap.pop();
-      doSave = true;
+      const event = this._heap.pop();
+      console.log(`TimeQ handling event id ${event.id}`)
+      yield event;
       nextEventTs = this.next()?.timestamp;
     }
-    doSave && this.save();
   }
 }
 

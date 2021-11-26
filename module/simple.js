@@ -164,18 +164,22 @@ Hooks.on("ready", () => {
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
     const scheduleFatigueDamage = async (interval, currentTime) => {
+      
       const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
       const startTimestamp = (interval, currentTime) => {
         const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
         return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
       };
       const start = startTimestamp(interval, currentTime);
-      let intervalId = game.settings.get("lostlands", "fatigue_clock_interval_id");
-      intervalId && TimeQ.cancel(intervalId);
+
+      const oldIntervalId = game.settings.get("lostlands", "fatigue_clock_interval_id");
+      oldIntervalId && TimeQ.cancel(oldIntervalId);
       const macro = await Util.getMacroByCommand("applyPartyFatigue", 
                     `return game.lostlands.Macro.applyPartyFatigue(execTime,seconds,newTime,oldTime);`);
-      intervalId = await TimeQ.doEvery(interval, start, macro.id);
+      const intervalId = await TimeQ.doEvery(interval, start, macro.id);
       await game.settings.set("lostlands", "fatigue_clock_interval_id", intervalId);
+
+      await TimeQ.save();
 
       // reset PC flags if non-existent or in the future
       const pCs = Util.pCTokens().map(t => t.actor);
@@ -196,7 +200,7 @@ Hooks.on("ready", () => {
     };
 
     const startFatigueClock = async (currentTime) => {
-      return scheduleFatigueDamage({hour: 4}, currentTime);
+      return scheduleFatigueDamage({hour: 1}, currentTime);
     };
 
     const removeAllConditions = async () => {
@@ -218,6 +222,10 @@ Hooks.on("ready", () => {
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
+      // pop off any events schedule before now
+      for (const event of TimeQ.eventsBefore(now)) {
+        continue;
+      }
       await startFatigueClock(now);
     }
     
@@ -235,8 +243,8 @@ Hooks.on("ready", () => {
 
       // clear event queue and restart fatigue clocks if going back in time
       if (timeDiff < 0) {
+        removeAllConditions();
         TimeQ.clear();
-        await removeAllConditions();
         locked = false;
         return startFatigueClock(newTime);
       }
@@ -375,7 +383,7 @@ Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
     const actor = activeEffect.parent;
     const now = Util.now();
     const startTime = activeEffect.data.duration.startTime;
-    if (startTime <= now - Util.secondsInHour() * 2) {
+    if (startTime <= now - Constant.SECONDS_IN_HOUR * 2) {
       actor.setFlag("lostlands", "last_sleep_time", now);
     }
   }
