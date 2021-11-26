@@ -1228,22 +1228,22 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 // async function applyColdDamage(pc, execTime, seconds) {
 // }
 
-export async function applyPartyFatigue(execTime, seconds) {
-
+export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
   const restMode = game.settings.get("lostlands", "restMode");
-  const pCs = Util.pCTokens().map(t => t.actor);
+  const pcTokens = Util.pCTokens();
 
-  return Promise.all(pCs.map(async (pc) => {
+  return Promise.all(pcTokens.map(async (token) => {
+    const pc = token.actor;
     const data = {
       hp: pc.data.data.hp.value,
       maxHp: pc.data.data.hp.max,
     };
     if ( data.hp < 0 || data.maxHp < 1 ) return;
 
-    const updates = {...data};
-    await addRestDamage(pc, execTime, updates);
-    await addHungerDamage(pc, execTime, seconds, updates);
-    await addThirstDamage(pc, execTime, seconds, updates);
+    const updates = {...data}; // put this data and functions into a separate class fatigueApplication, with another class fatigueDamage
+    await addRestDamage(pc, token, execTime, updates);
+    await addHungerDamage(pc, token, execTime, seconds, newTime, oldTime, updates);
+    await addThirstDamage(pc, token, execTime, seconds, updates);
 
     if (!foundry.utils.fastDeepEqual(data, updates)) {
       await pc.update({
@@ -1253,27 +1253,25 @@ export async function applyPartyFatigue(execTime, seconds) {
     }
   }));
 
-
-  async function addRestDamage(pc, execTime, updates) { // damage for not sleeping? split up into separate function
+  async function addRestDamage(pc, token, execTime, updates) { // damage for not sleeping? split up into separate function
     const flavor = 'Rest';
     const warningSound = 'sleepy';
-    const warningText = '';
-    const applyAsHeal = true;
     const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
     const lastSleepTime = pc.getFlag("lostlands", "last_sleep_time");
     const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
     const isSleeping = !!asleepEffect;
     const startSleepTime = asleepEffect?.data.duration.startTime;
     let dice = restMode ? game.settings.get("lostlands", "restDice") : '1';
+
     // do heal if execution time is at least 1 day after last rest time
     //    and pc has been sleeping at least 6 hours    
     let doHeal = execTime - Constant.SECONDS_IN_DAY >= lastRestTime &&
                  execTime - Constant.SECONDS_IN_HOUR * 6 >= startSleepTime;
     // pc becomes sleepy if awake and execution time is at least 18 hours after last sleep time
-    let doWarning = !isSleeping && execTime - Constant.SECONDS_IN_HOUR * 18 >= lastSleepTime;
+    let warn = !isSleeping && execTime - Constant.SECONDS_IN_HOUR * 18 >= lastSleepTime;
   
     if (!restMode) {
-      // if Rest Mode is inactive, must be sleeping and not hungry/thirsty before sleeping
+      // if Rest Mode is inactive, must be sleeping and not hungry/thirsty to heal
       const hungryEffect = pc.data.effects.find(e => e.data.label === 'Hungry');
       const wasHungry = !!hungryEffect && hungryEffect.data.duration.startTime < startSleepTime;
       const thirstyEffect = pc.data.effects.find(e => e.data.label === 'Thirsty');
@@ -1283,119 +1281,91 @@ export async function applyPartyFatigue(execTime, seconds) {
       const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
       if (hasBedroll) dice = 'd2';
     }
-  
-    doHeal && await Util.resetRest(pc, execTime);
-    doWarning && await Util.addCondition("Sleepy", pc);
-  
-    return addFatigueDamage(pc, {
-      dice,
-      flavor,
-      warningSound,
-      warningText,
-      doWarning,
-      doDamage: doHeal,
-      applyAsHeal
-    }, updates);
+
+    if (warn) {
+      await Util.addCondition("Sleepy", pc);
+      await doWarning(pc, token, {sound: warningSound, flavor});
+    }
+
+    if (doHeal) {
+      await Util.resetRest(pc, execTime);
+      return addDamage(pc, token, {dice, flavor, heal: true, updates});
+    }
   }
 
-  async function addHungerDamage(pc, execTime, seconds, updates) {
+  async function addHungerDamage(pc, token, execTime, seconds, newTime, oldTime, updates) {
+    if (restMode) {
+      await Util.resetHunger(pc, execTime);
+    }
     const dice = 'd2';
     const flavor = 'Hunger';
-    const warningSound = '';
-    const warningText = '';
+    const warningSound = newTime - oldTime < seconds ? 'stomach_rumble' : '';
     const lastEatTime = pc.getFlag("lostlands", "last_eat_time");
-    const doWarning = execTime - Constant.SECONDS_IN_HOUR * 18 >= lastEatTime;
+    const warn = execTime - Constant.SECONDS_IN_HOUR * 18 >= lastEatTime;
     const doDamage = execTime - Constant.SECONDS_IN_DAY * 2 >= lastEatTime &&
                      (execTime - lastEatTime) % (Constant.SECONDS_IN_DAY * 2) < seconds;
   
-    if (restMode) {
-      await Util.resetHunger(pc, execTime);
-    } else {
-      doWarning && await Util.addCondition("Hungry", pc);
-    }    
-  
-    return addFatigueDamage(pc, {
-      dice,
-      flavor,
-      warningSound,
-      warningText,
-      doWarning,
-      doDamage
-    }, updates);
+    if (warn) {
+      await Util.addCondition("Hungry", pc);
+      await doWarning(pc, token, {sound: warningSound, flavor});
+    }
+
+    if (doDamage) {
+      return addDamage(pc, token, {dice, flavor}, updates);
+    }
   }
 
-  async function addThirstDamage(pc, execTime, seconds, updates) {
+  async function addThirstDamage(pc, token, execTime, seconds, updates) {
+    if (restMode) {
+      await Util.resetThirst(pc, execTime);
+    }
     const dice = 'd6';
     const flavor = 'Thirst';
-    const warningSound = '';
-    const warningText = '';
     const lastDrinkTime = pc.getFlag("lostlands", "last_drink_time");
-    const doWarning = execTime - Constant.SECONDS_IN_HOUR * 12 >= lastDrinkTime;
+    const warn = execTime - Constant.SECONDS_IN_HOUR * 12 >= lastDrinkTime;
     const doDamage = execTime - Constant.SECONDS_IN_DAY * 2 >= lastDrinkTime &&
                      (execTime - lastDrinkTime) % Constant.SECONDS_IN_DAY < seconds;
 
-    if (restMode) {
-      await Util.resetThirst(pc, execTime);
-    } else {
-      doWarning && await Util.addCondition("Thirsty", pc);
+    if (warn) {
+      await Util.addCondition("Thirsty", pc);
     }
-  
-    return addFatigueDamage(pc, {
-      dice,
-      flavor,
-      warningSound,
-      warningText,
-      doWarning,
-      doDamage
-    }, updates);
+
+    if (doDamage) {
+      return addDamage(pc, token, {dice, flavor}, updates);
+    }
   }
 
-  async function addFatigueDamage(actor, 
-    { 
-      dice = 'd6', 
-      flavor = 'Fatigue', 
-      damageText = '',
-      warningSound = '', 
-      warningText = '',
-      doWarning = true,
-      doDamage = true,
-      applyAsHeal = false
-    } = {}, updates
-  ) {
-    const token = Util.getTokenFromActor(actor);
-  
-    if (doDamage) {
-  
-      const result = await Util.rollDice(dice);
-      const hp = Number(updates.hp) || 0;
-      const maxHp = Number(updates.maxHp) || 0;
-      const maxMaxHp = Number(actor.data.data.hp.max_max) || 0;
-      const hpResult = applyAsHeal ? hp + result : hp - result;
-      updates.hp = Math.min(maxHp, hpResult);
-      const maxHpResult = maxHp - result + 1;
-      updates.maxHp = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+  async function doWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+    content && await Util.macroChatMessage(token, {
+      content,
+      flavor
+    }, false);
 
-      damageText = damageText || 
-                   `${Util.chatInlineRoll(result)} ${applyAsHeal ? 'points of healing' : 'damage'} from ${flavor.toLowerCase()}!`;
-      return Util.macroChatMessage(token, {
-        content: damageText,
-        flavor
-      }, false);
+    if (!sound) return;
+
+    if (Object.values(Constant.VOICE_MOODS).includes(sound)) {
+      Util.playVoiceSound(sound, actor, token, {push: true, bubble: true, chance: 1});
+    } else {
+      Util.playSound(`${sound}`, token, {push: true, bubble: true});
     }
+  }
+
+  async function addDamage(actor, token, {dice = 'd6', content = '', flavor = 'Fatigue', heal = false} = {}, updates) {
+    const result = await Util.rollDice(dice);
+    const hp = Number(updates.hp) || 0;
+    const maxHp = Number(updates.maxHp) || 0;
+    const maxMaxHp = Number(actor.data.data.hp.max_max) || 0;
+    const hpResult = heal ? hp + result : hp - result;
+    updates.hp = Math.min(maxHp, hpResult);
+    const maxHpResult = maxHp - result + 1;
+    updates.maxHp = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+
+    content = content || 
+              `${Util.chatInlineRoll(result)} ${heal ? 'points of healing' : 'damage'} from ${flavor.toLowerCase()}!`;
     
-    if (doWarning) {
-  
-      if (Object.values(Constant.VOICE_MOODS).includes(warningSound)) {
-        Util.playVoiceSound(warningSound, actor, token, {push: true, bubble: true, chance: 1});
-      } else {
-        Util.playSound(`${warningSound}`, token, {push: true, bubble: true});
-      }
-  
-      if (!warningText) return;
-      return Util.macroChatMessage(token, {
-        content: `${actor.name} ${warningText}`,
-        flavor
-      }, false);
-    }
+    return Util.macroChatMessage(token, {
+      content,
+      flavor
+    }, false);
   }
 }
