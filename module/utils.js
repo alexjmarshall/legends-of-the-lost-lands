@@ -183,17 +183,7 @@ export function upperCaseFirst(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-export function now() {
-  return SimpleCalendar.api.timestamp();
-}
-
-export function secondsInDay() {
-  return SimpleCalendar.api.timestampPlusInterval(0, {day: 1});
-}
-
-export function secondsInHour() {
-  return SimpleCalendar.api.timestampPlusInterval(0, {hour: 1});
-}
+export const now = () => game.time.worldTime;
 
 export async function resetHunger(actor, time=now()) {
   await actor.setFlag("lostlands", "last_eat_time", time);
@@ -216,12 +206,18 @@ export async function resetSleep(actor, time=now()) {
 
 export async function removeCondition(condition, actor, {warn=false}={}) {
   const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
-  await game.cub.removeCondition(condition, actor, {warn});
-  slow && await wait(500);
+  const hasCondition = game.cub.hasCondition(condition, actor);
+  if (hasCondition) {
+    await game.cub.removeCondition(condition, actor, {warn});
+    slow && await wait(300);
+  }
 }
 
 export async function addCondition(condition, actor, {warn=false}={}) {
   const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
-  await game.cub.addCondition(condition, actor, {warn});
-  slow && await wait(500);
+  const hasCondition = game.cub.hasCondition(condition, actor);
+  if (!hasCondition) {
+    await game.cub.addCondition(condition, actor, {warn});
+    slow && await wait(300);
+  }
 }
