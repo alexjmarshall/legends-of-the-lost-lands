@@ -2,8 +2,6 @@ export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resou
 export const AC_MIN = 9;
 export const DEFAULT_REST_DICE = 'd3';
 export const REST_TYPES = {
-  "1": "Rough",
-  "d2": "Bedroll",
   "d3": "Peasant",
   "d4": "Merchant",
   "d6": "Noble",

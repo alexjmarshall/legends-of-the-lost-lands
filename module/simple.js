@@ -373,17 +373,23 @@ Hooks.on("preUpdateActor", (actor, change) => {
 
 Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
+  const actor = activeEffect.parent;
+
+  if (activeEffect.data.label === 'Asleep') {
+    Util.removeCondition("Sleepy", actor);
+  }
 });
 
 Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
-  // if deleting Asleep, update last sleep time if started sleeping more than 2 hours ago
+  const actor = activeEffect.parent;
+
+  // if deleting Asleep, update last sleep time if started sleeping 3+ hours ago
   if (activeEffect.data.label === 'Asleep') {
-    const actor = activeEffect.parent;
     const now = Util.now();
     const startTime = activeEffect.data.duration.startTime;
-    if (startTime <= now - Constant.SECONDS_IN_HOUR * 2) {
-      actor.setFlag("lostlands", "last_sleep_time", now);
+    if (startTime <= now - Constant.SECONDS_IN_HOUR * 3) {
+      Util.resetSleep(actor, now);
     }
   }
 });

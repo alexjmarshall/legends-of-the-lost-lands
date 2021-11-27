@@ -59,17 +59,20 @@ export async function toggleRestMode(value, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
   const restMode = value != null ? !!value : !game.settings.get("lostlands", "restMode");
-  const notify = value == null;
-  const restDice = options.altDialogChoice || Constant.DEFAULT_REST_DICE;
+  const restDice = options.altDialogChoice || 
+                   game.settings.get("lostlands", "restDice") ||
+                   Constant.DEFAULT_REST_DICE;
 
   if (options.showAltDialog && !options.shownAltDialog) {
-    const choices = ['Peasant (d3)', 'Merchant (d4)', 'Noble (d6)', 'Royal (d8)'];
-    return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(value, options));
+    const choices = Object.entries(Constant.REST_TYPES).map(type => {
+      return {label: `${type[1]}<br>${type[0]}`, value: type[0]};
+    });
+    return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(true, options));
   }
 
   await game.settings.set("lostlands", "restDice", restDice);
   await game.settings.set("lostlands", "restMode", restMode);
-  notify && ui.notifications.info(`Rest Mode is ${restMode ? 'on' : 'off'} (${restDice} hp/night)`);
+  return ui.notifications.info(`Rest Mode is ${restMode ? 'on' : 'off'} (${restDice} hp/night)`);
 }
 
 export async function castSpell(spellId, options={}) {
@@ -665,10 +668,13 @@ async function attack(attackers, targetToken, options) {
   const dmgTypes = weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
   // show attack choice dialogs
   if ( dmgTypes.length > 1 && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
+    const choices = dmgTypes.map(type => {
+      return {label: Util.upperCaseFirst(type), value: type}
+    });
     return altDialog(
       weapon, 
       `${weapon.name} Form of Attack`, 
-      dmgTypes, 
+      choices, 
       () => attack(attackers, targetToken, options)
     );
   }
@@ -927,12 +933,12 @@ function altDialog(options, title, buttons, callback) {
   }).render(true);
 
   function getButtons() {
-    return Object.fromEntries(buttons.map(button => [button, {
-      label: Util.upperCaseFirst(button),
+    return Object.fromEntries(buttons.map(button => [button.label, {
+      label: button.label,
       callback: () => {
         options.shownAltDialog= true;
-        options.altDialogChoice = button;
-        callback();
+        options.altDialogChoice = button.value;
+        return callback();
       }
     }]));
   }
@@ -1240,8 +1246,9 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
     };
     if ( data.hp < 0 || data.maxHp < 1 ) return;
 
-    const updates = {...data}; // put this data and functions into a separate class fatigueApplication, with another class fatigueDamage
-    await addRestDamage(pc, token, execTime, updates);
+    const updates = {...data}; // put this data and below functions into a separate class
+    await addRestHealing(pc, token, execTime, updates);
+    await addExhaustionDamage(pc, token, execTime, seconds, newTime, oldTime, updates);
     await addHungerDamage(pc, token, execTime, seconds, newTime, oldTime, updates);
     await addThirstDamage(pc, token, execTime, seconds, updates);
 
@@ -1253,52 +1260,72 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
     }
   }));
 
-  async function addRestDamage(pc, token, execTime, updates) { // damage for not sleeping? split up into separate function
-    const flavor = 'Rest';
-    const warningSound = 'sleepy';
+  async function addRestHealing(pc, token, execTime, updates) {
     const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
-    const lastSleepTime = pc.getFlag("lostlands", "last_sleep_time");
-    const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
-    const isSleeping = !!asleepEffect;
-    const startSleepTime = asleepEffect?.data.duration.startTime;
-    let dice = restMode ? game.settings.get("lostlands", "restDice") : '1';
-
-    // do heal if execution time is at least 1 day after last rest time
-    //    and pc has been sleeping at least 6 hours    
-    let doHeal = execTime - Constant.SECONDS_IN_DAY >= lastRestTime &&
-                 execTime - Constant.SECONDS_IN_HOUR * 6 >= startSleepTime;
-    // pc becomes sleepy if awake and execution time is at least 18 hours after last sleep time
-    let warn = !isSleeping && execTime - Constant.SECONDS_IN_HOUR * 18 >= lastSleepTime;
+    let dice = game.settings.get("lostlands", "restDice");
+    const type = 'rest';
+    let flavor = `${Util.upperCaseFirst(type)} (${Constant.REST_TYPES[dice]})`;
+    let doHeal = execTime - Constant.SECONDS_IN_DAY >= lastRestTime;
   
     if (!restMode) {
-      // if Rest Mode is inactive, must be sleeping and not hungry/thirsty to heal
-      const hungryEffect = pc.data.effects.find(e => e.data.label === 'Hungry');
-      const wasHungry = !!hungryEffect && hungryEffect.data.duration.startTime < startSleepTime;
-      const thirstyEffect = pc.data.effects.find(e => e.data.label === 'Thirsty');
-      const wasThirsty = !!thirstyEffect && thirstyEffect.data.duration.startTime < startSleepTime;
-      doHeal = doHeal && isSleeping && !wasHungry && !wasThirsty;
-  
-      const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-      if (hasBedroll) dice = 'd2';
-    }
+      dice = '1';
+      flavor = 'Rest (Rough)';
+      const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
+      const startSleepTime = asleepEffect?.data.duration.startTime;
+      const sleptLongEnough = execTime - Constant.SECONDS_IN_HOUR * 6 >= startSleepTime;
+      const isHungry = !!pc.data.effects.find(e => e.data.label === 'Hungry');
+      const isThirsty = !!pc.data.effects.find(e => e.data.label === 'Thirsty');
 
-    if (warn) {
-      await Util.addCondition("Sleepy", pc);
-      await doWarning(pc, token, {sound: warningSound, flavor});
+      // if Rest Mode is inactive, must be sleeping at least 6 hours and not hungry/thirsty to heal
+      doHeal = doHeal && sleptLongEnough && !isHungry && !isThirsty;
+      // bump healing dice to d2 if PC has a bedroll
+      const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
+      if (hasBedroll) {
+        dice = 'd2';
+        flavor = 'Rest (Bedroll)';
+      }
     }
 
     if (doHeal) {
       await Util.resetRest(pc, execTime);
-      return addDamage(pc, token, {dice, flavor, heal: true, updates});
+      return addDamage(pc, token, {dice, type, flavor, heal: true}, updates);
+    }
+  }
+
+  async function addExhaustionDamage(pc, token, execTime, seconds, newTime, oldTime, updates) {
+    if (restMode) {
+      return Util.resetSleep(pc, execTime);
+    }
+    const warningSound = newTime - oldTime < seconds ? 'sleepy' : '';
+    const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
+    const isSleeping = !!asleepEffect;
+    const lastSleepTime = pc.getFlag("lostlands", "last_sleep_time");
+    const dice = 'd3';
+    const type = 'exhaustion';
+    const flavor = Util.upperCaseFirst(type);
+    const doDamage = !isSleeping && 
+                   execTime - Constant.SECONDS_IN_DAY * 2 >= lastSleepTime &&
+                   (execTime - lastSleepTime) % Constant.SECONDS_IN_DAY < seconds;
+    const warn = !isSleeping && 
+               execTime - Constant.SECONDS_IN_HOUR * 18 >= lastSleepTime;
+
+    if (warn) {
+      await Util.addCondition("Sleepy", pc);
+      await doWarning(pc, token, {sound: warningSound});
+    }
+
+    if (doDamage) {
+      return addDamage(pc, token, {dice, type, flavor}, updates);
     }
   }
 
   async function addHungerDamage(pc, token, execTime, seconds, newTime, oldTime, updates) {
     if (restMode) {
-      await Util.resetHunger(pc, execTime);
+      return Util.resetHunger(pc, execTime);
     }
     const dice = 'd2';
-    const flavor = 'Hunger';
+    const type = 'hunger';
+    const flavor = Util.upperCaseFirst(type);
     const warningSound = newTime - oldTime < seconds ? 'stomach_rumble' : '';
     const lastEatTime = pc.getFlag("lostlands", "last_eat_time");
     const warn = execTime - Constant.SECONDS_IN_HOUR * 18 >= lastEatTime;
@@ -1307,20 +1334,21 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
   
     if (warn) {
       await Util.addCondition("Hungry", pc);
-      await doWarning(pc, token, {sound: warningSound, flavor});
+      await doWarning(pc, token, {sound: warningSound});
     }
 
     if (doDamage) {
-      return addDamage(pc, token, {dice, flavor}, updates);
+      return addDamage(pc, token, {dice, type, flavor}, updates);
     }
   }
 
   async function addThirstDamage(pc, token, execTime, seconds, updates) {
     if (restMode) {
-      await Util.resetThirst(pc, execTime);
+      return Util.resetThirst(pc, execTime);
     }
     const dice = 'd6';
-    const flavor = 'Thirst';
+    const type = 'thirst';
+    const flavor = Util.upperCaseFirst(type);
     const lastDrinkTime = pc.getFlag("lostlands", "last_drink_time");
     const warn = execTime - Constant.SECONDS_IN_HOUR * 12 >= lastDrinkTime;
     const doDamage = execTime - Constant.SECONDS_IN_DAY * 2 >= lastDrinkTime &&
@@ -1331,7 +1359,7 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
     }
 
     if (doDamage) {
-      return addDamage(pc, token, {dice, flavor}, updates);
+      return addDamage(pc, token, {dice, type, flavor}, updates);
     }
   }
 
@@ -1350,18 +1378,17 @@ export async function applyPartyFatigue(execTime, seconds, newTime, oldTime) {
     }
   }
 
-  async function addDamage(actor, token, {dice = 'd6', content = '', flavor = 'Fatigue', heal = false} = {}, updates) {
+  async function addDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}, updates) {
     const result = await Util.rollDice(dice);
     const hp = Number(updates.hp) || 0;
     const maxHp = Number(updates.maxHp) || 0;
     const maxMaxHp = Number(actor.data.data.hp.max_max) || 0;
     const hpResult = heal ? hp + result : hp - result;
-    updates.hp = Math.min(maxHp, hpResult);
-    const maxHpResult = maxHp - result + 1;
+    const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
+    updates.hp = Math.min(maxHpResult, hpResult, maxMaxHp);
     updates.maxHp = Math.min(Math.max(1, maxHpResult), maxMaxHp);
 
-    content = content || 
-              `${Util.chatInlineRoll(result)} ${heal ? 'points of healing' : 'damage'} from ${flavor.toLowerCase()}!`;
+    content = `${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
     
     return Util.macroChatMessage(token, {
       content,
