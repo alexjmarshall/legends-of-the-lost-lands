@@ -1,6 +1,14 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const AC_MIN = 9;
 export const DEFAULT_REST_DICE = 'd3';
+export const REST_TYPES = {
+  "1": "Rough",
+  "d2": "Bedroll",
+  "d3": "Peasant",
+  "d4": "Merchant",
+  "d6": "Noble",
+  "d8": "Royal",
+};
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
 export const REQ_CLO_BY_SEASON = {
