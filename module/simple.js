@@ -55,7 +55,7 @@ Hooks.once("init", async function() {
     config: true
   });
 
-  // Register Rest Mode and restDice settings
+  // Register Rest Mode setting
   game.settings.register("lostlands", "restMode", {
     name: "Rest Mode",
     hint: "Tick to turn on Rest Mode",
@@ -64,6 +64,8 @@ Hooks.once("init", async function() {
     default: false,
     config: true
   });
+
+  // Register restDice setting
   game.settings.register("lostlands", "restDice", {
     name: "Rest Dice",
     hint: "Select dice to heal while resting",
@@ -102,16 +104,9 @@ Hooks.once("init", async function() {
     CONFIG.Combat.initiative.formula = formula;
   }
 
-  // Register time queue and fatigue clock interval Id settings
+  // Register time queue setting
   game.settings.register("lostlands", "timeQ", {
     name: "Time Queue",
-    hint: "Don't touch this",
-    scope: "world",
-    type: String,
-    config: false
-  });
-  game.settings.register("lostlands", "fatigue_clock_interval_id", {
-    name: "Fatigue Clock Interval Id",
     hint: "Don't touch this",
     scope: "world",
     type: String,
@@ -163,73 +158,49 @@ Hooks.on("ready", () => {
 
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
-    const scheduleFatigueDamage = async (interval, currentTime) => {
-      
-      const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
-      const startTimestamp = (interval, currentTime) => {
-        const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-        return Math.floor((currentTime - lastMidnight) / intervalInSeconds) * intervalInSeconds + lastMidnight;
-      };
-      const start = startTimestamp(interval, currentTime);
-
-      const oldIntervalId = game.settings.get("lostlands", "fatigue_clock_interval_id");
-      oldIntervalId && TimeQ.cancel(oldIntervalId);
-      const macro = await Util.getMacroByCommand("applyPartyFatigue", 
-                    `return game.lostlands.Macro.applyPartyFatigue(execTime,seconds,newTime,oldTime);`);
-      const intervalId = await TimeQ.doEvery(interval, start, macro.id);
-      await game.settings.set("lostlands", "fatigue_clock_interval_id", intervalId);
-
-      await TimeQ.save();
-
-      // reset PC flags if non-existent or in the future
+    const startFatigueClocks = async (currentTime) => {
+      // cancel clocks for all actors
+      // for PCs, if last time is undefined or later than current time, do full reset
+      //    otherwise, just start clock
+      const allActors = game.actors;
       const pCs = Util.pCTokens().map(t => t.actor);
-      const fatigueResets = new Map([
-        [ (pc) => pc.getFlag("lostlands", "last_eat_time"), Util.resetHunger ],
-        [ (pc) => pc.getFlag("lostlands", "last_drink_time"), Util.resetThirst ],
-        [ (pc) => pc.getFlag("lostlands", "last_rest_time"), Util.resetRest ],
-        [ (pc) => pc.getFlag("lostlands", "last_sleep_time"), Util.resetSleep ],
-      ]);
-      return Promise.all(pCs.map(async (pc) => {
-        for (const [getStartTime, resetTime] of fatigueResets) {
-          const lastTime = getStartTime(pc);
-          if (!lastTime || lastTime > currentTime) {
-            await resetTime(pc, lastMidnight);
-          }
-        }
-      }));
-    };
+      const clocks = Constant.FATIGUE_CLOCKS;
+      const intervalFlags = Object.values(clocks).map(c => c.intervalFlag);
 
-    const startFatigueClock = async (currentTime) => {
-      return scheduleFatigueDamage({hour: 1}, currentTime);
-    };
-
-    const removeAllConditions = async () => {
-      const pCs = Util.pCTokens().map(t => t.actor);
-      return Promise.all(pCs.map(async (pc) => {
-        try {
-          let conditions = game.cub.getConditions(pc, {warn: false})?.conditions;
-          if (conditions == null) return;
-          if (!Array.isArray(conditions)) conditions = [conditions];
-          for (const condition of conditions) {
-            await Util.removeCondition(condition.name, pc);
-          }
-        } catch (error) {
-          ui.notifications.error(`Problem removing conditions from ${pc.name}. Refresh!`);
+      for (const actor of allActors) {
+        for (const flag of intervalFlags) {
+          Util.stopClock(actor, flag);
         }
-      }));
+      }    
+
+      return Promise.all(
+        pCs.map(async (pc) => {
+          for (const [type, {interval, lastFlag, command, intervalFlag}] of Object.entries(clocks)) {
+            const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+            const lastTime = pc.getFlag("lostlands", lastFlag);
+            let startTime;
+            
+            if ( !lastTime || lastTime > currentTime ) {
+              const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
+              startTime = Util.nextTime(interval, lastMidnight, currentTime) - intervalInSeconds;
+              await Util.resetFatigueType(pc, type, startTime);
+            } else {
+              startTime = Util.nextTime(interval, lastTime, currentTime) - intervalInSeconds;
+              await Util.startClock(pc, intervalFlag, command, interval, startTime);
+            }
+          }
+        })
+      );
     };
 
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      // pop off any events schedule before now
-      for (const event of TimeQ.eventsBefore(now)) {
-        continue;
-      }
-      await startFatigueClock(now);
+      await Util.removeEffectsStartingAfter(now);
+      await startFatigueClocks(now);
     }
     
-    console.log(`Simple Calendar is ready!`);
+    console.log(`Simple Calendar | is ready!`);
 
     let locked = false;
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
@@ -241,22 +212,36 @@ Hooks.on("ready", () => {
       const newTime =  SimpleCalendar.api.dateToTimestamp(data.date);
       const timeDiff = data.diff;
 
-      // clear event queue and restart fatigue clocks if going back in time
+      // if going back in time, remove conditions that started later than current time, and restart clocks
       if (timeDiff < 0) {
-        removeAllConditions();
-        TimeQ.clear();
-        locked = false;
-        return startFatigueClock(newTime);
+        await Util.removeEffectsStartingAfter(newTime);
+        await startFatigueClocks(newTime);
       }
-      
-      for (const event of TimeQ.eventsBefore(newTime)) {
+
+      // update reqClo setting on season change and weather change
+      // do cold damage using first additive method here
+      // compare worn clo to required clo, and add cold? condition
+      // use clo diff and number of times certain thresholds have passed, e.g. minutes, hours to calculate how much damage to do
+      // only apply cold damage if PC is alive
+      // const season = data.season?.name.toLowerCase();
+      // const reqClo = Constant.REQ_CLO_BY_SEASON[season];
+      // const pCs = Util.pCTokens().map(t => t.actor);
+      // console.log()
+      // for (const pc of pCs) {
+      //   const wornClo = pc.data.data.clo;
+      //   if (wornClo < reqClo) {
+      //     await Util.addCondition("Cold", pc);
+      //   }
+      // }
+
+      for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
         // add oldTime and newTime to macro scope
         Object.assign(event.scope, {oldTime, newTime});
         macro && await macro.execute(event.scope);
       }
 
-      locked = false;    
+      locked = false;
     });
   });
 });
@@ -357,17 +342,17 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const halfMaxHp = actor.data.data.hp?.max / 2;
   const token = Util.getTokenFromActor(actor);
 
-  // return if update does not decrease hp, or if actor is already unconscious
-  if ( hpUpdate == null || hpUpdate >= targetHp || targetHp < 1 ) return;
-  if (hpUpdate < 0) {
+  // return if update does not decrease hp
+  if ( hpUpdate < 0 && targetHp > 0 ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
-    if (actor.type === 'character') {
-      Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
-    }
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
   } else {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
+  }
+
+  if (hpUpdate < 0 && actor.type === 'character') {
+    Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
   }
 });
 
@@ -384,7 +369,7 @@ Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
   const actor = activeEffect.parent;
 
-  // if deleting Asleep, update last sleep time if started sleeping 3+ hours ago
+  // if deleting Asleep, reset last sleep time if started sleeping 3+ hours ago
   if (activeEffect.data.label === 'Asleep') {
     const now = Util.now();
     const startTime = activeEffect.data.duration.startTime;
