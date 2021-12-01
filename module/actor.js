@@ -111,7 +111,7 @@ export class SimpleActor extends Actor {
 
     // worn clo
     const totalWornClo = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.clo?.value || 0), 0);
-    updateData.clo = attributes.clo?.value ?? totalWornClo;
+    updateData.clo = attributes.clo?.value ?? Math.round(totalWornClo * 100) / 100;
 
     // st_mod
     const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
