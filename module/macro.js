@@ -1217,52 +1217,142 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 
 export async function applyHungry(actorId, execTime, newTime, oldTime) {
   const type = "hungry";
-  const {lastFlag, interval, condition} = Constant.FATIGUE_CLOCKS[type];
-
-  if (newTime > execTime) {
-    // if execTime is prior to newTime, find last time this macro would have run before newTime
-    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-    execTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
-  }
-
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) {
-    return Util.resetHunger(actor, newTime);
-  }
-
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
-  const lastEatTime = actor.getFlag("lostlands", lastFlag);
-  const isHungry = execTime - Constant.SECONDS_IN_HOUR * 18 >= lastEatTime;
-  const content = 'feels hungry...';
-  const flavor = Util.upperCaseFirst(type);
-  const sound = 'stomach_rumble';
+  const {lastFlag, interval, condition, minTime} = Constant.FATIGUE_CLOCKS[type];
+  const lastTime = actor.getFlag("lostlands", lastFlag);
+  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
+  const applyCondition = newTime - minTimeInSeconds >= lastTime;
+  let warn = applyCondition;
 
-  if (isHungry) {
-    await doWarning(actor, token, {content, flavor, sound});
+  if (newTime > execTime) {
+    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
+    if (newTime !== lastExecTime) {
+      warn = false;
+    }
+  }
+  
+  if (warn) {
+    const content = 'feels hungry...';
+    const flavor = Util.upperCaseFirst(type);
+    const sound = 'stomach_rumble';
+    await doFatigueWarning(actor, token, {content, flavor, sound});
+  }
+  
+  if (applyCondition) {
     await Util.addCondition(condition, actor);
   }
 }
 
 export async function applyHunger(actorId, execTime, newTime, oldTime) {
   const type = "hunger";
-  const restMode = game.settings.get("lostlands", "restMode");
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
-  const flavor = Util.upperCaseFirst(type);
   const {interval} = Constant.FATIGUE_CLOCKS[type];
   const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-  const extraDice = Math.floor((newTime - execTime) / intervalInSeconds);
-  const dice = `${1 + extraDice}d3`;
-console.log(dice);
-  if (restMode) {
-    return Util.resetHunger(actor, newTime);
-  }
-
-  await applyDamage(actor, token, {dice, type, flavor});
+  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+  const numDice = 1 + extraDice;
+  const dice = `${numDice}d3`;
+  const flavor = Util.upperCaseFirst(type);
+  
+  await applyFatigueDamage(actor, token, {dice, type, flavor});
 }
 
-async function doWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+export async function applyThirsty(actorId, execTime, newTime, oldTime) {
+  const type = "thirsty";
+  const actor = game.actors.get(actorId);
+  const token = Util.getTokenFromActor(actor);
+  const {lastFlag, interval, condition, minTime} = Constant.FATIGUE_CLOCKS[type];
+  const lastTime = actor.getFlag("lostlands", lastFlag);
+  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
+  const applyCondition = newTime - minTimeInSeconds >= lastTime;
+  let warn = applyCondition;
+
+  if (newTime > execTime) {
+    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
+    if (newTime !== lastExecTime) {
+      warn = false;
+    }
+  }
+  
+  if (warn) {
+    const content = 'feels thirsty...';
+    const flavor = Util.upperCaseFirst(type);
+    const sound = '';
+    await doFatigueWarning(actor, token, {content, flavor, sound});
+  }
+  
+  if (applyCondition) {
+    await Util.addCondition(condition, actor);
+  }
+}
+
+export async function applyThirst(actorId, execTime, newTime, oldTime) {
+  const type = "thirst";
+  const actor = game.actors.get(actorId);
+  const token = Util.getTokenFromActor(actor);
+  const {interval} = Constant.FATIGUE_CLOCKS[type];
+  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+  const numDice = 1 + extraDice;
+  const dice = `${numDice}d6`;
+  const flavor = Util.upperCaseFirst(type);
+  
+  await applyFatigueDamage(actor, token, {dice, type, flavor});
+}
+
+export async function applySleepy(actorId, execTime, newTime, oldTime) {
+  const type = "sleepy";
+  const actor = game.actors.get(actorId);
+  const token = Util.getTokenFromActor(actor);
+  const {lastFlag, interval, condition, minTime} = Constant.FATIGUE_CLOCKS[type];
+  const lastTime = actor.getFlag("lostlands", lastFlag);
+  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
+  const applyCondition = newTime - minTimeInSeconds >= lastTime;
+  let warn = applyCondition;
+
+  if (newTime > execTime) {
+    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
+    if (newTime !== lastExecTime) {
+      warn = false;
+    }
+  }
+  
+  if (warn) {
+    const content = 'feels sleepy...';
+    const flavor = Util.upperCaseFirst(type);
+    const sound = 'sleepy';
+    await doFatigueWarning(actor, token, {content, flavor, sound});
+  }
+  
+  if (applyCondition) {
+    await Util.addCondition(condition, actor);
+  }
+}
+
+export async function applyExhaustion(actorId, execTime, newTime, oldTime) {
+  const type = "exhaustion";
+  const actor = game.actors.get(actorId);
+  const token = Util.getTokenFromActor(actor);
+  const {interval} = Constant.FATIGUE_CLOCKS[type];
+  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+  const numDice = 1 + extraDice;
+  const dice = `${numDice}d6`;
+  const flavor = Util.upperCaseFirst(type);
+  
+  await applyFatigueDamage(actor, token, {dice, type, flavor});
+}
+
+async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+  const hp = Number(actor.data.data.hp.value);
+  if (hp < 1) return;
+
   content && await Util.macroChatMessage(token, {
     content,
     flavor
@@ -1277,15 +1367,17 @@ async function doWarning(actor, token, {sound = '', content = '', flavor = 'Fati
   }
 }
 
-async function applyDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
-  const result = await Util.rollDice(dice);
+async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if ( restMode && !heal ) return;
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   const maxMaxHp = Number(actor.data.data.hp.max_max);
   if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
     return ui.notifications.error(`Error applying ${type} damage to ${actor.name}: invalid HP values`);
   }
-
+  if (hp < 0) return;
+  const result = await Util.rollDice(dice);
   const hpResult = heal ? hp + result : hp - result;
   const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
   const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
