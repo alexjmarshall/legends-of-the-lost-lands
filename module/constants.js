@@ -15,6 +15,53 @@ export const REQ_CLO_BY_SEASON = {
   "spring": 2,
   "winter": 3
 };
+export const FATIGUE_CLOCKS = {
+  "hungry" : {
+    interval: { hour: 4 },
+    lastFlag: "last_eat_time",
+    command: "applyHungry",
+    intervalFlag: "hungry_interval_id",
+    condition: "Hungry",
+  },
+  "hunger" : {
+    interval: { day: 3 },
+    lastFlag: "last_eat_time",
+    command: "applyHunger",
+    intervalFlag: "hunger_interval_id",
+  },
+  // "thirsty" : {
+  //   interval: { hour: 4 },
+  //   lastFlag: "last_drink_time",
+  //   command: "applyThirsty",
+  //   intervalFlag: "thirsty_interval_id",
+  //   condition: "Thirsty",
+  // },
+  // "thirst" : {
+  //   interval: { hour: 24 },
+  //   lastFlag: "last_drink_time",
+  //   command: "applyThirst",
+  //   intervalFlag: "thirst_interval_id",
+  // },
+  // "rest" : {
+  //   interval: { hour: 2 },
+  //   lastFlag: "last_rest_time",
+  //   command: "applyRest",
+  //   intervalFlag: "rest_interval_id",
+  // },
+  // "sleepy" : {
+  //   interval: { hour: 4 },
+  //   lastFlag: "last_sleep_time",
+  //   command: "applySleepy",
+  //   intervalFlag: "sleepy_interval_id",
+  //   condition: "Sleepy",
+  // },
+  // "exhaustion" : {
+  //   interval: { hour: 24 },
+  //   lastFlag: "last_sleep_time",
+  //   command: "applyExhaustion",
+  //   intervalFlag: "exhaustion_interval_id",
+  // },
+}
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
