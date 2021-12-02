@@ -70,6 +70,17 @@ export async function toggleRestMode(value, options={}) {
     return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(true, options));
   }
 
+  // reset PCs fatigue
+  const pCs = Util.pCTokens().map(t => t.actor);
+  const clocks = Constant.FATIGUE_CLOCKS;
+  await Promise.all(
+    pCs.map(async (pc) => {
+      for (const type of Object.keys(clocks)) {
+        await Util.resetFatigueType(pc, type, Util.now());
+      }
+    })
+  );
+
   await game.settings.set("lostlands", "restDice", restDice);
   await game.settings.set("lostlands", "restMode", restMode);
   return ui.notifications.info(`Rest Mode is ${restMode ? 'on' : 'off'} (${restDice} hp/night)`);
@@ -1232,6 +1243,9 @@ export async function applyHungry(actorId, execTime, newTime, oldTime) {
       warn = false;
     }
   }
+
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
   
   if (warn) {
     const content = 'feels hungry...';
@@ -1276,6 +1290,9 @@ export async function applyThirsty(actorId, execTime, newTime, oldTime) {
       warn = false;
     }
   }
+
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
   
   if (warn) {
     const content = 'feels thirsty...';
@@ -1320,6 +1337,9 @@ export async function applySleepy(actorId, execTime, newTime, oldTime) {
       warn = false;
     }
   }
+
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
   
   if (warn) {
     const content = 'feels sleepy...';
