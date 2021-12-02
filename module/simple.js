@@ -169,7 +169,7 @@ Hooks.on("ready", () => {
 
       for (const actor of allActors) {
         for (const flag of intervalFlags) {
-          Util.stopClock(actor, flag);
+          await Util.stopClock(actor, flag);
         }
       }    
 
@@ -178,14 +178,11 @@ Hooks.on("ready", () => {
           for (const [type, {interval, lastFlag, command, intervalFlag}] of Object.entries(clocks)) {
             const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
             const lastTime = pc.getFlag("lostlands", lastFlag);
-            let startTime;
             
             if ( !lastTime || lastTime > currentTime ) {
-              const lastMidnight = SimpleCalendar.api.dateToTimestamp({hour: 0, minute: 0, second: 0});
-              startTime = Util.nextTime(interval, lastMidnight, currentTime) - intervalInSeconds;
-              await Util.resetFatigueType(pc, type, startTime);
+              await Util.resetFatigueType(pc, type, currentTime);
             } else {
-              startTime = Util.nextTime(interval, lastTime, currentTime) - intervalInSeconds;
+              const startTime = Util.nextTime(interval, lastTime, currentTime) - intervalInSeconds;
               await Util.startClock(pc, intervalFlag, command, interval, startTime);
             }
           }
@@ -233,6 +230,7 @@ Hooks.on("ready", () => {
       //     await Util.addCondition("Cold", pc);
       //   }
       // }
+
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
@@ -347,11 +345,11 @@ Hooks.on("preUpdateActor", (actor, change) => {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
-  } else {
+  } else if (hpUpdate < targetHp) {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
   }
 
-  if (hpUpdate < 0 && actor.type === 'character') {
+  if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
     Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
   }
 });
