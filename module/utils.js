@@ -221,10 +221,6 @@ export async function resetThirst(actor, startTime=now()) {
   await resetFatigueType(actor, "thirst", startTime);
 }
 
-export async function resetRest(actor, startTime=now()) {
-  await resetFatigueType(actor, "rest", startTime);
-}
-
 export async function resetSleep(actor, startTime=now()) {
   await resetFatigueType(actor, "sleepy", startTime);
   await resetFatigueType(actor, "exhaustion", startTime);
