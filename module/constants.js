@@ -16,52 +16,92 @@ export const REQ_CLO_BY_SEASON = {
   "winter": 3
 };
 export const FATIGUE_CLOCKS = {
-  "hungry" : {
+  "hungry": {
     interval: { hour: 4 },
     lastFlag: "last_eat_time",
     command: "applyHungry",
     intervalFlag: "hungry_interval_id",
     condition: "Hungry",
+    minTime: {hour: 18}
   },
-  "hunger" : {
+  "hunger": {
     interval: { day: 3 },
     lastFlag: "last_eat_time",
     command: "applyHunger",
     intervalFlag: "hunger_interval_id",
   },
-  // "thirsty" : {
-  //   interval: { hour: 4 },
-  //   lastFlag: "last_drink_time",
-  //   command: "applyThirsty",
-  //   intervalFlag: "thirsty_interval_id",
-  //   condition: "Thirsty",
-  // },
-  // "thirst" : {
-  //   interval: { hour: 24 },
-  //   lastFlag: "last_drink_time",
-  //   command: "applyThirst",
-  //   intervalFlag: "thirst_interval_id",
-  // },
-  // "rest" : {
-  //   interval: { hour: 2 },
-  //   lastFlag: "last_rest_time",
-  //   command: "applyRest",
-  //   intervalFlag: "rest_interval_id",
-  // },
-  // "sleepy" : {
-  //   interval: { hour: 4 },
-  //   lastFlag: "last_sleep_time",
-  //   command: "applySleepy",
-  //   intervalFlag: "sleepy_interval_id",
-  //   condition: "Sleepy",
-  // },
-  // "exhaustion" : {
-  //   interval: { hour: 24 },
-  //   lastFlag: "last_sleep_time",
-  //   command: "applyExhaustion",
-  //   intervalFlag: "exhaustion_interval_id",
-  // },
+  "thirsty": {
+    interval: { hour: 4 },
+    lastFlag: "last_drink_time",
+    command: "applyThirsty",
+    intervalFlag: "thirsty_interval_id",
+    condition: "Thirsty",
+    minTime: {hour: 12}
+  },
+  "thirst": {
+    interval: { day: 1 },
+    lastFlag: "last_drink_time",
+    command: "applyThirst",
+    intervalFlag: "thirst_interval_id",
+  },
+  "sleepy": {
+    interval: { hour: 4 },
+    lastFlag: "last_sleep_time",
+    command: "applySleepy",
+    intervalFlag: "sleepy_interval_id",
+    condition: "Sleepy",
+    minTime: {hour: 18}
+  },
+  "exhaustion": {
+    interval: { day: 1 },
+    lastFlag: "last_sleep_time",
+    command: "applyExhaustion",
+    intervalFlag: "exhaustion_interval_id",
+  },
 }
+
+export const DISEASES = {
+  "grippe": {
+    symptoms: ["cough", "headache", "fatigue"],
+    virulence: "d3",
+    incubationPeriod: {day: 1},
+  },
+  "dysentery": {
+    symptoms: ["diarrhea", "abdominal pain", "fatigue"],
+    virulence: "d4",
+    incubationPeriod: {day: 1},
+  },
+  "typhoid": {
+    symptoms: ["fever", "abdominal pain", "rash"],
+    virulence: "d4",
+    incubationPeriod: {day: 1},
+  },
+  "gangrene": {
+    symptoms: ["numbness", "black tissue"],
+    virulence: "d6",
+    incubationPeriod: {day: 1},
+  },
+  "malaria": {
+    symptoms: ["paroxysms", "vomiting", "fever"],
+    virulence: "d6",
+    incubationPeriod: {day: 1},
+  },
+  "spotted fever": {
+    symptoms: ["rash", "headache", "confusion"],
+    virulence: "d8",
+    incubationPeriod: {day: 1},
+  },
+  "plague": {
+    symptoms: ["black tissue", "headache", "fever"],
+    virulence: "d8",
+    incubationPeriod: {day: 1},
+  },
+  "leprosy": {
+    symptoms: ["black tissue", "numbness", "rash"],
+    virulence: "d10",
+    incubationPeriod: {day: 1},
+  },
+};
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
