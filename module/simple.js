@@ -62,10 +62,21 @@ Hooks.once("init", async function() {
     scope: "world",
     type: Boolean,
     default: false,
-    config: true
+    config: true,
+    onChange: value => Macro.onRestModeChange(value)
   });
 
-  // Register restDice setting
+  // Register Rest Mode Start Time setting 
+  game.settings.register("lostlands", "restModeStartTime", {
+    name: "Rest Mode Start Time",
+    hint: "Don't touch this",
+    scope: "world",
+    type: Number,
+    default: null,
+    config: false
+  });
+
+  // Register Rest Dice setting
   game.settings.register("lostlands", "restDice", {
     name: "Rest Dice",
     hint: "Select dice to heal while resting",
@@ -160,10 +171,7 @@ Hooks.on("ready", () => {
 
     const startFatigueClocks = async (currentTime) => {
       // cancel clocks for all actors
-      // for PCs, if last time is undefined or later than current time, do full reset
-      //    otherwise, just start clock
       const allActors = game.actors;
-      const pCs = Util.pCTokens().map(t => t.actor);
       const clocks = Constant.FATIGUE_CLOCKS;
       const intervalFlags = Object.values(clocks).map(c => c.intervalFlag);
 
@@ -173,9 +181,19 @@ Hooks.on("ready", () => {
         }
       }    
 
+      // for PCs, reset fatigue last times if undefined or later than current time
+      //    and restart fatigue clocks
+      const pCs = Util.pCTokens().map(t => t.actor);
       return Promise.all(
         pCs.map(async (pc) => {
+
+          const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
+          if ( !lastRestTime || lastRestTime > currentTime ) {
+            await pc.setFlag("lostlands", "last_rest_time", currentTime);
+          }
+
           for (const [type, {interval, lastFlag, command, intervalFlag}] of Object.entries(clocks)) {
+
             const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
             const lastTime = pc.getFlag("lostlands", lastFlag);
             
@@ -357,22 +375,34 @@ Hooks.on("preUpdateActor", (actor, change) => {
 Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
   const actor = activeEffect.parent;
+  const actorIsDead = !!actor.data.effects.find(e => e.data.label === 'Dead');
 
-  if (activeEffect.data.label === 'Asleep') {
-    Util.removeCondition("Sleepy", actor);
-  }
+  // if actor is dead, do not allow any other effects to be created
+  if (actorIsDead) return false;
 });
 
-Hooks.on("preDeleteActiveEffect", (activeEffect, data, options, userId) => {
+Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
   const actor = activeEffect.parent;
 
-  // if deleting Asleep, reset last sleep time if started sleeping 3+ hours ago
-  if (activeEffect.data.label === 'Asleep') {
-    const now = Util.now();
-    const startTime = activeEffect.data.duration.startTime;
-    if (startTime <= now - Constant.SECONDS_IN_HOUR * 3) {
-      Util.resetSleep(actor, now);
+  // if actor is dead, remove all other effects
+  if (activeEffect.data.label === 'Dead') {
+    const otherEffects = actor.effects.filter(e => e.data.label !== 'Dead');
+    for (const effect of otherEffects) {
+      await effect.delete();
     }
+  }
+});
+
+Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
+  if (!game.user.isGM) return false;
+  const actor = activeEffect.parent;
+  const restMode = game.settings.get("lostlands", "restMode");
+
+  // TODO remove promise.All? rename hunger/thirst to starvation/dehydration & set start times to first moment of hunger/thirst? matches disease dynamics
+  if ( activeEffect.data.label === 'Asleep' && !restMode ) {
+    const sleepStartTime = activeEffect.data.duration.startTime;
+    const sleepEndTime = Util.now();
+    await Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime);
   }
 });
