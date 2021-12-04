@@ -29,30 +29,35 @@ class TimeQueue {
     return game.settings.set("lostlands", "timeQ", heapString);
   }
 
-  clear() {
+  async clear() {
     this._heap = this._newHeap();
     console.log('TimeQ cleared');
+    return this.save();
   }
 
-  cancel(id) {
+  async cancel(id) {
     const result = this._heap.remove(id, e => e.id);
     if (result) {
       console.log('TimeQ event cancelled by id', id);
+      return this.save();
     }
   }
 
-  doAt(timestamp, macroId, scope={}, id=Util.uniqueId()) {
+  async doAt(timestamp, macroId, scope={}, id=Util.uniqueId()) {
     if (!macroId) return;
+
     // add timestamp to macro scope
     scope.execTime = timestamp;
     const event = { timestamp, macroId, scope, id };
+
     this._heap.push(event);
     console.log(`TimeQ event scheduled at ${event.timestamp}`);
+    await this.save();
 
     return event.id;
   }
 
-  doIn(interval={day:0, hour:0, minute:0, second:0}, macroId, scope={}) {
+  async doIn(interval={day:0, hour:0, minute:0, second:0}, macroId, scope={}) {
     const now = Util.now();
     const timestamp = SimpleCalendar.api.timestampPlusInterval(now, interval);
     return this.doAt(timestamp, macroId, scope);
@@ -60,28 +65,29 @@ class TimeQueue {
 
   async doEvery (
     interval = {day:0, hour:0, minute:0, second:0},
-    from = Util.now(),
+    start = Util.now(),
     macroId,
     scope = {},
     id = Util.uniqueId()
   ) {
-    const seconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
 
     // create new macro that combines the given macro with a statement to reschedule itself
     const givenMacro = game.macros.get(macroId);
     const givenMacroCommand = givenMacro.data.command.replace(/return\s+/, '')
-    const newMacroName = `TimeQ | doEvery ${givenMacro.name}`,
-          newMacroCommand = `await ${givenMacroCommand}; return game.lostlands.TimeQ._scheduleDoEvery(seconds, start, macroId, scope, id);`
+    const newMacroName = `TimeQ | doEvery ${givenMacro.name}`;
+    const newMacroCommand = `const stop = await ${givenMacroCommand};
+                            if (stop === false) return;
+                            return game.lostlands.TimeQ._scheduleDoEvery(interval, start, newTime, macroId, scope, id);`
     const newMacro = await Util.getMacroByCommand(newMacroName, newMacroCommand);
 
-    return this._scheduleDoEvery(seconds, from, newMacro.id, scope, id);
+    return this._scheduleDoEvery(interval, start, start, newMacro.id, scope, id);
   }
 
-  _scheduleDoEvery(seconds, start, macroId, scope, id=Util.uniqueId()) {
-    const nextTime = seconds + start;
+  async _scheduleDoEvery(interval, start, newTime, macroId, scope, id=Util.uniqueId()) {
+    const nextTime = Util.nextTime(interval, start, newTime);
     scope = {
       ...scope,
-      seconds,
+      interval,
       start: nextTime,
       macroId,
       scope: {...scope},
@@ -91,14 +97,17 @@ class TimeQueue {
     return this.doAt(nextTime, macroId, scope, id);
   }
 
-  * eventsBefore(timestamp) {
+  async * eventsBefore(timestamp) {
     let nextEventTs = this.next()?.timestamp;
+    let doSave = false;
     while (nextEventTs <= timestamp) {
       const event = this._heap.pop();
       console.log(`TimeQ handling event id ${event.id}`)
       yield event;
+      doSave = true;
       nextEventTs = this.next()?.timestamp;
     }
+    doSave && this.save();
   }
 }
 
