@@ -106,7 +106,6 @@ export class ContainerActorSheet extends ActorSheet {
               label: "Cancel"
             }
           },
-          default: "two",
           render: html => {
             const initialVal = itemQty;
             const splitRange = html.find('#splitRange');

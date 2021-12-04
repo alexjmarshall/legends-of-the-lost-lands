@@ -204,7 +204,6 @@ export class SimpleActorSheet extends ActorSheet {
               label: "Cancel"
             }
           },
-          default: "two",
           render: html => {
             const initialVal = itemQty;
             const splitRange = html.find('#splitRange');
@@ -364,7 +363,6 @@ export class SimpleActorSheet extends ActorSheet {
             label: "Cancel"
           }
         },
-        default: "two"
       }).render(true);
     }
     assignVoice.bind(this)();
