@@ -174,6 +174,7 @@ Hooks.on("ready", () => {
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
+      await Util.removeEffectsStartingAfter(now);
       await restartFatigueClocks(now);
     }
     
