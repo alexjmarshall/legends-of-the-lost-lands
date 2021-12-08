@@ -63,20 +63,14 @@ class TimeQueue {
     return this.doAt(timestamp, macroId, scope);
   }
 
-  async doEvery (
-    interval = {day:0, hour:0, minute:0, second:0},
-    start = Util.now(),
-    macroId,
-    scope = {},
-    id = Util.uniqueId()
-  ) {
+  async doEvery (interval = {day:0, hour:0, minute:0, second:0}, start, macroId, scope = {}, id = Util.uniqueId()) {
 
     // create new macro that combines the given macro with a statement to reschedule itself
     const givenMacro = game.macros.get(macroId);
     const givenMacroCommand = givenMacro.data.command.replace(/return\s+/, '')
     const newMacroName = `TimeQ | doEvery ${givenMacro.name}`;
-    const newMacroCommand = `const stop = await ${givenMacroCommand};
-                            if (stop === false) return;
+    const newMacroCommand = `const result = await ${givenMacroCommand};
+                            if (result === false) return;
                             return game.lostlands.TimeQ._scheduleDoEvery(interval, start, newTime, macroId, scope, id);`
     const newMacro = await Util.getMacroByCommand(newMacroName, newMacroCommand);
 
