@@ -203,15 +203,16 @@ export async function addCondition(condition, actor, {warn=false}={}) {
 }
 
 export function nextTime(interval, startTime, currentTime) {
-  const intervalInSeconds = intervalInSeconds(interval);
-  const nextTime = Math.ceil((currentTime - startTime) / intervalInSeconds) * intervalInSeconds + startTime;
+  const seconds = intervalInSeconds(interval);
+  let nextTime = Math.ceil((currentTime - startTime) / seconds) * seconds + startTime;
+  if (nextTime === currentTime) nextTime += seconds;
 
   return nextTime;
 }
 
 export function prevTime(interval, startTime, currentTime) {
-  const intervalInSeconds = intervalInSeconds(interval);
-  const prevTime = Math.floor((currentTime - startTime) / intervalInSeconds) * intervalInSeconds + startTime;
+  const seconds = intervalInSeconds(interval);
+  const prevTime = Math.floor((currentTime - startTime) / seconds) * seconds + startTime;
 
   return prevTime;
 }
