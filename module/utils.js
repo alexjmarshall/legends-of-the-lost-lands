@@ -1,5 +1,4 @@
 import * as Constant from "./constants.js";
-import { TimeQ } from './time-queue.js';
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -135,13 +134,6 @@ export function chatInlineRoll(content) {
   return `<span style="font-style:normal;">[[${content}]]</span>`
 }
 
-export function reqClo() {
-  // weather?
-  const season = SimpleCalendar.api.getCurrentSeason()?.name.toLowerCase();
-  const reqClo = Constant.REQ_CLO_BY_SEASON[season];
-  return reqClo;
-}
-
 export function uniqueId() {
   function chr4() {
     return Math.random().toString(16).slice(-4);
@@ -186,46 +178,6 @@ export function upperCaseFirst(string) {
 
 export const now = () => game.time.worldTime;
 
-export async function stopClock(actor, intervalFlag) {
-  const id = actor.getFlag("lostlands", intervalFlag);
-  id && await TimeQ.cancel(id);
-}
-
-export async function startClock(actor, intervalFlag, command, interval, startTime) {
-  const actorId = actor.isToken ? actor.token.id : actor.id;
-  const macro = await getMacroByCommand(command, `return game.lostlands.Macro.${command}(actorId, execTime, newTime, oldTime);`);
-  const intervalId = await TimeQ.doEvery(interval, startTime, macro.id, {actorId});
-  return actor.setFlag("lostlands", intervalFlag, intervalId);
-}
-
-async function restartClock(actor, intervalFlag, command, interval, startTime) {
-  await stopClock(actor, intervalFlag);
-  return startClock(actor, intervalFlag, command, interval, startTime);
-}
-
-export async function resetFatigueType(actor, type, startTime) {
-  let {interval, lastFlag, command, intervalFlag, condition} = Constant.FATIGUE_CLOCKS[type];
-  const lastTime = actor.getFlag("lostlands", lastFlag);
-  lastTime != startTime && await actor.setFlag("lostlands", lastFlag, startTime);
-  condition && await removeCondition(condition, actor, {warn: false});
-  await restartClock(actor, intervalFlag, command, interval, startTime);
-}
-
-export async function resetHunger(actor, startTime=now()) {
-  await resetFatigueType(actor, "hungry", startTime);
-  await resetFatigueType(actor, "hunger", startTime);
-}
-
-export async function resetThirst(actor, startTime=now()) {
-  await resetFatigueType(actor, "thirsty", startTime);
-  await resetFatigueType(actor, "thirst", startTime);
-}
-
-export async function resetSleep(actor, startTime=now()) {
-  await resetFatigueType(actor, "sleepy", startTime);
-  await resetFatigueType(actor, "exhaustion", startTime);
-}
-
 export async function removeCondition(condition, actor, {warn=false}={}) {
   const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
   const hasCondition = game.cub.hasCondition(condition, actor);
@@ -251,25 +203,35 @@ export async function addCondition(condition, actor, {warn=false}={}) {
 }
 
 export function nextTime(interval, startTime, currentTime) {
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-  let nextTime = Math.floor((currentTime - startTime) / intervalInSeconds) * intervalInSeconds + startTime;
-  if (nextTime <= currentTime) nextTime += intervalInSeconds;
+  const intervalInSeconds = intervalInSeconds(interval);
+  const nextTime = Math.ceil((currentTime - startTime) / intervalInSeconds) * intervalInSeconds + startTime;
 
   return nextTime;
 }
 
-export async function removeEffectsStartingAfter(time) {
-  const actors = game.actors;
+export function prevTime(interval, startTime, currentTime) {
+  const intervalInSeconds = intervalInSeconds(interval);
+  const prevTime = Math.floor((currentTime - startTime) / intervalInSeconds) * intervalInSeconds + startTime;
 
-  return Promise.all(actors.map(async (actor) => {
+  return prevTime;
+}
+
+export async function removeEffectsStartingAfter(time) {
+  const allChars = game.actors.filter(a => a.type === 'character');
+  for (const char of allChars) {
     try {
-      const effects = actor.effects.contents;
+      const effects = char.effects.contents;
       for (const effect of effects) {
         const invalid = effect.data.duration?.startTime > time;
         invalid && await effect.delete();
       }
     } catch (error) {
       ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
+      throw new Error(error);
     }
-  }));
+  }
+}
+
+export function intervalInSeconds(interval) {
+  return SimpleCalendar.api.timestampPlusInterval(0, interval);
 }
