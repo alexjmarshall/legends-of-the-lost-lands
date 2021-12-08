@@ -23,7 +23,7 @@ const REQ_CLO_BY_SEASON = {
   "spring": 2,
   "winter": 3
 };
-const FATIGUE_CLOCKS = {
+const CLOCKS = {
   "hunger": {
     warningInterval: { hour: 18 },
     damageInterval: { day: 3 },
@@ -167,7 +167,7 @@ export const DISEASES = {
 };
 
 export async function resetFatigueType(actor, type, time=Util.now()) {
-  let {warningInterval, startFlag, warningCommand, intervalFlag, condition} = FATIGUE_CLOCKS[type];
+  let {warningInterval, startFlag, warningCommand, intervalFlag, condition} = CLOCKS[type];
   const startTime = actor.getFlag("lostlands", startFlag);
   startTime != time && await actor.setFlag("lostlands", startFlag, time);
   condition && await Util.removeCondition(condition, actor, {warn: false});
@@ -194,7 +194,7 @@ export async function restartFatigueClocks(time) {
     
     await resetDiseases(char, time);
 
-    await resetClocks(char, time);
+    // await resetClocks(char, time);
   }
 
 }
@@ -210,7 +210,7 @@ async function resetClocks(char, time) {
   //    3b) otherwise, schedule damage event
 
   const actorId = char.isToken ? char.token.id : char.id;
-  for (const clock of Object.values(FATIGUE_CLOCKS)) {
+  for (const clock of Object.values(CLOCKS)) {
 
     // 1
     const id = actor.getFlag("lostlands", clock.intervalFlag);
@@ -220,8 +220,8 @@ async function resetClocks(char, time) {
     const lastTime = char.getFlag("lostlands", clock.startFlag);
     if (lastTime > time) { 
 
-      if (clock.alwaysOn) char.setFlag("lostlands", clock.startFlag, time);
-      else char.unsetFlag("lostlands", clock.startFlag);
+      if (clock.alwaysOn) await char.setFlag("lostlands", clock.startFlag, time);
+      else await char.unsetFlag("lostlands", clock.startFlag);
     }
 
     // 3
@@ -234,16 +234,11 @@ async function resetClocks(char, time) {
     const argsString = 'actorId, execTime, newTime, oldTime';
     const scope = {actorId};
     
-    if (scheduleWarning) {
+    const damageInterval = clock.damageInterval;
+    const intervalId = scheduleWarning ? await scheduleOnce(clock.warningCommand, argsString, warningTime, scope) :
+                       await scheduleRecurring(damageInterval, clock.damageCommand, argsString, startTime, time, scope);
 
-      const intervalId = await scheduleOnce(clock.warningCommand, argsString, warningTime, scope);
-      await char.setFlag("lostlands", clock.intervalFlag, intervalId);
-      continue;
-    }
-
-      const damageInterval = clock.damageInterval;
-      const intervalId = await scheduleRecurring(damageInterval, clock.damageCommand, argsString, startTime, time, scope);
-      await char.setFlag("lostlands", clock.intervalFlag, intervalId);
+    await char.setFlag("lostlands", clock.intervalFlag, intervalId);
   }
 }
 
@@ -266,12 +261,13 @@ async function resetDiseases(char, time) {
   for (const [disease, data] of Object.entries(charDiseases)) {
 
     // 1
-    await TimeQ.cancel(data.intervalId);  // TODO addDisease does create a disease on character, with intervalId stored from doAt
+    await TimeQ.cancel(data.intervalId);
     
     // 2
     const startTime = data.startTime;
     if (startTime > time) {
       delete charDiseases[disease];
+      continue;
     }
 
     // 3a
@@ -288,7 +284,7 @@ async function resetDiseases(char, time) {
     }
 
     // 3b
-    const damageInterval = DISEASES[k].damageInterval;
+    const damageInterval = DISEASES[disease].damageInterval;
     data.intervalId = await scheduleRecurring(damageInterval, 'applyDisease', argsString, startTime, time, scope);
   }
 
@@ -296,17 +292,17 @@ async function resetDiseases(char, time) {
   return char.setFlag("lostlands", "diseases", charDiseases);
 }
 
-async function scheduleOnce(command, args, time, scope={}) {
+export async function scheduleOnce(command, args, time, scope={}) {
   const macro = await Util.getMacroByCommand(`${command}`, `return game.lostlands.Macro.${command}(${args});`);
   const intervalId = await TimeQ.doAt(time, macro.id, scope);
 
   return intervalId;
 }
 
-async function scheduleRecurring(interval, command, args, startTime, currentTime, scope={}) {
+export async function scheduleRecurring(interval, command, args, startTime, currentTime, scope={}) {
   const macro = await Util.getMacroByCommand(`${command}`, `return game.lostlands.Macro.${command}(${args});`);
-  const startTime = Util.prevTime(interval, startTime, currentTime);
-  const intervalId = await TimeQ.doEvery(interval, nextTime, macro.id, scope);
+  const fromTime = Util.prevTime(interval, startTime, currentTime);
+  const intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
 
   return intervalId;
 }
