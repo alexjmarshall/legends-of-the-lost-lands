@@ -1,6 +1,7 @@
 import * as Constant from "./constants.js";
 import { TimeQ } from "./time-queue.js";
 import * as Util from "./utils.js";
+import { resetFatigueType, FATIGUE_CLOCKS } from "./fatigue.js";
 
 /**
  * Create a Macro from an attribute drop.
@@ -56,6 +57,7 @@ export function playVoice(mood) {
 }
 
 export async function toggleRestMode(value, options={}) {
+  
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
   const restMode = value != null ? !!value : !game.settings.get("lostlands", "restMode");
@@ -70,20 +72,35 @@ export async function toggleRestMode(value, options={}) {
     return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(true, options));
   }
 
-  // reset PCs fatigue
+  await game.settings.set("lostlands", "restDice", restDice);
+  await game.settings.set("lostlands", "restMode", restMode);
+}
+
+export async function onRestModeChange(restMode) {
+  // reset PCs fatigue whether turning Rest Mode On or Off
+  //    if turning Rest Mode Off, apply rest healing
   const pCs = Util.pCTokens().map(t => t.actor);
-  const clocks = Constant.FATIGUE_CLOCKS;
+  const now = Util.now();
+  const restModeStartTime = game.settings.get("lostlands", "restModeStartTime");
+  const restDice = await game.settings.get("lostlands", "restDice");
+
+  if (restMode) {
+    await game.settings.set("lostlands", "restModeStartTime", now);
+  } else {
+    await game.settings.set("lostlands", "restModeStartTime", null);
+  }
+
   await Promise.all(
     pCs.map(async (pc) => {
-      for (const type of Object.keys(clocks)) {
-        await Util.resetFatigueType(pc, type, Util.now());
+      // await Util.resetHunger(pc);
+      // await Util.resetThirst(pc);
+      if (!restMode) {
+        restModeStartTime && await applyRestOnWake(pc, restModeStartTime, now)
       }
     })
   );
 
-  await game.settings.set("lostlands", "restDice", restDice);
-  await game.settings.set("lostlands", "restMode", restMode);
-  return ui.notifications.info(`Rest Mode is ${restMode ? 'on' : 'off'} (${restDice} hp/night)`);
+  return ui.notifications.info(`Rest Mode is ${restMode ? 'On' : 'Off'} (${restDice} hp per night)`);
 }
 
 export async function castSpell(spellId, options={}) {
@@ -165,7 +182,7 @@ export async function drinkPotion(itemId, options={}) {
     chatMsgType
   }, true);
 
-  await Util.resetThirst(actor, Util.now());
+  await resetFatigueType(actor, 'thirst', Util.now());
 
   !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
 }
@@ -186,7 +203,7 @@ export async function drinkWater(itemId, options={}) {
     verb: `drinks from`
   }, false);
 
-  await Util.resetThirst(actor, Util.now());
+  await resetFatigueType(actor, 'thirst', Util.now());
 }
 
 export async function eatFood(itemId, options={}) {
@@ -198,13 +215,16 @@ export async function eatFood(itemId, options={}) {
     verb: `eats`
   }, true);
 
+  await resetFatigueType(actor, 'hunger', Util.now());
+
   await Util.resetHunger(actor, Util.now());
-  // reset thirst to one day ago if this time is later than last drink time
-  await Util.removeCondition("Thirsty", actor, {warn: false});
-  const oneDayAgo = Util.now() - Constant.SECONDS_IN_DAY;
-  const lastDrinkTime = actor.getFlag("lostlands", "last_drink_time");
-  if (oneDayAgo > lastDrinkTime) {
-    await actor.setFlag("lostlands", "last_drink_time", oneDayAgo);
+
+  // reset thirst to 12 hours ago if this is later than last drink time
+  const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
+  const startFlag = FATIGUE_CLOCKS['thirst'].startFlag;
+  const lastDrinkTime = actor.getFlag("lostlands", startFlag);
+  if (twelveHoursAgo > lastDrinkTime) {
+    await resetFatigueType(actor, 'thirst', twelveHoursAgo);
   } 
 }
 
@@ -915,32 +935,11 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / 5) * 5;
 }
 
-// function dmgTypeDialog(weapon, dmgTypes, callback) {
-//   return new Dialog({
-//     title: `${weapon.name} Form of Attack`,
-//     content: ``,
-//     buttons: dmgTypeButtons(),
-//     default: dmgTypes[0]
-//   }).render(true);
-
-//   function dmgTypeButtons() {
-//     return Object.fromEntries(dmgTypes.map(dmgType => [dmgType, {
-//       label: dmgType,
-//       callback: () => {
-//         weapon.shownAltDialog = true;
-//         weapon.dmgDialogType = dmgType;
-//         callback();
-//       }
-//     }]));
-//   }
-// }
-
 function altDialog(options, title, buttons, callback) {
   return new Dialog({
     title,
     content: ``,
     buttons: getButtons(),
-    default: buttons[0]
   }).render(true);
 
   function getButtons() {
@@ -985,7 +984,6 @@ function modDialog(options, title, fields=[{label:'', default:'', key:''}], call
         callback: () => console.log("Cancelled modifier dialog")
       }
     },
-    default: '1'
   }).render(true);
 }
 
@@ -1133,15 +1131,22 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   
   // show confirmation dialog if haven't shown split item dialog
   if (!options.shownSplitDialog) {
-    return Dialog.confirm({
-      title: "Confirm",
+    return new Dialog({
+      title: "Confirm Purchase",
       content: `<p>Buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${Util.getPriceString(totalPriceInCp)}?</p>`,
-      yes: async () => {
-        return finalizePurchase();
+      buttons: {
+       one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: "Yes",
+        callback: () => finalizePurchase(),
+       },
+       two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "No",
+        callback: () => {},
+       }
       },
-      no: () => {},
-      defaultYes: true
-    });
+     }).render(true);
   }
   return finalizePurchase();
 
@@ -1211,7 +1216,6 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
         label: "Cancel"
       }
     },
-    default: "one",
     render: html => {
       const qtyRange = html.find('[id=qty]'),
             qtySpan = html.find('[id=selectedQty]'),
@@ -1226,7 +1230,10 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   }).render(true);
 }
 
-export async function applyHungry(actorId, execTime, newTime, oldTime) {
+export async function addHungry(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "hungry";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
@@ -1244,9 +1251,6 @@ export async function applyHungry(actorId, execTime, newTime, oldTime) {
     }
   }
 
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-  
   if (warn) {
     const content = 'feels hungry...';
     const flavor = Util.upperCaseFirst(type);
@@ -1260,6 +1264,9 @@ export async function applyHungry(actorId, execTime, newTime, oldTime) {
 }
 
 export async function applyHunger(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "hunger";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
@@ -1273,7 +1280,10 @@ export async function applyHunger(actorId, execTime, newTime, oldTime) {
   await applyFatigueDamage(actor, token, {dice, type, flavor});
 }
 
-export async function applyThirsty(actorId, execTime, newTime, oldTime) {
+export async function addThirsty(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "thirsty";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
@@ -1291,9 +1301,6 @@ export async function applyThirsty(actorId, execTime, newTime, oldTime) {
     }
   }
 
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-  
   if (warn) {
     const content = 'feels thirsty...';
     const flavor = Util.upperCaseFirst(type);
@@ -1307,6 +1314,9 @@ export async function applyThirsty(actorId, execTime, newTime, oldTime) {
 }
 
 export async function applyThirst(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "thirst";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
@@ -1320,9 +1330,15 @@ export async function applyThirst(actorId, execTime, newTime, oldTime) {
   await applyFatigueDamage(actor, token, {dice, type, flavor});
 }
 
-export async function applySleepy(actorId, execTime, newTime, oldTime) {
+export async function addSleepy(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "sleepy";
   const actor = game.actors.get(actorId);
+  const isSleeping = !!actor.data.effects.find(e => e.data.label === 'Asleep');
+  if (isSleeping) return;
+
   const token = Util.getTokenFromActor(actor);
   const {lastFlag, interval, condition, minTime} = Constant.FATIGUE_CLOCKS[type];
   const lastTime = actor.getFlag("lostlands", lastFlag);
@@ -1338,9 +1354,6 @@ export async function applySleepy(actorId, execTime, newTime, oldTime) {
     }
   }
 
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-  
   if (warn) {
     const content = 'feels sleepy...';
     const flavor = Util.upperCaseFirst(type);
@@ -1354,8 +1367,14 @@ export async function applySleepy(actorId, execTime, newTime, oldTime) {
 }
 
 export async function applyExhaustion(actorId, execTime, newTime, oldTime) {
+  const restMode = game.settings.get("lostlands", "restMode");
+  if (restMode) return;
+
   const type = "exhaustion";
   const actor = game.actors.get(actorId);
+  const isSleeping = !!actor.data.effects.find(e => e.data.label === 'Asleep');
+  if (isSleeping) return;
+
   const token = Util.getTokenFromActor(actor);
   const {interval} = Constant.FATIGUE_CLOCKS[type];
   const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
@@ -1367,9 +1386,59 @@ export async function applyExhaustion(actorId, execTime, newTime, oldTime) {
   await applyFatigueDamage(actor, token, {dice, type, flavor});
 }
 
-async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+async function applyRest(actor, wakeTime, sleptTime) {
+  const type = 'rest';
+  const token = Util.getTokenFromActor(actor);
+  
+  // subtract first 6 hours of slept time before calculating extra healing dice
+  sleptTime = sleptTime - Constant.SECONDS_IN_HOUR * 6;
+  const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
+  const numDice = 1 + extraDice;
+  let die = game.settings.get("lostlands", "restDice");
+  const flavor = Util.upperCaseFirst(type);
   const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
+  let doHeal = true;
+
+  if (!restMode) {
+    die = 'd1';
+    // if Rest Mode is inactive, must not be hungry/thirsty/diseased/cold to heal
+    const fatigueConditions = ["Hungry", "Thirsty", "Diseased", "Cold"];
+    let fatigued = false;
+    for (const condition of fatigueConditions) {
+      fatigued = !!actor.data.effects.find(e => e.data.label === condition);
+      if (fatigued) break;
+    }
+    doHeal = !fatigued;
+
+    // bump healing dice to d2 if actor has a bedroll
+    const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
+    if (hasBedroll) die = 'd2';
+  }
+
+  if (!doHeal) return;
+
+  await actor.setFlag("lostlands", "last_rest_time", wakeTime);
+  const dice = `${numDice}${die}`;
+
+  await applyFatigueDamage(actor, token, {dice, type, flavor, heal: true});
+}
+
+export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime) {
+  const lastRestTime = actor.getFlag("lostlands", "last_rest_time");
+  const sleptTime = sleepEndTime - sleepStartTime;
+  const sleptTimeHours = Math.floor(sleptTime / Constant.SECONDS_IN_HOUR);
+  const lastRestedHoursAgo = Math.floor((sleepEndTime - lastRestTime) / Constant.SECONDS_IN_HOUR);
+
+  if (sleptTimeHours >= 3) {
+    await resetFatigueType(actor, 'exhaustion', sleepEndTime);
+  }
+
+  if ( sleptTimeHours >= 6 && lastRestedHoursAgo >= 22 ) {
+    await applyRest(actor, sleepEndTime, sleptTime);
+  }
+}
+
+async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
   const hp = Number(actor.data.data.hp.value);
   if (hp < 1) return;
 
@@ -1388,15 +1457,15 @@ async function doFatigueWarning(actor, token, {sound = '', content = '', flavor 
 }
 
 async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if ( restMode && !heal ) return;
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   const maxMaxHp = Number(actor.data.data.hp.max_max);
   if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
     return ui.notifications.error(`Error applying ${type} damage to ${actor.name}: invalid HP values`);
   }
+
   if (hp < 0) return;
+
   const result = await Util.rollDice(dice);
   const hpResult = heal ? hp + result : hp - result;
   const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
@@ -1415,142 +1484,162 @@ async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type
   return actor.update(updates);
 }
 
-export async function applyPartyFatigue(execTime, interval, newTime, oldTime) { // TODO cap damage/healing at max HP, fix applyToMaxHP logic
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-  const addTime = newTime - execTime;
-  const restMode = game.settings.get("lostlands", "restMode");
-  const pcTokens = Util.pCTokens();
+export async function addDisease(disease=null, options={}) {
+  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
-  return Promise.all(pcTokens.map(async (token) => {
-    const pc = token.actor;
-    const data = {
-      hp: pc.data.data.hp.value,
-      maxHp: pc.data.data.hp.max,
-    };
-    if ( data.hp < 0 || data.maxHp < 1 ) return;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const diseases = Constant.DISEASES;
+  disease = disease || options.altDialogChoice;
 
-    const updates = {...data}; // put this data and below functions into a separate class
-    // await addRestHealing(pc, token, execTime, updates);
-    // await addExhaustionDamage(pc, token, execTime, intervalInSeconds, newTime, oldTime, updates);
-    // await addHungerDamage(pc, token, execTime, intervalInSeconds, newTime, oldTime, updates);
-    await addThirstDamage(pc, token, execTime, intervalInSeconds, addTime, updates);
+  if (!disease && !options.shownAltDialog) {
+    const choices = Object.keys(diseases).map(type => {
+      return {label: Util.upperCaseFirst(type), value: type};
+    });
+    return altDialog(options, `Add Disease to ${actor.name}`, choices, () => addDisease(null, options));
+  }
 
-    if (!foundry.utils.fastDeepEqual(data, updates)) {
-      await pc.update({
-        "data.hp.value": updates.hp, 
-        "data.hp.max": updates.maxHp,
-      });
-    }
-  }));
-
-  async function addRestHealing(pc, token, execTime, updates) {
-    const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
-    let dice = game.settings.get("lostlands", "restDice");
-    const type = 'rest';
-    let flavor = `${Util.upperCaseFirst(type)} (${Constant.REST_TYPES[dice]})`;
-    let doHeal = execTime - Constant.SECONDS_IN_DAY >= lastRestTime;
+  const charDiseases = actor.getFlag("lostlands", "diseases");
   
-    if (!restMode) {
-      dice = '1';
-      flavor = 'Rest (Rough)';
-      const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
-      const startSleepTime = asleepEffect?.data.duration.startTime;
-      const sleptLongEnough = execTime - Constant.SECONDS_IN_HOUR * 6 >= startSleepTime;
-      const isHungry = !!pc.data.effects.find(e => e.data.label === 'Hungry');
-      const isThirsty = !!pc.data.effects.find(e => e.data.label === 'Thirsty');
+  // if character already has disease, return
+  if (charDiseases.hasOwnProperty(disease)) return;
 
-      // if Rest Mode is inactive, must be sleeping at least 6 hours and not hungry/thirsty to heal
-      doHeal = doHeal && sleptLongEnough && !isHungry && !isThirsty;
-      // bump healing dice to d2 if PC has a bedroll
-      const hasBedroll = !!pc.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-      if (hasBedroll) {
-        dice = 'd2';
-        flavor = 'Rest (Bedroll)';
+  const actorId = actor.isToken ? actor.token.id : actor.id;
+  const macro = await Util.getMacroByCommand(`confirmDisease`, `return game.lostlands.Macro.confirmDisease(actorId, disease, execTime, newTime, oldTime);`);
+  const incubationPeriod = Constant.DISEASES[disease].warningInterval;
+  const incubationInSeconds = SimpleCalendar.api.timestampPlusInterval(0, incubationPeriod);
+  const confirmTime = Util.now() + incubationInSeconds;
+
+  await TimeQ.doAt(confirmTime, macro.id, {actorId, disease});
+
+  return ui.notifications.info(`Added ${Util.upperCaseFirst(disease)} to ${actor.name}`);
+}  
+
+export async function confirmDisease(actorId, disease, execTime, newTime, oldTime) {
+  const actor = game.actors.get(actorId);
+  const hp = Number(actor.data.data.hp.value);
+  if (hp < 1) return;
+  const token = Util.getTokenFromActor(actor);
+  const type = 'disease';
+  const flavor = Util.upperCaseFirst(type);
+
+  const onConfirmDisease = async () => {
+    const interval = {day: 1};
+    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+    const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+    const numDice = 0 + extraDice;
+    const die = Constant.DISEASES[disease].virulence;
+    const dice = new Array(numDice).fill(die);
+    let damage = 0;
+    let resolved = false;
+
+    // determine damage and whether disease resolved early
+    for (const [index, die] of dice.entries()) {
+      const result = await Util.rollDice(die);
+      if ( result === 1 && index > 0 ) {
+        resolved = true;
+        break;
       }
+      damage += result;
     }
 
-    if (doHeal) {
-      await Util.resetRest(pc, execTime);
-      return addDamage(pc, token, {dice, type, flavor, heal: true}, updates);
-    }
-  }
+    damage && await applyFatigueDamage(actor, token, {dice: `${damage}`, type, flavor});
+    const hp = Number(actor.data.data.hp.value);
+    if (hp < 0) resolved = true;
 
-  async function addExhaustionDamage(pc, token, execTime, intervalInSeconds, newTime, oldTime, updates) {
-    if (restMode) {
-      return Util.resetSleep(pc, execTime);
-    }
-    const warningSound = newTime - oldTime < intervalInSeconds ? 'sleepy' : '';
-    const asleepEffect = pc.data.effects.find(e => e.data.label === 'Asleep');
-    const isSleeping = !!asleepEffect;
-    const lastSleepTime = pc.getFlag("lostlands", "last_sleep_time");
-    const dice = 'd3';
-    const type = 'exhaustion';
-    const flavor = Util.upperCaseFirst(type);
-    const doDamage = !isSleeping && 
-                   execTime - Constant.SECONDS_IN_DAY * 2 >= lastSleepTime &&
-                   (execTime - lastSleepTime) % Constant.SECONDS_IN_DAY < intervalInSeconds;
-    const warn = !isSleeping && 
-               execTime - Constant.SECONDS_IN_HOUR * 18 >= lastSleepTime;
-
-    if (warn) {
-      await Util.addCondition("Sleepy", pc);
-      await doWarning(pc, token, {sound: warningSound});
+    if (resolved) {
+      return Util.macroChatMessage(token, {
+        content: `${Util.upperCaseFirst(disease)} has resolved.`,
+        flavor
+      }, false);
     }
 
-    if (doDamage) {
-      return addDamage(pc, token, {dice, type, flavor}, updates);
+    // add disease to character and schedule applyDisease
+    const macro = await Util.getMacroByCommand(`applyDisease`, `return game.lostlands.Macro.applyDisease(actorId, disease, execTime, newTime, oldTime);`);
+    const scheduleFrom = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
+    const intervalId = await TimeQ.doEvery(interval, scheduleFrom, macro.id, {actorId, disease});
+    try {
+      await Util.addCondition("Diseased", actor);
+      const actorDiseases = actor.getFlag("lostlands", "diseases");
+      actorDiseases[disease] = {
+        startTime: execTime,
+        intervalId
+      };
+      await actor.setFlag("lostlands", "diseases", actorDiseases);
+      return await Util.macroChatMessage(token, {
+        content: `feels unwell...`,
+        flavor
+      }, false);
+    } catch (error) {
+      await TimeQ.cancel(intervalId);
+      throw new Error(error);
     }
-  }
+  };
 
-  async function addHungerDamage(pc, token, execTime, intervalInSeconds, newTime, oldTime, updates) {
-    if (restMode) {
-      return Util.resetHunger(pc, execTime);
-    }
-    const dice = 'd2';
-    const type = 'hunger';
-    const flavor = Util.upperCaseFirst(type);
-    const warningSound = newTime - oldTime < intervalInSeconds ? 'stomach_rumble' : '';
-    const lastEatTime = pc.getFlag("lostlands", "last_eat_time");
-    const warn = execTime - Constant.SECONDS_IN_HOUR * 18 >= lastEatTime;
-    const doDamage = execTime - Constant.SECONDS_IN_DAY * 2 >= lastEatTime &&
-                     (execTime - lastEatTime) % (Constant.SECONDS_IN_DAY * 2) < intervalInSeconds;
-  
-    if (warn) {
-      await Util.addCondition("Hungry", pc);
-      await doWarning(pc, token, {sound: warningSound});
-    }
-
-    if (doDamage) {
-      return addDamage(pc, token, {dice, type, flavor}, updates);
-    }
-  }
-
-  async function addThirstDamage(pc, token, execTime, intervalInSeconds, addTime, updates) { // only does damage to PC if they're on the scene
-    if (restMode) {
-      return Util.resetThirst(pc, execTime);
-    }
-    const dice = `d6`;
-    const type = 'thirst';
-    const flavor = Util.upperCaseFirst(type);
-    const lastDrinkTime = pc.getFlag("lostlands", "last_drink_time");
-    const warn = execTime + addTime - Constant.SECONDS_IN_HOUR * 12 >= lastDrinkTime;
-    const doDamage = execTime - Constant.SECONDS_IN_DAY * 2 >= lastDrinkTime &&
-                     ((execTime - lastDrinkTime) % Constant.SECONDS_IN_DAY < intervalInSeconds || addDice);
-
-    if (warn) {
-      await Util.addCondition("Thirsty", pc);
-    }
-
-    if (doDamage) {
-      return addDamage(pc, token, {dice, type, flavor}, updates);
-    }
-  }
-
-  
+  return new Dialog({
+    title: "Confirm Disease",
+    content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
+    buttons: {
+     one: {
+      icon: '<i class="fas fa-check"></i>',
+      label: "Yes",
+      callback: () => {}
+     },
+     two: {
+      icon: '<i class="fas fa-times"></i>',
+      label: "No",
+      callback: () => onConfirmDisease(),
+     }
+    },
+   }).render(true);
 }
 
+export async function applyDisease(actorId, disease, execTime, newTime, oldTime) {
+  const actor = game.actors.get(actorId);
+  const token = Util.getTokenFromActor(actor);
+  const type = 'disease';
+  const flavor = Util.upperCaseFirst(type);
+  const interval = {day: 1};
+  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+  const numDice = 1 + extraDice;
+  const die = Constant.DISEASES[disease].virulence;
+  const dice = new Array(numDice).fill(die);
+  let damage = 0;
+  let resolved = false;
+  
+  // determine damage and whether disease resolved early
+  for (const die of dice) {
+    const result = await Util.rollDice(die);
+    if (result === 1) {
+      resolved = true;
+      break;
+    }
+    damage += result;
+  }
 
+  damage && await applyFatigueDamage(actor, token, {dice: `${damage}`, type, flavor});
+  const hp = Number(actor.data.data.hp.value);
+  if (hp < 0) resolved = true;
 
-// async function applyDiseaseDamage(execTime, seconds) {
+  if (resolved) {
+    let actorDiseases = actor.getFlag("lostlands", "diseases");
+    delete actorDiseases[disease];
+    await actor.unsetFlag("lostlands", "diseases");
+    await actor.setFlag("lostlands", "diseases", actorDiseases);
 
-// }
+    if (!Object.keys(actorDiseases).length) {
+      await Util.removeCondition("Diseased", actor);
+    }
+
+    await Util.macroChatMessage(token, {
+      content: `${Util.upperCaseFirst(disease)} has resolved.`,
+      flavor
+    }, false);
+
+    // return false to prevent reschedule
+    return false;
+  }
+
+  return true;
+}
