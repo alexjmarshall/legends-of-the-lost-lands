@@ -11,6 +11,7 @@ import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
+import { restartFatigueClocks } from './fatigue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -82,7 +83,7 @@ Hooks.once("init", async function() {
     hint: "Select dice to heal while resting",
     scope: "world",
     type: String,
-    default: Constant.DEFAULT_REST_DICE,
+    default: 'd3',
     config: false
   });
 
@@ -167,52 +168,13 @@ Hooks.once("init", async function() {
 
 Hooks.on("ready", () => {
 
+  // Note: if a new character is created, the GM needs to reboot to start their fatigue clocks
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
-
-    const startFatigueClocks = async (currentTime) => {
-      // cancel clocks for all actors
-      const allActors = game.actors;
-      const clocks = Constant.FATIGUE_CLOCKS;
-      const intervalFlags = Object.values(clocks).map(c => c.intervalFlag);
-
-      for (const actor of allActors) {
-        for (const flag of intervalFlags) {
-          await Util.stopClock(actor, flag);
-        }
-      }    
-
-      // for PCs, reset fatigue last times if undefined or later than current time
-      //    and restart fatigue clocks
-      const pCs = Util.pCTokens().map(t => t.actor);
-      return Promise.all(
-        pCs.map(async (pc) => {
-
-          const lastRestTime = pc.getFlag("lostlands", "last_rest_time");
-          if ( !lastRestTime || lastRestTime > currentTime ) {
-            await pc.setFlag("lostlands", "last_rest_time", currentTime);
-          }
-
-          for (const [type, {interval, lastFlag, command, intervalFlag}] of Object.entries(clocks)) {
-
-            const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-            const lastTime = pc.getFlag("lostlands", lastFlag);
-            
-            if ( !lastTime || lastTime > currentTime ) {
-              await Util.resetFatigueType(pc, type, currentTime);
-            } else {
-              const startTime = Util.nextTime(interval, lastTime, currentTime) - intervalInSeconds;
-              await Util.startClock(pc, intervalFlag, command, interval, startTime);
-            }
-          }
-        })
-      );
-    };
 
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      await Util.removeEffectsStartingAfter(now);
-      await startFatigueClocks(now);
+      await restartFatigueClocks(now);
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -228,27 +190,12 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
 
       // if going back in time, remove conditions that started later than current time, and restart clocks
+      
       if (timeDiff < 0) {
+        await TimeQ.clear();
         await Util.removeEffectsStartingAfter(newTime);
-        await startFatigueClocks(newTime);
+        await restartFatigueClocks(newTime);
       }
-
-      // update reqClo setting on season change and weather change
-      // do cold damage using first additive method here
-      // compare worn clo to required clo, and add cold? condition
-      // use clo diff and number of times certain thresholds have passed, e.g. minutes, hours to calculate how much damage to do
-      // only apply cold damage if PC is alive
-      // const season = data.season?.name.toLowerCase();
-      // const reqClo = Constant.REQ_CLO_BY_SEASON[season];
-      // const pCs = Util.pCTokens().map(t => t.actor);
-      // console.log()
-      // for (const pc of pCs) {
-      //   const wornClo = pc.data.data.clo;
-      //   if (wornClo < reqClo) {
-      //     await Util.addCondition("Cold", pc);
-      //   }
-      // }
-
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
@@ -399,7 +346,6 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
   const actor = activeEffect.parent;
   const restMode = game.settings.get("lostlands", "restMode");
 
-  // TODO remove promise.All? rename hunger/thirst to starvation/dehydration & set start times to first moment of hunger/thirst? matches disease dynamics
   if ( activeEffect.data.label === 'Asleep' && !restMode ) {
     const sleepStartTime = activeEffect.data.duration.startTime;
     const sleepEndTime = Util.now();
