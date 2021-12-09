@@ -156,6 +156,21 @@ async function useItem(itemId, data={
   Util.chatBubble(token, chatBubbleText);
 }
 
+export async function cureDisease() {
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  let actorDiseases = actor.getFlag("lostlands", "diseases");
+
+  await Util.removeCondition("Diseased", actor);
+  for(const disease of Object.values(actorDiseases)) {
+    const intervalId = disease.intervalId;
+    await TimeQ.cancel(intervalId);
+  }
+  actorDiseases = {};
+  await actor.unsetFlag("lostlands", "diseases");
+  return actor.setFlag("lostlands", "diseases", actorDiseases);
+}
+
 export async function drinkPotion(itemId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
