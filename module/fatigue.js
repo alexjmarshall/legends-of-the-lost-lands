@@ -5,7 +5,7 @@ import { TimeQ } from './time-queue.js';
 // how to handle to events that occur to inactive/offscreen characters? -- put in individual rest mode
 // test rest mode healing
 
-// TODO get hunger/thirst/sleep tested and working, along with macros to reset these
+// TODO get thirst/sleep tested and working, along with macros to reset these
 
 // TODO add disease symptoms to character sheet? add tab with last eat time, last drink time, clo, disease symptoms, GM: reset/delete disease buttons
 // generic item icon for spells and features
@@ -30,10 +30,11 @@ const REQ_CLO_BY_SEASON = {
   "spring": 2,
   "winter": 3
 };
-const CLOCKS = {
+export const CLOCKS = {
   "hunger": {
     warningInterval: { hour: 18 },
-    damageInterval: { day: 3 },
+    damageInterval: { day: 2 },
+    damageDice: 'd3',
     startFlag: "last_eat_time",
     warningCommand: "addHungry",
     damageCommand: "applyHunger",
@@ -41,46 +42,50 @@ const CLOCKS = {
     condition: "Hungry",
     alwaysOn: true
   },
-  "thirst": {
-    warningInterval: { hour: 12 },
-    damageInterval: { day: 1 },
-    startFlag: "last_drink_time",
-    warningCommand: "addThirsty",
-    damageCommand: "applyThirst",
-    intervalFlag: "thirst_interval_id",
-    condition: "Thirsty",
-    alwaysOn: true
-  },
-  "exhaustion": {
-    warningInterval: { hour: 18 },
-    damageInterval: { day: 1 },
-    startFlag: "last_sleep_time",
-    warningCommand: "addSleepy",
-    damageCommand: "applyExhaustion",
-    intervalFlag: "exhaustion_interval_id",
-    condition: "Sleepy",
-    alwaysOn: true
-  },
-  "cold": {
-    warningInterval: {}, // immediate
-    damageInterval: {}, // varies based on difference between worn and required Clo
-    startFlag: "cold_start_time",
-    warningCommand: "addCold",
-    damageCommand: "applyCold",
-    intervalFlag: "cold_interval_id",
-    condition: "Cold",
-    alwaysOn: false
-  },
-  "rest": {
-    warningInterval: {},
-    damageInterval: {},
-    startFlag: "last_rest_time",
-    warningCommand: "",
-    damageCommand: "",
-    intervalFlag: "",
-    condition: "",
-    alwaysOn: false
-  },
+  // "thirst": {
+  //   warningInterval: { hour: 12 },
+  //   damageInterval: { day: 1 },
+  //   damageDice: 'd6',
+  //   startFlag: "last_drink_time",
+  //   warningCommand: "addThirsty",
+  //   damageCommand: "applyThirst",
+  //   intervalFlag: "thirst_interval_id",
+  //   condition: "Thirsty",
+  //   alwaysOn: true
+  // },
+  // "exhaustion": {
+  //   warningInterval: { hour: 18 },
+  //   damageInterval: { day: 1 },
+  //   damageDice: 'd6',
+  //   startFlag: "last_sleep_time",
+  //   warningCommand: "addSleepy",
+  //   damageCommand: "applyExhaustion",
+  //   intervalFlag: "exhaustion_interval_id",
+  //   condition: "Sleepy",
+  //   alwaysOn: true
+  // },
+  // "cold": {
+  //   warningInterval: {}, // immediate
+  //   damageInterval: {}, // varies based on difference between worn and required Clo
+  //   damageDice: 'd6',
+  //   startFlag: "cold_start_time",
+  //   warningCommand: "addCold",
+  //   damageCommand: "applyCold",
+  //   intervalFlag: "cold_interval_id",
+  //   condition: "Cold",
+  //   alwaysOn: false
+  // },
+  // "rest": {
+  //   warningInterval: {},
+  //   damageInterval: {},
+  //   damageDice: '',
+  //   startFlag: "last_rest_time",
+  //   warningCommand: "",
+  //   damageCommand: "",
+  //   intervalFlag: "",
+  //   condition: "",
+  //   alwaysOn: false
+  // },
 };
 export const DISEASES = {
   "grippe": {
@@ -219,7 +224,7 @@ async function resetClocks(char, time) {
     id && await TimeQ.cancel(id);
     
     // 2) if start time is invalid, set to undefined or given time for 'always on' clocks
-    const startTime = char.getFlag("lostlands", clock.startFlag);
+    let startTime = char.getFlag("lostlands", clock.startFlag);
     if ( startTime == null || startTime > time ) {
 
       if (!clock.alwaysOn) {
@@ -228,6 +233,7 @@ async function resetClocks(char, time) {
       }
 
       await char.setFlag("lostlands", clock.startFlag, time);
+      startTime = time;
     }
 
     // 3) if there is a start time defined, start the clock
@@ -249,7 +255,7 @@ async function resetClocks(char, time) {
 
 
 async function resetDiseases(char, time) {
-  
+
   const actorId = char.isToken ? char.token.id : char.id;
 
   let charDiseases = char.getFlag("lostlands", "diseases");
