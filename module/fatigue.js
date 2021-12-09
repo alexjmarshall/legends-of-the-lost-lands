@@ -3,6 +3,13 @@ import { TimeQ } from './time-queue.js';
 
 // TODO make rest mode individual condition, with rest dice an individual flag
 // how to handle to events that occur to inactive/offscreen characters? -- put in individual rest mode
+// test rest mode healing
+
+// TODO get hunger/thirst/sleep tested and working, along with macros to reset these
+
+// TODO add disease symptoms to character sheet? add tab with last eat time, last drink time, clo, disease symptoms, GM: reset/delete disease buttons
+// generic item icon for spells and features
+
 //
 // update reqClo setting on season change and weather change
 // do cold damage using first additive method here
@@ -188,13 +195,13 @@ export function reqClo() {
 
 export async function restartFatigueClocks(time) {
 
-  const allChars = game.actors.filter(a => a.type === 'character');
+  const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
 
   for (const char of allChars) {
     
     await resetDiseases(char, time);
 
-    // await resetClocks(char, time);
+    await resetClocks(char, time);
   }
 
 }
@@ -203,31 +210,29 @@ export async function restartFatigueClocks(time) {
 // TODO TEST
 
 async function resetClocks(char, time) {
-  // 1) stop the clock using stored interval Id
-  // 2) if start time is invalid, set to undefined or given time for 'always on' clocks
-  // 3) if there is a start time defined, start the clock
-  //    3a) Compare start time to now: if within warning event interval, schedule warning event
-  //    3b) otherwise, schedule damage event
 
   const actorId = char.isToken ? char.token.id : char.id;
   for (const clock of Object.values(CLOCKS)) {
 
-    // 1
-    const id = actor.getFlag("lostlands", clock.intervalFlag);
+    // 1) stop the clock using stored interval Id
+    const id = char.getFlag("lostlands", clock.intervalFlag);
     id && await TimeQ.cancel(id);
     
-    // 2
-    const lastTime = char.getFlag("lostlands", clock.startFlag);
-    if (lastTime > time) { 
+    // 2) if start time is invalid, set to undefined or given time for 'always on' clocks
+    const startTime = char.getFlag("lostlands", clock.startFlag);
+    if ( startTime == null || startTime > time ) {
 
-      if (clock.alwaysOn) await char.setFlag("lostlands", clock.startFlag, time);
-      else await char.unsetFlag("lostlands", clock.startFlag);
+      if (!clock.alwaysOn) {
+        await char.unsetFlag("lostlands", clock.startFlag);
+        continue;
+      }
+
+      await char.setFlag("lostlands", clock.startFlag, time);
     }
 
-    // 3
-    const startTime = char.getFlag("lostlands", clock.startFlag);
-    if (!startTime) continue;
-
+    // 3) if there is a start time defined, start the clock
+    //    -- Compare start time to now: if within warning event interval, schedule warning event
+    //    -- otherwise, schedule damage event
     const warningIntervalInSeconds = Util.intervalInSeconds(clock.warningInterval);
     const warningTime = startTime + warningIntervalInSeconds;
     const scheduleWarning = warningTime > time;
@@ -244,12 +249,7 @@ async function resetClocks(char, time) {
 
 
 async function resetDiseases(char, time) {
-  // 1) stop the clock using stored interval Id
-  // 2) if start time is invalid, delete disease
-  // 3) start the clock
-  //    3a) Compare disease start time to given time: if within warning event interval, schedule warning event
-  //    3b) otherwise, schedule damage event
-
+  
   const actorId = char.isToken ? char.token.id : char.id;
 
   let charDiseases = char.getFlag("lostlands", "diseases");
@@ -260,17 +260,22 @@ async function resetDiseases(char, time) {
 
   for (const [disease, data] of Object.entries(charDiseases)) {
 
-    // 1
+    // 1) stop the clock using stored interval Id
     await TimeQ.cancel(data.intervalId);
     
-    // 2
+    // 2) if start time is invalid, delete disease
     const startTime = data.startTime;
-    if (startTime > time) {
+    if ( startTime == null || startTime > time ) {
       delete charDiseases[disease];
+      if (!Object.keys(charDiseases).length) {
+        await Util.removeCondition("Diseased", char);
+      }
       continue;
     }
 
-    // 3a
+    // 3) start the clock
+    //    -- Compare disease start time to given time: if within warning event interval, schedule warning event
+    //    -- otherwise, schedule damage event
     const warningInterval = DISEASES[disease].warningInterval;
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const warningTime = startTime + warningIntervalInSeconds;
