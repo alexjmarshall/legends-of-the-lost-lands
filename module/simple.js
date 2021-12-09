@@ -191,7 +191,6 @@ Hooks.on("ready", () => {
       const newTime =  oldTime + timeDiff;
 
       // if going back in time, remove conditions that started later than current time, and restart clocks
-      
       if (timeDiff < 0) {
         await TimeQ.clear();
         await Util.removeEffectsStartingAfter(newTime);
