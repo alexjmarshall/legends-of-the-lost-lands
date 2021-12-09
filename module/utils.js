@@ -74,6 +74,27 @@ export function chatBubble(token, text, emote=true) {
   return canvas.hud.bubbles.say(token, text, {emote});
 }
 
+export async function macroChatMessage(token, actor, {content, type, flavor, sound}, chatBubble=true) {
+  if (!content) return;
+
+  const speaker = ChatMessage.getSpeaker(token);
+  type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
+  sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
+  content = content.trim();
+
+  // if chat msg is an emote, prefix content with actor's name
+  if (type == CONST.CHAT_MESSAGE_TYPES.EMOTE) {
+    content = `${actor.name} ${content}`;
+  }
+
+  // if content includes inline rolls, increase line height
+  if (/[[.*\d.*]]/.test(content)) {
+    content = `<div style="line-height:1.6em;">${content}</div>`;
+  }
+
+  return ChatMessage.create({speaker, content, type, flavor, sound}, {chatBubble});
+}
+
 export function getTokenFromActor(actor) {
   const token = actor.isToken ? actor.token.data :
     canvas.tokens.objects.children.find(t => t.actor.id === actor.id);
@@ -113,20 +134,6 @@ export async function reduceItemQty(item, actor) {
     '_id': item._id, 
     'data.quantity': itemQty - 1
   }]);
-}
-
-export async function macroChatMessage(token, data, chatBubble=true) {
-  if (!data.content) return;
-  const type = data.type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
-  const flavor = data.flavor;
-  const sound = data.sound ? `systems/lostlands/sounds/${data.sound}.mp3` : null;
-  const speaker = ChatMessage.getSpeaker(token);
-  let content = data.content.trim();
-  // if content includes inline rolls, increase line height
-  if (/[[.*\d.*]]/.test(data.content)) {
-    content = `<div style="line-height:1.6em;">${content}</div>`;
-  }
-  return ChatMessage.create({speaker, content, type, flavor, sound}, {chatBubble: chatBubble});
 }
 
 export function chatInlineRoll(content) {

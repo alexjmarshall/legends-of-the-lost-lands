@@ -152,7 +152,7 @@ async function useItem(itemId, data={
     return ui.notifications.error(`${item.name} must be held to use`);
   }
   consumable && await Util.reduceItemQty(item, actor);
-  Util.macroChatMessage(token, {content, flavor, sound, type}, false);
+  Util.macroChatMessage(token, actor, {content, flavor, sound, type}, false);
   Util.chatBubble(token, chatBubbleText);
 }
 
@@ -434,7 +434,7 @@ async function save(tokens, damage, options={}) {
   let content = `${Util.chatInlineRoll(saveText)}${resultText}`;
   content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
-  Util.macroChatMessage(token, {
+  Util.macroChatMessage(token, actor, {
     content: content, 
     flavor: flavor,
     sound: options.sound
@@ -618,7 +618,7 @@ async function attack(attackers, targetToken, options) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
-    Util.macroChatMessage(token, chatMsgData, false);
+    Util.macroChatMessage(token, token.actor, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString, true);
     for (const attack of attacks) {
@@ -1072,7 +1072,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
     const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
-    Util.macroChatMessage(reactingActor, chatData, false);
+    Util.macroChatMessage(token, reactingActor, chatData, false);
     canvas.hud.bubbles.say(token, `${reactingActor.name} considers ${targetActor.name}...`, {emote: true});
   }
 
@@ -1118,7 +1118,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money`,
       flavor: `Buy`
     };
-    return Util.macroChatMessage(actor, chatData, true);
+    return Util.macroChatMessage(null, actor, chatData, true);
   }
   // case 2: can pay with cp
   if (cp >= totalPriceInCp) {
@@ -1197,7 +1197,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       sound: 'coins',
       flavor: 'Buy'
     }
-    return Util.macroChatMessage(actor, chatData, true);
+    return Util.macroChatMessage(null, actor, chatData, true);
   }
 }
 
@@ -1245,56 +1245,64 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   }).render(true);
 }
 
+async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+  const hp = Number(actor.data.data.hp.value);
+  if (hp < 1) return;
+
+  content && await Util.macroChatMessage(token, actor, { content, flavor }, false);
+
+  if ( !sound || !token ) return;
+
+  if (Object.values(Constant.VOICE_MOODS).includes(sound)) {
+    Util.playVoiceSound(sound, actor, token, {push: true, bubble: true, chance: 1});
+  } else {
+    Util.playSound(`${sound}`, token, {push: true, bubble: true});
+  }
+}
+
+async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
+  const hp = Number(actor.data.data.hp.value);
+  const maxHp = Number(actor.data.data.hp.max);
+  const maxMaxHp = Number(actor.data.data.hp.max_max);
+  if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
+    return ui.notifications.error(`Error applying ${type} damage to ${actor.name}: invalid HP values`);
+  }
+
+  if (hp < 0) return;
+
+  const result = await Util.rollDice(dice);
+  const hpResult = heal ? hp + result : hp - result;
+  const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
+  const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
+  const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+  const updates = {"data.hp.value": hpUpdate};
+  if (applyToMax) Object.assign(updates, {"data.hp.max": maxHpUpdate});
+
+  content = `takes ${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
+
+  await Util.macroChatMessage(token, actor, { content, flavor }, false);
+  
+  return actor.update(updates);
+}
+
 export async function addHungry(actorId, execTime, newTime, oldTime) {
   const restMode = game.settings.get("lostlands", "restMode");
   if (restMode) return;
 
-  const type = "hungry";
+  const type = "hunger";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
-  const {lastFlag, interval, condition, minTime} = Fatigue.CLOCKS[type];
-  const lastTime = actor.getFlag("lostlands", lastFlag);
-  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
-  const applyCondition = newTime - minTimeInSeconds >= lastTime;
-  let warn = applyCondition;
-
-  if (newTime > execTime) {
-    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
-    if (newTime !== lastExecTime) {
-      warn = false;
-    }
-  }
-
-  if (warn) {
-    const content = 'feels hungry...';
-    const flavor = Util.upperCaseFirst(type);
-    const sound = 'stomach_rumble';
-    await doFatigueWarning(actor, token, {content, flavor, sound});
-  }
-  // TODO use this logic from confirmDisease
-  // const args = 'actorId, disease, execTime, newTime, oldTime';
-  //   const intervalId = await Fatigue.scheduleRecurring(interval, 'applyDisease', args, execTime, mewTime, {actorId, disease});
-  //   try {
-  //     await Util.addCondition("Diseased", actor);
-  //     const actorDiseases = actor.getFlag("lostlands", "diseases");
-  //     actorDiseases[disease] = {
-  //       startTime: execTime,
-  //       intervalId
-  //     };
-  //     await actor.setFlag("lostlands", "diseases", actorDiseases);
-  //     return await Util.macroChatMessage(token, {
-  //       content: `feels unwell...`,
-  //       flavor
-  //     }, false);
-  //   } catch (error) {
-  //     await TimeQ.cancel(intervalId);
-  //     return ui.notifications.error(error);
-  //   }
+  const { condition, damageInterval, damageCommand, intervalFlag } = Fatigue.CLOCKS[type];
+  const content = 'feels hungry...';
+  const flavor = Util.upperCaseFirst(type);
+  const sound = 'stomach_rumble';
+  await doFatigueWarning(actor, token, {content, flavor, sound});
   
-  if (applyCondition) {
-    await Util.addCondition(condition, actor);
-  }
+  const args = 'actorId, execTime, newTime, oldTime';
+  const intervalId = await Fatigue.scheduleRecurring(damageInterval, damageCommand, args, execTime, execTime, {actorId});
+  await actor.setFlag("lostlands", intervalFlag, intervalId);
+  await Util.addCondition(condition, actor);
+
 }
 
 export async function applyHunger(actorId, execTime, newTime, oldTime) {
@@ -1304,11 +1312,11 @@ export async function applyHunger(actorId, execTime, newTime, oldTime) {
   const type = "hunger";
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
-  const {interval} = Fatigue.CLOCKS[type];
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+  const { damageInterval, damageDice } = Fatigue.CLOCKS[type];
+  const intervalInSeconds = Util.intervalInSeconds(damageInterval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
-  const dice = `${numDice}d3`;
+  const dice = `${numDice}${damageDice}`;
   const flavor = Util.upperCaseFirst(type);
   
   await applyFatigueDamage(actor, token, {dice, type, flavor});
@@ -1472,52 +1480,6 @@ export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime) {
   }
 }
 
-async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 1) return;
-
-  content && await Util.macroChatMessage(token, {
-    content,
-    flavor
-  }, false);
-
-  if (!sound) return;
-
-  if (Object.values(Constant.VOICE_MOODS).includes(sound)) {
-    Util.playVoiceSound(sound, actor, token, {push: true, bubble: true, chance: 1});
-  } else {
-    Util.playSound(`${sound}`, token, {push: true, bubble: true});
-  }
-}
-
-async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
-  const hp = Number(actor.data.data.hp.value);
-  const maxHp = Number(actor.data.data.hp.max);
-  const maxMaxHp = Number(actor.data.data.hp.max_max);
-  if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
-    return ui.notifications.error(`Error applying ${type} damage to ${actor.name}: invalid HP values`);
-  }
-
-  if (hp < 0) return;
-
-  const result = await Util.rollDice(dice);
-  const hpResult = heal ? hp + result : hp - result;
-  const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
-  const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
-  const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
-  const updates = {"data.hp.value": hpUpdate};
-  if (applyToMax) Object.assign(updates, {"data.hp.max": maxHpUpdate});
-
-  content = `${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
-
-  await Util.macroChatMessage(token, {
-    content,
-    flavor
-  }, false);
-  
-  return actor.update(updates);
-}
-
 export async function addDisease(disease=null, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
@@ -1573,10 +1535,7 @@ export async function confirmDisease(actorId, disease, execTime, newTime, oldTim
 
   const onConfirmDisease = async () => {
 
-    await Util.macroChatMessage(token, {
-      content: `feels unwell...`,
-      flavor
-    }, false);
+    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
 
     const interval = Fatigue.DISEASES[disease].damageInterval;
     const intervalInSeconds = Util.intervalInSeconds(interval);
@@ -1605,7 +1564,7 @@ export async function confirmDisease(actorId, disease, execTime, newTime, oldTim
 
       await deleteDisease(actor, disease);
 
-      return Util.macroChatMessage(token, {
+      return Util.macroChatMessage(token, actor, {
         content: `${Util.upperCaseFirst(disease)} has resolved.`,
         flavor
       }, false);
@@ -1681,7 +1640,7 @@ export async function applyDisease(actorId, disease, execTime, newTime, oldTime)
 
     await deleteDisease(actor, disease);
 
-    await Util.macroChatMessage(token, {
+    await Util.macroChatMessage(token, actor, {
       content: `${Util.upperCaseFirst(disease)} has resolved.`,
       flavor
     }, false);

@@ -229,7 +229,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error("Cannot prepare any more spells of this level");
         }
         if (!isPrepared) {
-          Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
+          Util.macroChatMessage(this, this.actor, { content: `prepares ${item.name}` });
         }
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -254,7 +254,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
         }
         let verb = isWorn ? 'doffs' : 'dons';
-        Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
+        Util.macroChatMessage(this, this.actor, { content: `${verb} ${item.name}` });
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold":
         const isHeld = !!item.data.data.held;
@@ -283,9 +283,9 @@ export class SimpleActorSheet extends ActorSheet {
             if (event.altKey) {
               return game.lostlands.Macro.quickDrawAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
             }
-            Util.macroChatMessage(this, { content: `${this.actor.name} draws ${item.name}` });
+            Util.macroChatMessage(this, this.actor, { content: `draws ${item.name}` });
           } else {
-            Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}` });
+            Util.macroChatMessage(this, this.actor, { content: `wields ${item.name}` });
           }
         }
         return;

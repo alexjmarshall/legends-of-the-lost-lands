@@ -187,8 +187,8 @@ Hooks.on("ready", () => {
       locked = true;
 
       const oldTime = game.time.worldTime;
-      const newTime =  SimpleCalendar.api.dateToTimestamp(data.date);
       const timeDiff = data.diff;
+      const newTime =  oldTime + timeDiff;
 
       // if going back in time, remove conditions that started later than current time, and restart clocks
       
@@ -316,7 +316,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 
   if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
-    Util.macroChatMessage(token, {flavor: 'Death', content: `${actor.name} has fallen. May the Gods have mercy.`}, false);
+    Util.macroChatMessage(token, actor, {flavor: 'Death', content: `has fallen. May the Gods have mercy.`}, false);
   }
 });
 
