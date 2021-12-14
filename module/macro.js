@@ -1245,22 +1245,42 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   }).render(true);
 }
 
-async function doFatigueWarning(actor, token, {sound = '', content = '', flavor = 'Fatigue'}={}) {
+export async function doFatigueWarning(actorId, type, execTime) {
+  // Note: return true to reschedule fatigue warning. Return false to prevent reschedule.
+  // TODO rest mode
+  const actor = game.actors.get(actorId);
   const hp = Number(actor.data.data.hp.value);
-  if (hp < 1) return;
+  if (hp < 0) return true;
 
+  // schedule fatigue damage
+  const { condition, warningSound, damageInterval, intervalFlag } = Fatigue.CLOCKS[type]; // TODO schedule damage for prevTime of startTime and newTime
+  const command = 'applyFatigueDamage(actorId, type, execTime, newTime)';
+  const intervalId = await Fatigue.scheduleRecurring(damageInterval, command, execTime, {actorId, type});
+  await actor.setFlag("lostlands", intervalFlag, intervalId);
+  await Util.addCondition(condition, actor);
+
+  if (hp < 1) return false;
+
+  // do fatigue chat message/sound warning
+  const token = Util.getTokenFromActor(actor);
+  const flavor = Util.upperCaseFirst(type);
+  const content = `feels ${condition.toLowerCase()}...`;
   content && await Util.macroChatMessage(token, actor, { content, flavor }, false);
 
-  if ( !sound || !token ) return;
+  if ( !warningSound || !token ) return false;
 
-  if (Object.values(Constant.VOICE_MOODS).includes(sound)) {
-    Util.playVoiceSound(sound, actor, token, {push: true, bubble: true, chance: 1});
+  if (Object.values(Constant.VOICE_MOODS).includes(warningSound)) {
+    Util.playVoiceSound(warningSound, actor, token, {push: true, bubble: true, chance: 1});
   } else {
-    Util.playSound(`${sound}`, token, {push: true, bubble: true});
+    Util.playSound(warningSound, token, {push: true, bubble: true});
   }
+
+  return false;
 }
 
-async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type='', flavor = 'Fatigue', heal = false, applyToMax = true} = {}) {
+export async function applyFatigueDamage(actorId, type, execTime, newTime, heal = false, applyToMax = true) {
+  // TODO rest mode
+  const actor = game.actors.get(actorId);
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   const maxMaxHp = Number(actor.data.data.hp.max_max);
@@ -1270,6 +1290,12 @@ async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type
 
   if (hp < 0) return;
 
+  const { damageInterval, damageDice } = Fatigue.CLOCKS[type];
+  const intervalInSeconds = Util.intervalInSeconds(damageInterval);
+  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
+  const numDice = 1 + extraDice;
+  const dice = `${numDice}${damageDice}`;
+
   const result = await Util.rollDice(dice);
   const hpResult = heal ? hp + result : hp - result;
   const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
@@ -1278,154 +1304,13 @@ async function applyFatigueDamage(actor, token, {dice = 'd6', content = '', type
   const updates = {"data.hp.value": hpUpdate};
   if (applyToMax) Object.assign(updates, {"data.hp.max": maxHpUpdate});
 
-  content = `takes ${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
+  const content = `takes ${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
+  const flavor = Util.upperCaseFirst(type);
+  const token = Util.getTokenFromActor(actor);
 
   await Util.macroChatMessage(token, actor, { content, flavor }, false);
   
   return actor.update(updates);
-}
-
-export async function addHungry(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "hunger";
-  const actor = game.actors.get(actorId);
-  const token = Util.getTokenFromActor(actor);
-  const { condition, damageInterval, damageCommand, intervalFlag } = Fatigue.CLOCKS[type];
-  const content = 'feels hungry...';
-  const flavor = Util.upperCaseFirst(type);
-  const sound = 'stomach_rumble';
-  await doFatigueWarning(actor, token, {content, flavor, sound});
-  
-  const args = 'actorId, execTime, newTime, oldTime';
-  const intervalId = await Fatigue.scheduleRecurring(damageInterval, damageCommand, args, execTime, execTime, {actorId});
-  await actor.setFlag("lostlands", intervalFlag, intervalId);
-  await Util.addCondition(condition, actor);
-
-}
-
-export async function applyHunger(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "hunger";
-  const actor = game.actors.get(actorId);
-  const token = Util.getTokenFromActor(actor);
-  const { damageInterval, damageDice } = Fatigue.CLOCKS[type];
-  const intervalInSeconds = Util.intervalInSeconds(damageInterval);
-  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
-  const numDice = 1 + extraDice;
-  const dice = `${numDice}${damageDice}`;
-  const flavor = Util.upperCaseFirst(type);
-  
-  await applyFatigueDamage(actor, token, {dice, type, flavor});
-}
-
-export async function addThirsty(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "thirsty";
-  const actor = game.actors.get(actorId);
-  const token = Util.getTokenFromActor(actor);
-  const {lastFlag, interval, condition, minTime} = Fatigue.CLOCKS[type];
-  const lastTime = actor.getFlag("lostlands", lastFlag);
-  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
-  const applyCondition = newTime - minTimeInSeconds >= lastTime;
-  let warn = applyCondition;
-
-  if (newTime > execTime) {
-    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
-    if (newTime !== lastExecTime) {
-      warn = false;
-    }
-  }
-
-  if (warn) {
-    const content = 'feels thirsty...';
-    const flavor = Util.upperCaseFirst(type);
-    const sound = '';
-    await doFatigueWarning(actor, token, {content, flavor, sound});
-  }
-  
-  if (applyCondition) {
-    await Util.addCondition(condition, actor);
-  }
-}
-
-export async function applyThirst(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "thirst";
-  const actor = game.actors.get(actorId);
-  const token = Util.getTokenFromActor(actor);
-  const {interval} = Fatigue.CLOCKS[type];
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
-  const numDice = 1 + extraDice;
-  const dice = `${numDice}d6`;
-  const flavor = Util.upperCaseFirst(type);
-  
-  await applyFatigueDamage(actor, token, {dice, type, flavor});
-}
-
-export async function addSleepy(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "sleepy";
-  const actor = game.actors.get(actorId);
-  const isSleeping = !!actor.data.effects.find(e => e.data.label === 'Asleep');
-  if (isSleeping) return;
-
-  const token = Util.getTokenFromActor(actor);
-  const {lastFlag, interval, condition, minTime} = Fatigue.CLOCKS[type];
-  const lastTime = actor.getFlag("lostlands", lastFlag);
-  const minTimeInSeconds = SimpleCalendar.api.timestampPlusInterval(0, minTime);
-  const applyCondition = newTime - minTimeInSeconds >= lastTime;
-  let warn = applyCondition;
-
-  if (newTime > execTime) {
-    const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-    const lastExecTime = Util.nextTime(interval, execTime, newTime) - intervalInSeconds;
-    if (newTime !== lastExecTime) {
-      warn = false;
-    }
-  }
-
-  if (warn) {
-    const content = 'feels sleepy...';
-    const flavor = Util.upperCaseFirst(type);
-    const sound = 'sleepy';
-    await doFatigueWarning(actor, token, {content, flavor, sound});
-  }
-  
-  if (applyCondition) {
-    await Util.addCondition(condition, actor);
-  }
-}
-
-export async function applyExhaustion(actorId, execTime, newTime, oldTime) {
-  const restMode = game.settings.get("lostlands", "restMode");
-  if (restMode) return;
-
-  const type = "exhaustion";
-  const actor = game.actors.get(actorId);
-  const isSleeping = !!actor.data.effects.find(e => e.data.label === 'Asleep');
-  if (isSleeping) return;
-
-  const token = Util.getTokenFromActor(actor);
-  const {interval} = Fatigue.CLOCKS[type];
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
-  const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
-  const numDice = 1 + extraDice;
-  const dice = `${numDice}d6`;
-  const flavor = Util.upperCaseFirst(type);
-  
-  await applyFatigueDamage(actor, token, {dice, type, flavor});
 }
 
 async function applyRest(actor, wakeTime, sleptTime) {
@@ -1500,129 +1385,42 @@ export async function addDisease(disease=null, options={}) {
   // if character already has disease, return
   if (charDiseases.hasOwnProperty(disease)) return;
 
-  // add disease and schedule confirmDisease
-  const actorId = actor.isToken ? actor.token.id : actor.id;
-  const incubationPeriod = Fatigue.DISEASES[disease].warningInterval;
-  const incubationInSeconds = Util.intervalInSeconds(incubationPeriod);
-  const confirmTime = Util.now() + incubationInSeconds;
-  const argsString = 'actorId, disease, execTime, newTime, oldTime';
-  const intervalId = await Fatigue.scheduleOnce('confirmDisease', argsString, confirmTime, {actorId, disease});
-
-  try {
-
-    const actorDiseases = actor.getFlag("lostlands", "diseases");
-    actorDiseases[disease] = {
-      startTime: Util.now(),
-      intervalId
-    };
-    await actor.setFlag("lostlands", "diseases", actorDiseases);
-    return ui.notifications.info(`Added ${Util.upperCaseFirst(disease)} to ${actor.name}`);
-
-  } catch (error) {
-
-    await deleteDisease(actor, disease);
-    return ui.notifications.error(error);
-  }
-}
-
-export async function confirmDisease(actorId, disease, execTime, newTime, oldTime) {
-  const actor = game.actors.get(actorId);
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 1) return;
-  const token = Util.getTokenFromActor(actor);
-  const type = 'disease';
-  const flavor = Util.upperCaseFirst(type);
-
-  const onConfirmDisease = async () => {
-
-    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
-
-    const interval = Fatigue.DISEASES[disease].damageInterval;
-    const intervalInSeconds = Util.intervalInSeconds(interval);
-    const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
-    const numDice = 0 + extraDice;
-    const die = Fatigue.DISEASES[disease].virulence;
-    const dice = new Array(numDice).fill(die);
-    let damage = 0;
-    let resolved = false;
-
-    // determine damage and whether disease resolved early
-    for (const [index, die] of dice.entries()) {
-      const result = await Util.rollDice(die);
-      if ( result === 1 && index > 0 ) {
-        resolved = true;
-        break;
-      }
-      damage += result;
-    }
-
-    damage && await applyFatigueDamage(actor, token, {dice: `${damage}`, type, flavor});
-    const hp = Number(actor.data.data.hp.value);
-    if (hp < 0) resolved = true;
-
-    if (resolved) {
-
-      await deleteDisease(actor, disease);
-
-      return Util.macroChatMessage(token, actor, {
-        content: `${Util.upperCaseFirst(disease)} has resolved.`,
-        flavor
-      }, false);
-    }
-
-    // schedule applyDisease and update intervalId field on actor disease
-    const args = 'actorId, disease, execTime, newTime, oldTime';
-    const intervalId = await Fatigue.scheduleRecurring(interval, 'applyDisease', args, execTime, newTime, {actorId, disease});
-
-    try {
-
-      const actorDiseases = actor.getFlag("lostlands", "diseases");
-      actorDiseases[disease].intervalId = intervalId;
-      await actor.setFlag("lostlands", "diseases", actorDiseases);
-
-      return await Util.addCondition("Diseased", actor);
-
-    } catch (error) {
-
-      await deleteDisease(actor, disease);
-
-      return ui.notifications.error(error);
-    }
+  const actorDiseases = actor.getFlag("lostlands", "diseases");
+  actorDiseases[disease] = {
+    startTime: Util.now()
   };
 
-  return new Dialog({
-    title: "Confirm Disease",
-    content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
-    buttons: {
-     one: {
-      icon: '<i class="fas fa-check"></i>',
-      label: "Yes",
-      callback: () => deleteDisease(actor, disease)
-     },
-     two: {
-      icon: '<i class="fas fa-times"></i>',
-      label: "No",
-      callback: () => onConfirmDisease()
-     }
-    },
-   }).render(true);
+  await actor.setFlag("lostlands", "diseases", actorDiseases);
+
+  return ui.notifications.info(`Added ${Util.upperCaseFirst(disease)} to ${actor.name}`);
 }
 
-export async function applyDisease(actorId, disease, execTime, newTime, oldTime) {
+export async function applyDisease(actorId, disease, execTime, newTime) {
   const actor = game.actors.get(actorId);
   const token = Util.getTokenFromActor(actor);
   const type = 'disease';
   const flavor = Util.upperCaseFirst(type);
   const interval = Fatigue.DISEASES[disease].damageInterval;
-  const intervalInSeconds = SimpleCalendar.api.timestampPlusInterval(0, interval);
+  const intervalInSeconds = Util.intervalInSeconds(interval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
   const die = Fatigue.DISEASES[disease].virulence;
   const dice = new Array(numDice).fill(die);
   let damage = 0;
   let resolved = false;
+
+  const resolveDisease = async () => {
+    await deleteDisease(actor, disease);
+    await Util.macroChatMessage(token, actor, {
+      content: `${actor.name}'s ${disease} has resolved.`,
+      type: CONST.CHAT_MESSAGE_TYPES.IC,
+      flavor
+    }, false);
+    // return false to prevent applyDisease reschedule
+    return false;
+  };
   
-  // determine damage and whether disease resolved early
+  // determine damage and whether disease resolved early (if 1 is rolled)
   for (const die of dice) {
     const result = await Util.rollDice(die);
     if (result === 1) {
@@ -1632,38 +1430,30 @@ export async function applyDisease(actorId, disease, execTime, newTime, oldTime)
     damage += result;
   }
 
-  damage && await applyFatigueDamage(actor, token, {dice: `${damage}`, type, flavor});
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 0) resolved = true;
+  if (damage) {
+    // apply damage to actor's HP
+    const hp = Number(actor.data.data.hp.value);
+    if (hp < 0) return resolveDisease();
 
-  if (resolved) {
+    const maxHp = Number(actor.data.data.hp.max);
+    const maxMaxHp = Number(actor.data.data.hp.max_max);
+    if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
+      return ui.notifications.error(`Error applying ${disease} damage to ${actor.name}: invalid HP values`);
+    }
+    
+    const hpResult = hp - damage;
+    if (hpResult < 0) resolved = true;
+    const maxHpResult = maxHp - damage + 1;
+    const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
+    const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+    const updates = { "data.hp.value": hpUpdate, "data.hp.max": maxHpUpdate };
+    const content = `takes ${Util.chatInlineRoll(damage)} point${damage > 1 ? 's' : ''} of damage from ${type}!`;
 
-    await deleteDisease(actor, disease);
-
-    await Util.macroChatMessage(token, actor, {
-      content: `${Util.upperCaseFirst(disease)} has resolved.`,
-      flavor
-    }, false);
-
-    // return false to prevent reschedule
-    return false;
+    await Util.macroChatMessage(token, actor, { content, flavor }, false);
+    await actor.update(updates);
   }
+
+  if (resolved) return resolveDisease();
 
   return true;
-}
-
- async function deleteDisease(actor, disease) {
-  const diseases = actor.getFlag("lostlands", "diseases");
-
-  const intervalId = diseases[disease]?.intervalId;
-  await TimeQ.cancel(intervalId);
-    
-  delete diseases[disease];
-  if (!Object.keys(diseases).length) {
-    await Util.removeCondition("Diseased", actor);
-  }
-  
-  await actor.unsetFlag("lostlands", "diseases");
-
-  return actor.setFlag("lostlands", "diseases", diseases);
 }

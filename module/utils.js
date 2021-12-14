@@ -188,25 +188,26 @@ export const now = () => game.time.worldTime;
 export async function removeCondition(condition, actor, {warn=false}={}) {
   const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
   const hasCondition = game.cub.hasCondition(condition, actor);
-  if (hasCondition) {
-    await game.cub.removeCondition(condition, actor, {warn});
-    slow && await wait(300);
-  }
+  if (!hasCondition) return;
+
+  await game.cub.removeCondition(condition, actor, {warn});
+  // wait if condition includes active effects to ensure actor has updated
+  slow && await wait(200);
 }
 
 export async function addCondition(condition, actor, {warn=false}={}) {
   const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
   const hasCondition = game.cub.hasCondition(condition, actor);
-  if (!hasCondition) {
-    // wait until time has synced
-    while (SimpleCalendar.api.timestamp() !== game.time.worldTime) {
-      await wait(50);
-      continue;
-    }
-    await game.cub.addCondition(condition, actor, {warn});
-    // wait if condition includes active effects to ensure actor has updated
-    slow && await wait(300);
+  if (hasCondition) return;
+
+  // wait until time has synced
+  while (SimpleCalendar.api.timestamp() !== game.time.worldTime) {
+    await wait(50);
+    continue;
   }
+  await game.cub.addCondition(condition, actor, {warn});
+  // wait if condition includes active effects to ensure actor has updated
+  slow && await wait(200);
 }
 
 export function nextTime(interval, startTime, currentTime) {
@@ -222,22 +223,6 @@ export function prevTime(interval, startTime, currentTime) {
   const prevTime = Math.floor((currentTime - startTime) / seconds) * seconds + startTime;
 
   return prevTime;
-}
-
-export async function removeEffectsStartingAfter(time) {
-  const allChars = game.actors.filter(a => a.type === 'character');
-  for (const char of allChars) {
-    try {
-      const effects = char.effects.contents;
-      for (const effect of effects) {
-        const invalid = effect.data.duration?.startTime > time;
-        invalid && await effect.delete();
-      }
-    } catch (error) {
-      ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
-      throw new Error(error);
-    }
-  }
 }
 
 export function intervalInSeconds(interval) {

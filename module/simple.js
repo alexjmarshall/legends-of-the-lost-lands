@@ -11,7 +11,7 @@ import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
-import { restartFatigueClocks } from './fatigue.js';
+import { syncFatigueClocks } from './fatigue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -168,14 +168,29 @@ Hooks.once("init", async function() {
 
 Hooks.on("ready", () => {
 
+  const removeInvalidEffects = async (time) => {
+    const allChars = game.actors.filter(a => a.type === 'character');
+    for (const char of allChars) {
+      try {
+        const effects = char.effects.contents;
+        for (const effect of effects) {
+          const invalid = effect.data.duration?.startTime > time;
+          invalid && await effect.delete();
+        }
+      } catch (error) {
+        ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
+        throw new Error(error);
+      }
+    }
+  }
+
   // Note: if a new character is created, the GM needs to reboot to start their fatigue clocks
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      await Util.removeEffectsStartingAfter(now);
-      await restartFatigueClocks(now);
+      await syncFatigueClocks(now);
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -190,12 +205,13 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
 
-      // if going back in time, remove conditions that started later than current time, and restart clocks
-      if (timeDiff < 0) {
+      // if going back in time, clear event queue and remove effects that started later than new time
+      if (newTime < oldTime) {
         await TimeQ.clear();
-        await Util.removeEffectsStartingAfter(newTime);
-        await restartFatigueClocks(newTime);
+        await removeInvalidEffects(newTime);
       }
+
+      await syncFatigueClocks(newTime);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
@@ -305,17 +321,18 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const halfMaxHp = actor.data.data.hp?.max / 2;
   const token = Util.getTokenFromActor(actor);
 
-  // return if update does not decrease hp
-  if ( hpUpdate < 0 && targetHp > 0 ) {
+  if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
+    Util.macroChatMessage(token, actor, {flavor: 'Death', content: `has fallen. May the Gods have mercy.`}, false);
+  }
+
+  if (targetHp < 1) return;
+
+  if ( hpUpdate < 0) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
   } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
   } else if (hpUpdate < targetHp) {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
-  }
-
-  if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
-    Util.macroChatMessage(token, actor, {flavor: 'Death', content: `has fallen. May the Gods have mercy.`}, false);
   }
 });
 
