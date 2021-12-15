@@ -19,8 +19,8 @@ import * as Constant from "./constants.js";
 // use clo diff and number of times certain thresholds have passed, e.g. minutes, hours to calculate how much damage to do
 // only apply cold damage if PC is alive
 
-const FATIGUE_DAMAGE_COMMAND = 'applyFatigueDamage(actorId, type, execTime, newTime)';
-const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
+export const FATIGUE_DAMAGE_COMMAND = 'applyFatigueDamage(actorId, type, execTime, newTime)';
+export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
 
 export const REST_TYPES = {
   "d3": "Peasant",
@@ -183,7 +183,7 @@ export function reqClo() {
   return reqClo;
 }
 
-export async function syncFatigueClocks(time) {
+export async function syncFatigueClocks(time, resetClocks=false) {
 
   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
 
@@ -192,7 +192,7 @@ export async function syncFatigueClocks(time) {
 
     await syncStartTimes(char, time);
     await syncConditions(char, time);
-    await syncDamageClocks(char, time);
+    await syncDamageClocks(char, time, resetClocks);
   }
 }
 
@@ -231,6 +231,7 @@ async function syncStartTimes(char, time) {
 }
 
 async function syncConditions(char, time) {
+  const isConscious = Number(char.data.data.hp.value) > 0;
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
@@ -251,10 +252,14 @@ async function syncConditions(char, time) {
     if (hasCondition) continue;
 
     await Util.addCondition(condition, char);
+
+    if (!isConscious) continue;
+
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
     const content = `feels ${condition.toLowerCase()}...`;
     await Util.macroChatMessage(token, char, { content, flavor }, false);
+
     if (!clock.warningSound) continue;
 
     if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
@@ -272,7 +277,7 @@ async function syncConditions(char, time) {
   else await Util.removeCondition("Diseased", char);
 }
 
-async function syncDamageClocks(char, time) {
+async function syncDamageClocks(char, time, resetClocks=false) {
   const actorId = char.id;
 
   // clocks
@@ -280,7 +285,7 @@ async function syncDamageClocks(char, time) {
 
     // if event is already scheduled, continue
     let intervalId = char.getFlag("lostlands", clock.intervalFlag);
-    if (intervalId) continue;
+    if ( intervalId && !resetClocks ) continue;
 
     // if there is a start time defined, start the clock
     const startTime = char.getFlag("lostlands", clock.startFlag);
@@ -301,9 +306,11 @@ async function syncDamageClocks(char, time) {
   let setDiseases = false;
   for (const [disease, data] of Object.entries(charDiseases)) {
 
-    if (data.intervalId) continue;
+    if ( data.intervalId && !resetClocks ) continue;
 
     const startTime = data.startTime;
+    if (isNaN(startTime)) continue;
+
     const interval = DISEASES[disease].damageInterval;
     const fromTime = Util.prevTime(interval, startTime, time);
     const scope = {actorId, disease};
@@ -318,53 +325,4 @@ async function syncDamageClocks(char, time) {
 
   await char.unsetFlag("lostlands", "diseases");
   await char.setFlag("lostlands", "diseases", charDiseases);
-}
-
-async function confirmDisease(actor, disease) { //TODO roll this into applyDisease, use confirmed property on char disease
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 1) return;
-  const token = Util.getTokenFromActor(actor);
-  const type = 'disease';
-  const flavor = Util.upperCaseFirst(type);
-
-  const onConfirmDisease = async () => {
-
-    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
-    actorDiseases[disease].confirmed = true;
-    await actor.setFlag("lostlands", "diseases", actorDiseases);
-    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
-    await Util.addCondition("Diseased", actor);
-  };
-
-  return new Dialog({
-    title: "Confirm Disease",
-    content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
-    buttons: {
-     one: {
-      icon: '<i class="fas fa-check"></i>',
-      label: "Yes",
-      callback: () => deleteDisease(actor, disease)
-     },
-     two: {
-      icon: '<i class="fas fa-times"></i>',
-      label: "No",
-      callback: () => onConfirmDisease()
-     }
-    },
-  }).render(true);
-}
-
-export async function deleteDisease(actor, disease) {
-  const diseases = actor.getFlag("lostlands", "diseases");
-
-  const intervalId = diseases[disease]?.intervalId;
-  await TimeQ.cancel(intervalId);
-
-  delete diseases[disease];
-  if (!Object.keys(diseases).length) {
-    await Util.removeCondition("Diseased", actor);
-  }
-
-  await actor.unsetFlag("lostlands", "diseases");
-  await actor.setFlag("lostlands", "diseases", diseases);
 }
