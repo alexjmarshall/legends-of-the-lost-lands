@@ -6,12 +6,8 @@ import * as Constant from "./constants.js";
 // how to handle to events that occur to inactive/offscreen characters? -- put in individual rest mode
 // test rest mode healing
 
-// TODO schedule recurring even the warning stage so can just return and try again if unconscious/rest mode etc.
-// TODO get thirst/sleep tested and working, along with macros to reset these
-
 // TODO add disease symptoms to character sheet? add tab with last eat time, last drink time, clo, disease symptoms, GM: reset/delete disease buttons
 // generic item icon for spells and features
-// TODO forget about programming 
 
 // update reqClo setting on season change and weather change
 // do cold damage using first additive method here
@@ -89,72 +85,48 @@ export const DISEASES = {
     virulence: "d3",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime", // TODO remove?
-    intervalFlag: "intervalId", // TODO remove?
-    condition: "Diseased", // TODO remove?
   },
   "dysentery": {
     symptoms: ["diarrhea", "abdominal pain", "fatigue"],
     virulence: "d4",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "typhoid": {
     symptoms: ["fever", "abdominal pain", "rash"],
     virulence: "d4",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "gangrene": {
     symptoms: ["numbness", "black tissue"],
     virulence: "d6",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "malaria": {
     symptoms: ["paroxysms", "vomiting", "fever"],
     virulence: "d6",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "spotted fever": {
     symptoms: ["rash", "headache", "confusion"],
     virulence: "d8",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "plague": {
     symptoms: ["black tissue", "headache", "fever"],
     virulence: "d8",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
   "leprosy": {
     symptoms: ["black tissue", "numbness", "rash"],
     virulence: "d10",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
   },
 };
 
