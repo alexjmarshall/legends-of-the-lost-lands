@@ -205,13 +205,17 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
 
-      // if going back in time, clear event queue and remove effects that started later than new time
+      // if going back in time, clear event queue,
+      //  remove effects that started later than new time
+      //  and set flag to ensure clock events are rescheduled
+      let resetClocks = false;
       if (newTime < oldTime) {
         await TimeQ.clear();
         await removeInvalidEffects(newTime);
+        resetClocks = true;
       }
 
-      await syncFatigueClocks(newTime);
+      await syncFatigueClocks(newTime, resetClocks);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
@@ -322,7 +326,11 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const token = Util.getTokenFromActor(actor);
 
   if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
-    Util.macroChatMessage(token, actor, {flavor: 'Death', content: `has fallen. May the Gods have mercy.`}, false);
+    Util.macroChatMessage(token, actor, {
+      flavor: 'Death', 
+      content: `${actor.name} has fallen. May the Gods have mercy.`,
+      type: CONST.CHAT_MESSAGE_TYPES.IC,
+    }, false);
   }
 
   if (targetHp < 1) return;
