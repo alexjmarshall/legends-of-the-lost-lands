@@ -1278,7 +1278,7 @@ export async function doFatigueWarning(actorId, type, execTime) {
   return false;
 }
 
-export async function applyFatigueDamage(actorId, type, execTime, newTime, heal = false, applyToMax = true) {
+export async function applyFatigueDamage(actorId, type, execTime, newTime, heal=false, applyToMax=true) {
   // TODO rest mode
   const actor = game.actors.get(actorId);
   const hp = Number(actor.data.data.hp.value);
@@ -1373,7 +1373,7 @@ export async function addDisease(disease=null, options={}) {
   const diseases = Fatigue.DISEASES;
   disease = disease || options.altDialogChoice;
 
-  if (!disease && !options.shownAltDialog) {
+  if ( !disease && !options.shownAltDialog ) {
     const choices = Object.keys(diseases).map(type => {
       return {label: Util.upperCaseFirst(type), value: type};
     });
@@ -1386,8 +1386,18 @@ export async function addDisease(disease=null, options={}) {
   if (charDiseases.hasOwnProperty(disease)) return;
 
   const actorDiseases = actor.getFlag("lostlands", "diseases");
+  const startTime = Util.now();
+  const interval = Fatigue.DISEASES[disease].damageInterval;
+  const actorId = actor.id;
+  const scope = {actorId, disease};
+  const command = Fatigue.DISEASE_DAMAGE_COMMAND;
+  const macro = await Util.getMacroByCommand(`${command}`, `return game.lostlands.Macro.${command};`);
+  const intervalId = await TimeQ.doEvery(interval, startTime, macro.id, scope);
+
   actorDiseases[disease] = {
-    startTime: Util.now()
+    startTime,
+    intervalId,
+    confirmed: false
   };
 
   await actor.setFlag("lostlands", "diseases", actorDiseases);
@@ -1408,52 +1418,117 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   const dice = new Array(numDice).fill(die);
   let damage = 0;
   let resolved = false;
+  const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
+  const confirmed = !!actorDiseases[disease].confirmed;
+  const hp = Number(actor.data.data.hp.value);
 
   const resolveDisease = async () => {
     await deleteDisease(actor, disease);
-    await Util.macroChatMessage(token, actor, {
+    confirmed && await Util.macroChatMessage(token, actor, {
       content: `${actor.name}'s ${disease} has resolved.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
       flavor
     }, false);
-    // return false to prevent applyDisease reschedule
+    // return false to prevent reschedule
     return false;
   };
+
+  const confirmDisease = async () => {
+    actorDiseases[disease].confirmed = true;
+    await actor.setFlag("lostlands", "diseases", actorDiseases);
+    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
+    await Util.addCondition("Diseased", actor);
+    return applyDisease(actorId, disease, execTime, newTime);
+  };
+
+  if (hp < 0) return resolveDisease();
+
+  if (!confirmed) {
+    return new Dialog({
+      title: "Confirm Disease",
+      content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
+      buttons: {
+       one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: "Yes",
+        callback: () => resolveDisease()
+       },
+       two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "No",
+        callback: () => confirmDisease()
+       }
+      },
+    }).render(true);
+  }
   
-  // determine damage and whether disease resolved early (if 1 is rolled)
+  // determine damage and whether disease resolves (if 1 is rolled)
   for (const die of dice) {
     const result = await Util.rollDice(die);
+    damage += result;
     if (result === 1) {
       resolved = true;
       break;
     }
-    damage += result;
   }
 
-  if (damage) {
-    // apply damage to actor's HP
-    const hp = Number(actor.data.data.hp.value);
-    if (hp < 0) return resolveDisease();
-
-    const maxHp = Number(actor.data.data.hp.max);
-    const maxMaxHp = Number(actor.data.data.hp.max_max);
-    if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
-      return ui.notifications.error(`Error applying ${disease} damage to ${actor.name}: invalid HP values`);
-    }
-    
-    const hpResult = hp - damage;
-    if (hpResult < 0) resolved = true;
-    const maxHpResult = maxHp - damage + 1;
-    const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
-    const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
-    const updates = { "data.hp.value": hpUpdate, "data.hp.max": maxHpUpdate };
-    const content = `takes ${Util.chatInlineRoll(damage)} point${damage > 1 ? 's' : ''} of damage from ${type}!`;
-
-    await Util.macroChatMessage(token, actor, { content, flavor }, false);
-    await actor.update(updates);
+  // apply damage to actor's HP
+  const maxHp = Number(actor.data.data.hp.max);
+  const maxMaxHp = Number(actor.data.data.hp.max_max);
+  if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
+    return ui.notifications.error(`Error applying ${disease} damage to ${actor.name}: invalid HP values`);
   }
+  
+  const hpResult = hp - damage;
+  if (hpResult < 0) resolved = true;
+  const maxHpResult = maxHp - damage + 1;
+  const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
+  const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
+  const updates = { "data.hp.value": hpUpdate, "data.hp.max": maxHpUpdate };
+  const content = `takes ${Util.chatInlineRoll(damage)} point${damage > 1 ? 's' : ''} of damage from ${type}!`;
+
+  await Util.macroChatMessage(token, actor, { content, flavor }, false);
+  await actor.update(updates);
 
   if (resolved) return resolveDisease();
 
   return true;
+}
+
+async function deleteDisease(actor, disease) {
+  const diseases = actor.getFlag("lostlands", "diseases");
+
+  const intervalId = diseases[disease]?.intervalId;
+  await TimeQ.cancel(intervalId);
+
+  delete diseases[disease];
+  if (!Object.keys(diseases).length) {
+    await Util.removeCondition("Diseased", actor);
+  }
+
+  await actor.unsetFlag("lostlands", "diseases");
+  await actor.setFlag("lostlands", "diseases", diseases);
+}
+
+
+
+
+
+async function confirmDisease(actor, disease) { //TODO roll this into applyDisease, use confirmed property on char disease
+  const hp = Number(actor.data.data.hp.value);
+  if (hp < 1) return;
+  const token = Util.getTokenFromActor(actor);
+  const type = 'disease';
+  const flavor = Util.upperCaseFirst(type);
+
+  const onConfirmDisease = async () => {
+
+    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
+    actorDiseases[disease].confirmed = true;
+    await actor.setFlag("lostlands", "diseases", actorDiseases);
+    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
+    await Util.addCondition("Diseased", actor);
+  };
+
+  
 }
