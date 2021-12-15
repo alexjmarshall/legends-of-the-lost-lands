@@ -161,14 +161,9 @@ export async function cureDisease() {
   const actor = char.actor;
   let actorDiseases = actor.getFlag("lostlands", "diseases");
 
-  await Util.removeCondition("Diseased", actor);
-  for(const disease of Object.values(actorDiseases)) {
-    const intervalId = disease.intervalId;
-    await TimeQ.cancel(intervalId);
+  for(const disease of Object.keys(actorDiseases)) {
+    await deleteDisease(actor, disease);
   }
-  actorDiseases = {};
-  await actor.unsetFlag("lostlands", "diseases");
-  return actor.setFlag("lostlands", "diseases", actorDiseases);
 }
 
 export async function drinkPotion(itemId, options={}) {
@@ -1245,39 +1240,6 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   }).render(true);
 }
 
-export async function doFatigueWarning(actorId, type, execTime) {
-  // Note: return true to reschedule fatigue warning. Return false to prevent reschedule.
-  // TODO rest mode
-  const actor = game.actors.get(actorId);
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 0) return true;
-
-  // schedule fatigue damage
-  const { condition, warningSound, damageInterval, intervalFlag } = Fatigue.CLOCKS[type]; // TODO schedule damage for prevTime of startTime and newTime
-  const command = 'applyFatigueDamage(actorId, type, execTime, newTime)';
-  const intervalId = await Fatigue.scheduleRecurring(damageInterval, command, execTime, {actorId, type});
-  await actor.setFlag("lostlands", intervalFlag, intervalId);
-  await Util.addCondition(condition, actor);
-
-  if (hp < 1) return false;
-
-  // do fatigue chat message/sound warning
-  const token = Util.getTokenFromActor(actor);
-  const flavor = Util.upperCaseFirst(type);
-  const content = `feels ${condition.toLowerCase()}...`;
-  content && await Util.macroChatMessage(token, actor, { content, flavor }, false);
-
-  if ( !warningSound || !token ) return false;
-
-  if (Object.values(Constant.VOICE_MOODS).includes(warningSound)) {
-    Util.playVoiceSound(warningSound, actor, token, {push: true, bubble: true, chance: 1});
-  } else {
-    Util.playSound(warningSound, token, {push: true, bubble: true});
-  }
-
-  return false;
-}
-
 export async function applyFatigueDamage(actorId, type, execTime, newTime, heal=false, applyToMax=true) {
   // TODO rest mode
   const actor = game.actors.get(actorId);
@@ -1434,6 +1396,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   };
 
   const confirmDisease = async () => {
+    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
     actorDiseases[disease].confirmed = true;
     await actor.setFlag("lostlands", "diseases", actorDiseases);
     await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
@@ -1508,27 +1471,4 @@ async function deleteDisease(actor, disease) {
 
   await actor.unsetFlag("lostlands", "diseases");
   await actor.setFlag("lostlands", "diseases", diseases);
-}
-
-
-
-
-
-async function confirmDisease(actor, disease) { //TODO roll this into applyDisease, use confirmed property on char disease
-  const hp = Number(actor.data.data.hp.value);
-  if (hp < 1) return;
-  const token = Util.getTokenFromActor(actor);
-  const type = 'disease';
-  const flavor = Util.upperCaseFirst(type);
-
-  const onConfirmDisease = async () => {
-
-    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
-    actorDiseases[disease].confirmed = true;
-    await actor.setFlag("lostlands", "diseases", actorDiseases);
-    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
-    await Util.addCondition("Diseased", actor);
-  };
-
-  
 }
