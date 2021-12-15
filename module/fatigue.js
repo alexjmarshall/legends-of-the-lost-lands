@@ -1,5 +1,6 @@
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
+import * as Constant from "./constants.js";
 
 // TODO make rest mode individual condition, with rest dice an individual flag
 // how to handle to events that occur to inactive/offscreen characters? -- put in individual rest mode
@@ -10,9 +11,8 @@ import { TimeQ } from './time-queue.js';
 
 // TODO add disease symptoms to character sheet? add tab with last eat time, last drink time, clo, disease symptoms, GM: reset/delete disease buttons
 // generic item icon for spells and features
+// TODO forget about programming 
 
-
-//
 // update reqClo setting on season change and weather change
 // do cold damage using first additive method here
 // compare worn clo to required clo, and add cold? condition
@@ -35,16 +35,16 @@ const REQ_CLO_BY_SEASON = {
   "winter": 3
 };
 export const CLOCKS = {
-  "hunger": {
-    warningInterval: { hour: 12 },
-    warningSound: 'stomach_rumble',
-    damageInterval: { day: 3 },
-    damageDice: 'd3',
-    startFlag: "last_eat_time",
-    intervalFlag: "hunger_interval_id",
-    condition: "Hungry",
-    alwaysOn: true
-  },
+  // "hunger": {
+  //   warningInterval: { hour: 12 },
+  //   warningSound: 'stomach_rumble',
+  //   damageInterval: { day: 3 },
+  //   damageDice: 'd3',
+  //   startFlag: "last_eat_time",
+  //   intervalFlag: "hunger_interval_id",
+  //   condition: "Hungry",
+  //   alwaysOn: true
+  // },
   // "thirst": {
   //   warningInterval: { hour: 12 },
   //   damageInterval: { day: 1 },
@@ -89,9 +89,9 @@ export const DISEASES = {
     virulence: "d3",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
-    startFlag: "startTime",
-    intervalFlag: "intervalId",
-    condition: "Diseased",
+    startFlag: "startTime", // TODO remove?
+    intervalFlag: "intervalId", // TODO remove?
+    condition: "Diseased", // TODO remove?
   },
   "dysentery": {
     symptoms: ["diarrhea", "abdominal pain", "fatigue"],
@@ -237,37 +237,39 @@ async function syncConditions(char, time) {
 
     const warningInterval = clock.warningInterval; // TODO dynamic calculation for cold damage -- use function above
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
+    const condition = clock.condition;
     const startTime = char.getFlag("lostlands", clock.startFlag);
     if (isNaN(startTime)) continue;
 
     const warningTime = startTime + warningIntervalInSeconds;
-    if (warningTime <= time) {
+    if (time < warningTime) {
+      Util.removeCondition(condition, char);
+      continue;
+    }
 
-      const condition = clock.condition;
-      await Util.addCondition(condition, char); // TODO play warning sound here?
+    const hasCondition = game.cub.hasCondition(condition, char);
+    if (hasCondition) continue;
+
+    await Util.addCondition(condition, char);
+    const token = Util.getTokenFromActor(char);
+    const flavor = Util.upperCaseFirst(type);
+    const content = `feels ${condition.toLowerCase()}...`;
+    await Util.macroChatMessage(token, char, { content, flavor }, false);
+    if (!clock.warningSound) continue;
+
+    if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
+      Util.playVoiceSound(clock.warningSound, char, token, {push: true, bubble: true, chance: 1});
+    } else {
+      Util.playSound(clock.warningSound, token, {push: true, bubble: true});
     }
   }
 
   // diseases
   const charDiseases = char.getFlag("lostlands", "diseases") || {};
+  const diseased = !!Object.values(charDiseases).find(d => d.confirmed);
 
-  if (!Object.entries(charDiseases).length) {
-    await Util.removeCondition("Diseased", char);
-  }
-
-  for (const [disease, data] of Object.entries(charDiseases)) {
-
-    const { incubationPeriod } = DISEASES[disease];
-    const incubationPeriodInSeconds = Util.intervalInSeconds(incubationPeriod);
-    const startTime = data.startTime;
-    if (isNaN(startTime)) continue;
-
-    const warningTime = startTime + incubationPeriodInSeconds;
-    const confirmed = data.confirmed;
-    if ( time >= warningTime && !confirmed ) {
-      await confirmDisease(actor, disease);
-    }
-  }
+  if (diseased) await Util.addCondition("Diseased", char);
+  else await Util.removeCondition("Diseased", char);
 }
 
 async function syncDamageClocks(char, time) {
@@ -284,9 +286,9 @@ async function syncDamageClocks(char, time) {
     const startTime = char.getFlag("lostlands", clock.startFlag);
     if (isNaN(startTime)) continue;
 
-    const scope = {actorId, type};
     const interval = clock.damageInterval;
     const fromTime = Util.prevTime(interval, startTime, time);
+    const scope = {actorId, type};
     const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
     intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
 
@@ -301,9 +303,10 @@ async function syncDamageClocks(char, time) {
 
     if (data.intervalId) continue;
 
-    const scope = {actorId, disease};
+    const startTime = data.startTime;
     const interval = DISEASES[disease].damageInterval;
     const fromTime = Util.prevTime(interval, startTime, time);
+    const scope = {actorId, disease};
     const macro = await Util.getMacroByCommand(`${DISEASE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${DISEASE_DAMAGE_COMMAND};`);
     const intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
 
@@ -317,7 +320,7 @@ async function syncDamageClocks(char, time) {
   await char.setFlag("lostlands", "diseases", charDiseases);
 }
 
-async function confirmDisease(actor, disease) {
+async function confirmDisease(actor, disease) { //TODO roll this into applyDisease, use confirmed property on char disease
   const hp = Number(actor.data.data.hp.value);
   if (hp < 1) return;
   const token = Util.getTokenFromActor(actor);
@@ -326,9 +329,11 @@ async function confirmDisease(actor, disease) {
 
   const onConfirmDisease = async () => {
 
+    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
+    actorDiseases[disease].confirmed = true;
+    await actor.setFlag("lostlands", "diseases", actorDiseases);
     await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
-
-    await Util.addCondition("Diseased", char);
+    await Util.addCondition("Diseased", actor);
   };
 
   return new Dialog({
@@ -349,18 +354,17 @@ async function confirmDisease(actor, disease) {
   }).render(true);
 }
 
-async function deleteDisease(actor, disease) {
+export async function deleteDisease(actor, disease) {
   const diseases = actor.getFlag("lostlands", "diseases");
 
   const intervalId = diseases[disease]?.intervalId;
   await TimeQ.cancel(intervalId);
-    
+
   delete diseases[disease];
   if (!Object.keys(diseases).length) {
     await Util.removeCondition("Diseased", actor);
   }
-  
-  await actor.unsetFlag("lostlands", "diseases");
 
-  return actor.setFlag("lostlands", "diseases", diseases);
+  await actor.unsetFlag("lostlands", "diseases");
+  await actor.setFlag("lostlands", "diseases", diseases);
 }
