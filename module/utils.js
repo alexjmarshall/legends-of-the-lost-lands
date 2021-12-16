@@ -206,7 +206,7 @@ export async function addCondition(condition, actor, {warn=false}={}) {
 
   // wait until time has synced
   while (SimpleCalendar.api.timestamp() !== game.time.worldTime) {
-    await wait(50);
+    await wait(100);
     continue;
   }
 

@@ -26,6 +26,11 @@ export class SimpleActor extends Actor {
 
   /** @inheritdoc */
   async prepareDerivedData() {
+
+    // NOTE: avoid creating active effects that modify actor properties
+    //   that affect the derived data calculations below
+    //   e.g. ability scores, xp, enc, mv 
+
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
@@ -101,7 +106,7 @@ export class SimpleActor extends Actor {
     const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
     const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
     const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
-    const dexAcBonus = Math.min(actorData.dex_mod, ...maxDexBonuses);
+    const dexAcBonus = Math.min(updateData.dex_mod, ...maxDexBonuses);
     const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
     updateData.ac = attributes.ac?.value ?? ac;
 
@@ -129,7 +134,6 @@ export class SimpleActor extends Actor {
     }
 
     if(this._id && Object.keys(updateData).length) {
-      await Util.wait(200);
       await this.update({data: updateData});
     } 
   }
