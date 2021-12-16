@@ -71,6 +71,11 @@ export function chatBubble(token, text, emote=true) {
   token = token || canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] :
           game.user.character ? getTokenFromActor(game.user.character) : null;
   if ( !token || !text ) return
+
+  if (emote) {
+    text = `${token.name} ${text}`;
+  }
+
   return canvas.hud.bubbles.say(token, text, {emote});
 }
 
@@ -82,7 +87,7 @@ export async function macroChatMessage(token, actor, {content, type, flavor, sou
   sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
   content = content.trim();
 
-  // if chat msg is an emote, prefix content with actor's name
+  // if chat msg is an emote, prefix content with token's name
   if (type == CONST.CHAT_MESSAGE_TYPES.EMOTE) {
     content = `${actor.name} ${content}`;
   }
@@ -192,11 +197,10 @@ export async function removeCondition(condition, actor, {warn=false}={}) {
 
   await game.cub.removeCondition(condition, actor, {warn});
   // wait if condition includes active effects to ensure actor has updated
-  slow && await wait(200);
+  slow && await wait(300);
 }
 
 export async function addCondition(condition, actor, {warn=false}={}) {
-  const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
   const hasCondition = game.cub.hasCondition(condition, actor);
   if (hasCondition) return;
 
@@ -205,14 +209,13 @@ export async function addCondition(condition, actor, {warn=false}={}) {
     await wait(50);
     continue;
   }
+
   await game.cub.addCondition(condition, actor, {warn});
-  // wait if condition includes active effects to ensure actor has updated
-  slow && await wait(200);
 }
 
 export function nextTime(interval, startTime, currentTime) {
   const seconds = intervalInSeconds(interval);
-  let nextTime = Math.ceil((currentTime - startTime) / seconds) * seconds + startTime;
+  let nextTime = Math.ceil(Math.max(0, currentTime - startTime) / seconds) * seconds + startTime;
   if (nextTime === currentTime) nextTime += seconds;
 
   return nextTime;
@@ -220,7 +223,7 @@ export function nextTime(interval, startTime, currentTime) {
 
 export function prevTime(interval, startTime, currentTime) {
   const seconds = intervalInSeconds(interval);
-  const prevTime = Math.floor((currentTime - startTime) / seconds) * seconds + startTime;
+  let prevTime = Math.floor(Math.max(0, currentTime - startTime) / seconds) * seconds + startTime;
 
   return prevTime;
 }

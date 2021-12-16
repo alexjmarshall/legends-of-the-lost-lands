@@ -15,7 +15,7 @@ import * as Constant from "./constants.js";
 // use clo diff and number of times certain thresholds have passed, e.g. minutes, hours to calculate how much damage to do
 // only apply cold damage if PC is alive
 
-export const FATIGUE_DAMAGE_COMMAND = 'applyFatigueDamage(actorId, type, execTime, newTime)';
+export const FATIGUE_DAMAGE_COMMAND = 'applyFatigue(actorId, type, execTime, newTime)';
 export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
 
 export const REST_TYPES = {
@@ -31,35 +31,35 @@ const REQ_CLO_BY_SEASON = {
   "winter": 3
 };
 export const CLOCKS = {
-  // "hunger": {
-  //   warningInterval: { hour: 12 },
-  //   warningSound: 'stomach_rumble',
-  //   damageInterval: { day: 3 },
-  //   damageDice: 'd3',
-  //   startFlag: "last_eat_time",
-  //   intervalFlag: "hunger_interval_id",
-  //   condition: "Hungry",
-  //   alwaysOn: true
-  // },
-  // "thirst": {
-  //   warningInterval: { hour: 12 },
-  //   damageInterval: { day: 1 },
-  //   damageDice: 'd6',
-  //   startFlag: "last_drink_time",
-  //   intervalFlag: "thirst_interval_id",
-  //   condition: "Thirsty",
-  //   alwaysOn: true
-  // },
-  // "exhaustion": {
-  //   warningInterval: { hour: 18 },
-  //   warningSound: 'sleepy',
-  //   damageInterval: { day: 1 },
-  //   damageDice: 'd6',
-  //   startFlag: "last_sleep_time",
-  //   intervalFlag: "exhaustion_interval_id",
-  //   condition: "Sleepy",
-  //   alwaysOn: true
-  // },
+  "hunger": {
+    warningInterval: { hour: 12 },
+    warningSound: 'stomach_rumble',
+    damageInterval: { day: 3 },
+    damageDice: 'd3',
+    startFlag: "last_eat_time",
+    intervalFlag: "hunger_interval_id",
+    condition: "Hungry",
+    alwaysOn: true
+  },
+  "thirst": {
+    warningInterval: { hour: 12 },
+    damageInterval: { day: 1 },
+    damageDice: 'd6',
+    startFlag: "last_drink_time",
+    intervalFlag: "thirst_interval_id",
+    condition: "Thirsty",
+    alwaysOn: true
+  },
+  "exhaustion": {
+    warningInterval: { hour: 18 },
+    warningSound: 'sleepy',
+    damageInterval: { day: 1 },
+    damageDice: 'd6',
+    startFlag: "last_sleep_time",
+    intervalFlag: "exhaustion_interval_id",
+    condition: "Sleepy",
+    alwaysOn: true
+  },
   // "cold": {
   //   warningInterval: {}, // immediate
   //   damageInterval: {}, // varies based on difference between worn and required Clo
@@ -75,7 +75,6 @@ export const CLOCKS = {
   //   damageDice: '',
   //   startFlag: "last_rest_time",
   //   intervalFlag: "",
-  //   condition: "",
   //   alwaysOn: false
   // },
 };
@@ -131,7 +130,7 @@ export const DISEASES = {
 };
 
 export async function resetFatigueType(actor, type, time=Util.now()) {
-  let { startFlag, intervalFlag, condition, damageInterval } = CLOCKS[type];
+  let { startFlag, intervalFlag, condition, warningInterval, damageInterval } = CLOCKS[type];
   const startTime = actor.getFlag("lostlands", startFlag);
   startTime != time && await actor.setFlag("lostlands", startFlag, time);
   condition && await Util.removeCondition(condition, actor);
@@ -139,12 +138,14 @@ export async function resetFatigueType(actor, type, time=Util.now()) {
   let intervalId = actor.getFlag("lostlands", intervalFlag);
   intervalId && await TimeQ.cancel(intervalId);
 
+  const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
+  const fromTime = time + warningIntervalInSeconds;
   const actorId = actor.id;
   const scope = {actorId, type};
   const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
-  intervalId = await TimeQ.doEvery(damageInterval, time, macro.id, scope);
+  intervalId = await TimeQ.doEvery(damageInterval, fromTime, macro.id, scope);
 
-  return actor.setFlag("lostlands", intervalFlag, intervalId)
+  return actor.setFlag("lostlands", intervalFlag, intervalId);
 }
 
 export function reqClo() {
@@ -160,7 +161,6 @@ export async function syncFatigueClocks(time, resetClocks=false) {
   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
 
   for (const char of allChars) {
-    // TODO don't add sleepy if Asleep, and check for rest mode
 
     await syncStartTimes(char, time);
     await syncConditions(char, time);
@@ -181,7 +181,7 @@ async function syncStartTimes(char, time) {
   }
 
   // diseases
-  const charDiseases = char.getFlag("lostlands", "diseases");
+  let charDiseases = char.getFlag("lostlands", "diseases");
   let setDiseases = false;
 
   if (!charDiseases) {
@@ -203,7 +203,8 @@ async function syncStartTimes(char, time) {
 }
 
 async function syncConditions(char, time) {
-  const isConscious = Number(char.data.data.hp.value) > 0;
+  const isConscious = Number(char.data.data.hp.value) > 0 &&
+                      !char.data.effects.find(e => e.data.label === 'Asleep');
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
@@ -221,23 +222,21 @@ async function syncConditions(char, time) {
     }
 
     const hasCondition = game.cub.hasCondition(condition, char);
-    if (hasCondition) continue;
-
+    if ( hasCondition || !isConscious ) continue;
+    
     await Util.addCondition(condition, char);
-
-    if (!isConscious) continue;
-
+    const warningSound = clock.warningSound;
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
     const content = `feels ${condition.toLowerCase()}...`;
     await Util.macroChatMessage(token, char, { content, flavor }, false);
 
-    if (!clock.warningSound) continue;
+    if (!warningSound) continue;
 
     if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
-      Util.playVoiceSound(clock.warningSound, char, token, {push: true, bubble: true, chance: 1});
+      Util.playVoiceSound(warningSound, char, token, {push: true, bubble: true, chance: 1});
     } else {
-      Util.playSound(clock.warningSound, token, {push: true, bubble: true});
+      Util.playSound(warningSound, token, {push: true, bubble: true});
     }
   }
 
@@ -263,8 +262,9 @@ async function syncDamageClocks(char, time, resetClocks=false) {
     const startTime = char.getFlag("lostlands", clock.startFlag);
     if (isNaN(startTime)) continue;
 
+    const warningIntervalInSeconds = Util.intervalInSeconds(clock.warningInterval);
     const interval = clock.damageInterval;
-    const fromTime = Util.prevTime(interval, startTime, time);
+    const fromTime = Util.prevTime(interval, startTime + warningIntervalInSeconds, time);
     const scope = {actorId, type};
     const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
     intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
@@ -284,7 +284,9 @@ async function syncDamageClocks(char, time, resetClocks=false) {
     if (isNaN(startTime)) continue;
 
     const interval = DISEASES[disease].damageInterval;
-    const fromTime = Util.prevTime(interval, startTime, time);
+    const incubationPeriod = DISEASES[disease].incubationPeriod;
+    const incubationInSeconds = Util.intervalInSeconds(incubationPeriod);
+    const fromTime = Util.prevTime(interval, startTime + incubationInSeconds, time);
     const scope = {actorId, disease};
     const macro = await Util.getMacroByCommand(`${DISEASE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${DISEASE_DAMAGE_COMMAND};`);
     const intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
