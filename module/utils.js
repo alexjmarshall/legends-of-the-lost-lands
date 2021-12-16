@@ -191,25 +191,23 @@ export function upperCaseFirst(string) {
 export const now = () => game.time.worldTime;
 
 export async function removeCondition(condition, actor, {warn=false}={}) {
-  const slow = !!game.cub.getCondition(condition, undefined, {warn})?.activeEffect?.changes?.length;
   const hasCondition = game.cub.hasCondition(condition, actor);
   if (!hasCondition) return;
 
+  await wait(300);
   await game.cub.removeCondition(condition, actor, {warn});
-  // wait if condition includes active effects to ensure actor has updated
-  slow && await wait(300);
 }
 
 export async function addCondition(condition, actor, {warn=false}={}) {
   const hasCondition = game.cub.hasCondition(condition, actor);
   if (hasCondition) return;
 
+  await wait(300);
   // wait until time has synced
   while (SimpleCalendar.api.timestamp() !== game.time.worldTime) {
-    await wait(100);
+    await wait(50);
     continue;
   }
-
   await game.cub.addCondition(condition, actor, {warn});
 }
 

@@ -56,51 +56,36 @@ export function playVoice(mood) {
   Util.playVoiceSound(mood, actor, token);
 }
 
-export async function toggleRestMode(value, options={}) {
-  
-  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
+export async function togglePartyRest(options={}) {
+  const selectedTokens = canvas.tokens.controlled;
+  if (!selectedTokens.length) return ui.notifications.error("Select resting token(s)");
 
-  const restMode = value != null ? !!value : !game.settings.get("lostlands", "restMode");
-  const restDice = options.altDialogChoice || 
-                   game.settings.get("lostlands", "restDice") ||
-                   Constant.DEFAULT_REST_DICE;
+  const condition = "Rest";
 
-  if (options.showAltDialog && !options.shownAltDialog) {
-    const choices = Object.entries(Constant.REST_TYPES).map(type => {
-      return {label: `${type[1]}<br>${type[0]}`, value: type[0]};
-    });
-    return altDialog(options, 'Rest Dice', choices, () => toggleRestMode(true, options));
-  }
-
-  await game.settings.set("lostlands", "restDice", restDice);
-  await game.settings.set("lostlands", "restMode", restMode);
-}
-
-export async function onRestModeChange(restMode) {
-  // reset PCs fatigue whether turning Rest Mode On or Off
-  //    if turning Rest Mode Off, apply rest healing
-  const pCs = Util.pCTokens().map(t => t.actor);
-  const now = Util.now();
-  const restModeStartTime = game.settings.get("lostlands", "restModeStartTime");
-  const restDice = await game.settings.get("lostlands", "restDice");
-
-  if (restMode) {
-    await game.settings.set("lostlands", "restModeStartTime", now);
-  } else {
-    await game.settings.set("lostlands", "restModeStartTime", null);
-  }
-
-  await Promise.all(
-    pCs.map(async (pc) => {
-      // await Util.resetHunger(pc);
-      // await Util.resetThirst(pc);
-      if (!restMode) {
-        restModeStartTime && await applyRestOnWake(pc, restModeStartTime, now)
-      }
+  return Promise.all(
+    selectedTokens.map(async (token) => {
+      const actor = token.actor;
+      const isResting = game.cub.hasCondition(condition, actor);
+      isResting ? await Util.removeCondition(condition, actor) :
+                  await Util.addCondition(condition, actor);
     })
   );
+}
 
-  return ui.notifications.info(`Rest Mode is ${restMode ? 'On' : 'Off'} (${restDice} hp per night)`);
+export function selectRestDice(actor, options={}) {
+  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
+
+  const choice = options.altDialogChoice;
+
+  if (choice) {
+    return actor.setFlag("lostlands", "restDice", choice);
+  }
+  
+  const choices = Object.entries(Fatigue.REST_TYPES).map(type => {
+    return {label: `${type[1]}<br>${type[0]}`, value: type[0]};
+  });
+  
+  return altDialog(options, `${actor.name} Rest Dice`, choices, () => selectRestDice(actor, options));
 }
 
 export async function castSpell(spellId, options={}) {
@@ -1236,10 +1221,15 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 }
 
 export async function applyFatigue(actorId, type, execTime, newTime, heal=false, applyToMax=true) {
-  // TODO rest mode
   const actor = game.actors.get(actorId);
-  const isAsleep = !!actor.data.effects.find(e => e.data.label === 'Asleep');
+
+  // exhaustion damage has no effect while asleep
+  // exhaustion/hunger/thirst damage has no effect while resting
+  const isAsleep = game.cub.hasCondition('Asleep', actor);
   if ( isAsleep && type === 'exhaustion') return;
+  const isResting = game.cub.hasCondition('Rest', actor);
+  const invalidRestDamage = type === 'thirst' || type === 'hunger' || type === 'exhaustion';
+  if ( isResting && invalidRestDamage ) return;
 
   const { damageInterval, damageDice } = Fatigue.CLOCKS[type]; // TODO cold damage?
   const intervalInSeconds = Util.intervalInSeconds(damageInterval);
@@ -1251,7 +1241,6 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false,
 }
 
 async function applyFatigueDamage(actor, type, dice, heal=false, applyToMax=true) {
-  
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   const maxMaxHp = Number(actor.data.data.hp.max_max);
@@ -1278,44 +1267,28 @@ async function applyFatigueDamage(actor, type, dice, heal=false, applyToMax=true
   return actor.update(updates);
 }
 
-async function applyRest(actor, wakeTime, sleptTime) {
-  const type = 'rest';
-  const token = Util.getTokenFromActor(actor);
-  
+async function applyRest(actor, wakeTime, sleptTime, restDice) {
+
   // subtract first 6 hours of slept time before calculating extra healing dice
   sleptTime = sleptTime - Constant.SECONDS_IN_HOUR * 6;
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
-  let die = game.settings.get("lostlands", "restDice");
-  const flavor = Util.upperCaseFirst(type);
-  const restMode = game.settings.get("lostlands", "restMode");
-  let doHeal = true;
+  const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
+  restDice = restDice || hasBedroll ? 'd2' : 'd1';
+  const dice = `${numDice}${restDice}`;
 
-  if (!restMode) {
-    die = 'd1';
-    // if Rest Mode is inactive, must not be hungry/thirsty/diseased/cold to heal
-    const fatigueConditions = ["Hungry", "Thirsty", "Diseased", "Cold"];
-    let fatigued = false;
-    for (const condition of fatigueConditions) {
-      fatigued = !!actor.data.effects.find(e => e.data.label === condition);
-      if (fatigued) break;
-    }
-    doHeal = !fatigued;
-
-    // bump healing dice to d2 if actor has a bedroll
-    const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-    if (hasBedroll) die = 'd2';
+  const fatigueConditions = ["Hungry", "Thirsty"];
+  for (const condition of fatigueConditions) {
+    const fatigued = game.cub.hasCondition(condition, actor);
+    if (fatigued) return;
   }
 
-  if (!doHeal) return;
-
   await actor.setFlag("lostlands", "last_rest_time", wakeTime);
-  const dice = `${numDice}${die}`;
-
-  await applyFatigue(actor, token, {dice, type, flavor, heal: true}); //TODO fix
+  
+  await applyFatigueDamage(actor, 'rest', dice, true);
 }
 
-export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime) {
+export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime, restDice) {
   const lastRestTime = actor.getFlag("lostlands", "last_rest_time");
   const sleptTime = sleepEndTime - sleepStartTime;
   const sleptTimeHours = Math.floor(sleptTime / Constant.SECONDS_IN_HOUR);
@@ -1326,7 +1299,7 @@ export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime) {
   }
 
   if ( sleptTimeHours >= 6 && lastRestedHoursAgo >= 22 ) {
-    await applyRest(actor, sleepEndTime, sleptTime);
+    await applyRest(actor, sleepEndTime, sleptTime, restDice);
   }
 }
 

@@ -51,7 +51,7 @@ export const CLOCKS = {
     alwaysOn: true
   },
   "exhaustion": {
-    warningInterval: { hour: 18 },
+    warningInterval: { hour: 12 },
     warningSound: 'sleepy',
     damageInterval: { day: 1 },
     damageDice: 'd6',
@@ -69,14 +69,10 @@ export const CLOCKS = {
   //   condition: "Cold",
   //   alwaysOn: false
   // },
-  // "rest": {
-  //   warningInterval: {},
-  //   damageInterval: {},
-  //   damageDice: '',
-  //   startFlag: "last_rest_time",
-  //   intervalFlag: "",
-  //   alwaysOn: false
-  // },
+  "rest": {
+    startFlag: "last_rest_time",
+    alwaysOn: true
+  },
 };
 export const DISEASES = {
   "grippe": {
@@ -159,13 +155,14 @@ export function reqClo() {
 export async function syncFatigueClocks(time, resetClocks=false) {
 
   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
-
-  for (const char of allChars) {
-
-    await syncStartTimes(char, time);
-    await syncConditions(char, time);
-    await syncDamageClocks(char, time, resetClocks);
-  }
+  
+  return Promise.all(
+    allChars.map(async (char) => {
+      await syncStartTimes(char, time);
+      await syncConditions(char, time);
+      await syncDamageClocks(char, time, resetClocks);
+    })
+  );
 }
 
 async function syncStartTimes(char, time) {
@@ -175,8 +172,11 @@ async function syncStartTimes(char, time) {
     const startTime = char.getFlag("lostlands", clock.startFlag);
     if ( startTime == null || startTime > time ) {
 
-      if (clock.alwaysOn) await char.setFlag("lostlands", clock.startFlag, time);
-      else await char.unsetFlag("lostlands", clock.startFlag);
+      if (clock.alwaysOn) {
+        await char.setFlag("lostlands", clock.startFlag, time);
+      } else {
+        startTime && await char.unsetFlag("lostlands", clock.startFlag);
+      } 
     }
   }
 
@@ -203,28 +203,30 @@ async function syncStartTimes(char, time) {
 }
 
 async function syncConditions(char, time) {
-  const isConscious = Number(char.data.data.hp.value) > 0 &&
-                      !char.data.effects.find(e => e.data.label === 'Asleep');
+  const isUnconscious = Number(char.data.data.hp.value) < 1 || game.cub.hasCondition('Asleep', char);
+  const isResting = game.cub.hasCondition('Rest', char);
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
 
     const warningInterval = clock.warningInterval; // TODO dynamic calculation for cold damage -- use function above
-    const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const condition = clock.condition;
+    if ( !warningInterval || !condition ) continue;
+    const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const startTime = char.getFlag("lostlands", clock.startFlag);
     if (isNaN(startTime)) continue;
 
-    const warningTime = startTime + warningIntervalInSeconds;
-    if (time < warningTime) {
-      Util.removeCondition(condition, char);
+    const beforeWarning = time < startTime + warningIntervalInSeconds;
+    if (beforeWarning) {
+      await Util.removeCondition(condition, char);
       continue;
     }
 
     const hasCondition = game.cub.hasCondition(condition, char);
-    if ( hasCondition || !isConscious ) continue;
+    if ( hasCondition || isUnconscious || isResting ) continue;
     
     await Util.addCondition(condition, char);
+    
     const warningSound = clock.warningSound;
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
@@ -244,8 +246,8 @@ async function syncConditions(char, time) {
   const charDiseases = char.getFlag("lostlands", "diseases") || {};
   const diseased = !!Object.values(charDiseases).find(d => d.confirmed);
 
-  if (diseased) await Util.addCondition("Diseased", char);
-  else await Util.removeCondition("Diseased", char);
+  diseased ? await Util.addCondition("Diseased", char) :
+             await Util.removeCondition("Diseased", char);
 }
 
 async function syncDamageClocks(char, time, resetClocks=false) {
@@ -254,8 +256,11 @@ async function syncDamageClocks(char, time, resetClocks=false) {
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
 
+    const intervalFlag = clock.intervalFlag;
+    if (!intervalFlag) continue;
+
     // if event is already scheduled, continue
-    let intervalId = char.getFlag("lostlands", clock.intervalFlag);
+    let intervalId = char.getFlag("lostlands", intervalFlag);
     if ( intervalId && !resetClocks ) continue;
 
     // if there is a start time defined, start the clock
@@ -269,7 +274,7 @@ async function syncDamageClocks(char, time, resetClocks=false) {
     const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
     intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
 
-    await char.setFlag("lostlands", clock.intervalFlag, intervalId);
+    await char.setFlag("lostlands", intervalFlag, intervalId);
   }
 
   // diseases

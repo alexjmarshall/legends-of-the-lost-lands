@@ -11,7 +11,7 @@ import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
-import { syncFatigueClocks } from './fatigue.js';
+import { resetFatigueType, syncFatigueClocks } from './fatigue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -54,37 +54,6 @@ Hooks.once("init", async function() {
     type: Boolean,
     default: true,
     config: true
-  });
-
-  // Register Rest Mode setting
-  game.settings.register("lostlands", "restMode", {
-    name: "Rest Mode",
-    hint: "Tick to turn on Rest Mode",
-    scope: "world",
-    type: Boolean,
-    default: false,
-    config: true,
-    onChange: value => Macro.onRestModeChange(value)
-  });
-
-  // Register Rest Mode Start Time setting 
-  game.settings.register("lostlands", "restModeStartTime", {
-    name: "Rest Mode Start Time",
-    hint: "Don't touch this",
-    scope: "world",
-    type: Number,
-    default: null,
-    config: false
-  });
-
-  // Register Rest Dice setting
-  game.settings.register("lostlands", "restDice", {
-    name: "Rest Dice",
-    hint: "Select dice to heal while resting",
-    scope: "world",
-    type: String,
-    default: 'd3',
-    config: false
   });
 
   // Register initiative setting
@@ -170,22 +139,24 @@ Hooks.on("ready", () => {
 
   const removeInvalidEffects = async (time) => {
     const allChars = game.actors.filter(a => a.type === 'character');
-    for (const char of allChars) {
-      try {
-        const effects = char.effects.contents;
-        for (const effect of effects) {
-          const invalid = effect.data.duration?.startTime > time;
-          if (invalid) {
-            await effect.delete();
-            const slow = !!effect.data.changes.length;
-            slow && await Util.wait(200);
+
+    return Promise.all(
+      allChars.map(async (char) => {
+        try {
+          const effects = char.effects.contents;
+          for (const effect of effects) {
+            const invalid = effect.data.duration?.startTime > time;
+            if (invalid) {
+              await effect.delete();
+              await Util.wait(200);
+            }
           }
+        } catch (error) {
+          ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
+          throw new Error(error);
         }
-      } catch (error) {
-        ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
-        throw new Error(error);
-      }
-    }
+      })
+    );
   }
 
   // Note: if a new character is created, the GM needs to reboot to start their fatigue clocks
@@ -348,29 +319,44 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
-Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
+Hooks.on("preCreateActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
+});
+
+Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
+  if (!game.user.isGM) return;
   const actor = activeEffect.parent;
 
-  // if actor is dead, remove all other effects and delete all diseases
-  if (activeEffect.data.label === 'Dead') {
-    const otherEffects = actor.effects.filter(e => e.data.label !== 'Dead');
-    for (const effect of otherEffects) {
-      await effect.delete();
-      const slow = !!effect.data.changes.length;
-      slow && await Util.wait(200);
-    }
-    await Macro.deleteAllDiseases(actor);
+  switch (activeEffect.data.label) {
+    case 'Dead':
+      return Macro.deleteAllDiseases(actor);
+    case 'Rest': // TODO apply Warm condition?
+      Macro.selectRestDice(actor);
+      await resetFatigueType(actor, 'hunger');
+      return resetFatigueType(actor, 'thirst');
   }
 });
 
 Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
-  if (!game.user.isGM) return false;
-  const actor = activeEffect.parent;
+  if (!game.user.isGM) return;
 
-  if (activeEffect.data.label === 'Asleep') {
+  const actor = activeEffect.parent;
+  const effect = activeEffect.data.label;
+
+  const applyRest = async (restDice) => {
     const sleepStartTime = activeEffect.data.duration.startTime;
     const sleepEndTime = Util.now();
-    await Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime);
+    return Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime);
+  };
+
+  switch (effect) {
+    case 'Asleep':
+      return applyRest();
+    case 'Rest':
+      const restDice = actor.getFlag("lostlands", "restDice");
+      await actor.unsetFlag("lostlands", "restDice");
+      await resetFatigueType(actor, 'hunger');
+      await resetFatigueType(actor, 'thirst');
+      return applyRest(restDice);
   }
 });
