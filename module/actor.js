@@ -134,6 +134,7 @@ export class SimpleActor extends Actor {
     }
 
     if(this._id && Object.keys(updateData).length) {
+      await Util.wait(200);
       await this.update({data: updateData});
     } 
   }
