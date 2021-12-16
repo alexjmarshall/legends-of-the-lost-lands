@@ -122,14 +122,16 @@ export class SimpleActor extends Actor {
     updateData.attitude_map = actorData.attitude_map || {};
 
     // update actor if any update data is different than existing data
-    let shouldUpdate = false;
     for(const key of Object.keys(updateData)) {
-      if(!foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
-        shouldUpdate = true;
-        break;
+      if(foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
+        delete updateData[key];
       }
     }
-    if(this._id && shouldUpdate) await this.update({data: updateData});
+
+    if(this._id && Object.keys(updateData).length) {
+      await Util.wait(200);
+      await this.update({data: updateData});
+    } 
   }
 
   /* -------------------------------------------- */

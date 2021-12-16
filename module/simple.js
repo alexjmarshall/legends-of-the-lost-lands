@@ -175,7 +175,11 @@ Hooks.on("ready", () => {
         const effects = char.effects.contents;
         for (const effect of effects) {
           const invalid = effect.data.duration?.startTime > time;
-          invalid && await effect.delete();
+          if (invalid) {
+            await effect.delete();
+            const slow = !!effect.data.changes.length;
+            slow && await Util.wait(200);
+          }
         }
       } catch (error) {
         ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
@@ -344,34 +348,27 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
-Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
-  if (!game.user.isGM) return false;
-  const actor = activeEffect.parent;
-  const actorIsDead = !!actor.data.effects.find(e => e.data.label === 'Dead');
-
-  // if actor is dead, do not allow any other effects to be created
-  if (actorIsDead) return false;
-});
-
 Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
   const actor = activeEffect.parent;
 
-  // if actor is dead, remove all other effects
+  // if actor is dead, remove all other effects and delete all diseases
   if (activeEffect.data.label === 'Dead') {
     const otherEffects = actor.effects.filter(e => e.data.label !== 'Dead');
     for (const effect of otherEffects) {
       await effect.delete();
+      const slow = !!effect.data.changes.length;
+      slow && await Util.wait(200);
     }
+    await Macro.deleteAllDiseases(actor);
   }
 });
 
 Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
   const actor = activeEffect.parent;
-  const restMode = game.settings.get("lostlands", "restMode");
 
-  if ( activeEffect.data.label === 'Asleep' && !restMode ) {
+  if (activeEffect.data.label === 'Asleep') {
     const sleepStartTime = activeEffect.data.duration.startTime;
     const sleepEndTime = Util.now();
     await Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime);
