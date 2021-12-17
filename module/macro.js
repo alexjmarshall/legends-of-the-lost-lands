@@ -1223,19 +1223,25 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 export async function applyFatigue(actorId, type, execTime, newTime, heal=false, applyToMax=true) {
   const actor = game.actors.get(actorId);
 
-  // exhaustion damage has no effect while asleep
-  // exhaustion/hunger/thirst damage has no effect while resting
+  const isResting = game.cub.hasCondition('Rest', actor);
+  if (isResting) return;
   const isAsleep = game.cub.hasCondition('Asleep', actor);
   if ( isAsleep && type === 'exhaustion') return;
-  const isResting = game.cub.hasCondition('Rest', actor);
-  const invalidRestDamage = type === 'thirst' || type === 'hunger' || type === 'exhaustion';
-  if ( isResting && invalidRestDamage ) return;
 
-  const { damageInterval, damageDice } = Fatigue.CLOCKS[type]; // TODO cold damage?
+  let coldMulti;
+  if (type == 'cold') {
+    applyToMax = false;
+    const diffClo = Fatigue.diffClo(actor);
+    coldMulti = Math.max(0, Math.floor(diffClo));
+  }
+  if (coldMulti <= 0) return;
+
+  const clock = Fatigue.CLOCKS[type];
+  const { damageDice, damageInterval } = clock;
   const intervalInSeconds = Util.intervalInSeconds(damageInterval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
-  const dice = `${numDice}${damageDice}`;
+  const dice = `${numDice}${damageDice}${coldMulti ? `*${coldMulti}` : ''}`;
 
   return applyFatigueDamage(actor, type, dice, heal, applyToMax);
 }
@@ -1251,6 +1257,7 @@ async function applyFatigueDamage(actor, type, dice, heal=false, applyToMax=true
   if (hp < 0) return;
   
   const result = await Util.rollDice(dice);
+  if (result < 1) return;
   const hpResult = heal ? hp + result : hp - result;
   const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
   const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);

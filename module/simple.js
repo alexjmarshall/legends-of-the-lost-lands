@@ -11,7 +11,7 @@ import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
-import { resetFatigueType, syncFatigueClocks } from './fatigue.js';
+import { resetFatigueType, syncFatigueClocks, reqClo } from './fatigue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -65,6 +65,16 @@ Hooks.once("init", async function() {
     default: "1d6",
     config: true,
     onChange: formula => _simpleUpdateInit(formula, true)
+  });
+
+  // required Clo setting
+  game.settings.register("lostlands", "requiredClo", {
+    name: "Required Clo",
+    hint: "The warmth of clothing required to not suffer cold damage",
+    scope: "world",
+    type: Number,
+    default: 1,
+    config: true,
   });
 
   // Retrieve and assign the initiative formula setting
@@ -166,6 +176,7 @@ Hooks.on("ready", () => {
       TimeQ.init();
       const now = Util.now();
       await syncFatigueClocks(now);
+      await game.settings.set("lostlands", "requiredClo", reqClo());
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -179,6 +190,13 @@ Hooks.on("ready", () => {
       const oldTime = game.time.worldTime;
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
+
+      // change requiredClo if season changes
+      const oldSeason = SimpleCalendar.api.timestampToDate(oldTime).currentSeason?.name.toLowerCase();
+      const newSeason = SimpleCalendar.api.timestampToDate(newTime).currentSeason?.name.toLowerCase();
+      if (newSeason != oldSeason) {
+        await game.settings.set("lostlands", "requiredClo", reqClo(newSeason));
+      }
 
       // if going back in time, clear event queue,
       //  remove effects that started later than new time
@@ -330,10 +348,8 @@ Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
   switch (activeEffect.data.label) {
     case 'Dead':
       return Macro.deleteAllDiseases(actor);
-    case 'Rest': // TODO apply Warm condition?
-      Macro.selectRestDice(actor);
-      await resetFatigueType(actor, 'hunger');
-      return resetFatigueType(actor, 'thirst');
+    case 'Rest':
+      return Macro.selectRestDice(actor);
   }
 });
 
@@ -357,6 +373,7 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
       await actor.unsetFlag("lostlands", "restDice");
       await resetFatigueType(actor, 'hunger');
       await resetFatigueType(actor, 'thirst');
+      await resetFatigueType(actor, 'cold'); // TODO also reset cold fatigue on delete warm effect
       return applyRest(restDice);
   }
 });

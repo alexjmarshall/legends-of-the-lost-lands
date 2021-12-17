@@ -30,6 +30,12 @@ const REQ_CLO_BY_SEASON = {
   "spring": 2,
   "winter": 3
 };
+export function diffClo(char) {
+  const requiredClo = game.settings.get("lostlands", "requiredClo");
+  const wornClo = char.data.data.clo;
+  const diff = requiredClo - wornClo;
+  return diff || 0;
+}
 export const CLOCKS = {
   "hunger": {
     warningInterval: { hour: 12 },
@@ -39,7 +45,6 @@ export const CLOCKS = {
     startFlag: "last_eat_time",
     intervalFlag: "hunger_interval_id",
     condition: "Hungry",
-    alwaysOn: true
   },
   "thirst": {
     warningInterval: { hour: 12 },
@@ -48,7 +53,6 @@ export const CLOCKS = {
     startFlag: "last_drink_time",
     intervalFlag: "thirst_interval_id",
     condition: "Thirsty",
-    alwaysOn: true
   },
   "exhaustion": {
     warningInterval: { hour: 12 },
@@ -58,20 +62,17 @@ export const CLOCKS = {
     startFlag: "last_sleep_time",
     intervalFlag: "exhaustion_interval_id",
     condition: "Sleepy",
-    alwaysOn: true
   },
-  // "cold": {
-  //   warningInterval: {}, // immediate
-  //   damageInterval: {}, // varies based on difference between worn and required Clo
-  //   damageDice: 'd6',
-  //   startFlag: "cold_start_time",
-  //   intervalFlag: "cold_interval_id",
-  //   condition: "Cold",
-  //   alwaysOn: false
-  // },
+  "cold": {
+    warningInterval: { hour: 0 },
+    damageInterval: { hour: 1 },
+    damageDice: 'd6',
+    startFlag: "cold_start_time",
+    intervalFlag: "cold_interval_id",
+    condition: "Cold",
+  },
   "rest": {
     startFlag: "last_rest_time",
-    alwaysOn: true
   },
 };
 export const DISEASES = {
@@ -126,9 +127,10 @@ export const DISEASES = {
 };
 
 export async function resetFatigueType(actor, type, time=Util.now()) {
-  let { startFlag, intervalFlag, condition, warningInterval, damageInterval } = CLOCKS[type];
+  const clock = CLOCKS[type];
+  const { startFlag, intervalFlag, condition, warningInterval, damageInterval } = clock;
   const startTime = actor.getFlag("lostlands", startFlag);
-  startTime != time && await actor.setFlag("lostlands", startFlag, time);
+  if (startTime != time) await actor.setFlag("lostlands", startFlag, time);
   condition && await Util.removeCondition(condition, actor);
 
   let intervalId = actor.getFlag("lostlands", intervalFlag);
@@ -136,19 +138,17 @@ export async function resetFatigueType(actor, type, time=Util.now()) {
 
   const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
   const fromTime = time + warningIntervalInSeconds;
-  const actorId = actor.id;
-  const scope = {actorId, type};
+  const scope = {actorId: actor.id, type};
   const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
   intervalId = await TimeQ.doEvery(damageInterval, fromTime, macro.id, scope);
 
   return actor.setFlag("lostlands", intervalFlag, intervalId);
 }
 
-export function reqClo() {
-  // change game setting of required clo when season changes
-  // then GM can alter with macro for daily weather
-  const season = SimpleCalendar.api.getCurrentSeason()?.name.toLowerCase();
-  const reqClo = Constant.REQ_CLO_BY_SEASON[season];
+export function reqClo(season) {
+  // TODO GM can alter with macro for daily weather
+  season = season || SimpleCalendar.api.getCurrentSeason()?.name.toLowerCase();
+  const reqClo = REQ_CLO_BY_SEASON[season];
   return reqClo;
 }
 
@@ -169,14 +169,10 @@ async function syncStartTimes(char, time) {
 
   // clocks
   for (const clock of Object.values(CLOCKS)) {
-    const startTime = char.getFlag("lostlands", clock.startFlag);
+    const {startFlag} = clock;
+    const startTime = char.getFlag("lostlands", startFlag);
     if ( startTime == null || startTime > time ) {
-
-      if (clock.alwaysOn) {
-        await char.setFlag("lostlands", clock.startFlag, time);
-      } else {
-        startTime && await char.unsetFlag("lostlands", clock.startFlag);
-      } 
+      await char.setFlag("lostlands", startFlag, time);
     }
   }
 
@@ -203,31 +199,34 @@ async function syncStartTimes(char, time) {
 }
 
 async function syncConditions(char, time) {
-  const isUnconscious = Number(char.data.data.hp.value) < 1 || game.cub.hasCondition('Asleep', char);
+  const isDead = Number(char.data.data.hp.value) < 1;
+  const isAsleep = game.cub.hasCondition('Asleep', char);
   const isResting = game.cub.hasCondition('Rest', char);
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
 
-    const warningInterval = clock.warningInterval; // TODO dynamic calculation for cold damage -- use function above
-    const condition = clock.condition;
+    if (isDead) continue;
+
+    const { startFlag, condition, warningInterval, warningSound } = clock;
+    const startTime = char.getFlag("lostlands", startFlag);
     if ( !warningInterval || !condition ) continue;
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
-    const startTime = char.getFlag("lostlands", clock.startFlag);
-    if (isNaN(startTime)) continue;
-
     const beforeWarning = time < startTime + warningIntervalInSeconds;
-    if (beforeWarning) {
+
+    let removeCold = false;
+    if ( type == 'cold' && diffClo(char) <= 0 ) removeCold = true;
+
+    if ( isResting || beforeWarning || removeCold ) {
       await Util.removeCondition(condition, char);
       continue;
     }
 
-    const hasCondition = game.cub.hasCondition(condition, char);
-    if ( hasCondition || isUnconscious || isResting ) continue;
-    
+    const hasCondition = game.cub.hasCondition(condition, char); // TODO  add/remove cold condition as needed
+    if (hasCondition) continue;
     await Util.addCondition(condition, char);
+    if (isAsleep) continue;
     
-    const warningSound = clock.warningSound;
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
     const content = `feels ${condition.toLowerCase()}...`;
@@ -256,23 +255,23 @@ async function syncDamageClocks(char, time, resetClocks=false) {
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
 
-    const intervalFlag = clock.intervalFlag;
+    const { startFlag, intervalFlag, warningInterval, damageInterval } = clock;
     if (!intervalFlag) continue;
 
     // if event is already scheduled, continue
     let intervalId = char.getFlag("lostlands", intervalFlag);
     if ( intervalId && !resetClocks ) continue;
 
-    // if there is a start time defined, start the clock
-    const startTime = char.getFlag("lostlands", clock.startFlag);
-    if (isNaN(startTime)) continue;
+    intervalId && await TimeQ.cancel(intervalId);
 
-    const warningIntervalInSeconds = Util.intervalInSeconds(clock.warningInterval);
-    const interval = clock.damageInterval;
-    const fromTime = Util.prevTime(interval, startTime + warningIntervalInSeconds, time);
+    // if there is a start time defined, start the clock
+    const startTime = char.getFlag("lostlands", startFlag);
+
+    const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
+    const fromTime = Util.prevTime(damageInterval, startTime + warningIntervalInSeconds, time);
     const scope = {actorId, type};
     const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
-    intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
+    intervalId = await TimeQ.doEvery(damageInterval, fromTime, macro.id, scope);
 
     await char.setFlag("lostlands", intervalFlag, intervalId);
   }
