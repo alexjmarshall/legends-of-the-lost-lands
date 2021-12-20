@@ -1,6 +1,7 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Util from "./utils.js";
 import * as Constant from "./constants.js";
+import * as Fatigue from './fatigue.js';
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -117,6 +118,10 @@ export class SimpleActor extends Actor {
     // worn clo
     const totalWornClo = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.clo?.value || 0), 0);
     updateData.clo = attributes.clo?.value ?? Math.round(totalWornClo * 100) / 100;
+    const resetExposure = actorData.clo !== updateData.clo;
+    const reqClo = game.settings.get("lostlands", "requiredClo");
+    const newDiffClo = updateData.clo - reqClo;
+    const oldDiffClo = actorData.clo - reqClo;
 
     // st_mod
     const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
@@ -127,16 +132,27 @@ export class SimpleActor extends Actor {
     updateData.attitude_map = actorData.attitude_map || {};
 
     // update actor if any update data is different than existing data
-    for(const key of Object.keys(updateData)) {
+    for (const key of Object.keys(updateData)) {
+
       if(foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
         delete updateData[key];
       }
     }
 
-    if(this._id && Object.keys(updateData).length) {
+    if (this._id && Object.keys(updateData).length) {
       await Util.wait(200);
       await this.update({data: updateData});
-    } 
+    }
+
+    if (resetExposure) {
+      // reset damage if actor was suffering damage but is now fine
+      // reset clock if actor was fine but is now suffering damage
+      const isFine = newDiffClo >= 0 && newDiffClo < 1;
+      const wasFine = oldDiffClo >= 0 && oldDiffClo < 1;
+      !wasFine && isFine && await Fatigue.resetFatigueDamage(this, 'exposure');
+      wasFine && !isFine && await Fatigue.resetFatigueClock(this, 'exposure', Util.now());
+    }
+
   }
 
   /* -------------------------------------------- */

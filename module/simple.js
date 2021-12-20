@@ -11,7 +11,7 @@ import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
-import { resetFatigueType, syncFatigueClocks, reqClo } from './fatigue.js';
+import * as Fatigue from './fatigue.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -70,12 +70,28 @@ Hooks.once("init", async function() {
   // required Clo setting
   game.settings.register("lostlands", "requiredClo", {
     name: "Required Clo",
-    hint: "The warmth of clothing required to not suffer cold damage",
+    hint: "The warmth of clothing required to not suffer exposure damage",
     scope: "world",
     type: Number,
     default: 1,
     config: true,
+    onChange: (requiredClo) => resetExposureClocks(requiredClo)
   });
+
+  async function resetExposureClocks(requiredClo) {
+    const allChars = game.actors.filter(a => a.type === 'character');
+    return Promise.all(
+      allChars.map(async (char) => {
+        const wornClo = char.data.data.clo;
+        const diff = wornClo - requiredClo;
+        const isFine = diff >= 0 && diff < 1;
+        if (isFine) {
+          return Fatigue.resetFatigueDamage(char, 'exposure');
+        }
+        return Fatigue.resetFatigueClock(char, 'exposure', Util.now());
+      })
+    )
+  }
 
   // Retrieve and assign the initiative formula setting
   const initFormula = game.settings.get("lostlands", "initFormula");
@@ -175,8 +191,9 @@ Hooks.on("ready", () => {
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      await syncFatigueClocks(now);
-      await game.settings.set("lostlands", "requiredClo", reqClo());
+      await Fatigue.syncFatigueClocks(now);
+      const reqClo = Fatigue.reqClo();
+      await game.settings.set("lostlands", "requiredClo", reqClo);
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -195,7 +212,8 @@ Hooks.on("ready", () => {
       const oldSeason = SimpleCalendar.api.timestampToDate(oldTime).currentSeason?.name.toLowerCase();
       const newSeason = SimpleCalendar.api.timestampToDate(newTime).currentSeason?.name.toLowerCase();
       if (newSeason != oldSeason) {
-        await game.settings.set("lostlands", "requiredClo", reqClo(newSeason));
+        const reqClo = Fatigue.reqClo(newSeason);
+        await game.settings.set("lostlands", "requiredClo", reqClo);
       }
 
       // if going back in time, clear event queue,
@@ -208,7 +226,7 @@ Hooks.on("ready", () => {
         resetClocks = true;
       }
 
-      await syncFatigueClocks(newTime, resetClocks);
+      await Fatigue.syncFatigueClocks(newTime, resetClocks);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find(m => m.id === event.macroId);
@@ -314,9 +332,15 @@ Hooks.on("updateToken", (token, moved, data) => {
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
   const hpUpdate = change.data?.hp?.value;
+  const maxHpUpdate = change.data?.hp?.max;
   const targetHp = actor.data.data.hp?.value;
-  const halfMaxHp = actor.data.data.hp?.max / 2;
+  const maxHp = actor.data.data.hp?.max;
+  const maxMaxHp = actor.data.data.hp?.max_max;
   const token = Util.getTokenFromActor(actor);
+
+  if (maxHp < maxMaxHp && maxHpUpdate >= maxMaxHp) {
+    Fatigue.clearMaxHpDamage(actor);
+  }
 
   if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
     Util.macroChatMessage(token, actor, {
@@ -328,9 +352,9 @@ Hooks.on("preUpdateActor", (actor, change) => {
 
   if (targetHp < 1) return;
 
-  if ( hpUpdate < 0) {
+  if (hpUpdate < 0) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
-  } else if ( hpUpdate < halfMaxHp && targetHp >= halfMaxHp ) {
+  } else if ( hpUpdate < maxHp / 2 && targetHp >= maxHp / 2 ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
   } else if (hpUpdate < targetHp) {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
@@ -344,10 +368,11 @@ Hooks.on("preCreateActiveEffect", async (activeEffect, data, options, userId) =>
 Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return;
   const actor = activeEffect.parent;
+  const effect = activeEffect.data.label;
 
-  switch (activeEffect.data.label) {
+  switch (effect) {
     case 'Dead':
-      return Macro.deleteAllDiseases(actor);
+      return Fatigue.deleteAllDiseases(actor);
     case 'Rest':
       return Macro.selectRestDice(actor);
   }
@@ -355,7 +380,6 @@ Hooks.on("createActiveEffect", async (activeEffect, data, options, userId) => {
 
 Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return;
-
   const actor = activeEffect.parent;
   const effect = activeEffect.data.label;
 
@@ -371,9 +395,8 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
     case 'Rest':
       const restDice = actor.getFlag("lostlands", "restDice");
       await actor.unsetFlag("lostlands", "restDice");
-      await resetFatigueType(actor, 'hunger');
-      await resetFatigueType(actor, 'thirst');
-      await resetFatigueType(actor, 'cold'); // TODO also reset cold fatigue on delete warm effect
+      await Fatigue.resetFatigueType(actor, 'hunger');
+      await Fatigue.resetFatigueType(actor, 'thirst');
       return applyRest(restDice);
   }
 });

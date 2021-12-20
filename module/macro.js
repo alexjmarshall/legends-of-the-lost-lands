@@ -65,7 +65,7 @@ export async function togglePartyRest(options={}) {
   return Promise.all(
     selectedTokens.map(async (token) => {
       const actor = token.actor;
-      const isResting = game.cub.hasCondition(condition, actor);
+      const isResting = game.cub.hasCondition(condition, actor, {warn: false});
       isResting ? await Util.removeCondition(condition, actor) :
                   await Util.addCondition(condition, actor);
     })
@@ -145,7 +145,7 @@ export async function cureDisease() {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   
-  return deleteAllDiseases(actor);
+  return Fatigue.deleteAllDiseases(actor);
 }
 
 export async function drinkPotion(itemId, options={}) {
@@ -163,7 +163,10 @@ export async function drinkPotion(itemId, options={}) {
       const currentHp = +actor.data.data.hp?.value;
       const maxHp = +actor.data.data.hp?.max;
       // can only drink a potion if conscious
-      if (currentHp > 0) hpUpdate = Math.min(maxHp, currentHp + healPoints);
+      if (currentHp > 0) {
+        hpUpdate = Math.min(maxHp, currentHp + healPoints);
+        await actor.update({'data.hp.value': hpUpdate});
+      } 
     }
   }
 
@@ -174,9 +177,7 @@ export async function drinkPotion(itemId, options={}) {
     chatMsgType
   }, true);
 
-  await Fatigue.resetFatigueType(actor, 'thirst', Util.now());
-
-  !isNaN(hpUpdate) && await actor.update({'data.hp.value': hpUpdate});
+  await Fatigue.resetFatigueType(actor, 'thirst');
 }
 
 export async function readScroll(itemId, options={}) {
@@ -211,8 +212,8 @@ export async function eatFood(itemId, options={}) {
 
   // reset thirst to 12 hours ago if this is later than last drink time
   const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
-  const startFlag = Fatigue.CLOCKS['thirst'].startFlag;
-  const lastDrinkTime = actor.getFlag("lostlands", startFlag);
+  const thirstData = actor.getFlag("lostlands", 'thirst');
+  const lastDrinkTime = thirstData.startTime;
   if (twelveHoursAgo > lastDrinkTime) {
     await Fatigue.resetFatigueType(actor, 'thirst', twelveHoursAgo);
   } 
@@ -595,7 +596,7 @@ async function attack(attackers, targetToken, options) {
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
     Util.macroChatMessage(token, token.actor, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
-    Util.chatBubble(token, chatBubbleString, true);
+    Util.chatBubble(token, chatBubbleString);
     for (const attack of attacks) {
       attack.sound && Util.playSound(`${attack.sound}`, token, {push: true, bubble: false});
       const targetHp = +targetToken?.actor.data.data.hp?.value;
@@ -865,7 +866,7 @@ async function attack(attackers, targetToken, options) {
   }
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
-  chatMsgData.bubbleString += `${getAttackChatBubble(token.actor.name, targetToken?.actor.name, weapName, dmgType)}<br>`;
+  chatMsgData.bubbleString += `${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
 
   // add sound and damage
   let thisAttackDamage;
@@ -884,32 +885,32 @@ async function attack(attackers, targetToken, options) {
   return attack(attackers, targetToken, options);
 }
 
-function getAttackChatBubble(attackerName, targetName, weapName, dmgType) {
+function getAttackChatBubble(targetName, weapName, dmgType) {
   switch (dmgType) {
     case "arrow":
-      return `${attackerName} shoots an arrow${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+      return `shoots an arrow${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
     case "attack":
-      return `${attackerName} attacks${targetName ? ` ${targetName}` : ''}`;
+      return `attacks${targetName ? ` ${targetName}` : ''}`;
     case "bludgeon":
-      return `${attackerName} bludgeons${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+      return `bludgeons${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "bolt":
-      return `${attackerName} shoots a bolt${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+      return `shoots a bolt${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
     case "hew":
-      return `${attackerName} hews${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+      return `hews${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "grapple":
-      return `${attackerName} grapples${targetName ? ` ${targetName}` : ''} `;
+      return `grapples${targetName ? ` ${targetName}` : ''} `;
     case "hook":
-      return `${attackerName} hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+      return `hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "punch":
-      return `${attackerName} punches${targetName ? ` ${targetName}` : ''}`;
+      return `punches${targetName ? ` ${targetName}` : ''}`;
     case "cut":
-      return `${attackerName} cuts${targetName ? ` ${targetName}` : ''} with ${weapName}`;
+      return `cuts${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "thrust":
-      return `${attackerName} thrusts ${weapName}${targetName ? ` at ${targetName}` : ''} `;
+      return `thrusts ${weapName}${targetName ? ` at ${targetName}` : ''} `;
     case "slingstone":
-      return `${attackerName} slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
+      return `slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
     case "throw":
-      return `${attackerName} throws ${weapName}${targetName ? ` at ${targetName}` : ''} `;
+      return `throws ${weapName}${targetName ? ` at ${targetName}` : ''} `;
   }
 }
 
@@ -944,12 +945,12 @@ function altDialog(options, title, buttons, callback) {
   }
 }
 
-function modDialog(options, title, fields=[{label:'', default:'', key:''}], callback) {
+function modDialog(options, title, fields=[{label:'', key:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {
     formFields += `<div class="form-group">
                     <label>${field.label}</label>
-                    <input type="text" id="${field.key}" value="${field.default}" placeholder="e.g. -4, 2d6 etc.">
+                    <input type="text" id="${field.key}" placeholder="e.g. -4, 2d6 etc.">
                   </div>`;
   });
   const content = `<form>${formFields}</form>`;
@@ -1220,58 +1221,68 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
   }).render(true);
 }
 
-export async function applyFatigue(actorId, type, execTime, newTime, heal=false, applyToMax=true) {
+export async function applyFatigue(actorId, type, execTime, newTime, heal=false) {
   const actor = game.actors.get(actorId);
 
-  const isResting = game.cub.hasCondition('Rest', actor);
+  const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
-  const isAsleep = game.cub.hasCondition('Asleep', actor);
-  if ( isAsleep && type === 'exhaustion') return;
-
-  let coldMulti;
-  if (type == 'cold') {
-    applyToMax = false;
-    const diffClo = Fatigue.diffClo(actor);
-    coldMulti = Math.max(0, Math.floor(diffClo));
+  
+  if ( type === 'exhaustion') {
+    const isAsleep = game.cub.hasCondition('Asleep', actor, {warn: false});
+    if (isAsleep) return;
   }
-  if (coldMulti <= 0) return;
 
+  let expMulti;
+  if (type == 'exposure') {
+    const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
+    if (isWarm) return;
+
+    const diffClo = Fatigue.diffClo(actor);
+    expMulti = Math.floor(Math.abs(diffClo));
+    if (expMulti <= 0) return;
+  }
+  
   const clock = Fatigue.CLOCKS[type];
   const { damageDice, damageInterval } = clock;
   const intervalInSeconds = Util.intervalInSeconds(damageInterval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
-  const dice = `${numDice}${damageDice}${coldMulti ? `*${coldMulti}` : ''}`;
+  const dice = `${numDice}${damageDice}${expMulti ? `*${expMulti}` : ''}`;
 
-  return applyFatigueDamage(actor, type, dice, heal, applyToMax);
+  const result = await applyFatigueDamage(actor, type, dice, heal);
+  const data = actor.getFlag("lostlands", type);
+  data.maxHpDamage = data.maxHpDamage + result || result;
+  await actor.setFlag("lostlands", type, data);
 }
 
-async function applyFatigueDamage(actor, type, dice, heal=false, applyToMax=true) {
+async function applyFatigueDamage(actor, type, dice, heal=false) {
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
-  const maxMaxHp = Number(actor.data.data.hp.max_max);
-  if ( isNaN(hp) || isNaN(maxHp) || isNaN(maxMaxHp) ) {
-    return ui.notifications.error(`Error applying ${type} damage to ${actor.name}: invalid HP values`);
+  if (hp < 0) return 0;
+
+  let result = await Util.rollDice(dice);
+  if (result < 1) return 0;
+
+  let update;
+  let maxHpResult = Math.min(result, maxHp);
+  if (heal) {
+    result = Math.min(result, maxHp - hp);
+    const hpUpdate = hp + result;
+    update = {"data.hp.value": hpUpdate};
+  } else {
+    const maxHpUpdate = maxHp - maxHpResult;
+    const hpUpdate = hp - result;
+    update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
 
-  if (hp < 0) return;
-  
-  const result = await Util.rollDice(dice);
-  if (result < 1) return;
-  const hpResult = heal ? hp + result : hp - result;
-  const maxHpResult = heal ? maxHp + result : maxHp - result + 1;
-  const hpUpdate = Math.min(maxHpResult, hpResult, maxMaxHp);
-  const maxHpUpdate = Math.min(Math.max(1, maxHpResult), maxMaxHp);
-  const updates = {"data.hp.value": hpUpdate};
-  if (applyToMax) Object.assign(updates, {"data.hp.max": maxHpUpdate});
-
-  const content = `takes ${Util.chatInlineRoll(result)} ${heal ? `point${result > 1 ? 's' : ''} of healing` : 'damage'} from ${type}!`;
+  const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}!`;
   const flavor = Util.upperCaseFirst(type);
   const token = Util.getTokenFromActor(actor);
 
   await Util.macroChatMessage(token, actor, { content, flavor }, false);
-  
-  return actor.update(updates);
+  await actor.update(update);
+
+  return maxHpResult;
 }
 
 async function applyRest(actor, wakeTime, sleptTime, restDice) {
@@ -1281,14 +1292,8 @@ async function applyRest(actor, wakeTime, sleptTime, restDice) {
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
   const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-  restDice = restDice || hasBedroll ? 'd2' : 'd1';
+  restDice = restDice || hasBedroll ? 'd3' : 'd2';
   const dice = `${numDice}${restDice}`;
-
-  const fatigueConditions = ["Hungry", "Thirsty"];
-  for (const condition of fatigueConditions) {
-    const fatigued = game.cub.hasCondition(condition, actor);
-    if (fatigued) return;
-  }
 
   await actor.setFlag("lostlands", "last_rest_time", wakeTime);
   
@@ -1325,30 +1330,24 @@ export async function addDisease(disease=null, options={}) {
     return altDialog(options, `Add Disease to ${actor.name}`, choices, () => addDisease(null, options));
   }
 
-  const charDiseases = actor.getFlag("lostlands", "diseases");
-  
-  // if character already has disease, return
+  const charDiseases = actor.getFlag("lostlands", "disease") || {};
   if (charDiseases.hasOwnProperty(disease)) return;
 
-  const actorDiseases = actor.getFlag("lostlands", "diseases");
-  const incubationPeriod = diseases[disease].incubationPeriod;
-  const incubationInSeconds = Util.intervalInSeconds(incubationPeriod);
   const startTime = Util.now();
-  const fromTime = startTime + incubationInSeconds;
   const interval = Fatigue.DISEASES[disease].damageInterval;
   const actorId = actor.id;
   const scope = {actorId, disease};
   const command = Fatigue.DISEASE_DAMAGE_COMMAND;
   const macro = await Util.getMacroByCommand(`${command}`, `return game.lostlands.Macro.${command};`);
-  const intervalId = await TimeQ.doEvery(interval, fromTime, macro.id, scope);
+  const intervalId = await TimeQ.doEvery(interval, startTime, macro.id, scope);
 
-  actorDiseases[disease] = {
+  charDiseases[disease] = {
     startTime,
     intervalId,
     confirmed: false
   };
 
-  await actor.setFlag("lostlands", "diseases", actorDiseases);
+  await actor.setFlag("lostlands", "disease", charDiseases);
 
   return ui.notifications.info(`Added ${Util.upperCaseFirst(disease)} to ${actor.name}`);
 }
@@ -1366,13 +1365,19 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   const dice = new Array(numDice).fill(die);
   let damage = 0;
   let resolved = false;
-  const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
+  const actorDiseases = actor.getFlag("lostlands", "disease");
+  if (!actorDiseases) return false;
   const confirmed = !!actorDiseases[disease].confirmed;
-  const hp = Number(actor.data.data.hp.value);
-  if ( hp < 0 ) return;
+  const startTime = actorDiseases[disease].startTime;
+
+  // if within incubation period, return
+  const incubationPeriod = Fatigue.DISEASES[disease].incubationPeriod;
+  const incubationInSeconds = Util.intervalInSeconds(incubationPeriod);
+  const isIncubating = newTime < startTime + incubationInSeconds;
+  if (isIncubating) return true;
 
   const resolveDisease = async () => {
-    await deleteDisease(actor, disease);
+    await Fatigue.deleteDisease(actor, disease);
     confirmed && await Util.macroChatMessage(token, actor, {
       content: `${actor.name}'s ${disease} has resolved.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
@@ -1383,9 +1388,10 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   };
 
   const confirmDisease = async () => {
-    const actorDiseases = actor.getFlag("lostlands", "diseases") || {};
+    const actorDiseases = actor.getFlag("lostlands", "disease");
+    if (!actorDiseases) return false;
     actorDiseases[disease].confirmed = true;
-    await actor.setFlag("lostlands", "diseases", actorDiseases);
+    await actor.setFlag("lostlands", "disease", actorDiseases);
     await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
     await Util.addCondition("Diseased", actor);
     return applyDisease(actorId, disease, execTime, newTime);
@@ -1399,7 +1405,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
        one: {
         icon: '<i class="fas fa-check"></i>',
         label: "Yes",
-        callback: () => deleteDisease(actor, disease)
+        callback: () => Fatigue.deleteDisease(actor, disease)
        },
        two: {
         icon: '<i class="fas fa-times"></i>',
@@ -1420,38 +1426,11 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     }
   }
 
-  await applyFatigueDamage(actor, 'disease', `${damage}`);
+  const result = await applyFatigueDamage(actor, type, `${damage}`);
+  actorDiseases[disease].maxHpDamage = actorDiseases[disease].maxHpDamage + result || result;
+  await actor.setFlag("lostlands", "disease", actorDiseases);
 
   if (resolved) return resolveDisease();
 
   return true;
-}
-
-async function deleteDisease(actor, disease) {
-  const diseases = actor.getFlag("lostlands", "diseases");
-
-  const intervalId = diseases[disease]?.intervalId;
-  await TimeQ.cancel(intervalId);
-
-  delete diseases[disease];
-  if (!Object.keys(diseases).length) {
-    await Util.removeCondition("Diseased", actor);
-  }
-
-  await actor.unsetFlag("lostlands", "diseases");
-  await actor.setFlag("lostlands", "diseases", diseases);
-}
-
-
-export async function deleteAllDiseases(actor) {
-  const diseases = actor.getFlag("lostlands", "diseases");
-
-  for (const disease of Object.values(diseases)) {
-    const intervalId = disease.intervalId;
-    await TimeQ.cancel(intervalId);
-  }
-
-  await Util.removeCondition("Diseased", actor);
-  await actor.unsetFlag("lostlands", "diseases");
-  await actor.setFlag("lostlands", "diseases", {});
 }

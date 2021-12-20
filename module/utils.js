@@ -35,7 +35,7 @@ export const playVoiceSound = (() => {
     
     const actorId = actor.isToken ? actor.token.id : actor.id;
     if (speakingActorIds.has(actorId)) return;
-    const isSleeping = game.cub.hasCondition("Asleep", actor);
+    const isSleeping = game.cub.hasCondition("Asleep", actor, {warn: false});
     if (isSleeping) return;
     const voice = actor.data.data.voice;
     const soundsArr = Constant.VOICE_SOUNDS.get(`${voice}`)?.get(`${mood}`);
@@ -61,7 +61,7 @@ export function playSound(sound, token, {push = true, bubble = true}={}) {
   if (!sound) return;
   const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.mp3`;
   if (token && bubble) {
-    chatBubble(token, '<i class="fas fa-volume-up"></i>');
+    chatBubble(token, '<i class="fas fa-volume-up"></i>', false);
   }
 
   return AudioHelper.play({src: soundPath, volume: 1, loop: false}, push);
@@ -142,7 +142,6 @@ export async function reduceItemQty(item, actor) {
 }
 
 export function chatInlineRoll(content) {
-  if (!content) return;
   return `<span style="font-style:normal;">[[${content}]]</span>`
 }
 
@@ -191,7 +190,7 @@ export function upperCaseFirst(string) {
 export const now = () => game.time.worldTime;
 
 export async function removeCondition(condition, actor, {warn=false}={}) {
-  const hasCondition = game.cub.hasCondition(condition, actor);
+  const hasCondition = game.cub.hasCondition(condition, actor, {warn});
   if (!hasCondition) return;
 
   await wait(300);
@@ -199,7 +198,7 @@ export async function removeCondition(condition, actor, {warn=false}={}) {
 }
 
 export async function addCondition(condition, actor, {warn=false}={}) {
-  const hasCondition = game.cub.hasCondition(condition, actor);
+  const hasCondition = game.cub.hasCondition(condition, actor, {warn});
   if (hasCondition) return;
 
   await wait(300);
