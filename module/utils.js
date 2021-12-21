@@ -43,7 +43,7 @@ export const playVoiceSound = (() => {
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
     if (Math.random() > chance) return;
-    token = token || getTokenFromActor(actor);
+    token = token ?? getTokenFromActor(actor);
 
     try {
       speakingActorIds.set(actorId);
@@ -68,10 +68,11 @@ export function playSound(sound, token, {push = true, bubble = true}={}) {
 }
 
 export function chatBubble(token, text, emote=true) {
-  token = token || canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] :
-          game.user.character ? getTokenFromActor(game.user.character) : null;
+  if (token == null) {
+    token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] :
+            getTokenFromActor(game.user.character);
+  }
   if ( !token || !text ) return
-
   if (emote) {
     text = `${token.name} ${text}`;
   }
@@ -101,8 +102,8 @@ export async function macroChatMessage(token, actor, {content, type, flavor, sou
 }
 
 export function getTokenFromActor(actor) {
-  const token = actor.isToken ? actor.token.data :
-    canvas.tokens.objects.children.find(t => t.actor.id === actor.id);
+  const token = actor?.isToken ? actor.token.data :
+    canvas.tokens.objects.children.find(t => t.actor.id === actor?.id);
   return token;
 }
 

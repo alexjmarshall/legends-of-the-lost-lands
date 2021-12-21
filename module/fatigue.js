@@ -2,10 +2,12 @@ import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
-// TODO add disease symptoms to character sheet? add tab with hunger: Fine/Hungry/Starving, thirst: Fine/Thirsty/Dehydrated, cold: Hot/Warm/Fine/Cold/Freezing
+// TODO add disease symptoms to character sheet? 
+// add tab with hunger: Fine/Hungry/Starving, thirst: Fine/Thirsty/Dehydrated, exposure: Hot/Warm/Fine/Cold/Freezing, temperature desc outside, max (max) HP
 // TODO generic item icon for spells and features
 // TODO weather random macro
 // TODO monster sheet
+// TODO energyDrain damage type reduces max_max HP and stores amount in flag on char -- add greyhawk restoration spell to level 6 to restore it
 
 // Conditions:
 //  Warm

@@ -382,7 +382,7 @@ async function save(tokens, damage, options={}) {
     return modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
   }
   const actorSaveMod = +actor.data.data.st_mod || 0;
-  const saveAttr = options.saveAttr == null ? 'wis' : options.saveAttr;
+  const saveAttr = options.saveAttr || 'wis';
   const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
   const d20Result = await new Roll("d20").evaluate().total;
   let dialogMod = '';
@@ -658,7 +658,7 @@ async function attack(attackers, targetToken, options) {
   const unwieldy = weapAttrs.unwieldy?.value;
   const critMin = weapAttrs.impale?.value ? 19 : 20;
   const reloadable = weapAttrs.reloadable?.value;
-  const throwable = attacker.throwable == null ? weapAttrs.throwable?.value : attacker.throwable;
+  const throwable = attacker.throwable ?? weapAttrs.throwable?.value;
   const loaded =  weaponItem.data.data.loaded;
   // reload item if needed
   if ( reloadable && !loaded ) {
@@ -676,7 +676,7 @@ async function attack(attackers, targetToken, options) {
     weapon.dmgType = 'throw';
     attacker.showAltDialog = false;
   }
-  const offhand = options.offhand == null ? weapon.offhand : options.offhand;
+  const offhand = options.offhand ?? weapon.offhand;
   // throwing offhand weapon is not allowed
   if ( offhand === true && weapon.dmgType === 'throw' ) {
     weapons.shift();
@@ -1223,6 +1223,7 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 
 export async function applyFatigue(actorId, type, execTime, newTime, heal=false) {
   const actor = game.actors.get(actorId);
+  let dmgMulti, typeString = type;
 
   const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
@@ -1232,14 +1233,13 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
     if (isAsleep) return;
   }
 
-  let expMulti;
   if (type == 'exposure') {
     const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
-
     const diffClo = Fatigue.diffClo(actor);
-    expMulti = Math.floor(Math.abs(diffClo));
-    if (expMulti <= 0) return;
+    dmgMulti = Math.floor(Math.abs(diffClo));
+    if (dmgMulti === 0) return;
+    typeString = diffClo < 0 ? 'cold' : 'heat';
   }
   
   const clock = Fatigue.CLOCKS[type];
@@ -1247,9 +1247,9 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   const intervalInSeconds = Util.intervalInSeconds(damageInterval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
-  const dice = `${numDice}${damageDice}${expMulti ? `*${expMulti}` : ''}`;
+  const dice = `${numDice}${damageDice}${dmgMulti ? `*${dmgMulti}` : ''}`;
 
-  const result = await applyFatigueDamage(actor, type, dice, heal);
+  const result = await applyFatigueDamage(actor, typeString, dice, heal);
   const data = actor.getFlag("lostlands", type);
   data.maxHpDamage = data.maxHpDamage + result || result;
   await actor.setFlag("lostlands", type, data);
@@ -1261,10 +1261,9 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
   if (hp < 0) return 0;
 
   let result = await Util.rollDice(dice);
-  if (result < 1) return 0;
-
-  let update;
   let maxHpResult = Math.min(result, maxHp);
+  let update;
+  
   if (heal) {
     result = Math.min(result, maxHp - hp);
     const hpUpdate = hp + result;
@@ -1274,6 +1273,8 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
     const hpUpdate = hp - result;
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
+
+  if (result < 1) return 0;
 
   const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}!`;
   const flavor = Util.upperCaseFirst(type);
@@ -1292,7 +1293,7 @@ async function applyRest(actor, wakeTime, sleptTime, restDice) {
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
   const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-  restDice = restDice || hasBedroll ? 'd3' : 'd2';
+  restDice = restDice || (hasBedroll ? 'd3' : 'd2');
   const dice = `${numDice}${restDice}`;
 
   await actor.setFlag("lostlands", "last_rest_time", wakeTime);

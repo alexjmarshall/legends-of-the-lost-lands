@@ -216,7 +216,7 @@ export class SimpleActorSheet extends ActorSheet {
             });
           }
         }).render(true);
-      case "prepare":
+      case "prepare": // TODO clean up code in these cases
         const isPrepared = !!item.data.data.prepared;
         const spellLevel = item.data.data.attributes.lvl.value;
         const actorSlotsAttr = this.actor.data.data.attributes[`${item.type}`]?.[`lvl_${spellLevel}`];
@@ -334,7 +334,7 @@ export class SimpleActorSheet extends ActorSheet {
     const select = tab.find('.voice-select');
     const voice = select.find(":selected").val();
     const soundsArr = mood ? Constant.VOICE_SOUNDS?.get(`${voice}`)?.get(`${mood}`) :
-      Array.from(Constant.VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
+                      Array.from(Constant.VOICE_SOUNDS?.get(`${voice}`)?.values()).flat();
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
