@@ -386,7 +386,7 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
   const applyRest = async (restDice) => {
     const sleepStartTime = activeEffect.data.duration.startTime;
     const sleepEndTime = Util.now();
-    return Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime);
+    return Macro.applyRestOnWake(actor, sleepStartTime, sleepEndTime, restDice);
   };
 
   switch (effect) {
