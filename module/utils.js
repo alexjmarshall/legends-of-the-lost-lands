@@ -177,7 +177,7 @@ export function charsOwnedByUser() {
 }
 
 export function isOwned(actor) {
-  return !!charsOwnedByUser().find(a => a.id === actor.id);
+  return charsOwnedByUser().some(a => a.id === actor.id);
 }
 
 export function pCTokens() {
@@ -185,6 +185,7 @@ export function pCTokens() {
 }
 
 export function upperCaseFirst(string) {
+  if (!string) return;
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 

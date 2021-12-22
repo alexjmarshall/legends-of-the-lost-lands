@@ -92,7 +92,7 @@ export async function castSpell(spellId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   const spell = Util.getItemFromActor(spellId, actor, 'spell');
-  const spellSound = spell.data.data.attributes.sound?.value || null; // need generic spell sound here
+  const spellSound = spell.data.data.attributes.sound?.value || null; // TODO need generic spell sound here
   const isPrepared = !!spell.data.data.prepared;
   if (!isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
   const spellLevel = spell.data.data.attributes.lvl?.value;
@@ -224,7 +224,7 @@ export async function useChargedItem(itemId, options={}) {
   const actor = char.actor;
   const item = Util.getItemFromActor(itemId, actor);
   const charges = +item.data.data.attributes.charges?.value;
-  const sound = item.data.data.attributes.sound?.value || null; // generic use charges sound?
+  const sound = item.data.data.attributes.sound?.value || null; // TODO generic use charges sound
   const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
   const chargesLeft = charges - numChargesUsed;
   const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
@@ -276,7 +276,7 @@ export function heldWeaponAttackMacro(options={}) {
     if ( weapons.length > 1 ) {
       // can only use multiple weapons if Dex > 13 and not wearing a shield
       const dexScore = +token.actor.data.data.attributes.ability_scores?.dex.value;
-      const wearingShield = !!token.actor.data.items.find(i => i.type === 'item' &&
+      const wearingShield = token.actor.data.items.some(i => i.type === 'item' &&
       i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
       if (dexScore < 13 || wearingShield) weapons = [weapons[0]];
     }
@@ -303,10 +303,9 @@ export function quickDrawAttackMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
   if (!actor) return ui.notifications.error("Select character using the weapon");
-  const weapon = actor.data.items.get(itemId) || actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemId?.toLowerCase().replace(/\s/g,''));
+  const weapon = actor.data.items.get(itemId) ?? actor.data.items.find(i => Util.stringMatch(i.name, itemId));
   if (!weapon) return ui.notifications.error("Could not find weapon on this character");
-  const dmgTypes = weapon.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
-  const canQuickDraw = weapon.data.data.attributes.quick_draw?.value && dmgTypes.includes('cut');
+  const canQuickDraw = weapon.data.data.attributes.quick_draw?.value;
   if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
@@ -544,6 +543,7 @@ export function backstabMacro(options={}) {
 export async function attackMacro(weapons, options={}) {
   if(!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({id: a}));
+  // TODO: clean up macro code, extract combat system to separate file and DRY up
   // need macro for misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells
   // XP progressions and other class/race features -- YAH to auto level up
   // should use combat tracker? or nah
@@ -1292,7 +1292,7 @@ async function applyRest(actor, wakeTime, sleptTime, restDice) {
   sleptTime = sleptTime - Constant.SECONDS_IN_HOUR * 6;
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
-  const hasBedroll = !!actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
+  const hasBedroll = actor.items.some(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
   restDice = restDice || (hasBedroll ? 'd3' : 'd2');
   const dice = `${numDice}${restDice}`;
 

@@ -2,8 +2,7 @@ import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
-// TODO add disease symptoms to character sheet? 
-// add tab with hunger: Fine/Hungry/Starving, thirst: Fine/Thirsty/Dehydrated, exposure: Hot/Warm/Fine/Cold/Freezing, temperature desc outside, max (max) HP
+// TODO add tab with disease symptoms, hunger: Fine/Hungry/Starving, thirst: Fine/Thirsty/Dehydrated, exposure: Hot/Warm/Fine/Cold/Freezing, temperature desc outside, max (max) HP
 // TODO generic item icon for spells and features
 // TODO weather random macro
 // TODO monster sheet
@@ -213,10 +212,14 @@ async function syncConditions(char, time) {
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const beforeWarning = time < startTime + warningIntervalInSeconds;
 
-    const diff = diffClo(char);
-    const removeHotCold = type === 'exposure' && diff >= 0 && diff < 1;
+    
+    let conditionString = condition.toLowerCase();
+    if (type === 'exposure') {
+      const diff = diffClo(char);
+      conditionString = getExposureConditionString(diff);
+    }
 
-    if ( isResting || beforeWarning || removeHotCold ) {
+    if ( isResting || beforeWarning || conditionString === 'fine' ) {
       await resetFatigueDamage(char, type);
       continue;
     }
@@ -228,7 +231,6 @@ async function syncConditions(char, time) {
     
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
-    const conditionString = type == 'exposure' ? getExposureConditionString(diff) : condition.toLowerCase();
     const content = `feels ${conditionString}.`;
     await Util.macroChatMessage(token, char, { content, flavor }, false);
 
@@ -243,16 +245,17 @@ async function syncConditions(char, time) {
 
   // diseases
   const charDiseases = char.getFlag("lostlands", "disease") || {};
-  const diseased = !!Object.values(charDiseases).find(d => d.confirmed);
+  const diseased = Object.values(charDiseases).some(d => d.confirmed);
 
   diseased ? await Util.addCondition("Diseased", char) :
              await Util.removeCondition("Diseased", char);
 }
 
-function getExposureConditionString(diffClo) {
+export function getExposureConditionString(diffClo) {
   if (diffClo <= -3) return 'extremely cold';
   if (diffClo <= -1) return 'very cold';
   if (diffClo < 0) return 'cold';
+  if (diffClo < 1) return 'fine';
   if (diffClo <= 2) return 'very hot';
   return 'extremely hot';
 }

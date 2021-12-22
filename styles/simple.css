@@ -255,7 +255,9 @@
   margin: 0;
   padding: 0;
 }
-.lostlands .attributes-list li > * {
+.lostlands .attributes-list li > *,
+.lostlands .fatigue-label,
+.lostlands .fatigue-value {
   margin: 0 3px;
   height: 28px;
   line-height: 24px;
@@ -263,6 +265,10 @@
   border: none;
   border-radius: 0;
   border-bottom: 1px solid #AAA;
+}
+.lostlands .attribute-key-wrapper,
+.lostlands .fatigue-label {
+  max-width: 263px;
 }
 .lostlands .attributes-list .attribute-col {
   flex: 0 0 41px;

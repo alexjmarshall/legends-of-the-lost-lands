@@ -1,6 +1,7 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Util from "./utils.js";
 import * as Constant from "./constants.js";
+import *  as Fatigue from "./fatigue.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -59,7 +60,44 @@ export class SimpleActorSheet extends ActorSheet {
     context.hideVoiceSelection = context.isPlayer && context.hasVoice;
     context.showSoundBoard = context.isGM || context.hasVoice;
 
+    // fatigue
+    context.data.fatigue = this.getFatigueData(context.data);
+
     return context;
+  }
+
+  getFatigueData(data) {
+    const fatigue = {};
+    const tempDescs = {
+      0: 'Hot',
+      1: 'Warm',
+      2: 'Cool',
+      3: 'Cold',
+      4: 'Freezing',
+    };
+    const reqClo = game.settings.get("lostlands", "requiredClo");
+    fatigue.tempDesc = tempDescs[reqClo];
+    const diffClo = data.data.clo - reqClo;
+    fatigue.exposureDesc = Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
+    const diseases = Object.keys(data.flags.lostlands.disease ?? {});
+    const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
+    const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
+    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
+    const thirstStatus = this.getFatigueStatus(data, 'thirst');
+    fatigue.thirstDesc = thirstStatus === 2 ? 'Dying of thirst' : thirstStatus === 1 ? 'Thirsty' : 'Satisfied';
+    const hungerStatus = this.getFatigueStatus(data, 'hunger');
+    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Satisfied';
+
+    return fatigue;
+  }
+
+  getFatigueStatus(data, type) {
+    const damage = data.data.hp.max < data.data.hp.max_max && data.flags.lostlands[type].maxHpDamage;
+    const condition = Fatigue.CLOCKS[type].condition;
+    const warn = data.effects.map(e => e.label).includes(condition);
+    if (damage) return 2;
+    if (warn) return 1;
+    return 0;
   }
 
   sortEquipmentByType(items) {    
@@ -103,7 +141,6 @@ export class SimpleActorSheet extends ActorSheet {
 
   sortFeaturesBySource(features) {
     const sortedFeatures = {};
-
     const classArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'class'));
     if (classArr.length) sortedFeatures['Class'] = classArr;
     const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
@@ -236,14 +273,14 @@ export class SimpleActorSheet extends ActorSheet {
         const isWorn = !!item.data.data.worn;
         // can't wear a shield while holding a small shield
         const isShield = Util.stringMatch(item.data.data.attributes.slot?.value, 'shield');
-        const holdingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.held && Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
-        if ( isShield && holdingShield ) {
+        const holdingSmallShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
+        if ( isShield && holdingSmallShield ) {
           return ui.notifications.error("Cannot wear a shield while using a small shield");
         }
         // can't stack rings of protection
         const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
-        const stackingRingofProt = !!item.data.name.toLowerCase().includes('ring of protection') &&
-          !!wornItems.find(i => i.data.name.toLowerCase().includes('ring of protection'));
+        const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
+                                   wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
         if ( !isWorn && stackingRingofProt ) {
           return ui.notifications.error("Cannot wear more than one ring of protection");
         }
@@ -259,10 +296,10 @@ export class SimpleActorSheet extends ActorSheet {
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.held);
-        const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.find(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
+        const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.some(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
         // can't hold a small shield while wearing a shield
         const isSmallShield = Util.stringMatch(item.data.data.attributes.size?.value, 'small');
-        const wearingShield = !!this.actor.data.items.find(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+        const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
         if ( isSmallShield && wearingShield ) {
           return ui.notifications.error("Cannot use a small shield while wearing a shield");
         }
@@ -347,7 +384,7 @@ export class SimpleActorSheet extends ActorSheet {
     const tab = button.closest('.tab.voice');
     const select = tab.find('.voice-select');
     const voice = select.find(":selected").val();
-    const otherCharacterHasVoice = !!game.actors.find(a => a.data.data.voice === voice);
+    const otherCharacterHasVoice = game.actors.some(a => a.data.data.voice === voice);
     if (otherCharacterHasVoice) {
       return new Dialog({
         title: "Voice Already Selected",
