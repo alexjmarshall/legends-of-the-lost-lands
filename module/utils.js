@@ -135,7 +135,9 @@ export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
 
 export async function reduceItemQty(item, actor) {
   const itemQty = +item.data.data.quantity;
-  if (!itemQty) throw new Error(`${item.name} must have quantity greater than zero`);
+  if (!itemQty) {
+    throw new Error(`${item.name} must have quantity greater than zero`);
+  }
   return actor.updateEmbeddedDocuments("Item", [{
     '_id': item._id, 
     'data.quantity': itemQty - 1

@@ -47,27 +47,36 @@ export async function createLostlandsMacro(data, slot) {
   return false;
 }
 
-export function playVoice(mood) {
+export async function playVoice(mood) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   const token = char.token;
   const voice = actor.data.data.voice;
   if (!voice) return ui.notifications.error(`${actor.name} does not have a selected voice`);
-  Util.playVoiceSound(mood, actor, token);
+
+  try {
+    return await Util.playVoiceSound(mood, actor, token);
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function togglePartyRest(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select resting token(s)");
-
   const condition = "Rest";
 
   return Promise.all(
     selectedTokens.map(async (token) => {
-      const actor = token.actor;
-      const isResting = game.cub.hasCondition(condition, actor, {warn: false});
-      isResting ? await Util.removeCondition(condition, actor) :
-                  await Util.addCondition(condition, actor);
+
+      try {
+        const actor = token.actor;
+        const isResting = game.cub.hasCondition(condition, actor, {warn: false});
+        isResting ? await Util.removeCondition(condition, actor) :
+                    await Util.addCondition(condition, actor);
+      } catch (error) {
+        return ui.notifications.error(error);
+      }
     })
   );
 }
@@ -93,12 +102,16 @@ export async function castSpell(spellId, options={}) {
   const actor = char.actor;
   const spell = Util.getItemFromActor(spellId, actor, 'spell');
   const spellSound = spell.data.data.attributes.sound?.value || null; // TODO need generic spell sound here
+
   const isPrepared = !!spell.data.data.prepared;
   if (!isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
+
   const spellLevel = spell.data.data.attributes.lvl?.value;
   if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
+
   const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
   if (actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
+
   const updateData = { data: {
     attributes: {
       [`${spell.type}`]: {
@@ -108,12 +121,17 @@ export async function castSpell(spellId, options={}) {
       }
     }
   }};
-  await actor.update(updateData);
-  // await play sound based on spell school first
-  await useItem(spellId, {
-    sound: spellSound,
-    verb: `casts`
-  });
+
+  try {
+    // await play sound based on spell school first
+    await useItem(spellId, {
+      sound: spellSound,
+      verb: `casts`
+    });
+    await actor.update(updateData);
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 async function useItem(itemId, data={
@@ -133,19 +151,30 @@ async function useItem(itemId, data={
   const chatBubbleText = `${data.verb || 'uses'} ${item.name}`;
   const content = data.chatMsgContent || desc || chatBubbleText;
   const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
-  if (item.data.data.attributes.holdable && item.data.data.held !== true) {
-    return ui.notifications.error(`${item.name} must be held to use`);
+  const holdable = item.data.data.attributes.holdable?.value;
+
+  if ( holdable && item.data.data.held !== true) {
+    throw new Error(`${item.name} must be held to use`);
   }
-  consumable && await Util.reduceItemQty(item, actor);
-  Util.macroChatMessage(token, actor, {content, flavor, sound, type}, false);
-  Util.chatBubble(token, chatBubbleText);
+
+  try {
+    consumable && await Util.reduceItemQty(item, actor);
+    Util.macroChatMessage(token, actor, {content, flavor, sound, type}, false);
+    Util.chatBubble(token, chatBubbleText);
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 export async function cureDisease() {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   
-  return Fatigue.deleteAllDiseases(actor);
+  try {
+    return await Fatigue.deleteAllDiseases(actor);
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function drinkPotion(itemId, options={}) {
@@ -155,68 +184,86 @@ export async function drinkPotion(itemId, options={}) {
   const healFormula = item.data.data.attributes.heal?.value;
   let chatMsgContent, chatMsgType, hpUpdate;
 
-  if (healFormula) {
-    const healPoints = await Util.rollDice(healFormula);
-    chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
-    chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
-    if (options.applyEffect) {
-      const currentHp = +actor.data.data.hp?.value;
-      const maxHp = +actor.data.data.hp?.max;
-      // can only drink a potion if conscious
-      if (currentHp > 0) {
-        hpUpdate = Math.min(maxHp, currentHp + healPoints);
-        await actor.update({'data.hp.value': hpUpdate});
-      } 
+  try {
+
+    await useItem(itemId, {
+      sound: 'drink_potion',
+      verb: `quaffs`,
+      chatMsgContent,
+      chatMsgType
+    }, true);
+  
+    if (healFormula) {
+      const healPoints = await Util.rollDice(healFormula);
+      chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
+      chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
+      if (options.applyEffect) {
+        const currentHp = +actor.data.data.hp?.value;
+        const maxHp = +actor.data.data.hp?.max;
+        // can only drink a potion if conscious
+        if (currentHp > 0) {
+          hpUpdate = Math.min(maxHp, currentHp + healPoints);
+          await actor.update({'data.hp.value': hpUpdate});
+        } 
+      }
     }
+  
+    await Fatigue.resetFatigueType(actor, 'thirst');
+  } catch (error) {
+    return ui.notifications.error(error);
   }
-
-  await useItem(itemId, {
-    sound: 'drink_potion',
-    verb: `quaffs`,
-    chatMsgContent,
-    chatMsgType
-  }, true);
-
-  await Fatigue.resetFatigueType(actor, 'thirst');
 }
 
 export async function readScroll(itemId, options={}) {
-  await useItem(itemId, {
-    sound: 'read_scroll',
-    verb: `reads`
-  }, true);
+  try {
+    await useItem(itemId, {
+      sound: 'read_scroll',
+      verb: `reads`
+    }, true);
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function drinkWater(itemId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
 
-  await useItem(itemId, {
-    sound: 'drink_water',
-    verb: `drinks from`
-  }, false);
-
-  await Fatigue.resetFatigueType(actor, 'thirst');
+  try {
+    await useItem(itemId, {
+      sound: 'drink_water',
+      verb: `drinks from`
+    }, false);
+    await Fatigue.resetFatigueType(actor, 'thirst');
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function eatFood(itemId, options={}) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
 
-  await useItem(itemId, {
-    sound: 'eat_food',
-    verb: `eats`
-  }, true);
+  try {
 
-  await Fatigue.resetFatigueType(actor, 'hunger');
+    await useItem(itemId, {
+      sound: 'eat_food',
+      verb: `eats`
+    }, true);
 
-  // reset thirst to 12 hours ago if this is later than last drink time
-  const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
-  const thirstData = actor.getFlag("lostlands", 'thirst');
-  const lastDrinkTime = thirstData.startTime;
-  if (twelveHoursAgo > lastDrinkTime) {
-    await Fatigue.resetFatigueType(actor, 'thirst', twelveHoursAgo);
-  } 
+    await Fatigue.resetFatigueType(actor, 'hunger');
+
+    // reset thirst to 12 hours ago if this is later than last drink time
+    const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
+    const thirstData = actor.getFlag("lostlands", 'thirst');
+    const lastDrinkTime = thirstData.startTime;
+    if (twelveHoursAgo > lastDrinkTime) {
+      await Fatigue.resetFatigueType(actor, 'thirst', twelveHoursAgo);
+    }
+
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function useChargedItem(itemId, options={}) {
@@ -243,13 +290,19 @@ export async function useChargedItem(itemId, options={}) {
     return useChargedItem(itemId, options);
   }
 
-  await useItem(itemId, {
-    sound,
-    flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
-    verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
-  }, false);
+  try {
 
-  chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+    await useItem(itemId, {
+      sound,
+      flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
+      verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
+    }, false);
+
+    chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export function heldWeaponAttackMacro(options={}) {
@@ -303,10 +356,13 @@ export function quickDrawAttackMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
   if (!actor) return ui.notifications.error("Select character using the weapon");
+
   const weapon = actor.data.items.get(itemId) ?? actor.data.items.find(i => Util.stringMatch(i.name, itemId));
   if (!weapon) return ui.notifications.error("Could not find weapon on this character");
+
   const canQuickDraw = weapon.data.data.attributes.quick_draw?.value;
   if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack");
+
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -328,7 +384,7 @@ export function quickDrawAttackMacro(itemId, options={}) {
 
 export function attackRoutineMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
+  if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -402,7 +458,11 @@ async function save(tokens, damage, options={}) {
     const itemQty = +options.critFailBrokenItem.data.data.quantity;
     const qtyUpdate = itemQty - 1;
     options.sound = options.critFailSound || options.sound;
-    await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
+    try {
+      await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
+    } catch {
+      ui.notifications.error(`Error updating quantity of ${options.critFailBrokenItem.name}`);
+    }
   }
   const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
@@ -518,7 +578,7 @@ export function backstabMacro(options={}) {
 }
 
 /*
-* options:
+* options: // TODO clean up this list of weapon item attributes
 * {
 *  flavor: chat message header -- actor
 *  offhand: true/false -- weapon
@@ -541,7 +601,7 @@ export function backstabMacro(options={}) {
 * }
 */
 export async function attackMacro(weapons, options={}) {
-  if(!Array.isArray(weapons)) weapons = [weapons];
+  if (!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({id: a}));
   // TODO: clean up macro code, extract combat system to separate file and DRY up
   // need macro for misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells
@@ -559,8 +619,9 @@ export async function attackMacro(weapons, options={}) {
   // set default settings in day night cycle based on season in simple calendar
   // in rules doc, set categories for rest quality conditions, buy bedroll to improve quality when sleeping outside -- also poor quality sleep in armor!
   // apply rough resting each day when time changes -- if fatigue clock is OFF, party is in a safe place, so ask what quality of rest
+  // TODO update rules doc
   const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
+  if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
@@ -687,7 +748,7 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const dmgTypes = weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
+  const dmgTypes = [...new Set(weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t))] || [];
   // show attack choice dialogs
   if ( dmgTypes.length > 1 && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = dmgTypes.map(type => {
@@ -701,16 +762,21 @@ async function attack(attackers, targetToken, options) {
     );
   }
   if ( weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.dmg_type ) {
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.altDialogChoice}]);
+    try {
+      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.altDialogChoice}]);
+    } catch {
+      ui.notifications.error(`error updating stored damage type for ${weaponItem.name}`);
+    }
   }
   let dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
-  if (!Object.keys(Constant.DMG_TYPES).includes(dmgType)) dmgType = 'attack';
+  if (!Object.keys(Constant.DMG_TYPES).includes(dmgType)) {
+    dmgType = 'attack';
+  }
   const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE || 'melee';
   const targetArmorItem = targetToken?.actor.items.find(i => i.data.data.worn &&
-    Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
+                          Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
   const targetArmorType = targetArmorItem?.data.data.attributes.type?.value ||
-    targetToken?.actor.data.data.attributes.armor_type?.value ||
-    'none';
+                          targetToken?.actor.data.data.attributes.armor_type?.value || 'none';
   const vsACMod = Constant.DMG_TYPES[dmgType].VS_AC_MODS[targetArmorType];
   const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
   if (range > +maxRange) {
@@ -718,7 +784,9 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if (atkType === 'touch') attacker.skipDmgDialog = true;
+  if (atkType === 'touch') {
+    attacker.skipDmgDialog = true;
+  }
   if ( options.showModDialog && !options.shownModDialog ) {
     const fields = [
       {label: 'Attack modifiers?', key: 'dialogAtkMod'}
@@ -757,28 +825,38 @@ async function attack(attackers, targetToken, options) {
     rangePenalty = -Math.abs(Math.floor(range / 10));
     // reduce qty of thrown weapon/missile
     if (dmgType === 'throw') {
-      const weaponQty = weaponItem.data.data.quantity;
-      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
+      try {
+        await Util.reduceItemQty(weaponItem, token.actor);
+      } catch (error) {
+        ui.notifications.error(error);
+        weapons.shift();
+        return attack(attackers, targetToken, options);
+      }
     } else {
       const quiver = token.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'quiver'));
       const quiverQty = quiver?.data.data.quantity;
       const matchWeap = dmgType === 'bolt' ? quiver?.name?.toLowerCase()?.includes('bolt') :
         dmgType === 'arrow' ? quiver?.name?.toLowerCase()?.includes('arrow') : true;
-      if(!quiver || !quiverQty || !matchWeap) {
-        ui.notifications.error("Nothing found to shoot from this weapon");
+
+      try {
+        if( !quiver || !quiverQty || !matchWeap ) {
+          throw new Error("Nothing found to shoot from this weapon");
+        }
+        const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
+        // set crossbow to unloaded
+        if (reloadable) await itemsUpdate.push({'_id': weaponItem._id, 'data.loaded': false});
+        await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
+      } catch (error) {
+        ui.notifications.error(error);
         weapons.shift();
         return attack(attackers, targetToken, options);
       }
-      const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
-      // set crossbow to unloaded
-      if (reloadable) await itemsUpdate.push({'_id': weaponItem._id, 'data.loaded': false});
-      await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
     }
   }
 
   // put together chat message content
-  const d20Result = await new Roll("d20").evaluate().total;
-  const weapDmgResult = await new Roll(weapDmg).evaluate().total;
+  const d20Result = await Util.rollDice("d20");
+  const weapDmgResult = await Util.rollDice(weapDmg);
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
   totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}${vsACMod ? `+${vsACMod}` : ''}`;
   totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${attackerAtkMod ? `+${attackerAtkMod}` : ''}`;
@@ -832,17 +910,16 @@ async function attack(attackers, targetToken, options) {
     }
     if (unwieldy) {
       // disregard shield mods if weapon is unwieldy, e.g. flail
-      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn === true &&
+      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn &&
         Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
-        i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
+        i.data.data.held && i.data.data.attributes.ac_mod?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
       targetAc -= shieldAcMods;
       touchAc -= shieldAcMods;
     }
-    const totalAtkRoll = new Roll(totalAtk);
-    await totalAtkRoll.evaluate();
+    const totalAtkResult = await Util.rollDice(totalAtk);
     if (atkType === 'touch') targetAc = touchAc;
-    isHit = totalAtkRoll.total >= targetAc;
+    isHit = totalAtkResult >= targetAc;
     if (isHit) {
       resultText = ` vs. AC ${targetAc} ${attacker.hitText ? attacker.hitText : `<span style="${resultStyle('#7CCD7C')}">HIT</span>`}`;
       resultSound = hitSound;
@@ -861,8 +938,13 @@ async function attack(attackers, targetToken, options) {
   if ( fragile && atkType === 'melee' && d20Result === 1 ) {
     resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
     resultSound = 'weapon_break';
-    const weaponQty = weaponItem.data.data.quantity;
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.quantity': weaponQty - 1}]);
+    try {
+      await Util.reduceItemQty(weaponItem, token.actor);
+    } catch (error) {
+      ui.notifications.error(error);
+      weapons.shift();
+      return attack(attackers, targetToken, options);
+    }
   }
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
@@ -871,9 +953,7 @@ async function attack(attackers, targetToken, options) {
   // add sound and damage
   let thisAttackDamage;
   if ( isHit && targetToken && options.applyEffect === true && game.user.isGM ) {
-    const totalDmgRoll = new Roll(totalDmg);
-    await totalDmgRoll.evaluate();
-    thisAttackDamage = totalDmgRoll.total;
+    thisAttackDamage = await Util.rollDice(totalDmg);
   }
   attacks.push({
     sound: resultSound,
@@ -978,7 +1058,7 @@ function modDialog(options, title, fields=[{label:'', key:''}], callback) {
   }).render(true);
 }
 
-export function reactionRollMacro(options) {
+export async function reactionRollMacro(options) {
   if (!game.user.isGM) return;
   if (canvas.tokens.controlled.length !== 1) return ui.notifications.error("Select a single token");
   const reactingActor = canvas.tokens.controlled[0].actor;
@@ -988,7 +1068,11 @@ export function reactionRollMacro(options) {
   if (!targetActor) return ui.notifications.error("Select a target");
   options.override = true;
 
-  return reactionRoll(reactingActor, targetActor, options);
+  try {
+    return await reactionRoll(reactingActor, targetActor, options);
+  } catch (error) {
+    return ui.notifications.error(error);
+  }
 }
 
 export async function reactionRoll(reactingActor, targetActor, options) {
@@ -1019,7 +1103,6 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     const rxnText = `${base2d6Result}${chaMod ? `+${chaMod}` : ''}${dialogMod ? `+${dialogMod}` : ''}${targetRxnMod ? `+${targetRxnMod}` : ''}`;
     const rxnRollResult = await new Roll(rxnText).evaluate().total;
-    if (isNaN(rxnRollResult)) return;
 
     if (rxnRollResult <= 2) attitude = Constant.ATTITUDES.HOSTILE;
     else if (rxnRollResult <= 5) attitude = Constant.ATTITUDES.DISMISSIVE;
@@ -1028,7 +1111,8 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     else attitude = Constant.ATTITUDES.HELPFUL;
     const attitudeMapUpdate = {
       attitude_map: {
-        [targetActor.id]: {attitude: attitude, lvl: targetLevel}}
+        [targetActor.id]: {attitude: attitude, lvl: targetLevel}
+      }
     };
     await reactingActor.update({data: attitudeMapUpdate});
     console.log(`Reaction Roll: ${reactingActor.name} is ${attitude} towards ${targetActor.name}`);
@@ -1139,6 +1223,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       },
      }).render(true);
   }
+
   return finalizePurchase();
 
   async function finalizePurchase() {
@@ -1252,6 +1337,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   const result = await applyFatigueDamage(actor, typeString, dice, heal);
   const data = actor.getFlag("lostlands", type);
   data.maxHpDamage = data.maxHpDamage + result || result;
+
   await actor.setFlag("lostlands", type, data);
 }
 
@@ -1261,20 +1347,20 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
   if (hp < 0) return 0;
 
   let result = await Util.rollDice(dice);
-  let maxHpResult = Math.min(result, maxHp);
+  let appliedResult = result;
   let update;
   
   if (heal) {
-    result = Math.min(result, maxHp - hp);
-    const hpUpdate = hp + result;
+    appliedResult = Math.min(result, maxHp - hp);
+    if (appliedResult < 1) return appliedResult;
+    const hpUpdate = hp + appliedResult;
     update = {"data.hp.value": hpUpdate};
   } else {
-    const maxHpUpdate = maxHp - maxHpResult;
+    appliedResult = Math.min(result, maxHp);
+    const maxHpUpdate = maxHp - appliedResult;
     const hpUpdate = hp - result;
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
-
-  if (result < 1) return 0;
 
   const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}!`;
   const flavor = Util.upperCaseFirst(type);
@@ -1283,7 +1369,7 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
   await Util.macroChatMessage(token, actor, { content, flavor }, false);
   await actor.update(update);
 
-  return maxHpResult;
+  return appliedResult;
 }
 
 async function applyRest(actor, wakeTime, sleptTime, restDice) {

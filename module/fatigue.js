@@ -2,11 +2,11 @@ import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
-// TODO add tab with disease symptoms, hunger: Fine/Hungry/Starving, thirst: Fine/Thirsty/Dehydrated, exposure: Hot/Warm/Fine/Cold/Freezing, temperature desc outside, max (max) HP
 // TODO generic item icon for spells and features
 // TODO weather random macro
 // TODO monster sheet
 // TODO energyDrain damage type reduces max_max HP and stores amount in flag on char -- add greyhawk restoration spell to level 6 to restore it
+// TODO convert all mp3s to ogg
 
 // Conditions:
 //  Warm
@@ -145,7 +145,7 @@ export async function resetFatigueClock(actor, type, time) {
 
 export async function resetFatigueType(actor, type, time=Util.now()) {
   await resetFatigueClock(actor, type, time);
-  return resetFatigueDamage(actor, type);
+  await resetFatigueDamage(actor, type);
 }
 
 export function reqClo(season) {
@@ -333,10 +333,13 @@ export async function deleteAllDiseases(actor) {
     damage += disease.maxHpDamage;
   }
 
-  damage && await restoreMaxHpDamage(actor, damage);
-
-  await Util.removeCondition("Diseased", actor);
-  await actor.unsetFlag("lostlands", "disease");
+  try {
+    await actor.unsetFlag("lostlands", "disease");
+    damage && await restoreMaxHpDamage(actor, damage);
+    await Util.removeCondition("Diseased", actor);
+  } catch (error) {
+    throw new Error(error);
+  }
 }
 
 async function restoreMaxHpDamage(actor, damage) {
