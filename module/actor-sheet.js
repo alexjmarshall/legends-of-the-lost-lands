@@ -82,11 +82,13 @@ export class SimpleActorSheet extends ActorSheet {
     const diseases = Object.keys(data.flags.lostlands.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
-    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
+    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Healthy';
+    const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
+    fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Dying of exhaustion' : exhaustionStatus === 1 ? 'Sleepy' : 'Healthy';
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
-    fatigue.thirstDesc = thirstStatus === 2 ? 'Dying of thirst' : thirstStatus === 1 ? 'Thirsty' : 'Satisfied';
+    fatigue.thirstDesc = thirstStatus === 2 ? 'Dying of thirst' : thirstStatus === 1 ? 'Thirsty' : 'Healthy';
     const hungerStatus = this.getFatigueStatus(data, 'hunger');
-    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Satisfied';
+    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Healthy';
 
     return fatigue;
   }
