@@ -589,11 +589,22 @@ export class EntitySheetHelper {
           createData.type = template.data.type;
           delete createData.flags.lostlands.isTemplate;
         }
-        // set sheet for non-default types
+
+        // Set default icon by type here feature, spell, equipment
+        const img = createData.type === 'feature' ? "icons/svg/feature.svg" :
+                    createData.type === 'spell_magic' ? "icons/svg/spell.svg" :
+                    createData.type === 'spell_cleric' ? "icons/svg/prayer.svg" :
+                    createData.type === 'spell_witch' ? "icons/svg/pentacle.svg" :
+                    createData.type === 'item' ? "icons/svg/equipment.svg" : null;
+        if (img) {
+          createData.img = img;
+        }
+
+        // Set sheet for non-default types TODO monster sheet
         const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
-          createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
-          createData.type === types.feature ? "lostlands.FeatureItemSheet" :
-          (documentName === 'Item' && createData.type !== 'item') ? "lostlands.SpellItemSheet" : null;
+                           createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
+                           createData.type === types.feature ? "lostlands.FeatureItemSheet" :
+                           (documentName === 'Item' && createData.type !== 'item') ? "lostlands.SpellItemSheet" : null;
         if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
             flags: {
