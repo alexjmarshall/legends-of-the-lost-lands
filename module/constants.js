@@ -175,7 +175,18 @@ export const DMG_TYPES = {
       "leather": 0,
       "chain": 2,
       "plate": 0
-    }
+    },
+  },
+  "energy drain": {
+    ATK_TYPE: "melee",
+    HIT_SOUND: "energyDrain_hit",
+    MISS_SOUND: "energyDrain_miss",
+    VS_AC_MODS: {
+      "none": 0,
+      "leather": 0,
+      "chain": 0,
+      "plate": 0
+    },
   },
 };
 export const VOICE_MOODS = {

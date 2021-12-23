@@ -658,12 +658,22 @@ async function attack(attackers, targetToken, options) {
     Util.macroChatMessage(token, token.actor, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);
+
     for (const attack of attacks) {
       attack.sound && Util.playSound(`${attack.sound}`, token, {push: true, bubble: false});
       const targetHp = +targetToken?.actor.data.data.hp?.value;
       const hpUpdate = targetHp - attack.damage;
+      const update = {"data.hp.value": hpUpdate};
+      if (attack.energyDrainDamage) {
+        const maxMaxHp = +targetToken?.actor.data.data.hp?.max_max;
+        const maxHp = +targetToken?.actor.data.data.hp?.max;
+        const dmg = Math.min(attack.energyDrainDamage, maxHp, maxMaxHp);
+        Object.assign(update, {"data.hp.max_max": maxMaxHp - dmg, "data.hp.max": maxHp - dmg});
+        const storedDamage = targetToken.actor.getFlag("lostlands", "energyDrainDamage") || 0;
+        await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + dmg);
+      }
       if ( hpUpdate < targetHp ) {
-        await targetToken.actor.update({"data.hp.value": hpUpdate});
+        await targetToken.actor.update(update);
         if ( hpUpdate < 1 && targetHp > 0 ) {
           Util.playVoiceSound(Constant.VOICE_MOODS.KILL, token.actor, token, {push: true, bubble: true, chance: 0.7});
         }
@@ -671,6 +681,7 @@ async function attack(attackers, targetToken, options) {
       // wait if there are more attacks or more attackers left to handle
       if ( attacks.indexOf(attack) < attacks.length - 1 || attackers.length > 1 ) await Util.wait(500);
     }
+
     attackers.shift();
     return attack(attackers, targetToken, options);
   }
@@ -750,7 +761,7 @@ async function attack(attackers, targetToken, options) {
   }
   const dmgTypes = [...new Set(weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t))] || [];
   // show attack choice dialogs
-  if ( dmgTypes.length > 1 && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
+  if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = dmgTypes.map(type => {
       return {label: Util.upperCaseFirst(type), value: type}
     });
@@ -957,7 +968,8 @@ async function attack(attackers, targetToken, options) {
   }
   attacks.push({
     sound: resultSound,
-    damage: thisAttackDamage
+    damage: thisAttackDamage,
+    energyDrainDamage: dmgType === 'energy drain' ? thisAttackDamage : null
   });
 
   weapons.shift();
@@ -978,7 +990,7 @@ function getAttackChatBubble(targetName, weapName, dmgType) {
     case "hew":
       return `hews${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "grapple":
-      return `grapples${targetName ? ` ${targetName}` : ''} `;
+      return `grapples${targetName ? ` ${targetName}` : ''}`;
     case "hook":
       return `hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "punch":
@@ -986,11 +998,13 @@ function getAttackChatBubble(targetName, weapName, dmgType) {
     case "cut":
       return `cuts${targetName ? ` ${targetName}` : ''} with ${weapName}`;
     case "thrust":
-      return `thrusts ${weapName}${targetName ? ` at ${targetName}` : ''} `;
+      return `thrusts ${weapName}${targetName ? ` at ${targetName}` : ''}`;
     case "slingstone":
       return `slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
     case "throw":
-      return `throws ${weapName}${targetName ? ` at ${targetName}` : ''} `;
+      return `throws ${weapName}${targetName ? ` at ${targetName}` : ''}`;
+    case "energy drain":
+      return `drains life energy${targetName ? ` from ${targetName}` : ''}`;
   }
 }
 
