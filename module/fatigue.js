@@ -2,11 +2,19 @@ import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
-// TODO generic item icon for spells and features
-// TODO weather random macro
+// TODO weather random macro, use table? use macro and save weather in a game setting
+// TODO revise wilderness rules for pointcrawls, not hexcrawls -- basically precalculate distance between points in leagues for foot/horses
+//     -- make journey macro that takes 2 selected map points and shows dialog with distance between them, possible multiple paths, calculates time based on party MV and foot/horseback
+//     -- shows time it willl be on arrival, confirmation button to advance time
+//     -- also check for random encounter, if indicated, show time of its occurence, and confirmation button to advance time
+//     -- time represented as Dawn, Midday, Dusk, or Midnight -- random terrain?
+//     -- pointcrawl maps, wilderness map (big view distance, time passes at 2x speed), dungeon/interior map (small view distance, time passes at 1x speed)
+//     -- journey macro rolls random weather too
+// use resources automatically if exist on character during long time skips
 // TODO monster sheet
-// TODO energyDrain damage type reduces max_max HP and stores amount in flag on char -- add greyhawk restoration spell to level 6 to restore it
 // TODO convert all mp3s to ogg
+// TODO if max HP less than half max max HP, MV is halved (use condition/effect)
+// TODO button to level up char, add level/HD to top bar of actor sheet, allow players to click this button, shows chat msg and rolls HP based on HD in attributes
 
 // Conditions:
 //  Warm
@@ -23,10 +31,11 @@ export const FATIGUE_DAMAGE_COMMAND = 'applyFatigue(actorId, type, execTime, new
 export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
 
 export const REST_TYPES = {
-  "d4": "Peasant",
-  "d6": "Merchant",
-  "d8": "Noble",
-  "d10": "Royal",
+  "Rough": null,
+  "Peasant": "d4",
+  "Merchant": "d6",
+  "Noble": "d8",
+  "Royal": "d10",
 };
 const REQ_CLO_BY_SEASON = {
   "summer": 1,
@@ -231,7 +240,7 @@ async function syncConditions(char, time) {
     
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
-    const content = `feels ${conditionString}.`;
+    const content = `feels ${conditionString}...`;
     await Util.macroChatMessage(token, char, { content, flavor }, false);
 
     if (!warningSound) continue;

@@ -91,7 +91,7 @@ export function selectRestDice(actor, options={}) {
   }
   
   const choices = Object.entries(Fatigue.REST_TYPES).map(type => {
-    return {label: `${type[1]}<br>${type[0]}`, value: type[0]};
+    return {label: `${type[0]}<br>${type[1] ? type[1] : 'd2/d3'}`, value: type[0]};
   });
   
   return altDialog(options, `${actor.name} Rest Dice`, choices, () => selectRestDice(actor, options));
@@ -603,23 +603,20 @@ export function backstabMacro(options={}) {
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({id: a}));
-  // TODO: clean up macro code, extract combat system to separate file and DRY up
-  // need macro for misc rolls like swim/climb, reaction/morale/random target/award XP?, sounds for spells
-  // XP progressions and other class/race features -- YAH to auto level up
-  // should use combat tracker? or nah
-  // players cannot edit their XP or HP?
-  // document all attribute properties -- rationalize with sheet
-  // weapon light flag, two-hand flag
-  // armor type leather, chain and plate
-  // convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and seiing in foundry.js
-  // macro for disease, starvation, thirts etc. -- show colour bars on char sheet for fatigued/very fatigued (max hp less than/less than half max max hp), hungry (after 3 days since no food), thirsty (after 1 day with no water), diseased, cold
-  // rename hungerClock to fatigueClock, if time advances more than 1 hour while fatigue clock is paused, open party heal dialog to GM
-  // e.g. allow players to have their other owned characters e.g. horse, use an item, but that char must own the used item
-  // add GM-only tab to characters for fatigue stuff -- show and reset of last eat/drink times, choose or reset disease, reset cold, edit max max HP
-  // set default settings in day night cycle based on season in simple calendar
-  // in rules doc, set categories for rest quality conditions, buy bedroll to improve quality when sleeping outside -- also poor quality sleep in armor!
-  // apply rough resting each day when time changes -- if fatigue clock is OFF, party is in a safe place, so ask what quality of rest
+  // TODO clean up macro code, extract combat system to separate file and DRY up
+  // TODO d6 skills like swim/climb in features or attributes?
+  // TODO macro for morale check 
+  // TODO macro for award XP
+  // TODO sounds for spells
+  // TODO XP progressions for basic attributes, and button on charsheet, allow players to click. don't allow players to edit HP or XP
+  // should use combat tracker? or nah -- if nah, how to remember when to roll init? ah yes, just roll once at beginning of battle
+  // TODO record all actor attributes by type in actor.js, and item attributes by type in item.js
+  // TODO convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and selling in foundry.js?
+  // TODO set default settings in day night cycle based on season in simple calendar
   // TODO update rules doc
+  // TODO banker sheet & macro -- money change, trust fund (stored on PC), storage (stored on banker)
+  // TODO inn sheet & macro -- allow players to choose food/sleep quality level on sheet, auto sets rest mode with rest type on char, on remove effect, heals & pays for the healing
+  // TODO use terrain layer and terrain ruler module on a hex map with single party token for wilderness exploration -- use white/tan fog of war instead of black
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
@@ -1355,7 +1352,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   await actor.setFlag("lostlands", type, data);
 }
 
-async function applyFatigueDamage(actor, type, dice, heal=false) {
+async function applyFatigueDamage(actor, type, dice, heal=false, flavor) {
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   if (hp < 0) return 0;
@@ -1366,7 +1363,6 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
   
   if (heal) {
     appliedResult = Math.min(result, maxHp - hp);
-    if (appliedResult < 1) return appliedResult;
     const hpUpdate = hp + appliedResult;
     update = {"data.hp.value": hpUpdate};
   } else {
@@ -1376,8 +1372,8 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
 
-  const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}!`;
-  const flavor = Util.upperCaseFirst(type);
+  const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}.`;
+  flavor = flavor || Util.upperCaseFirst(type);
   const token = Util.getTokenFromActor(actor);
 
   await Util.macroChatMessage(token, actor, { content, flavor }, false);
@@ -1386,19 +1382,28 @@ async function applyFatigueDamage(actor, type, dice, heal=false) {
   return appliedResult;
 }
 
-async function applyRest(actor, wakeTime, sleptTime, restDice) {
+async function applyRest(actor, wakeTime, sleptTime, restType='Rough') {
 
   // subtract first 6 hours of slept time before calculating extra healing dice
   sleptTime = sleptTime - Constant.SECONDS_IN_HOUR * 6;
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
   const hasBedroll = actor.items.some(i => i.type === 'item' && Util.stringMatch(i.name, "Bedroll"));
-  restDice = restDice || (hasBedroll ? 'd3' : 'd2');
+  const restDice = restType === 'Rough' ? hasBedroll ? 'd3' : 'd2' : Fatigue.REST_TYPES[restType];
   const dice = `${numDice}${restDice}`;
+  const flavor = `Rest (${restType})`;
+
+  const wearingArmor = actor.items.some(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
+  if (wearingArmor) {
+    const token = Util.getTokenFromActor(actor);
+    return Util.macroChatMessage(token, actor, {
+      content: 'slept poorly...',
+      flavor
+    }, false);
+  }
 
   await actor.setFlag("lostlands", "last_rest_time", wakeTime);
-  
-  await applyFatigueDamage(actor, 'rest', dice, true);
+  await applyFatigueDamage(actor, `rest`, dice, true, flavor);
 }
 
 export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime, restDice) {
