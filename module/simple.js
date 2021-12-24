@@ -361,6 +361,17 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
+Hooks.on("preUpdateItem", (item, change) => {
+  if (change.data?.attributes?.holdable?.value != null) {
+    change.data.held = false;
+  }
+  if (change.data?.attributes?.wearable?.value != null) {
+    change.data.worn = false;
+  }
+
+  console.log(change);
+});
+
 Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
 });
