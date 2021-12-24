@@ -16,8 +16,10 @@
             <div class="resource">
                 <label>XP</label>
                 <input type="number" name="data.xp.value" value="{{systemData.xp.value}}"/>
+                {{#if isCharacter}}
                 <span> / </span>
                 <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
+                {{/if}}
             </div>
             <div class="resource">
                 <label>AC</label>
@@ -44,8 +46,10 @@
         <a class="item" data-tab="features">Features</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
+        {{#if isCharacter}}
         <a class="item" data-tab="voice">Voice</a>
         <a class="item" data-tab="fatigue">Fatigue</a>
+        {{/if}}
     </nav>
 
     {{!-- Sheet Body --}}
@@ -230,6 +234,7 @@
             </div>
         </div>
 
+        {{#if isCharacter}}
         {{!-- Voice Tab --}}
         <div class="tab voice" data-group="primary" data-tab="voice">
             <div class="flexrow voice-selection" {{#if hideVoiceSelection}}style="display:none;"{{/if}}>
@@ -270,13 +275,13 @@
                 <input class="fatigue-value" type="number" name="data.hp.max_max" value="{{systemData.hp.max_max}}" {{#if isPlayer}}readonly{{/if}} />
             </div>
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Weather" readonly />
+                <input class="fatigue-label" type="text" value="Temperature" readonly />
                 <input class="fatigue-value" type="text" value="{{data.fatigue.tempDesc}}" readonly />
             </div>
-            <div class="flexrow">
+            <!-- <div class="flexrow">
                 <input class="fatigue-label" type="text" value="Worn Clo" readonly />
                 <input class="fatigue-value" type="text" value="{{systemData.clo}}" readonly />
-            </div>
+            </div> -->
             <div class="flexrow">
                 <input class="fatigue-label" type="text" value="Exposure" readonly />
                 <input class="fatigue-value" type="text" value="{{data.fatigue.exposureDesc}}" readonly />
@@ -298,6 +303,7 @@
                 <input class="fatigue-value" type="text" value="{{data.fatigue.hungerDesc}}" readonly />
             </div>
         </div>
+        {{/if}}
 
     </section>
 </form>

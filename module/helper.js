@@ -600,7 +600,7 @@ export class EntitySheetHelper {
           createData.img = img;
         }
 
-        // Set sheet for non-default types TODO monster sheet
+        // Set sheet for non-default types
         const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
                            createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
                            createData.type === types.feature ? "lostlands.FeatureItemSheet" :

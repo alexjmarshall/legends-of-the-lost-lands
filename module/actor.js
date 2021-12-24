@@ -32,6 +32,8 @@ export class SimpleActor extends Actor {
     //   that affect the derived data calculations below
     //   e.g. ability scores, xp, enc, mv 
 
+    // character, monster, container, merchant
+
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
@@ -39,20 +41,23 @@ export class SimpleActor extends Actor {
     const actorData = this.data.data;
     const attributes = actorData.attributes;
     const updateData = {};
+    const type = this.data.type;
 
     // level up sound
-    if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
-      Util.playSound('level_up', null, {push: false, bubble: false});
-      updateData.islevelup = true;
-    } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
-      updateData.islevelup = false;
+    if (type === 'character') {
+      if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
+        Util.playSound('level_up', null, {push: false, bubble: false});
+        updateData.islevelup = true;
+      } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
+        updateData.islevelup = false;
+      }
     }
 
     // encumbrance and mv
     actorData.enc = items.filter(i => i.data.type === 'item').reduce((a, b) => a + Math.ceil((b.data.data.quantity || 0) * (b.data.data.weight || 0)), 0);
     actorData.enc = attributes.enc?.value ?? actorData.enc;
     // derive mv and speed from encumbrance for characters
-    if(this.data.type === 'character') {
+    if ( type === 'character' || type === 'monster' ) {
       const str = attributes.ability_scores?.str?.value || 0;
       const strEnc = (Math.floor(str / 3) + 1) * 3;
       let mv = (5 - Math.ceil((actorData.enc || 1) / (strEnc || 1))) * 3;
@@ -76,14 +81,17 @@ export class SimpleActor extends Actor {
         }
       }
     }
-    // ability score modifiers
-    updateData.str_mod = Math.floor(attributes.ability_scores?.str?.value / 3 - 3) || 0;
-    updateData.int_mod = Math.floor(attributes.ability_scores?.int?.value / 3 - 3) || 0;
-    updateData.wis_mod = Math.floor(attributes.ability_scores?.wis?.value / 3 - 3) || 0;
-    updateData.dex_mod = Math.floor(attributes.ability_scores?.dex?.value / 3 - 3) || 0;
-    updateData.con_mod = Math.floor(attributes.ability_scores?.con?.value / 3 - 3) || 0;
-    updateData.cha_mod = Math.floor(attributes.ability_scores?.cha?.value / 3 - 3) || 0;
 
+    // ability score modifiers
+    if ( type === 'character' || type === 'monster' ) {
+      updateData.str_mod = Math.floor(attributes.ability_scores?.str?.value / 3 - 3) || 0;
+      updateData.int_mod = Math.floor(attributes.ability_scores?.int?.value / 3 - 3) || 0;
+      updateData.wis_mod = Math.floor(attributes.ability_scores?.wis?.value / 3 - 3) || 0;
+      updateData.dex_mod = Math.floor(attributes.ability_scores?.dex?.value / 3 - 3) || 0;
+      updateData.con_mod = Math.floor(attributes.ability_scores?.con?.value / 3 - 3) || 0;
+      updateData.cha_mod = Math.floor(attributes.ability_scores?.cha?.value / 3 - 3) || 0;
+    }
+    
     /* AC
     slots:
     - helmet
@@ -101,39 +109,45 @@ export class SimpleActor extends Actor {
     - belt
     - boots (shoes)
     */
-    const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
-      i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
-    const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
-    const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
-    const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
-    const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
-    const dexAcBonus = Math.min(updateData.dex_mod, ...maxDexBonuses);
-    const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
-    updateData.ac = attributes.ac?.value ?? ac;
+    let resetExposure = false, newDiffClo, oldDiffClo;
+    if ( type === 'character' || type === 'monster' ) {
+      const wornOrHeldShields = items.filter(i => i.data.data.worn === true && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
+                                i.data.data.held === true && i.data.data.attributes.ac_mod?.value);
+      const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
+      const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+      const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
+      const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
+      const dexAcBonus = Math.min(updateData.dex_mod, ...maxDexBonuses);
+      const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
+      updateData.ac = attributes.ac?.value ?? ac;
 
-    // touch AC
-    const touchAc = Constant.AC_MIN + shieldAcMods + dexAcBonus;
-    updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
+      // touch AC
+      const touchAc = Constant.AC_MIN + shieldAcMods + dexAcBonus;
+      updateData.touch_ac = attributes.touch_ac?.value ?? touchAc;
 
-    // worn clo
-    const totalWornClo = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.clo?.value || 0), 0);
-    updateData.clo = attributes.clo?.value ?? Math.round(totalWornClo * 100) / 100;
-    const resetExposure = actorData.clo !== updateData.clo;
-    const reqClo = game.settings.get("lostlands", "requiredClo");
-    const newDiffClo = updateData.clo - reqClo;
-    const oldDiffClo = actorData.clo - reqClo;
+      // st_mod
+      const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
+      const st_mod = stItems.reduce((a, b) => a + (b.data.data.attributes.st_mod?.value || 0), 0);
+      updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
-    // st_mod
-    const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
-    const st_mod = stItems.reduce((a, b) => a + (b.data.data.attributes.st_mod?.value || 0), 0);
-    updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
-
+      // worn clo
+      if (type === 'character') {
+        const totalWornClo = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.clo?.value || 0), 0);
+        updateData.clo = attributes.clo?.value ?? Math.round(totalWornClo * 100) / 100;
+        resetExposure = actorData.clo !== updateData.clo;
+        const reqClo = game.settings.get("lostlands", "requiredClo");
+        newDiffClo = updateData.clo - reqClo;
+        oldDiffClo = actorData.clo - reqClo;
+      }
+    }
+    
     // attitude map
-    updateData.attitude_map = actorData.attitude_map || {};
+    if (type !== 'container') {
+      updateData.attitude_map = actorData.attitude_map || {};
+    }
 
     // update actor if any update data is different than existing data
     for (const key of Object.keys(updateData)) {
-
       if(foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
         delete updateData[key];
       }
@@ -144,6 +158,7 @@ export class SimpleActor extends Actor {
       await this.update({data: updateData});
     }
 
+    // reset exposure damage/clock
     if (resetExposure) {
       // reset damage if actor was suffering damage but is now fine
       // reset clock if actor was fine but is now suffering damage
@@ -152,7 +167,6 @@ export class SimpleActor extends Actor {
       !wasFine && isFine && await Fatigue.resetFatigueDamage(this, 'exposure');
       wasFine && !isFine && await Fatigue.resetFatigueClock(this, 'exposure', Util.now());
     }
-
   }
 
   /* -------------------------------------------- */

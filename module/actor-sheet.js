@@ -33,6 +33,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
+    context.isCharacter = context.data.type === 'character';
 
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
@@ -61,7 +62,9 @@ export class SimpleActorSheet extends ActorSheet {
     context.showSoundBoard = context.isGM || context.hasVoice;
 
     // fatigue
-    context.data.fatigue = this.getFatigueData(context.data);
+    if (context.isCharacter) {
+      context.data.fatigue = this.getFatigueData(context.data);
+    }
 
     return context;
   }
@@ -309,7 +312,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error("Must release a held item first");
         }
         const heldQtyLimit = item.name.toLowerCase().includes('javelin') ? 3 :
-          item.data.data.attributes.light?.value ? 2 : 1;
+                             item.data.data.attributes.light?.value ? 2 : 1;
         if ( !isHeld && itemQty > heldQtyLimit ) {
           return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand`);
         }
