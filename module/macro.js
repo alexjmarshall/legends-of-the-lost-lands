@@ -148,7 +148,7 @@ async function useItem(itemId, data={
   const sound = data.sound || item.data.data.attributes.sound?.value;
   const flavor = data.flavor || item.name;
   const desc = item.data.data.description
-  const chatBubbleText = `${data.verb || 'uses'} ${item.name}`;
+  const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
   const content = data.chatMsgContent || desc || chatBubbleText;
   const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
   const holdable = item.data.data.attributes.holdable?.value;
@@ -215,6 +215,8 @@ export async function drinkPotion(itemId, options={}) {
 }
 
 export async function readScroll(itemId, options={}) {
+  // TODO make saving throw here if scroll level is higher than max level able to cast
+  // also return error if character is not able to cast scrolls
   try {
     await useItem(itemId, {
       sound: 'read_scroll',
@@ -436,7 +438,7 @@ async function save(tokens, damage, options={}) {
     const field = {label: 'Save modifiers?', key: 'dialogMod'};
     return modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
   }
-  const actorSaveMod = +actor.data.data.st_mod || 0;
+  const actorSaveMod = +actor.data.data.sv_mod || 0;
   const saveAttr = options.saveAttr || 'wis';
   const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
   const d20Result = await new Roll("d20").evaluate().total;
@@ -452,7 +454,7 @@ async function save(tokens, damage, options={}) {
   const savingThrow = new Roll(saveText);
   await savingThrow.evaluate();
   const success = savingThrow.total >= saveTarget;
-  const resultText = ` vs. ST ${saveTarget}` + ( success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>` );
+  const resultText = ` vs. SV ${saveTarget}` + ( success ? ` <span style="${resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${resultStyle('#EE6363')}">FAIL</span>` );
   const critFail = d20Result === 1 && options.critFailText;
   if(critFail && options.critFailBrokenItem) {
     const itemQty = +options.critFailBrokenItem.data.data.quantity;
@@ -464,16 +466,17 @@ async function save(tokens, damage, options={}) {
       ui.notifications.error(`Error updating quantity of ${options.critFailBrokenItem.name}`);
     }
   }
-  const fail = !critFail && !success && options.failText;
   const takenDamage = success ? Math.floor(damage / 2) : damage;
   let content = `${Util.chatInlineRoll(saveText)}${resultText}`;
-  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}${fail ? `${options.failText}` : ``}`;
+  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
+  const chatBubbleText = options.bubbleText;
   Util.macroChatMessage(token, actor, {
     content: content, 
     flavor: flavor,
     sound: options.sound
-  });
+  }, false);
+  Util.chatBubble(token, chatBubbleText);
   const currentHp = +actor.data.data.hp?.value;
   if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
@@ -484,10 +487,20 @@ async function save(tokens, damage, options={}) {
   return save(tokens, damage, options);
 }
 
+export async function learnSpellMacro(options={}) {
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+
+  options.saveAttr = 'int';
+  options.bubbleText = `${actor.name} attempts to learn a spell...`;
+
+  return saveMacro(0, options);
+}
+
 export async function thiefSkillMacro(skill, options={}) {
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  if(!token) return ui.notifications.error("Select token attempting the thief skill");
-  const actor = token.actor;
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const token = char.token;
 
   options.flavor = skill;
   options.saveAttr = 'dex';
@@ -495,32 +508,30 @@ export async function thiefSkillMacro(skill, options={}) {
   switch (skill.toLowerCase().replace(/\s/g,'')) {
     case 'openlocks':
       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks`);
-      options.failText = ` but may try again when their skill increases`;
-      options.critFailText = ` and the lock pick breaks!`;
+      // options.bubbleText = `${actor.name} attempts to pick a lock...`;
+      options.critFailText = ` and their lock pick breaks!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'disarmtraps':
       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks`);
-      options.failText = ` but may try again when their skill increases`;
+      // options.bubbleText = `${actor.name} attempts to disarm a trap...`;
       options.critFailText = ` and the trap fires!`;
       options.critFailSound = 'break_lock_pick';
       options.critFailBrokenItem = lockPickItem;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'pickpockets':
-      options.failText = ` but may try again when their skill increases`;
+      // options.bubbleText = `${actor.name} attempts to pick a pocket...`;
       options.critFailText = ` and is immediately caught!`;
       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
       break;
     case 'movesilently':
-      options.failText = ` but may hide to avoid detection`;
       options.critFailText = ` and is immediately caught!`;
       break;
-    case 'hideinshadows':
-      options.failText = ` and may be found if searched for`;
-      options.critFailText = ` and is immediately caught!`;
+    // case 'hideinshadows':
+    //   options.critFailText = ` and is immediately caught!`;
   }
 
   return saveMacro(0, options);
@@ -578,7 +589,7 @@ export function backstabMacro(options={}) {
 }
 
 /*
-* options: // TODO clean up this list of weapon item attributes
+* options: // TODO this list should have only option attributes used, make similar documentation for other macros that use options arg
 * {
 *  flavor: chat message header -- actor
 *  offhand: true/false -- weapon
@@ -600,23 +611,10 @@ export function backstabMacro(options={}) {
 *  critMin: (value) -- item attribute
 * }
 */
+// TODO dry up combat code and extract to separate file
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({id: a}));
-  // TODO clean up macro code, extract combat system to separate file and DRY up
-  // TODO d6 skills like swim/climb in features or attributes?
-  // TODO macro for morale check 
-  // TODO macro for award XP
-  // TODO sounds for spells
-  // TODO XP progressions for basic attributes, and button on charsheet, allow players to click. don't allow players to edit HP or XP
-  // should use combat tracker? or nah -- if nah, how to remember when to roll init? ah yes, just roll once at beginning of battle
-  // TODO record all actor attributes by type in actor.js, and item attributes by type in item.js
-  // TODO convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and selling in foundry.js?
-  // TODO set default settings in day night cycle based on season in simple calendar
-  // TODO update rules doc
-  // TODO banker sheet & macro -- money change, trust fund (stored on PC), storage (stored on banker)
-  // TODO inn sheet & macro -- allow players to choose food/sleep quality level on sheet, auto sets rest mode with rest type on char, on remove effect, heals & pays for the healing
-  // TODO use terrain layer and terrain ruler module on a hex map with single party token for wilderness exploration -- use white/tan fog of war instead of black
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
@@ -956,20 +954,32 @@ async function attack(attackers, targetToken, options) {
   }
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
-  chatMsgData.bubbleString += `${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
+  chatMsgData.bubbleString += `${token.actor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
 
   // add sound and damage
-  let thisAttackDamage;
+  let thisAttackDamage = await Util.rollDice(totalDmg);
+  let damage;
+
   if ( isHit && targetToken && options.applyEffect === true && game.user.isGM ) {
-    thisAttackDamage = await Util.rollDice(totalDmg);
+    damage = thisAttackDamage;
   }
   attacks.push({
     sound: resultSound,
-    damage: thisAttackDamage,
+    damage,
     energyDrainDamage: dmgType === 'energy drain' ? thisAttackDamage : null
   });
 
-  weapons.shift();
+  let totalDmg = 0;
+  for (const attack of attacks) {
+    totalDmg += attack.damage;
+  }
+
+  const targetHp = +targetToken?.actor.data.data.hp?.value;
+  if (totalDmg >= targetHp) {
+    weapons = [];
+  } else {
+    weapons.shift();
+  }
 
   return attack(attackers, targetToken, options);
 }
@@ -1144,7 +1154,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
     Util.macroChatMessage(token, reactingActor, chatData, false);
-    canvas.hud.bubbles.say(token, `${reactingActor.name} considers ${targetActor.name}...`, {emote: true});
+    Util.chatBubble(token, `${reactingActor.name} reacts to ${targetActor.name}`, {emote: true});
   }
 
   return attitude;
@@ -1372,7 +1382,7 @@ async function applyFatigueDamage(actor, type, dice, heal=false, flavor) {
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
 
-  const content = `takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}.`;
+  const content = `${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}.`;
   flavor = flavor || Util.upperCaseFirst(type);
   const token = Util.getTokenFromActor(actor);
 
@@ -1397,7 +1407,7 @@ async function applyRest(actor, wakeTime, sleptTime, restType='Rough') {
   if (wearingArmor) {
     const token = Util.getTokenFromActor(actor);
     return Util.macroChatMessage(token, actor, {
-      content: 'slept poorly...',
+      content: `${actor.name} slept poorly...`,
       flavor
     }, false);
   }
@@ -1498,7 +1508,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     if (!actorDiseases) return false;
     actorDiseases[disease].confirmed = true;
     await actor.setFlag("lostlands", "disease", actorDiseases);
-    await Util.macroChatMessage(token, actor, { content: `feels unwell...`, flavor }, false);
+    await Util.macroChatMessage(token, actor, { content: `${actor.name} feels unwell...`, flavor }, false);
     await Util.addCondition("Diseased", actor);
     return applyDisease(actorId, disease, execTime, newTime);
   };
