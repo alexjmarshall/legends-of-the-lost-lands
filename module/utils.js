@@ -73,9 +73,6 @@ export function chatBubble(token, text, emote=true) {
             getTokenFromActor(game.user.character);
   }
   if ( !token || !text ) return
-  if (emote) {
-    text = `${token.name} ${text}`;
-  }
 
   return canvas.hud.bubbles.say(token, text, {emote});
 }
@@ -87,11 +84,6 @@ export async function macroChatMessage(token, actor, {content, type, flavor, sou
   type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
   content = content.trim();
-
-  // if chat msg is an emote, prefix content with token's name
-  if (type == CONST.CHAT_MESSAGE_TYPES.EMOTE) {
-    content = `${actor.name} ${content}`;
-  }
 
   // if content includes inline rolls, increase line height
   if (/[[.*\d.*]]/.test(content)) {
@@ -108,7 +100,8 @@ export function getTokenFromActor(actor) {
 }
 
 export function selectedCharacter() {
-  let actor = null, token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : null;
+  let actor = null;
+  let token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : null;
   if (token) {
     actor = token.actor;
   } else {
