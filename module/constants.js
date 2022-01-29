@@ -75,7 +75,7 @@ export const DMG_TYPES = {
       "none": 0,
       "leather": 0,
       "chain": 2,
-      "plate": 4
+      "plate": 2
     }
   },
   "bolt": {
@@ -152,7 +152,7 @@ export const DMG_TYPES = {
       "none": 0,
       "leather": 0,
       "chain": 2,
-      "plate": 4
+      "plate": 2
     }
   },
   "throw": {
@@ -174,17 +174,6 @@ export const DMG_TYPES = {
       "none": -2,
       "leather": 0,
       "chain": 2,
-      "plate": 0
-    },
-  },
-  "energy drain": {
-    ATK_TYPE: "melee",
-    HIT_SOUND: "energyDrain_hit",
-    MISS_SOUND: "energyDrain_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 0,
-      "chain": 0,
       "plate": 0
     },
   },
