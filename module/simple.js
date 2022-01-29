@@ -342,7 +342,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
     Fatigue.clearMaxHpDamage(actor);
   }
 
-  if (hpUpdate < 0 && targetHp >= 0 && actor.type === 'character') {
+  if ( hpUpdate < 0 && targetHp >= 0 && actor.type === 'character' && actor.hasPlayerOwner ) {
     Util.macroChatMessage(token, actor, {
       flavor: 'Death', 
       content: `${actor.name} has fallen. May the Gods have mercy.`,
@@ -368,8 +368,6 @@ Hooks.on("preUpdateItem", (item, change) => {
   if (change.data?.attributes?.wearable?.value != null) {
     change.data.worn = false;
   }
-
-  console.log(change);
 });
 
 Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
