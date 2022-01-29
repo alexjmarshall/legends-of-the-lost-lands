@@ -2,19 +2,62 @@ import * as Util from "./utils.js";
 import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
-// TODO weather random macro, use table? use macro and save weather in a game setting
-// TODO revise wilderness rules for pointcrawls, not hexcrawls -- basically precalculate distance between points in leagues for foot/horses
-//     -- make journey macro that takes 2 selected map points and shows dialog with distance between them, possible multiple paths, calculates time based on party MV and foot/horseback
-//     -- shows time it willl be on arrival, confirmation button to advance time
-//     -- also check for random encounter, if indicated, show time of its occurence, and confirmation button to advance time
-//     -- time represented as Dawn, Midday, Dusk, or Midnight -- random terrain?
-//     -- pointcrawl maps, wilderness map (big view distance, time passes at 2x speed), dungeon/interior map (small view distance, time passes at 1x speed)
-//     -- journey macro rolls random weather too
-// use resources automatically if exist on character during long time skips
-// TODO monster sheet
-// TODO convert all mp3s to ogg
+// TODO update rules doc
 // TODO if max HP less than half max max HP, MV is halved (use condition/effect)
 // TODO button to level up char, add level/HD to top bar of actor sheet, allow players to click this button, shows chat msg and rolls HP based on HD in attributes
+// TODO XP progressions for basic attributes, and button on charsheet, allow players to click. don't allow players to edit HP or XP
+// TODO d6 skills like swim/climb in features or attributes?
+// TODO macro for morale check 
+// TODO macro for award XP
+// TODO sounds for spells
+// TODO convert all mp3s to ogg
+// TODO record all actor attributes by type in actor.js, and item attributes by type in item.js
+// TODO convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and selling in foundry.js?
+// TODO set default settings in day night cycle based on season in simple calendar
+// TODO banker sheet & macro -- money change, trust fund (stored on PC), storage (stored on banker)
+// TODO inn sheet & macro -- allow players to choose food/sleep quality level on sheet, diff inns have diff quality levels (set in attributes),
+//      auto sets rest mode with rest type on char, on remove effect, heals & pays
+// TODO make magical ingredient list for potions
+// TODO add poison type to diseases (virulence 8), think thru process of Ranger Slow Poison
+// TODO sound for energy drain hit/miss
+// TODO give 1 point buffer before heat stress damage, same as cold
+// Poison from attack causes ONE save to be done after battle is over
+// Random 3 choices for critical hits!
+// certain pieces of armor prevent critical hit damage, but not necessarily the crit result
+// attribute of immune to crits, e.g. for oozes -- try to not make further distinctions, e.g. all crit results can apply if not immune
+// thrust weapons explode damage die, hew weapons crit on 19-20?
+// crits typically do max damage, backstab doesn't multiply damage, do it manually after any exploding damage is done
+// always make damage roll deferred roll to click?
+// init macro rolls init and starts battle playlist
+// make all ability scores into resource type to store current/max values, to player view just show current value
+// make max_HP a resource, change code so max_max hp refers to max_HP.value, apply energy drain manually not automatic (don't need damage type)
+// fix resources showing max not current value to players
+// thrown needs to be an attack type, not damage type
+// split offhand weapon into separate attack -- otherwise how to handle separate damage?
+// derive offhand penalty from dex
+// make sound property of weapon item
+// grapple 1 dice every 4 levels
+// add dialog to save for half damage macro to choose type of damage
+// custom drag n drop logic to turn arrows/bolts into additional quantity for quiver
+// in attribute tabs make fields max width fit content/ moz-fit-content
+/*
+* TODO hexcrawl
+*   use terrain layer and terrain ruler module on a hex map with single party token
+*   paint difficult terrain for rough/very rough terrain types
+*   how to handle horseback? can set flag on party token, then prolly have to interact with API of terrain layer/ruler
+*   need new sheet/actor type for token? can try to auto calc speed
+*   manually set mv of party token
+*   use white/tan fog of war instead of black
+*/
+/* TODO journeys (?)
+*     -- used for top level gridless pointcrawl map with distances between nodes precalculated
+*     -- make journey macro that takes 2 selected map points and shows dialog with distance between them
+*     -- possible multiple paths, calculates time based on party MV and foot/horseback
+*     -- shows time it will be on arrival, confirmation button to advance time
+*     -- also check for random encounter, if indicated, show time of its occurence, and confirmation button to advance time
+*     -- time represented as Dawn, Midday, Dusk, or Midnight -- random terrain?
+*     -- rolls random weather too
+*/
 
 // Conditions:
 //  Warm
@@ -26,6 +69,7 @@ import * as Constant from "./constants.js";
 //  Thirsty
 //  Dead
 //  Diseased
+//  Fatigued
 
 export const FATIGUE_DAMAGE_COMMAND = 'applyFatigue(actorId, type, execTime, newTime)';
 export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
@@ -240,7 +284,7 @@ async function syncConditions(char, time) {
     
     const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
-    const content = `feels ${conditionString}...`;
+    const content = `${char.name} feels ${conditionString}...`;
     await Util.macroChatMessage(token, char, { content, flavor }, false);
 
     if (!warningSound) continue;
