@@ -94,16 +94,19 @@ export class SimpleActor extends Actor {
     
     /* AC
     slots:
-    - helmet
+    - coif
+    - hat
     - shield
     - cloak
-    - armor
+    - armored_shirt
+    - cuirass
     - quiver
-    - shirt (shift)
-    - tunic (dress, gambeson)
+    - under_shirt (shift)
+    - tunic (dress) -- gambeson here?
     - breeches
     - pants
     - bracers
+    - greaves
     - gloves
     - ring
     - belt
