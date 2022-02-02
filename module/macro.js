@@ -969,13 +969,13 @@ async function attack(attackers, targetToken, options) {
     energyDrainDamage: dmgType === 'energy drain' ? thisAttackDamage : null
   });
 
-  let totalDmg = 0;
+  let dmg = 0;
   for (const attack of attacks) {
-    totalDmg += attack.damage;
+    dmg += attack.damage;
   }
 
   const targetHp = +targetToken?.actor.data.data.hp?.value;
-  if (totalDmg >= targetHp) {
+  if (dmg >= targetHp) {
     weapons = [];
   } else {
     weapons.shift();
