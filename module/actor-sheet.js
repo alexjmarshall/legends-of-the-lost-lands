@@ -87,11 +87,11 @@ export class SimpleActorSheet extends ActorSheet {
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
     fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Healthy';
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
-    fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Dying of exhaustion' : exhaustionStatus === 1 ? 'Sleepy' : 'Healthy';
+    fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
-    fatigue.thirstDesc = thirstStatus === 2 ? 'Dying of thirst' : thirstStatus === 1 ? 'Thirsty' : 'Healthy';
+    fatigue.thirstDesc = thirstStatus === 2 ? 'Extremely thirsty' : thirstStatus === 1 ? 'Thirsty' : 'Fine';
     const hungerStatus = this.getFatigueStatus(data, 'hunger');
-    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Healthy';
+    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Fine';
 
     return fatigue;
   }
