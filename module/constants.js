@@ -51,9 +51,9 @@ export const DMG_TYPES = {
     MISS_SOUND: "arrow_miss",
     VS_AC_MODS: {
       "none": 0,
-      "leather": 2,
+      "leather": 1,
       "chain": 0,
-      "plate": -2
+      "plate": -1
     }
   },
   "attack": {
@@ -74,8 +74,8 @@ export const DMG_TYPES = {
     VS_AC_MODS: {
       "none": 0,
       "leather": 0,
-      "chain": 2,
-      "plate": 2
+      "chain": 1,
+      "plate": 1
     }
   },
   "bolt": {
@@ -85,7 +85,7 @@ export const DMG_TYPES = {
     VS_AC_MODS: {
       "none": 0,
       "leather": 0,
-      "chain": 2,
+      "chain": 1,
       "plate": 0
     }
   },
@@ -94,10 +94,10 @@ export const DMG_TYPES = {
     HIT_SOUND: "cut_hit",
     MISS_SOUND: "cut_miss",
     VS_AC_MODS: {
-      "none": 2,
+      "none": 1,
       "leather": 0,
-      "chain": -2,
-      "plate": -4
+      "chain": -1,
+      "plate": -2
     }
   },
   "grapple": {
@@ -105,10 +105,10 @@ export const DMG_TYPES = {
     HIT_SOUND: undefined,
     MISS_SOUND: undefined,
     VS_AC_MODS: {
-      "none": -2,
+      "none": -1,
       "leather": 0,
       "chain": 0,
-      "plate": 2
+      "plate": 1
     }
   },
   "hew": {
@@ -117,9 +117,9 @@ export const DMG_TYPES = {
     MISS_SOUND: "hew_miss",
     VS_AC_MODS: {
       "none": 0,
-      "leather": 2,
+      "leather": 1,
       "chain": 0,
-      "plate": -2
+      "plate": -1
     }
   },
   "hook": {
@@ -127,10 +127,10 @@ export const DMG_TYPES = {
     HIT_SOUND: undefined,
     MISS_SOUND: undefined,
     VS_AC_MODS: {
-      "none": -2,
+      "none": -1,
       "leather": 0,
       "chain": 0,
-      "plate": 2
+      "plate": 1
     }
   },
   "punch": {
@@ -138,10 +138,10 @@ export const DMG_TYPES = {
     HIT_SOUND: undefined,
     MISS_SOUND: undefined,
     VS_AC_MODS: {
-      "none": 2,
+      "none": 1,
       "leather": 0,
       "chain": 0,
-      "plate": -2
+      "plate": -1
     }
   },
   "slingstone": {
@@ -151,8 +151,8 @@ export const DMG_TYPES = {
     VS_AC_MODS: {
       "none": 0,
       "leather": 0,
-      "chain": 2,
-      "plate": 2
+      "chain": 1,
+      "plate": 1
     }
   },
   "throw": {
@@ -160,10 +160,10 @@ export const DMG_TYPES = {
     HIT_SOUND: "throw_hit",
     MISS_SOUND: "throw_miss",
     VS_AC_MODS: {
-      "none": 2,
+      "none": 1,
       "leather": 0,
       "chain": 0,
-      "plate": -2
+      "plate": -1
     }
   },
   "thrust": {
@@ -171,9 +171,9 @@ export const DMG_TYPES = {
     HIT_SOUND: "thrust_hit",
     MISS_SOUND: "thrust_miss",
     VS_AC_MODS: {
-      "none": -2,
+      "none": -1,
       "leather": 0,
-      "chain": 2,
+      "chain": 1,
       "plate": 0
     },
   },
