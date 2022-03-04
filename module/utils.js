@@ -101,7 +101,7 @@ export function getTokenFromActor(actor) {
 
 export function getArrFromCSL(list) {
   if (typeof list === 'string' || list instanceof String) {
-    return [...new Set(list.split(',').map(t => t.trim()).filter(t => t))] || []
+    return [...new Set(list?.split(',').map(t => t.trim()).filter(t => t))] || []
   } else {
     throw new Error("Input list not a string.");
   }
