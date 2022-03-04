@@ -754,7 +754,7 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const dmgTypes = [...new Set(weapAttrs.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t))] || [];
+  const dmgTypes = Util.getArrFromCSL(weapAttrs.dmg_types?.value);
   // show attack choice dialogs
   if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = dmgTypes.map(type => {
