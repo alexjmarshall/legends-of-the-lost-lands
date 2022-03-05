@@ -271,6 +271,9 @@ export const VOICE_SOUNDS = new Map();
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
+
+
+
 export const HIT_LOCATIONS_SWING = [
   {
     name: "left foot",
@@ -381,6 +384,113 @@ export const HIT_LOCATIONS_SWING = [
     weight: 8
   },
 ];
-export const HIT_LOCATIONS_THRUST = {
-
-};
+export const HIT_LOCATIONS_THRUST = [
+  {
+    name: "left foot",
+    weight: 2
+  },
+  {
+    name: "right foot",
+    weight: 2
+  },
+  {
+    name: "left shin",
+    weight: 3
+  },
+  {
+    name: "right shin",
+    weight: 3
+  },
+  {
+    name: "left knee",
+    weight: 3
+  },
+  {
+    name: "right knee",
+    weight: 3
+  },
+  {
+    name: "left thigh",
+    weight: 7
+  },
+  {
+    name: "right thigh",
+    weight: 7
+  },
+  {
+    name: "left hip",
+    weight: 2
+  },
+  {
+    name: "right hip",
+    weight: 2
+  },
+  {
+    name: "groin",
+    weight: 6
+  },
+  {
+    name: "gut",
+    weight: 16
+  },
+  {
+    name: "chest",
+    weight: 10
+  },
+  {
+    name: "left shoulder",
+    weight: 3
+  },
+  {
+    name: "right shoulder",
+    weight: 3
+  },
+  {
+    name: "left upper arm",
+    weight: 2
+  },
+  {
+    name: "right upper arm",
+    weight: 2
+  },
+  {
+    name: "left elbow",
+    weight: 2
+  },
+  {
+    name: "right elbow",
+    weight: 2
+  },
+  {
+    name: "left forearm",
+    weight: 2
+  },
+  {
+    name: "right forearm",
+    weight: 2
+  },
+  {
+    name: "left hand",
+    weight: 2
+  },
+  {
+    name: "right hand",
+    weight: 2
+  },
+  {
+    name: "neck",
+    weight: 3
+  },
+  {
+    name: "face",
+    weight: 4
+  },
+  {
+    name: "eyes",
+    weight: 2
+  },
+  {
+    name: "skull",
+    weight: 3
+  },
+];
