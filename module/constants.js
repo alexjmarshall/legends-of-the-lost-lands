@@ -271,3 +271,116 @@ export const VOICE_SOUNDS = new Map();
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
+export const HIT_LOCATIONS_SWING = [
+  {
+    name: "left foot",
+    weight: 2
+  },
+  {
+    name: "right foot",
+    weight: 2
+  },
+  {
+    name: "left shin",
+    weight: 4
+  },
+  {
+    name: "right shin",
+    weight: 4
+  },
+  {
+    name: "left knee",
+    weight: 4
+  },
+  {
+    name: "right knee",
+    weight: 4
+  },
+  {
+    name: "left thigh",
+    weight: 5
+  },
+  {
+    name: "right thigh",
+    weight: 5
+  },
+  {
+    name: "left hip",
+    weight: 3
+  },
+  {
+    name: "right hip",
+    weight: 3
+  },
+  {
+    name: "groin",
+    weight: 2
+  },
+  {
+    name: "gut",
+    weight: 8
+  },
+  {
+    name: "chest",
+    weight: 4
+  },
+  {
+    name: "left shoulder",
+    weight: 4
+  },
+  {
+    name: "right shoulder",
+    weight: 4
+  },
+  {
+    name: "left upper arm",
+    weight: 3
+  },
+  {
+    name: "right upper arm",
+    weight: 3
+  },
+  {
+    name: "left elbow",
+    weight: 4
+  },
+  {
+    name: "right elbow",
+    weight: 4
+  },
+  {
+    name: "left forearm",
+    weight: 4
+  },
+  {
+    name: "right forearm",
+    weight: 4
+  },
+  {
+    name: "left hand",
+    weight: 3
+  },
+  {
+    name: "right hand",
+    weight: 3
+  },
+  {
+    name: "neck",
+    weight: 4
+  },
+  {
+    name: "face",
+    weight: 2
+  },
+  {
+    name: "eyes",
+    weight: 0
+  },
+  {
+    name: "skull",
+    weight: 8
+  },
+];
+export const HIT_LOCATIONS_THRUST = {
+
+};
