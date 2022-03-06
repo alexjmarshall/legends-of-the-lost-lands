@@ -273,224 +273,70 @@ export const VOICE_SOUNDS = new Map();
 })();
 
 
-
-export const HIT_LOCATIONS_SWING = [
-  {
-    name: "left foot",
-    weight: 2
+// weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
+export const HIT_LOCATIONS = {
+  foot: {
+    weights: [4,4,2,2,8,8],
+    bilateral: true
   },
-  {
-    name: "right foot",
-    weight: 2
+  shin: {
+    weights: [8,6,2,2,16,12],
+    bilateral: true
   },
-  {
-    name: "left shin",
+  knee: {
+    weights: [8,6,4,2,16,12],
+    bilateral: true
+  },
+  thigh: {
+    weights: [10,14,4,6,16,18],
+    bilateral: true
+  },
+  hip: {
+    weights: [6,4,2,2,10,6],
+    bilateral: true
+  },
+  groin: {
+    weights: [2,6,1,2,4,8],
+  },
+  gut: {
+    weights: [8,16,3,8,12,18],
+  },
+  chest: {
+    weights: [4,10,6,16,2,5],
+  },
+  shoulder: {
+    weights: [8,6,12,12,2,2],
+    bilateral: true
+  },
+  "upper arm": {
+    weights: [6,4,10,8,2,2],
+    bilateral: true
+  },
+  elbow: {
+    weights: [8,4,10,6,2,2],
+    bilateral: true
+  },
+  forearm: {
+    weights: [8,4,8,4,4,2],
+    bilateral: true
+  },
+  hand: {
+    weights: [6,4,6,4,2,2],
+    bilateral: true
+  },
+  neck: {
+    weights: [4,3,6,8,1,1],
     weight: 4
   },
-  {
-    name: "right shin",
-    weight: 4
-  },
-  {
-    name: "left knee",
-    weight: 4
-  },
-  {
-    name: "right knee",
-    weight: 4
-  },
-  {
-    name: "left thigh",
-    weight: 5
-  },
-  {
-    name: "right thigh",
-    weight: 5
-  },
-  {
-    name: "left hip",
-    weight: 3
-  },
-  {
-    name: "right hip",
-    weight: 3
-  },
-  {
-    name: "groin",
+  face: {
+    weights: [2,4,4,8,1,1],
     weight: 2
   },
-  {
-    name: "gut",
-    weight: 8
+  eyes: {
+    weights: [0,2,2,4,0,0],
+    bilateral: true
   },
-  {
-    name: "chest",
-    weight: 4
+  skull: {
+    weights: [8,3,18,6,2,1],
   },
-  {
-    name: "left shoulder",
-    weight: 4
-  },
-  {
-    name: "right shoulder",
-    weight: 4
-  },
-  {
-    name: "left upper arm",
-    weight: 3
-  },
-  {
-    name: "right upper arm",
-    weight: 3
-  },
-  {
-    name: "left elbow",
-    weight: 4
-  },
-  {
-    name: "right elbow",
-    weight: 4
-  },
-  {
-    name: "left forearm",
-    weight: 4
-  },
-  {
-    name: "right forearm",
-    weight: 4
-  },
-  {
-    name: "left hand",
-    weight: 3
-  },
-  {
-    name: "right hand",
-    weight: 3
-  },
-  {
-    name: "neck",
-    weight: 4
-  },
-  {
-    name: "face",
-    weight: 2
-  },
-  {
-    name: "eyes",
-    weight: 0
-  },
-  {
-    name: "skull",
-    weight: 8
-  },
-];
-export const HIT_LOCATIONS_THRUST = [
-  {
-    name: "left foot",
-    weight: 2
-  },
-  {
-    name: "right foot",
-    weight: 2
-  },
-  {
-    name: "left shin",
-    weight: 3
-  },
-  {
-    name: "right shin",
-    weight: 3
-  },
-  {
-    name: "left knee",
-    weight: 3
-  },
-  {
-    name: "right knee",
-    weight: 3
-  },
-  {
-    name: "left thigh",
-    weight: 7
-  },
-  {
-    name: "right thigh",
-    weight: 7
-  },
-  {
-    name: "left hip",
-    weight: 2
-  },
-  {
-    name: "right hip",
-    weight: 2
-  },
-  {
-    name: "groin",
-    weight: 6
-  },
-  {
-    name: "gut",
-    weight: 16
-  },
-  {
-    name: "chest",
-    weight: 10
-  },
-  {
-    name: "left shoulder",
-    weight: 3
-  },
-  {
-    name: "right shoulder",
-    weight: 3
-  },
-  {
-    name: "left upper arm",
-    weight: 2
-  },
-  {
-    name: "right upper arm",
-    weight: 2
-  },
-  {
-    name: "left elbow",
-    weight: 2
-  },
-  {
-    name: "right elbow",
-    weight: 2
-  },
-  {
-    name: "left forearm",
-    weight: 2
-  },
-  {
-    name: "right forearm",
-    weight: 2
-  },
-  {
-    name: "left hand",
-    weight: 2
-  },
-  {
-    name: "right hand",
-    weight: 2
-  },
-  {
-    name: "neck",
-    weight: 3
-  },
-  {
-    name: "face",
-    weight: 4
-  },
-  {
-    name: "eyes",
-    weight: 2
-  },
-  {
-    name: "skull",
-    weight: 3
-  },
-];
+};
