@@ -274,7 +274,7 @@ export const VOICE_SOUNDS = new Map();
 
 
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
-export const HIT_LOCATIONS = {
+const HIT_LOCATIONS = {
   foot: {
     weights: [4,4,2,2,8,8],
     bilateral: true
@@ -325,14 +325,12 @@ export const HIT_LOCATIONS = {
     bilateral: true
   },
   neck: {
-    weights: [4,3,6,8,1,1],
-    weight: 4
+    weights: [4,3,6,8,1,1]
   },
   face: {
-    weights: [2,4,4,8,1,1],
-    weight: 2
+    weights: [2,4,4,8,1,1]
   },
-  eyes: {
+  eye: {
     weights: [0,2,2,4,0,0],
     bilateral: true
   },
@@ -340,3 +338,30 @@ export const HIT_LOCATIONS = {
     weights: [8,3,18,6,2,1],
   },
 };
+
+// populate hit location arrays on startup
+export const HIT_LOC_ARRS = {
+  SWING: [],
+  THRUST: [],
+  SWING_HIGH: [],
+  THRUST_HIGH: [],
+  SWING_LOW: [],
+  THRUST_LOW: []
+};
+(async function() {
+  const fillLocArr = function (loc, weight, bi) {
+    const arr = [];
+    for (let i = 0; i < weight; i++) {
+      const entry = bi ? i < weight / 2 ? `left ${loc}`: `right ${loc}` : loc;
+      arr.push(entry);
+    }
+    return arr;
+  };
+  for (const [k, v] of Object.entries(HIT_LOCATIONS)) {
+
+    ["SWING", "THRUST", "SWING_HIGH", "THRUST_HIGH", "SWING_LOW", "THRUST_LOW"].forEach((arr, i) => {
+      HIT_LOC_ARRS[arr] = HIT_LOC_ARRS[arr].concat(fillLocArr(k, v.weights[i], v.bilateral));
+    });
+  }
+  console.log('Completed loading hit locations', HIT_LOC_ARRS);
+})();
