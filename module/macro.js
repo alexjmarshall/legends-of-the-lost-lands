@@ -317,6 +317,7 @@ export function heldWeaponAttackMacro(options={}) {
   const attackers = [];
   for(const token of selectedTokens) {
     const actor = token.actor;
+
     let weapons = actor.items.filter(i => i.type === 'item' &&
       i.data.data.attributes.atk_modes &&
       i.data.data.attributes.size &&
@@ -326,16 +327,16 @@ export function heldWeaponAttackMacro(options={}) {
       return ui.notifications.error("Invalid weapon size specified");
     }
 
-    // sort weapons by size
+    // sort weapons by size ascending
     weapons.sort((a, b) => {
-      const aSize = a.data.data.attributes.size.value;
-      const bSize = b.data.data.attributes.size.value;
+      const aSize = Constant.SIZE_VALUES[a.data.data.attributes.size.value];
+      const bSize = Constant.SIZE_VALUES[b.data.data.attributes.size.value];
       if ( aSize < bSize ) return -1;
       if ( aSize > bSize ) return 1;
       if ( aSize === bSize ) return 0;
     });
 
-    // if no weapons, return error is hands full, otherwise add two fist weapon objects
+    // if no weapons, return error if hands full, otherwise add two fist weapon objects
     const numHeld = actor.items.filter(i => i.type === 'item' && i.data.data.held).length;
     const unarmed = !weapons.length;
     if (unarmed) {
@@ -354,10 +355,10 @@ export function heldWeaponAttackMacro(options={}) {
     const weapIds = weapons.map((w, i) => {
       return Object.create({
         id: w.id,
-        offhand: i === 0
+        offhand: i === 0 && weapons.length > 1
       })
     });
-    
+
     attackers.push({
       token: token,
       weapons: weapIds,
