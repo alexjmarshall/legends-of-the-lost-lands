@@ -365,3 +365,12 @@ export const HIT_LOC_ARRS = {
   }
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();
+
+export const SIZE_VALUES = {
+  T: 0, // tiny
+  S: 1, // small
+  M: 2, // medium
+  L: 3, // large
+  H: 4, // huge
+  G: 5, // gargantuan
+};

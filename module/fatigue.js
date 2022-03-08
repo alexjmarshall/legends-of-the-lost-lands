@@ -33,8 +33,6 @@ import * as Constant from "./constants.js";
 // make max_HP a resource, change code so max_max hp refers to max_HP.value, apply energy drain manually not automatic (don't need damage type)
 // fix resources showing max not current value to players
 // thrown needs to be an attack type, not damage type
-// split offhand weapon into separate attack -- otherwise how to handle separate damage?
-// derive offhand penalty from dex
 // make sound property of weapon item
 // grapple 1 dice every 4 levels
 // add dialog to save for half damage macro to choose type of damage

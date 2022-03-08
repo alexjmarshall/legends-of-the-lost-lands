@@ -316,32 +316,48 @@ export function heldWeaponAttackMacro(options={}) {
 
   const attackers = [];
   for(const token of selectedTokens) {
-    let weapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
-    // if weapons includes a light weapon, move it to end of array
-    weapons.forEach((w, i, arr) => {
-      if (w.data.data.attributes.light?.value) {
-        arr.splice(i,1);
-        arr.push(w);
-      }
+    const actor = token.actor;
+    let weapons = actor.items.filter(i => i.type === 'item' &&
+      i.data.data.attributes.atk_modes &&
+      i.data.data.attributes.size &&
+      i.data.data.held
+    );
+    if ( weapons.some(w => !Object.keys(Constant.SIZE_VALUES).includes(w.data.data.attributes.size.value.toUpperCase())) ) {
+      return ui.notifications.error("Invalid weapon size specified");
+    }
+
+    // sort weapons by size
+    weapons.sort((a, b) => {
+      const aSize = a.data.data.attributes.size.value;
+      const bSize = b.data.data.attributes.size.value;
+      if ( aSize < bSize ) return -1;
+      if ( aSize > bSize ) return 1;
+      if ( aSize === bSize ) return 0;
     });
-    // add two dummy weapon objects if unarmed
+
+    // if no weapons, return error is hands full, otherwise add two fist weapon objects
+    const numHeld = actor.items.filter(i => i.type === 'item' && i.data.data.held).length;
     const unarmed = !weapons.length;
-    unarmed && weapons.push({id:'1', name:'Fist'}, {id:'2', name: 'Fist'});
+    if (unarmed) {
+      if (numHeld) return ui.notifications.error("Not holding any weapons");
+      weapons.push({id:'1', name:'Fist'}, {id:'2', name: 'Fist'});
+    }
     
-    if ( weapons.length > 1 ) {
-      // can only use multiple weapons if Dex > 13 and not wearing a shield
-      const dexScore = +token.actor.data.data.attributes.ability_scores?.dex.value;
+    // if wearing a shield and holding multiple weapons, can only use biggest one
+    if (weapons.length > 1) {
       const wearingShield = token.actor.data.items.some(i => i.type === 'item' &&
       i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
-      if (dexScore < 13 || wearingShield) weapons = [weapons[0]];
+      if (wearingShield) weapons = [weapons[weapons.length - 1]];
     }
-    // extract item ids and flag weapons after the first as offhand
+
+    // extract item ids and flag first weapon as offhand
     const weapIds = weapons.map((w, i) => {
       return Object.create({
         id: w.id,
-        offhand: i > 0
+        offhand: i === 0
       })
     });
+    
     attackers.push({
       token: token,
       weapons: weapIds,
@@ -589,11 +605,11 @@ export function backstabMacro(options={}) {
 }
 
 /*
-* options: // TODO this list should have only option attributes used, make similar documentation for other macros that use options arg
+* options:
 * {
 *  flavor: chat message header -- actor
-*  offhand: true/false -- weapon
-*  skipHookDialog: true/false -- 
+*  offhand: true/false -- flagged false by monster attackRoutineMacro
+*  atk_mode
 *  showModDialog: true/false
 *  skipThrowDialog: true/false
 *  dialogAtkMod: (value)
@@ -601,7 +617,6 @@ export function backstabMacro(options={}) {
 *  applyEffect: true/false
 *  throwable: true/false -- item attribute
 *  reach: true/false -- item attribute
-*  light: true/false -- item attribute
 *  maxRange: (value) -- item attribute
 *  atkType: melee/missile/throw/touch  -- item attribute
 *  dmgType: cut/thrust/hew/bludgeon/throw/slingstone/arrow/bolt/punch/grapple/hook  -- item attribute
@@ -610,8 +625,11 @@ export function backstabMacro(options={}) {
 *  unwieldly: true/false -- item attribute
 *  critMin: (value) -- item attribute
 * }
+* required weapon item attributes:
+* atk_modes: swing (blunt), swing (slashing), swing (piercing), thrust (blunt), thrust (slashing), thrust (piercing),
+*             shoot (blunt), shoot (slashing), shoot (piercing), throw (blunt), throw (slashing), throw (piercing)
+* size: T, S, M, L, H, G
 */
-// TODO dry up combat code and extract to separate file
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({id: a}));
@@ -940,6 +958,14 @@ async function attack(attackers, targetToken, options) {
     resultText += ` hit self`;
     resultSound = hitSound;
   }
+
+  //add hit location
+  const hitLocRoll = await Util.rollDice("d100");
+  const hitLoc = Constant.HIT_LOC_ARRS.SWING[hitLocRoll - 1];
+  if ( targetToken?.actor && isHit ) {
+    resultText += hitLoc ? ` in the ${hitLoc}` : '';
+  }
+
   if (isHit) resultText += dmgText;
   if ( fragile && atkType === 'melee' && d20Result === 1 ) {
     resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
@@ -952,6 +978,7 @@ async function attack(attackers, targetToken, options) {
       return attack(attackers, targetToken, options);
     }
   }
+
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
   chatMsgData.bubbleString += `${token.actor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
@@ -976,7 +1003,7 @@ async function attack(attackers, targetToken, options) {
 
   const targetHp = +targetToken?.actor.data.data.hp?.value;
   if (dmg >= targetHp) {
-    weapons = [];
+    while (weapons.length) weapons.shift();
   } else {
     weapons.shift();
   }
