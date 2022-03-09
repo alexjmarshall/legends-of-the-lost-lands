@@ -301,22 +301,44 @@ export class SimpleActorSheet extends ActorSheet {
       case "hold":
         const isHeld = !!item.data.data.held;
         const heldItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.held);
-        const heldItemsLimit = item.data.data.attributes.two_hand?.value || heldItems.some(i => i.data.data.attributes.two_hand?.value) ? 1 : 2;
+        let handsUsed = heldItems.length;
+        const heldItemSizes = heldItems.map(i => Constant.SIZE_VALUES[i.data.data.attributes.size?.value]).filter(n => !isNaN(n));
+        const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
+        const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
+        const largestHeldSize = Math.max(...heldItemSizes);
+        // item size values: T - 0, S - 1, M - 2, L - 3, H - 4, G - 5
+        let maxSize = charSize < 2 ? charSize + 1 : charSize + 2;
+        let oneHandMaxSize = charSize < 2 ? charSize : charSize + 1;
+        let sizeLimit = maxSize;
+
+        if (largestHeldSize >= maxSize) handsUsed = 2;
+        else if (largestHeldSize >= 0) sizeLimit = charSize - largestHeldSize;
+        else if (handsUsed) sizeLimit = oneHandMaxSize;
+
+        if (!isHeld) {
+          if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
+          if ( handsUsed > 1 || itemSize > sizeLimit ) return ui.notifications.error("Must release a held item first");
+        }
+
+        // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
+        // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
+
         // can't hold a small shield while wearing a shield
-        const isSmallShield = Util.stringMatch(item.data.data.attributes.size?.value, 'small');
-        const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
-        if ( isSmallShield && wearingShield ) {
-          return ui.notifications.error("Cannot use a small shield while wearing a shield");
+        const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && i.data.data.attributes.shield);
+        if ( item.data.data.attributes.shield && wearingShield ) {
+          return ui.notifications.error("Cannot use a shield while wearing a shield");
         }
-        if ( !isHeld && heldItems.length >= heldItemsLimit ) {
-          return ui.notifications.error("Must release a held item first");
-        }
-        const heldQtyLimit = item.name.toLowerCase().includes('javelin') ? 3 :
-                             item.data.data.attributes.light?.value ? 2 : 1;
+        
+        let heldQtyLimit = 1;
+        if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
+        if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
+
         if ( !isHeld && itemQty > heldQtyLimit ) {
           return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand`);
         }
+
         await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
+
         if (!isHeld) {
           // handle quick draw attack
           const dmgTypes = item.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
@@ -327,7 +349,7 @@ export class SimpleActorSheet extends ActorSheet {
             }
             Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} draws ${item.name}` });
           } else {
-            Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}` });
+            Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${itemSize === maxSize ? ' in both hands' : ''}` });
           }
         }
         return;
