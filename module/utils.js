@@ -13,6 +13,14 @@ export function stringMatch(str1, str2) {
   return str1.toLowerCase().replace(/\s/g,'').normalize() === str2.toLowerCase().replace(/\s/g,'').normalize();
 }
 
+export function sizeComparator(a, b) {
+  const aSize = Constant.SIZE_VALUES[a.data.data.attributes.size.value];
+  const bSize = Constant.SIZE_VALUES[b.data.data.attributes.size.value];
+  if ( aSize < bSize ) return -1;
+  if ( aSize > bSize ) return 1;
+  if ( aSize === bSize ) return 0;
+}
+
 export function expandPrice(priceInCps) {
   if (!priceInCps) return;
   const gp = Math.floor(priceInCps / 50);
