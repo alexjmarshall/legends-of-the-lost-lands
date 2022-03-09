@@ -328,13 +328,7 @@ export function heldWeaponAttackMacro(options={}) {
     }
 
     // sort weapons by size ascending
-    weapons.sort((a, b) => {
-      const aSize = Constant.SIZE_VALUES[a.data.data.attributes.size.value];
-      const bSize = Constant.SIZE_VALUES[b.data.data.attributes.size.value];
-      if ( aSize < bSize ) return -1;
-      if ( aSize > bSize ) return 1;
-      if ( aSize === bSize ) return 0;
-    });
+    weapons.sort((a,b) => Util.sizeComparator(a,b));
 
     // if no weapons, return error if hands full, otherwise add two fist weapon objects
     const numHeld = actor.items.filter(i => i.type === 'item' && i.data.data.held).length;
@@ -630,6 +624,8 @@ export function backstabMacro(options={}) {
 * atk_modes: swing (blunt), swing (slashing), swing (piercing), thrust (blunt), thrust (slashing), thrust (piercing),
 *             shoot (blunt), shoot (slashing), shoot (piercing), throw (blunt), throw (slashing), throw (piercing)
 * size: T, S, M, L, H, G
+* TODO remove energy drain
+* TODO +1 to hit if holding only 1 weapon of same size as character
 */
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
