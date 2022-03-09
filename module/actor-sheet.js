@@ -331,7 +331,7 @@ export class SimpleActorSheet extends ActorSheet {
         
         let heldQtyLimit = 1;
         if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
-        if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
+        else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
 
         if ( !isHeld && itemQty > heldQtyLimit ) {
           return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand`);
