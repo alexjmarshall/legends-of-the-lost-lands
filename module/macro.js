@@ -341,7 +341,7 @@ export function heldWeaponAttackMacro(options={}) {
     // if wearing a shield and holding multiple weapons, can only use biggest one
     if (weapons.length > 1) {
       const wearingShield = token.actor.data.items.some(i => i.type === 'item' &&
-      i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'shield'));
+                            i.data.data.worn && i.data.data.attributes.shield);
       if (wearingShield) weapons = [weapons[weapons.length - 1]];
     }
 
@@ -613,7 +613,6 @@ export function backstabMacro(options={}) {
 *  throwable: true/false -- item attribute
 *  reach: true/false -- item attribute
 *  maxRange: (value) -- item attribute
-*  atkType: melee/missile/throw/touch  -- item attribute
 *  dmgType: cut/thrust/hew/bludgeon/throw/slingstone/arrow/bolt/punch/grapple/hook  -- item attribute
 *  fragile: true/false -- item attribute
 *  finesse: true/false -- item attribute
@@ -663,6 +662,7 @@ async function attack(attackers, targetToken, options) {
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
+    // remove commas
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
     Util.macroChatMessage(token, token.actor, chatMsgData, false);
@@ -805,9 +805,6 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if (atkType === 'touch') {
-    attacker.skipDmgDialog = true;
-  }
   if ( options.showModDialog && !options.shownModDialog ) {
     const fields = [
       {label: 'Attack modifiers?', key: 'dialogAtkMod'}
@@ -884,17 +881,15 @@ async function attack(attackers, targetToken, options) {
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
   totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
   let dmgText = `${totalDmg ? ` for ${Util.chatInlineRoll(totalDmg)}` : ''}`;
-  const isCrit = atkType !== 'touch' && d20Result >= critMin && !preventCrit;
+  const isCrit = d20Result >= critMin && !preventCrit;
   if (isCrit) dmgText += ` + ${Util.chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
   dmgText += ' damage';
-  if (atkType === 'touch') dmgText = '';
   let rangeText = range && rangePenalty ? ` ${range}'` : '';
   let hitSound = Constant.DMG_TYPES[dmgType].HIT_SOUND, missSound = Constant.DMG_TYPES[dmgType].MISS_SOUND;
   let resultText = '';
   let resultSound = missSound;
   let isHit = true;
   let targetAc = targetRollData?.ac;
-  let touchAc = targetRollData?.touch_ac || Constant.AC_MIN;
   if (!isNaN(targetAc)) {
     // handle situational AC mods
     // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
@@ -904,42 +899,37 @@ async function attack(attackers, targetToken, options) {
       measureRange(targetToken, t) < 10);
     const adjLargeShieldMods = adjFriendlyTokens.map(t => 
       t.actor.items.filter(i => i.data.data.worn &&
-        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
-        Util.stringMatch(i.data.data.attributes.size?.value, 'large')
+        i.data.data.attributes.shield &&
+        Util.stringMatch(i.data.data.attributes.size?.value, 'L')
       ).map(i => +i.data.data.attributes.ac_mod?.value || 0)
     ).flat();
     const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
     targetAc += shieldWallMod;
-    touchAc += shieldWallMod;
     if (atkType === 'missile') {
       // disregard bucklers
       const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held &&
-        Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
+                           i.data.data.attributes.shield &&
+                           Util.stringMatch(i.data.data.attributes.size?.value, 'T'));
       bucklersHeld.forEach(i =>{
         const mod = +i.data.data.attributes.ac_mod?.value || 0;
         targetAc -= mod;
-        touchAc -= mod;
       });
       // +1 for each large shield worn
       const largeShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
-        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') &&
-        Util.stringMatch(i.data.data.attributes.size?.value, 'large'));
+                               i.data.data.attributes.shield &&
+                               Util.stringMatch(i.data.data.attributes.size?.value, 'L'));
       largeShieldsWorn.forEach((i) => {
         targetAc += 1;
-        touchAc += 1;
       });
     }
     if (unwieldy) {
       // disregard shield mods if weapon is unwieldy, e.g. flail
-      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn &&
-        Util.stringMatch(i.data.data.attributes.slot?.value, 'shield') ||
-        i.data.data.held && i.data.data.attributes.ac_mod?.value);
+      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn && i.data.data.attributes.shield ||
+                                i.data.data.held && i.data.data.attributes.shield);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
       targetAc -= shieldAcMods;
-      touchAc -= shieldAcMods;
     }
     const totalAtkResult = await Util.rollDice(totalAtk);
-    if (atkType === 'touch') targetAc = touchAc;
     isHit = totalAtkResult >= targetAc;
     if (isHit) {
       resultText = ` vs. AC ${targetAc} ${attacker.hitText ? attacker.hitText : `<span style="${resultStyle('#7CCD7C')}">HIT</span>`}`;
@@ -956,7 +946,7 @@ async function attack(attackers, targetToken, options) {
     resultSound = hitSound;
   }
 
-  //add hit location
+  // add hit location based on attack mode, if target is a character
   const hitLocRoll = await Util.rollDice("d100");
   const hitLoc = Constant.HIT_LOC_ARRS.SWING[hitLocRoll - 1];
   if ( targetToken?.actor && isHit ) {
@@ -980,26 +970,17 @@ async function attack(attackers, targetToken, options) {
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
   chatMsgData.bubbleString += `${token.actor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
 
-  // add sound and damage
-  let thisAttackDamage = await Util.rollDice(totalDmg);
-  let damage;
+  const totalDmgResult = await Util.rollDice(totalDmg);
 
-  if ( isHit && targetToken && options.applyEffect === true && game.user.isGM ) {
-    damage = thisAttackDamage;
-  }
   attacks.push({
     sound: resultSound,
-    damage,
-    energyDrainDamage: dmgType === 'energy drain' ? thisAttackDamage : null
+    damage: isHit && targetToken?.actor && options.applyEffect === true && game.user.isGM ? totalDmgResult : null,
+    energyDrainDamage: dmgType === 'energy drain' ? totalDmgResult : null
   });
 
-  let dmg = 0;
-  for (const attack of attacks) {
-    dmg += attack.damage;
-  }
-
+  const sumDmg = attacks.reduce((sum, a) => sum + a.damage, 0);
   const targetHp = +targetToken?.actor.data.data.hp?.value;
-  if (dmg >= targetHp) {
+  if (sumDmg >= targetHp) {
     while (weapons.length) weapons.shift();
   } else {
     weapons.shift();
@@ -1574,3 +1555,5 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
 
   return true;
 }
+
+// todo simpify fantigue conditions -- just note on char sheet whether hhungry/thristy etc., use a generalized fatigued/exhausted condition

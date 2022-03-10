@@ -277,8 +277,8 @@ export class SimpleActorSheet extends ActorSheet {
       case "wear":
         const isWorn = !!item.data.data.worn;
         // can't wear a shield while holding a small shield
-        const isShield = Util.stringMatch(item.data.data.attributes.slot?.value, 'shield');
-        const holdingSmallShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && Util.stringMatch(i.data.data.attributes.size?.value, 'small'));
+        const isShield = item.data.data.attributes.shield;
+        const holdingSmallShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && i.data.data.attributes.shield);
         if ( isShield && holdingSmallShield ) {
           return ui.notifications.error("Cannot wear a shield while using a small shield");
         }
