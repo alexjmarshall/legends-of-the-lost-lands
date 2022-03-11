@@ -93,7 +93,14 @@
                     </div>
                     <div class="item-toggle">
                         {{#if item.data.attributes.holdable.value}}
-                        <a class="item-control {{#if item.data.held}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold">
+                        <a class="item-control {{#if item.data.held_left}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_left">
+                            <img style="transform: scaleX(-1);" src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
+                        </a>
+                        {{/if}}
+                    </div>
+                    <div class="item-toggle">
+                        {{#if item.data.attributes.holdable.value}}
+                        <a class="item-control {{#if item.data.held_right}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_right">
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
                         {{else if item.data.attributes.wearable.value}}
@@ -115,7 +122,7 @@
             </ol>
             {{/each}}
             <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:46px;">
+                <span style="max-width:69px;">
                 </span>
                 <span>
                     {{#if isGM}}

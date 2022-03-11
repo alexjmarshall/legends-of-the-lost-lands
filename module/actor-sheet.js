@@ -258,7 +258,7 @@ export class SimpleActorSheet extends ActorSheet {
             });
           }
         }).render(true);
-      case "prepare": // TODO clean up code in these cases
+      case "prepare":
         const isPrepared = !!item.data.data.prepared;
         const spellLevel = item.data.data.attributes.lvl.value;
         const actorSlotsAttr = this.actor.data.data.attributes[`${item.type}`]?.[`lvl_${spellLevel}`];
@@ -276,83 +276,38 @@ export class SimpleActorSheet extends ActorSheet {
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
         const isWorn = !!item.data.data.worn;
-        // can't wear a shield while holding a small shield
-        const isShield = item.data.data.attributes.shield;
-        const holdingSmallShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && i.data.data.attributes.shield);
-        if ( isShield && holdingSmallShield ) {
-          return ui.notifications.error("Cannot wear a shield while using a small shield");
+        if (!isWorn) {
+          // can't wear a shield while holding a small shield or holding 2 handed weapon
+          const isShield = !!item.data.data.attributes.shield?.value;
+          const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held === 2);
+          const holdingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && !!i.data.data.attributes.shield?.value);
+          if (isShield ) {
+            if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
+            if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
+          }
+          // can't stack rings of protection
+          const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
+          const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
+                                    wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
+          if (stackingRingofProt ) {
+            return ui.notifications.error("Cannot wear more than one ring of protection");
+          }
+          // can't wear item if already wearing an item in that slot
+          const itemSlot = item.data.data.attributes.slot?.value;
+          const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
+          const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
+          if ( itemSlot && wornItemsInSlot.length >= slotLimit ) {
+            return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
+          }
         }
-        // can't stack rings of protection
-        const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
-        const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
-                                   wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
-        if ( !isWorn && stackingRingofProt ) {
-          return ui.notifications.error("Cannot wear more than one ring of protection");
-        }
-        const itemSlot = item.data.data.attributes.slot?.value;
-        const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
-        const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
-        if ( itemSlot && !isWorn && wornItemsInSlot.length >= slotLimit ) {
-          return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
-        }
+        
         let verb = isWorn ? 'doffs' : 'dons';
         Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} ${verb} ${item.name}` });
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
-      case "hold":
-        const isHeld = !!item.data.data.held;
-        const heldItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.held);
-        let handsUsed = heldItems.length;
-        const heldItemSizes = heldItems.map(i => Constant.SIZE_VALUES[i.data.data.attributes.size?.value]).filter(n => !isNaN(n));
-        const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
-        const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
-        const largestHeldSize = Math.max(...heldItemSizes);
-        // item size values: T - 0, S - 1, M - 2, L - 3, H - 4, G - 5
-        let maxSize = charSize < 2 ? charSize + 1 : charSize + 2;
-        let oneHandMaxSize = charSize < 2 ? charSize : charSize + 1;
-        let sizeLimit = maxSize;
-
-        if (largestHeldSize >= maxSize) handsUsed = 2;
-        else if (largestHeldSize >= 0) sizeLimit = charSize - largestHeldSize;
-        else if (handsUsed) sizeLimit = oneHandMaxSize;
-
-        if (!isHeld) {
-          if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
-          if ( handsUsed > 1 || itemSize > sizeLimit ) return ui.notifications.error("Must release a held item first");
-        }
-
-        // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
-        // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
-
-        // can't hold a small shield while wearing a shield
-        const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && i.data.data.attributes.shield);
-        if ( item.data.data.attributes.shield && wearingShield ) {
-          return ui.notifications.error("Cannot use a shield while wearing a shield");
-        }
-        
-        let heldQtyLimit = 1;
-        if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
-        else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
-
-        if ( !isHeld && itemQty > heldQtyLimit ) {
-          return ui.notifications.error(`May hold only ${heldQtyLimit} quantity in one hand`);
-        }
-
-        await this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.held": !isHeld}]);
-
-        if (!isHeld) {
-          // handle quick draw attack
-          const dmgTypes = item.data.data.attributes.dmg_types?.value.split(',').map(t => t.trim()).filter(t => t) || [];
-          const canQuickDraw = item.data.data.attributes.quick_draw?.value && dmgTypes.includes('cut');
-          if (canQuickDraw) {
-            if (event.altKey) {
-              return game.lostlands.Macro.quickDrawAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
-            }
-            Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} draws ${item.name}` });
-          } else {
-            Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${itemSize === maxSize ? ' in both hands' : ''}` });
-          }
-        }
-        return;
+      case "hold_left":
+        return this._handleHold(item, "left", event);
+      case "hold_right":
+        return this._handleHold(item, "right", event);
       case "use":
         let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
         let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
@@ -376,6 +331,96 @@ export class SimpleActorSheet extends ActorSheet {
         return macro.execute();
     }
   }
+
+  async _handleHold(item, hand, event) {
+    // cases to handle:
+    // item is held in this hand
+    //    if 2 handed, empty both hands
+    //    if 1 handed, empty this hand
+    // item not held in this hand
+    //    if 2 handed
+    //      if other hand empty, hold in both hands
+    //      if other hand full, error msg
+    //    if 1 handed
+    //      if held in other hand
+    //        if can be held in 2 hands, hold in this hand
+    //        if cannot, error msg
+    //      if not held in other hand
+    //        hold in this hand
+    let itemUpdate = {_id: item.id, data: {}};
+    const otherHand = hand === 'left' ? 'right' : 'left';
+    const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
+    const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
+    const maxSize = charSize < 2 ? charSize + 1 : charSize + 2;
+    const oneHandMaxSize = charSize < 2 ? charSize : charSize + 1;
+    const twoHanded = itemSize === maxSize;
+    const handAndHalf = itemSize < maxSize && itemSize >= charSize;
+    const isHeld = !!item.data.data[`held_${hand}`];
+    let isHeldOtherHand = !!item.data.data[`held_${otherHand}`];
+    const itemHeldInOtherHand = this.actor.data.items.find(i => i.data.data[`held_${otherHand}`]);
+    const thisHandFull = this.actor.data.items.find(i => i.data.data[`held_${hand}`]);
+
+    if (isHeld) {
+      if (twoHanded) {
+        Object.assign(itemUpdate.data, {held_left: false, held_right: false});
+      } else {
+        itemUpdate.data[`held_${hand}`] = false;
+      }
+    } else {
+      if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
+      if (thisHandFull) return ui.notifications.error("Must release a held item first");
+      if (twoHanded) {
+        if (!!itemHeldInOtherHand) return ui.notifications.error("Must release a held item first");
+        Object.assign(itemUpdate.data, {held_left: true, held_right: true});
+      } else {
+        if (isHeldOtherHand) {
+          if (!handAndHalf) {
+            itemUpdate.data[`held_${otherHand}`] = false;
+            isHeldOtherHand = false;
+          } 
+          itemUpdate.data[`held_${hand}`] = true;
+        } else {
+          let sizeLimit = maxSize;
+          const sizeHeldInOtherHand = Constant.SIZE_VALUES[itemHeldInOtherHand?.data.data.attributes.size?.value];
+          if (sizeHeldInOtherHand >= 0) {
+            sizeLimit = charSize - sizeHeldInOtherHand;
+          } else {
+            sizeLimit = oneHandMaxSize;
+          }
+          if ( itemSize > sizeLimit ) return ui.notifications.error("Must release a held item first");
+          itemUpdate.data[`held_${hand}`] = true;
+        }
+      }
+
+      const itemQty = +item?.data.data.quantity || 0;
+      let heldQtyLimit = 1;
+      if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
+      else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
+      if (itemQty > heldQtyLimit) return ui.notifications.error(`Can hold only ${heldQtyLimit} quantity in one hand`);
+
+      const isShield = !!item.data.data.attributes.shield?.value;
+      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+      if ( (isShield || twoHanded) && wearingShield ) return ui.notifications.error("Cannot wield this item while wearing a shield");
+
+      await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+
+      // handle quick slash attack
+      const atkModes = item.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+      const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(slashing)');
+      if (canQuickSlash && event.altKey) {
+        game.lostlands.Macro.quickSlashAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
+      } else {
+        Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
+      }
+    }
+
+    return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+
+    // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
+    // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
+  }
+
+  
 
   /* -------------------------------------------- */
 
