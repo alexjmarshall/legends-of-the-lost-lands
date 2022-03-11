@@ -112,8 +112,8 @@ export class SimpleActor extends Actor {
     */
     let resetExposure = false, newDiffClo, oldDiffClo;
     if ( type === 'character' || type === 'monster' ) {
-      const wornOrHeldShields = items.filter(i => i.data.data.worn === true && !!i.data.data.attributes.shield?.value ||
-                                i.data.data.held === true && !!i.data.data.attributes.shield?.value);
+      const wornOrHeldShields = items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
+                                (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
       const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !i.data.data.attributes.shield?.value);
       const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
@@ -123,7 +123,7 @@ export class SimpleActor extends Actor {
       updateData.ac = attributes.ac?.value ?? ac;
 
       // st_mod
-      const stItems = items.filter(i => (i.data.data.worn === true || i.data.data.held === true) && i.data.data.attributes.st_mod?.value);
+      const stItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right) && i.data.data.attributes.st_mod?.value);
       const st_mod = stItems.reduce((a, b) => a + (b.data.data.attributes.st_mod?.value || 0), 0);
       updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
