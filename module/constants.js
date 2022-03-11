@@ -44,22 +44,203 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-// const ARMOR_VS_DMG_TYPE = {
-//   none: {
-//     blunt: {
-//       atk:,
-//       dmg:,
-//     },
-//     piercing: {
-//       atk:,
-//       dmg:,
-//     },
-//     slashing: {
-//       atk:,
-//       dmg:,
-//     },
-//   },
-// }
+const ARMOR_VS_DMG_TYPE = {
+  none: {
+    base_AC: 0,
+    blunt: {
+      ac:1,
+      dr:0,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:-1,
+      dr:0,
+    },
+  },
+  fur: {
+    base_AC: 1,
+    blunt: {
+      ac:0,
+      dr:1,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:-1,
+      dr:0,
+    },
+  },
+  padded: {
+    base_AC: 2,
+    blunt: {
+      ac:0,
+      dr:1,
+    },
+    piercing: {
+      ac:-2,
+      dr:1,
+    },
+    slashing: {
+      ac:0,
+      dr:0,
+    },
+  },
+  leather: {
+    base_AC: 3,
+    blunt: {
+      ac:0,
+      dr:1,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:-1,
+      dr:0,
+    },
+  },
+  brigandine: {
+    base_AC: 4,
+    blunt: {
+      ac:2,
+      dr:1,
+    },
+    piercing: {
+      ac:1,
+      dr:1,
+    },
+    slashing: {
+      ac:0,
+      dr:1,
+    },
+  },
+  chain: {
+    base_AC: 5,
+    blunt: {
+      ac:-1,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:1,
+      dr:1,
+    },
+  },
+  "elven chain": {
+    base_AC: 5,
+    blunt: {
+      ac:-1,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:1,
+      dr:1,
+    },
+  },
+  scale: {
+    base_AC: 6,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:-1,
+      dr:0,
+    },
+  },
+  lamellar: {
+    base_AC: 7,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:0,
+      dr:1,
+    },
+  },
+  splint: {
+    base_AC: 7,
+    blunt: {
+      ac:1,
+      dr:0,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:1,
+      dr:0,
+    },
+  },
+  "banded mail": {
+    base_AC: 7,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:0,
+      dr:1,
+    },
+  },
+  "iron plate": {
+    base_AC: 8,
+    blunt: {
+      ac: 0,
+      dr: 0,
+    },
+    piercing: {
+      ac: 1,
+      dr: 0,
+    },
+    slashing: {
+      ac: 1,
+      dr: 1,
+    },
+  },
+  "steel plate": {
+    base_AC: 9,
+    blunt: {
+      ac: 1,
+      dr: 0,
+    },
+    piercing: {
+      ac: 2,
+      dr: 1,
+    },
+    slashing: {
+      ac: 1,
+      dr: 1,
+    },
+  },
+}
 export const ATK_MODES = {
   "attack": {
     ATK_ATTR: "str",
