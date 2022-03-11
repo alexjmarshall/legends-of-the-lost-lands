@@ -153,7 +153,7 @@ async function useItem(itemId, data={
   const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
   const holdable = item.data.data.attributes.holdable?.value;
 
-  if ( holdable && item.data.data.held !== true) {
+  if ( holdable && !item.data.data.held_left && !item.data.data.held_right ) {
     throw new Error(`${item.name} must be held to use`);
   }
 
@@ -321,27 +321,29 @@ export function heldWeaponAttackMacro(options={}) {
     let weapons = actor.items.filter(i => i.type === 'item' &&
       i.data.data.attributes.atk_modes &&
       i.data.data.attributes.size &&
-      i.data.data.held
+      (i.data.data.held_left || i.data.data.held_right)
     );
     if ( weapons.some(w => !Object.keys(Constant.SIZE_VALUES).includes(w.data.data.attributes.size.value.toUpperCase())) ) {
       return ui.notifications.error("Invalid weapon size specified");
     }
 
-    // sort weapons by size ascending
-    weapons.sort((a,b) => Util.sizeComparator(a,b));
-
-    // if no weapons, return error if hands full, otherwise add two fist weapon objects
-    const numHeld = actor.items.filter(i => i.type === 'item' && i.data.data.held).length;
+    // if no weapons, return error if hands full, otherwise add dummy weapon object
+    const numHeld = actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right)).length;
     const unarmed = !weapons.length;
     if (unarmed) {
       if (numHeld) return ui.notifications.error("Not holding any weapons");
-      weapons.push({id:'1', name:'Fist'}, {id:'2', name: 'Fist'});
+      weapons.push({id:'1', name: 'Fists'});
     }
+
+    // TODO drag token on top of another owned token of larger size to mount them -- set mounted flag. Drag away to unmount.
+
+    // sort weapons by size ascending
+    weapons.sort((a,b) => Util.sizeComparator(a,b));
     
     // if wearing a shield and holding multiple weapons, can only use biggest one
     if (weapons.length > 1) {
       const wearingShield = token.actor.data.items.some(i => i.type === 'item' &&
-                            i.data.data.worn && i.data.data.attributes.shield);
+                            i.data.data.worn && !!i.data.data.attributes.shield?.value);
       if (wearingShield) weapons = [weapons[weapons.length - 1]];
     }
 
@@ -365,7 +367,7 @@ export function heldWeaponAttackMacro(options={}) {
   return attack(attackers, targetToken, options);
 }
 
-export function quickDrawAttackMacro(itemId, options={}) {
+export function quickSlashAttackMacro(itemId, options={}) {
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = token ? token.actor : game.user.character;
   if (!actor) return ui.notifications.error("Select character using the weapon");
@@ -373,18 +375,15 @@ export function quickDrawAttackMacro(itemId, options={}) {
   const weapon = actor.data.items.get(itemId) ?? actor.data.items.find(i => Util.stringMatch(i.name, itemId));
   if (!weapon) return ui.notifications.error("Could not find weapon on this character");
 
-  const canQuickDraw = weapon.data.data.attributes.quick_draw?.value;
-  if (!canQuickDraw) return ui.notifications.error("This weapon cannot perform a quick draw attack");
-
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
 
   const attackers = [];
-  const flavor = `${weapon.name} (quick draw)`;
+  const flavor = `${weapon.name} (quick slash)`;
   attackers.push({
     token: token,
-    weapons: [{id: itemId, dmgType: 'cut'}],
+    weapons: [{id: itemId, atkMode: 'Swing (S)'}],
     chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
     flavor,
     attacks: [],
@@ -567,7 +566,7 @@ export function backstabMacro(options={}) {
       ui.notifications.error(`Backstab feature not found on this character`);
       continue;
     }
-    const heldWeapons = token.actor.items.filter(i => i.type === 'item' && i.data.data.held);
+    const heldWeapons = token.actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right));
     if (!heldWeapons.length) {
       ui.notifications.error(`${token.actor.name} is not holding any weapons`);
       continue;
@@ -621,10 +620,14 @@ export function backstabMacro(options={}) {
 * }
 * required weapon item attributes:
 * atk_modes: swing (blunt), swing (slashing), swing (piercing), thrust (blunt), thrust (slashing), thrust (piercing),
-*             shoot (blunt), shoot (slashing), shoot (piercing), throw (blunt), throw (slashing), throw (piercing)
+*            shoot (blunt), shoot (slashing), shoot (piercing), throw (blunt), throw (slashing), throw (piercing)
 * size: T, S, M, L, H, G
-* TODO remove energy drain
-* TODO +1 to hit if holding only 1 weapon of same size as character
+* TODO +1 to hit if holding only 1 weapon of same size as character -- add flag for being held in 2 hands...another hand button to char sheet?
+* TODO make attack routine work with features not held items
+* features NOT automated: mounted bonus, mounted charge
+* separate macro for touch attacks -- touch attack uses Dex to attack and dodge TODO derive touch AC again for actors
+* TODO if select random targets (at least 3) and shoot attack, waive ranged penalty
+* test whether range works with other units or only feet
 */
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
@@ -698,23 +701,27 @@ async function attack(attackers, targetToken, options) {
 
   // get weapon and its properties
   const actorItems = token.actor.data.items;
-  let weaponItem = actorItems.get(weapon.id) || actorItems.find(i => i.name.toLowerCase().replace(/\s/g,'') === weapon.id?.toLowerCase().replace(/\s/g,''));
+  let weaponItem;
   if (attacker.unarmed) {
     weaponItem = {
       name: 'Fist',
       data:{
         data: {
           attributes: {
-            atk_mod: { value: 0},
-            dmg: { value: '1d2'},
-            dmg_types: { value: 'punch'},
-            light: { value: true}
+            atk_mod: { value: 0 },
+            dmg: { value: '1d2/1d2' },
+            atk_modes: { value: 'Swing (B)' },
+            double_weapon: { value: true },
           },
           quantity: 2
         }
       }
     }
+  } else {
+    weaponItem = actorItems.get(weapon.id) || actorItems.find(i => Util.stringMatch(i.name, weapon.id));
   }
+
+  // checks for valid data
   if (!weaponItem) {
     ui.notifications.error("Could not find item on this character");
     weapons.shift();
@@ -725,74 +732,126 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if (weaponItem.data.data.attributes.holdable && weaponItem.data.data.held !== true) {
+
+  if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
+
   const weapName = weaponItem.name;
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
   const weapAtkMod = weapAttrs.atk_mod?.value;
-  const weapDmg = weapAttrs.dmg?.value;
-  const fragile = weapAttrs.fragile?.value;
-  const finesse = weapAttrs.finesse?.value;
+  let weapDmg = weapAttrs.dmg?.value;
+  const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
+  const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
+
+  if (!weapDmg) {
+    ui.notifications.error("Invalid weapon damage specified");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+
+  // handle double weapon TODO test
+  const isDoubleWeapon = !!weapAttrs.double_weapon?.value;
+  if (isDoubleWeapon) {
+    const dmgs = weapDmg.toLowerCase().replace(/\s/g,'').split('/') || [];
+    if (dmgs.length !== 2) {
+      ui.notifications.error("Invalid double weapon damage specified");
+      weapons.shift();
+      return attack(attackers, targetToken, options);
+    }
+    if (weapon.dwSideTwo) {
+      weapDmg = dmgs[1];
+      options.offhand = false;
+    } else {
+      weapDmg = dmgs[0];
+      if (weaponHeldTwoHands) weapons.push(Object.assign(weapon, {dwSideTwo: true}));
+    }
+  }
+
+  // atk modes
+  const atkModes = weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+  if (!atkModes.length) {
+    ui.notifications.error("Invalid attack mode(s) specified");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+  const defaultThrowAtkMode = atkModes.find(a => a.includes('throw'));
+  let throwable = attacker.throwable ?? weapAttrs.range?.value && defaultThrowAtkMode;
+
+  // reach values
+  const reachValues = weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => t) || [];
+  if (!reachValues.length) {
+    ui.notifications.error("Invalid reach specified");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+
+  // tags
+  const backRank = !!weapAttrs.backRank?.value;
+  const bonusToShields = !!weapAttrs.bonus_to_shields?.value;
+  const bleedBonus = !!weapAttrs.bleed_bonus?.value;
+  const chainWeapon = !!weapAttrs.chain_weapon?.value;
+  const fragile = !!weapAttrs.fragile?.value;
   const unwieldy = weapAttrs.unwieldy?.value;
-  const critMin = weapAttrs.impale?.value ? 19 : 20;
-  const reloadable = weapAttrs.reloadable?.value;
-  const throwable = attacker.throwable ?? weapAttrs.throwable?.value;
-  const loaded =  weaponItem.data.data.loaded;
+  const reload = weapAttrs.reload?.value;
+  
   // reload item if needed
-  if ( reloadable && !loaded ) {
+  const loaded =  weaponItem.data.data.loaded;
+  if ( reload && !loaded ) {
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
     chatMsgData.content += `reloads ${weapName}<br>`;
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if (!weapDmg) {
-    weapons.shift();
-    return attack(attackers, targetToken, options);
-  }
-  const meleeRange = weapAttrs.reach?.value ? 10 : 5;
-  if ( range > meleeRange && throwable && !weapon.dmgType ) {
-    weapon.dmgType = 'throw';
+
+  // automatic throw if target beyond max reach in feet
+  const maxReach = reachValues[reachValues.length - 1] * 5;
+  if ( range > maxReach && throwable && weapon.atkMode == null ) {
+    weapon.atkMode = defaultThrowAtkMode;
     attacker.showAltDialog = false;
   }
+  
+  // offhand
   const offhand = options.offhand ?? weapon.offhand;
   // throwing offhand weapon is not allowed
-  if ( offhand === true && weapon.dmgType === 'throw' ) {
+  if ( offhand === true && weapon.atkMode.toLowerCase().includes('throw') ) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  if ( offhand === true && weapAttrs.light?.value !== true ) {
-    ui.notifications.error("Weapon used in the offhand must be light");
+  // can't use offhand weapon when wearing a shield
+  const wearingShield = actorItems.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+  if ( offhand === true && wearingShield ) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const dmgTypes = Util.getArrFromCSL(weapAttrs.dmg_types?.value);
+
   // show attack choice dialogs
   if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
-    const choices = dmgTypes.map(type => {
-      return {label: Util.upperCaseFirst(type), value: type}
+    const choices = atkModes.map(mode => {
+      return {label: Util.upperCaseFirst(mode), value: mode}
     });
     return altDialog(
       weapon, 
-      `${weapon.name} Form of Attack`, 
+      `${weapon.name} Attack Mode`, 
       choices, 
       () => attack(attackers, targetToken, options)
     );
   }
-  if ( weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.dmg_type ) {
+  if ( weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
     try {
-      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.dmg_type': weapon.altDialogChoice}]);
+      await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
     } catch {
-      ui.notifications.error(`error updating stored damage type for ${weaponItem.name}`);
+      ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}`);
     }
   }
-  let dmgType = weapon.dmgType || weaponItem.data.data.dmg_type || dmgTypes[0];
-  if (!Object.keys(Constant.DMG_TYPES).includes(dmgType)) {
-    dmgType = 'attack';
+  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
+  if (!Object.keys(Constant.ATK_MODES).includes(atkMode)) {
+    atkMode = 'attack';
   }
+  
   const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE || 'melee';
   const targetArmorItem = targetToken?.actor.items.find(i => i.data.data.worn &&
                           Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
@@ -899,33 +958,33 @@ async function attack(attackers, targetToken, options) {
       measureRange(targetToken, t) < 10);
     const adjLargeShieldMods = adjFriendlyTokens.map(t => 
       t.actor.items.filter(i => i.data.data.worn &&
-        i.data.data.attributes.shield &&
-        Util.stringMatch(i.data.data.attributes.size?.value, 'L')
+                                !!i.data.data.attributes.shield?.value &&
+                                Util.stringMatch(i.data.data.attributes.size?.value, 'L')
       ).map(i => +i.data.data.attributes.ac_mod?.value || 0)
     ).flat();
     const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
     targetAc += shieldWallMod;
     if (atkType === 'missile') {
       // disregard bucklers
-      const bucklersHeld = targetToken.actor.items.filter(i => i.data.data.held &&
-                           i.data.data.attributes.shield &&
+      const bucklersHeld = targetToken.actor.items.filter(i => (i.data.data.held_left || i.data.data.held_right) &&
+                           !!i.data.data.attributes.shield?.value &&
                            Util.stringMatch(i.data.data.attributes.size?.value, 'T'));
       bucklersHeld.forEach(i =>{
         const mod = +i.data.data.attributes.ac_mod?.value || 0;
         targetAc -= mod;
       });
-      // +1 for each large shield worn
-      const largeShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
-                               i.data.data.attributes.shield &&
-                               Util.stringMatch(i.data.data.attributes.size?.value, 'L'));
-      largeShieldsWorn.forEach((i) => {
-        targetAc += 1;
+      // -1 for medium shield
+      const medShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
+                               !!i.data.data.attributes.shield?.value &&
+                               Util.stringMatch(i.data.data.attributes.size?.value, 'M'));
+      medShieldsWorn.forEach((i) => {
+        targetAc -= 1;
       });
     }
     if (unwieldy) {
       // disregard shield mods if weapon is unwieldy, e.g. flail
-      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn && i.data.data.attributes.shield ||
-                                i.data.data.held && i.data.data.attributes.shield);
+      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
+                                (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
       targetAc -= shieldAcMods;
     }
