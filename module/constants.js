@@ -44,138 +44,113 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-export const DMG_TYPES = {
-  "arrow": {
-    ATK_TYPE: "missile",
-    HIT_SOUND: "arrow_hit",
-    MISS_SOUND: "arrow_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 1,
-      "chain": 0,
-      "plate": -1
-    }
-  },
+// const ARMOR_VS_DMG_TYPE = {
+//   none: {
+//     blunt: {
+//       atk:,
+//       dmg:,
+//     },
+//     piercing: {
+//       atk:,
+//       dmg:,
+//     },
+//     slashing: {
+//       atk:,
+//       dmg:,
+//     },
+//   },
+// }
+export const ATK_MODES = {
   "attack": {
-    ATK_TYPE: "melee",
+    ATK_ATTR: "str",
+    DMG_ATTR: "str",
     HIT_SOUND: undefined,
     MISS_SOUND: undefined,
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 0,
-      "chain": 0,
-      "plate": 0
-    }
+    DMG_TYPE: undefined,
   },
-  "bludgeon": {
-    ATK_TYPE: "melee",
+  "swing(b)": {
+    ATK_ATTR: "str",
+    DMG_ATTR: "str",
     HIT_SOUND: "bludgeon_hit",
     MISS_SOUND: "bludgeon_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 0,
-      "chain": 1,
-      "plate": 1
-    }
+    DMG_TYPE: "blunt",
   },
-  "bolt": {
-    ATK_TYPE: "missile",
-    HIT_SOUND: "bolt_hit",
-    MISS_SOUND: "bolt_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 0,
-      "chain": 1,
-      "plate": 0
-    }
-  },
-  "cut": {
-    ATK_TYPE: "melee",
+  "swing(s)": {
+    ATK_ATTR: "str",
+    DMG_ATTR: "str",
     HIT_SOUND: "cut_hit",
     MISS_SOUND: "cut_miss",
-    VS_AC_MODS: {
-      "none": 1,
-      "leather": 0,
-      "chain": -1,
-      "plate": -2
-    }
+    DMG_TYPE: "slashing",
   },
-  "grapple": {
-    ATK_TYPE: "touch",
-    HIT_SOUND: undefined,
-    MISS_SOUND: undefined,
-    VS_AC_MODS: {
-      "none": -1,
-      "leather": 0,
-      "chain": 0,
-      "plate": 1
-    }
-  },
-  "hew": {
-    ATK_TYPE: "melee",
+  "swing(p)": {
+    ATK_ATTR: "str",
+    DMG_ATTR: "str",
     HIT_SOUND: "hew_hit",
     MISS_SOUND: "hew_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 1,
-      "chain": 0,
-      "plate": -1
-    }
+    DMG_TYPE: "piercing",
   },
-  "hook": {
-    ATK_TYPE: "touch",
-    HIT_SOUND: undefined,
-    MISS_SOUND: undefined,
-    VS_AC_MODS: {
-      "none": -1,
-      "leather": 0,
-      "chain": 0,
-      "plate": 1
-    }
+  "thrust(b)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
+    HIT_SOUND: "bludgeon_hit",
+    MISS_SOUND: "bludgeon_miss",
+    DMG_TYPE: "blunt",
   },
-  "punch": {
-    ATK_TYPE: "melee",
-    HIT_SOUND: undefined,
-    MISS_SOUND: undefined,
-    VS_AC_MODS: {
-      "none": 1,
-      "leather": 0,
-      "chain": 0,
-      "plate": -1
-    }
+  "thrust(s)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
+    HIT_SOUND: "hew_hit",
+    MISS_SOUND: "hew_miss",
+    DMG_TYPE: "slashing",
   },
-  "slingstone": {
-    ATK_TYPE: "missile",
-    HIT_SOUND: "slingstone_hit",
-    MISS_SOUND: "slingstone_miss",
-    VS_AC_MODS: {
-      "none": 0,
-      "leather": 0,
-      "chain": 1,
-      "plate": 1
-    }
-  },
-  "throw": {
-    ATK_TYPE: "missile",
-    HIT_SOUND: "throw_hit",
-    MISS_SOUND: "throw_miss",
-    VS_AC_MODS: {
-      "none": 1,
-      "leather": 0,
-      "chain": 0,
-      "plate": -1
-    }
-  },
-  "thrust": {
-    ATK_TYPE: "melee",
+  "thrust(p)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
     HIT_SOUND: "thrust_hit",
     MISS_SOUND: "thrust_miss",
-    VS_AC_MODS: {
-      "none": -1,
-      "leather": 0,
-      "chain": 1,
-      "plate": 0
-    },
+    DMG_TYPE: "piercing",
+  },
+  "shoot(b)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: undefined,
+    HIT_SOUND: "slingstone_hit",
+    MISS_SOUND: "slingstone_miss",
+    DMG_TYPE: "blunt",
+  },
+  "shoot(s)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: undefined,
+    HIT_SOUND: "arrow_hit",
+    MISS_SOUND: "arrow_miss",
+    DMG_TYPE: "slashing",
+  },
+  "shoot(p)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: undefined,
+    HIT_SOUND: "bolt_hit",
+    MISS_SOUND: "bolt_miss",
+    DMG_TYPE: "piercing",
+  },
+  "throw(b)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
+    HIT_SOUND: "throw_hit",
+    MISS_SOUND: "throw_miss",
+    DMG_TYPE: "blunt",
+  },
+  "throw(s)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
+    HIT_SOUND: "throw_hit",
+    MISS_SOUND: "throw_miss",
+    DMG_TYPE: "slashing",
+  },
+  "throw(p)": {
+    ATK_ATTR: "dex",
+    DMG_ATTR: "str",
+    HIT_SOUND: "throw_hit",
+    MISS_SOUND: "throw_miss",
+    DMG_TYPE: "piercing",
   },
 };
 export const VOICE_MOODS = {
