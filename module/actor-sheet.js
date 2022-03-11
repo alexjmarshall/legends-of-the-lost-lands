@@ -279,8 +279,8 @@ export class SimpleActorSheet extends ActorSheet {
         if (!isWorn) {
           // can't wear a shield while holding a small shield or holding 2 handed weapon
           const isShield = !!item.data.data.attributes.shield?.value;
-          const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held === 2);
-          const holdingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held && !!i.data.data.attributes.shield?.value);
+          const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
+          const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left && i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
           if (isShield ) {
             if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
             if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
@@ -367,6 +367,9 @@ export class SimpleActorSheet extends ActorSheet {
         itemUpdate.data[`held_${hand}`] = false;
       }
     } else {
+      const isShield = !!item.data.data.attributes.shield?.value;
+      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+      if (isShield && wearingShield) return ui.notifications.error("Cannot use a shield while wearing a shield");
       if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
       if (thisHandFull) return ui.notifications.error("Must release a held item first");
       if (twoHanded) {
@@ -398,9 +401,7 @@ export class SimpleActorSheet extends ActorSheet {
       else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
       if (itemQty > heldQtyLimit) return ui.notifications.error(`Can hold only ${heldQtyLimit} quantity in one hand`);
 
-      const isShield = !!item.data.data.attributes.shield?.value;
-      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
-      if ( (isShield || twoHanded) && wearingShield ) return ui.notifications.error("Cannot wield this item while wearing a shield");
+      if ( wearingShield && (twoHanded || isHeldOtherHand) ) return ui.notifications.error("Cannot hold with both hands while wearing a shield");
 
       await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
 
@@ -413,9 +414,6 @@ export class SimpleActorSheet extends ActorSheet {
         Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
     }
-
-    return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
-
     // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
     // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
   }
