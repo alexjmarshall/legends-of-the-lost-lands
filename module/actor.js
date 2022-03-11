@@ -112,10 +112,10 @@ export class SimpleActor extends Actor {
     */
     let resetExposure = false, newDiffClo, oldDiffClo;
     if ( type === 'character' || type === 'monster' ) {
-      const wornOrHeldShields = items.filter(i => i.data.data.worn === true && i.data.data.attributes.shield ||
-                                i.data.data.held === true && i.data.data.attributes.shield);
+      const wornOrHeldShields = items.filter(i => i.data.data.worn === true && !!i.data.data.attributes.shield?.value ||
+                                i.data.data.held === true && !!i.data.data.attributes.shield?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
-      const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !i.data.data.attributes.shield);
+      const wornNonShieldItems = items.filter(i => i.data.data.worn === true && !i.data.data.attributes.shield?.value);
       const armorAcMods = wornNonShieldItems.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
       const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
       const dexAcBonus = Math.min(updateData.dex_mod, ...maxDexBonuses);
