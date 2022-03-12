@@ -179,7 +179,7 @@ Hooks.on("ready", () => {
           }
         } catch (error) {
           ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
-          throw new Error(error);
+          throw error;
         }
       })
     );
@@ -363,7 +363,8 @@ Hooks.on("preUpdateActor", (actor, change) => {
 
 Hooks.on("preUpdateItem", (item, change) => {
   if (change.data?.attributes?.holdable?.value != null) {
-    change.data.held = false;
+    change.data.held_left = false;
+    change.data.held_right = false;
   }
   if (change.data?.attributes?.wearable?.value != null) {
     change.data.worn = false;
