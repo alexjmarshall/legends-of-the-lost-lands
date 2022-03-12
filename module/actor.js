@@ -31,7 +31,7 @@ export class SimpleActor extends Actor {
     //   that affect the derived data calculations below
     //   e.g. ability scores, xp, enc, mv 
 
-    // character, monster, container, merchant
+    // types: character, monster, container, merchant
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -110,6 +110,7 @@ export class SimpleActor extends Actor {
     - belt
     - boots (shoes)
     */
+    // ac, st mods and worn clo
     let resetExposure = false, newDiffClo, oldDiffClo;
     if ( type === 'character' || type === 'monster' ) {
       const wornOrHeldShields = items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
@@ -120,11 +121,39 @@ export class SimpleActor extends Actor {
       const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
       const dexAcBonus = Math.min(updateData.dex_mod, ...maxDexBonuses);
       const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
-      updateData.ac = attributes.ac?.value ?? ac;
+      // updateData.ac = attributes.ac?.value ?? ac;
+      
+      const touch_ac = Constant.AC_MIN + dexAcBonus;
+      updateData.ac = {touch_ac, total: {}};
+      for (const dmgType of Constant.DMG_TYPES) {
+        updateData.ac.total[dmgType] = {
+          ac: 0,
+          dr: 0
+        }
+      }
+
+      // ac and dr for every body area
+      for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) { // TODO only derive AC like this for characters, not monsters
+        updateData.ac[k] = {};
+        const wornCoveringItems = items.filter(i => i.data.data.worn && i.data.data.ac?.locations.includes(k));
+        for (const dmgType of Constant.DMG_TYPES) {
+          const unarmoredAc = Constant.AC_MIN + dexAcBonus + Constant.ARMOR_VS_DMG_TYPE["none"][dmgType].ac;
+          const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE["none"][dmgType].dr;
+          const ac = !wornCoveringItems.length ? unarmoredAc : Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0)) + dexAcBonus;
+          const dr = unarmoredDr + wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0);
+          updateData.ac[k][dmgType] = { ac, dr };
+          updateData.ac.total[dmgType].ac += ac / 100 * v.weights[1]; // index 1 for centre thrust
+          updateData.ac.total[dmgType].dr += dr / 100 * v.weights[1];
+        }
+      }
+      for (const v of Object.values(updateData.ac.total)) {
+        v.ac = Math.round(v.ac) || touch_ac;
+        v.dr = Math.round(v.dr);
+      }
 
       // st_mod
       const stItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right) && i.data.data.attributes.st_mod?.value);
-      const st_mod = stItems.reduce((a, b) => a + (b.data.data.attributes.st_mod?.value || 0), 0);
+      const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0);
       updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
       // worn clo
@@ -143,13 +172,12 @@ export class SimpleActor extends Actor {
       updateData.attitude_map = actorData.attitude_map || {};
     }
 
-    // update actor if any update data is different than existing data
+    // update actor only if update data is different than existing data
     for (const key of Object.keys(updateData)) {
-      if(foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
+      if (foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
         delete updateData[key];
       }
     }
-
     if (this._id && Object.keys(updateData).length) {
       await Util.wait(200);
       await this.update({data: updateData});

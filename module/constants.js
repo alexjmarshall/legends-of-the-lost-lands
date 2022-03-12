@@ -1,7 +1,7 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
-export const AC_MIN = 9;
+export const AC_MIN = 10;
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -44,7 +44,8 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-const ARMOR_VS_DMG_TYPE = {
+export const DMG_TYPES = ["blunt", "piercing", "slashing"];
+export const ARMOR_VS_DMG_TYPE = {
   none: {
     base_AC: 0,
     blunt: {
@@ -430,7 +431,7 @@ export const VOICE_SOUNDS = new Map();
 
 
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
-const HIT_LOCATIONS = {
+export const HIT_LOCATIONS = {
   foot: {
     weights: [4,4,2,2,8,8],
     bilateral: true
