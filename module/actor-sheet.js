@@ -82,7 +82,7 @@ export class SimpleActorSheet extends ActorSheet {
     fatigue.tempDesc = tempDescs[reqClo];
     const diffClo = data.data.clo - reqClo;
     fatigue.exposureDesc = Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
-    const diseases = Object.keys(data.flags.lostlands.disease ?? {});
+    const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
     fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Healthy';
@@ -97,7 +97,7 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   getFatigueStatus(data, type) {
-    const damage = data.data.hp.max < data.data.hp.max_max && data.flags.lostlands[type].maxHpDamage;
+    const damage = data.data.hp.max < data.data.hp.max_max && data.flags?.lostlands[type]?.maxHpDamage;
     const condition = Fatigue.CLOCKS[type].condition;
     const warn = data.effects.map(e => e.label).includes(condition);
     if (damage) return 2;
