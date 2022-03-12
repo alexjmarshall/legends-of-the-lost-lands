@@ -162,7 +162,7 @@ async function useItem(itemId, data={
     Util.macroChatMessage(token, actor, {content, flavor, sound, type}, false);
     Util.chatBubble(token, chatBubbleText);
   } catch (error) {
-    throw new Error(error);
+    throw error;
   }
 }
 
@@ -779,7 +779,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
   const defaultThrowAtkMode = atkModes.find(a => a.includes('throw'));
-  let throwable = attacker.throwable ?? weapAttrs.range?.value && defaultThrowAtkMode;
+  let throwable = attacker.throwable ?? (weapAttrs.range?.value && defaultThrowAtkMode);
 
   // reach values
   const reachValues = weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => t) || [];
@@ -788,9 +788,12 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
+  // reduce max reach by 1 if not holding the weapon with both hands
+  if (!weaponHeldTwoHands) {
+    --reachValues[reachValues.length - 1];
+  }
 
   // tags
-  const backRank = !!weapAttrs.backRank?.value;
   const bonusToShields = !!weapAttrs.bonus_to_shields?.value;
   const bleedBonus = !!weapAttrs.bleed_bonus?.value;
   const chainWeapon = !!weapAttrs.chain_weapon?.value;
@@ -851,7 +854,7 @@ async function attack(attackers, targetToken, options) {
   if (!Object.keys(Constant.ATK_MODES).includes(atkMode)) {
     atkMode = 'attack';
   }
-  
+
   const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE || 'melee';
   const targetArmorItem = targetToken?.actor.items.find(i => i.data.data.worn &&
                           Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
@@ -1615,4 +1618,5 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   return true;
 }
 
-// todo simpify fantigue conditions -- just note on char sheet whether hhungry/thristy etc., use a generalized fatigued/exhausted condition
+// TODO simpify fatigue conditions -- just note on char sheet whether hhungry/thristy etc., use a generalized fatigued/exhausted condition
+// TODO bug: can't delete dex ability scores in attributes tab
