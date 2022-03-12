@@ -103,7 +103,7 @@ export async function macroChatMessage(token, actor, {content, type, flavor, sou
 
 export function getTokenFromActor(actor) {
   const token = actor?.isToken ? actor.token.data :
-    canvas.tokens.objects.children.find(t => t.actor.id === actor?.id);
+    canvas.tokens?.objects?.children.find(t => t.actor.id === actor?.id);
   return token;
 }
 
