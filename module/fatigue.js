@@ -261,12 +261,14 @@ async function syncConditions(char, time) {
     const beforeWarning = time < startTime + warningIntervalInSeconds;
 
     let conditionString = condition.toLowerCase();
+    let resetExposure = false;
     if (type === 'exposure') {
       const diff = diffClo(char);
       conditionString = getExposureConditionString(diff);
+      resetExposure = conditionString === 'cool' || conditionString === 'warm';
     }
-
-    if ( isResting || beforeWarning || conditionString === 'fine' ) {
+  
+    if ( isResting || beforeWarning || resetExposure ) {
       await resetFatigueDamage(char, type);
       continue;
     }
@@ -318,8 +320,9 @@ async function syncDamageClocks(char, time, override=false) {
 
     const data = char.getFlag("lostlands", type);
 
-    // if event is already scheduled, continue
-    if ( data.intervalId && !override ) continue;
+    // if event is already scheduled and override not set, continue
+    const scheduled = TimeQ.find(data.intervalId);
+    if ( scheduled && !override ) continue;
 
     data.intervalId && await TimeQ.cancel(data.intervalId);
     const startTime = Util.prevTime(damageInterval, data.startTime, time);
