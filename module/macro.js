@@ -1424,6 +1424,7 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 
 export async function applyFatigue(actorId, type, execTime, newTime, heal=false) {
   const actor = game.actors.get(actorId);
+  if (!actor) return;
   let dmgMulti, typeString = type;
 
   const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
