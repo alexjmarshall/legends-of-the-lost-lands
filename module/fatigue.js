@@ -30,7 +30,6 @@ import * as Constant from "./constants.js";
 // always make damage roll deferred roll to click?
 // init macro rolls init and starts battle playlist
 // make all ability scores into resource type to store current/max values, to player view just show current value
-// make max_HP a resource, change code so max_max hp refers to max_HP.value, apply energy drain manually not automatic (don't need damage type)
 // fix resources showing max not current value to players
 // thrown needs to be an attack type, not damage type
 // make sound property of weapon item
@@ -91,7 +90,6 @@ export function diffClo(char) {
   const diff = wornClo - requiredClo;
   return diff || 0;
 }
-// startTime, intervalId
 export const CLOCKS = {
   "hunger": {
     warningInterval: { hour: 12 },
@@ -211,7 +209,6 @@ export async function syncFatigueClocks(time, resetClocks=false) {
   
   return Promise.all(
     allChars.map(async (char) => {
-      // TODO clean up/consolidate these functions using resetFatigueClock and resetFatigueDamage
       await syncStartTimes(char, time);
       await syncDamageClocks(char, time, resetClocks);
       await syncConditions(char, time);
@@ -263,7 +260,6 @@ async function syncConditions(char, time) {
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const beforeWarning = time < startTime + warningIntervalInSeconds;
 
-    
     let conditionString = condition.toLowerCase();
     if (type === 'exposure') {
       const diff = diffClo(char);
@@ -288,10 +284,10 @@ async function syncConditions(char, time) {
     if (!warningSound) continue;
 
     if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
-      Util.playVoiceSound(warningSound, char, token, {push: true, bubble: true, chance: 1});
-    } else {
-      Util.playSound(warningSound, token, {push: true, bubble: true});
+      return Util.playVoiceSound(warningSound, char, token, {push: true, bubble: true, chance: 1});
     }
+      
+    return Util.playSound(warningSound, token, {push: true, bubble: true});
   }
 
   // diseases
@@ -303,11 +299,11 @@ async function syncConditions(char, time) {
 }
 
 export function getExposureConditionString(diffClo) {
-  if (diffClo <= -30) return 'extremely cold';
-  if (diffClo <= -10) return 'very cold';
-  if (diffClo < 0) return 'cold';
-  if (diffClo < 10) return 'fine';
-  if (diffClo <= 20) return 'very hot';
+  if (diffClo <= -20) return 'freezing';
+  if (diffClo <= -10) return 'cold';
+  if (diffClo < 0) return 'cool';
+  if (diffClo < 10) return 'warm';
+  if (diffClo <= 20) return 'hot';
   return 'extremely hot';
 }
 
@@ -395,8 +391,7 @@ export async function deleteAllDiseases(actor) {
 
 async function restoreMaxHpDamage(actor, damage) {
   const maxHp = Number(actor.data.data.hp.max);
-  const maxMaxHp = Number(actor.data.data.hp.max_max);
-  const result = Math.min(maxHp + damage, maxMaxHp);
+  const result = maxHp + damage;
   return actor.update({"data.hp.max": result});
 }
 

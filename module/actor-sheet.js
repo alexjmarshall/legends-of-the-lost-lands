@@ -72,6 +72,7 @@ export class SimpleActorSheet extends ActorSheet {
   getFatigueData(data) {
     const fatigue = {};
     const tempDescs = [
+      [-4, 'Extremely hot'],
       [0, 'Hot'],
       [6, 'Warm'],
       [16, 'Cool'],
@@ -80,13 +81,13 @@ export class SimpleActorSheet extends ActorSheet {
     ];
     let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
     if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
-    fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity));
+    fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
     const diffClo = data.data.clo - reqClo;
     fatigue.exposureDesc = Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
-    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Fine';
+    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
     fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
@@ -98,10 +99,14 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   getFatigueStatus(data, type) {
-    const damage = data.data.hp.max < data.data.hp.max_max && data.flags?.lostlands[type]?.maxHpDamage;
-    const condition = Fatigue.CLOCKS[type].condition;
-    const warn = data.effects.map(e => e.label).includes(condition);
+    const flagData = data.flags?.lostlands[type] || {};
+    const damage = !!flagData.maxHpDamage;
     if (damage) return 2;
+    const startTime = flagData.startTime;
+    const warningInterval = Fatigue.CLOCKS[type].warningInterval;
+    const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
+    const time = Util.now();
+    const warn = time >= startTime + warningIntervalInSeconds;
     if (warn) return 1;
     return 0;
   }
