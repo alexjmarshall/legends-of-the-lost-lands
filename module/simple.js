@@ -67,10 +67,10 @@ Hooks.once("init", async function() {
     onChange: formula => _simpleUpdateInit(formula, true)
   });
 
-  // required Clo setting
+  // required Clo setting TODO be able to set this as environmental temperature, possibly reset every day by random modifier applied to reqClo by season
   game.settings.register("lostlands", "requiredClo", {
     name: "Required Clo",
-    hint: "The warmth of clothing required to not suffer exposure damage",
+    hint: "The warmth of clothing required to not suffer exposure damage. Equal to 36 - 10 - environmental temp.",
     scope: "world",
     type: Number,
     default: 1,
@@ -84,7 +84,7 @@ Hooks.once("init", async function() {
       allChars.map(async (char) => {
         const wornClo = char.data.data.clo;
         const diff = wornClo - requiredClo;
-        const isFine = diff >= 0 && diff < 1;
+        const isFine = diff >= 0 && diff < 10;
         if (isFine) {
           return Fatigue.resetFatigueDamage(char, 'exposure');
         }

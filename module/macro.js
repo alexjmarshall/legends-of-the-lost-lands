@@ -257,7 +257,7 @@ export async function eatFood(itemId, options={}) {
 
     // reset thirst to 12 hours ago if this is later than last drink time
     const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
-    const thirstData = actor.getFlag("lostlands", 'thirst');
+    const thirstData = actor.getFlag("lostlands", 'thirst') || {};
     const lastDrinkTime = thirstData.startTime;
     if (twelveHoursAgo > lastDrinkTime) {
       await Fatigue.resetFatigueType(actor, 'thirst', twelveHoursAgo);
@@ -1439,7 +1439,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
     const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
     const diffClo = Fatigue.diffClo(actor);
-    dmgMulti = Math.floor(Math.abs(diffClo));
+    dmgMulti = Math.floor(Math.abs(diffClo) / 10);
     if (dmgMulti === 0) return;
     typeString = diffClo < 0 ? 'cold' : 'heat';
   }
@@ -1452,7 +1452,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   const dice = `${numDice}${damageDice}${dmgMulti ? `*${dmgMulti}` : ''}`;
 
   const result = await applyFatigueDamage(actor, typeString, dice, heal);
-  const data = actor.getFlag("lostlands", type);
+  const data = actor.getFlag("lostlands", type) || {};
   data.maxHpDamage = data.maxHpDamage + result || result;
 
   await actor.setFlag("lostlands", type, data);

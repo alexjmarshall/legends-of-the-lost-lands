@@ -71,15 +71,16 @@ export class SimpleActorSheet extends ActorSheet {
 
   getFatigueData(data) {
     const fatigue = {};
-    const tempDescs = {
-      0: 'Hot',
-      1: 'Warm',
-      2: 'Cool',
-      3: 'Cold',
-      4: 'Freezing',
-    };
-    const reqClo = game.settings.get("lostlands", "requiredClo");
-    fatigue.tempDesc = tempDescs[reqClo];
+    const tempDescs = [
+      [0, 'Hot'],
+      [6, 'Warm'],
+      [16, 'Cool'],
+      [16, 'Cold'],
+      [26, 'Freezing'],
+    ];
+    let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
+    if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
+    fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity));
     const diffClo = data.data.clo - reqClo;
     fatigue.exposureDesc = Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});

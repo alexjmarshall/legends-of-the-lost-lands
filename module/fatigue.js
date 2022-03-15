@@ -80,10 +80,10 @@ export const REST_TYPES = {
   "Royal": "d10",
 };
 const REQ_CLO_BY_SEASON = {
-  "summer": 1,
-  "fall": 2,
-  "spring": 2,
-  "winter": 3
+  "summer": 6,
+  "fall": 16,
+  "spring": 16,
+  "winter": 26
 };
 export function diffClo(char) {
   const requiredClo = game.settings.get("lostlands", "requiredClo");
@@ -172,7 +172,7 @@ export const DISEASES = {
 };
 
 export async function resetFatigueDamage(actor, type) {
-  const data = actor.getFlag("lostlands", type);
+  const data = actor.getFlag("lostlands", type) || {};
   const damage = data.maxHpDamage;
   if (damage) {
     data.maxHpDamage = 0;
@@ -184,7 +184,7 @@ export async function resetFatigueDamage(actor, type) {
 }
 
 export async function resetFatigueClock(actor, type, time) {
-  const data = actor.getFlag("lostlands", type);
+  const data = actor.getFlag("lostlands", type) || {};
   data.startTime = time;
   const {damageInterval} = CLOCKS[type];
   data.intervalId && await TimeQ.cancel(data.intervalId);
@@ -303,11 +303,11 @@ async function syncConditions(char, time) {
 }
 
 export function getExposureConditionString(diffClo) {
-  if (diffClo <= -3) return 'extremely cold';
-  if (diffClo <= -1) return 'very cold';
+  if (diffClo <= -30) return 'extremely cold';
+  if (diffClo <= -10) return 'very cold';
   if (diffClo < 0) return 'cold';
-  if (diffClo < 1) return 'fine';
-  if (diffClo <= 2) return 'very hot';
+  if (diffClo < 10) return 'fine';
+  if (diffClo <= 20) return 'very hot';
   return 'extremely hot';
 }
 
@@ -403,8 +403,8 @@ async function restoreMaxHpDamage(actor, damage) {
 export async function clearMaxHpDamage(actor) {
   // clocks
   for (const type of Object.keys(CLOCKS)) {
-    const data = actor.getFlag("lostlands", type);
-    if (data?.maxHpDamage !== 0) {
+    const data = actor.getFlag("lostlands", type) || {};
+    if (data.maxHpDamage !== 0) {
       data.maxHpDamage = 0;
       await actor.setFlag("lostlands", type, data);
     }
