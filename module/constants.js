@@ -249,6 +249,7 @@ export const ATK_MODES = {
     HIT_SOUND: undefined,
     MISS_SOUND: undefined,
     DMG_TYPE: undefined,
+    ATK_TYPE: "melee"
   },
   "swing(b)": {
     ATK_ATTR: "str",
@@ -256,6 +257,7 @@ export const ATK_MODES = {
     HIT_SOUND: "bludgeon_hit",
     MISS_SOUND: "bludgeon_miss",
     DMG_TYPE: "blunt",
+    ATK_TYPE: "melee"
   },
   "swing(s)": {
     ATK_ATTR: "str",
@@ -263,6 +265,7 @@ export const ATK_MODES = {
     HIT_SOUND: "cut_hit",
     MISS_SOUND: "cut_miss",
     DMG_TYPE: "slashing",
+    ATK_TYPE: "melee"
   },
   "swing(p)": {
     ATK_ATTR: "str",
@@ -270,6 +273,7 @@ export const ATK_MODES = {
     HIT_SOUND: "hew_hit",
     MISS_SOUND: "hew_miss",
     DMG_TYPE: "piercing",
+    ATK_TYPE: "melee"
   },
   "thrust(b)": {
     ATK_ATTR: "dex",
@@ -277,6 +281,7 @@ export const ATK_MODES = {
     HIT_SOUND: "bludgeon_hit",
     MISS_SOUND: "bludgeon_miss",
     DMG_TYPE: "blunt",
+    ATK_TYPE: "melee"
   },
   "thrust(s)": {
     ATK_ATTR: "dex",
@@ -284,6 +289,7 @@ export const ATK_MODES = {
     HIT_SOUND: "hew_hit",
     MISS_SOUND: "hew_miss",
     DMG_TYPE: "slashing",
+    ATK_TYPE: "melee"
   },
   "thrust(p)": {
     ATK_ATTR: "dex",
@@ -291,6 +297,7 @@ export const ATK_MODES = {
     HIT_SOUND: "thrust_hit",
     MISS_SOUND: "thrust_miss",
     DMG_TYPE: "piercing",
+    ATK_TYPE: "melee"
   },
   "shoot(b)": {
     ATK_ATTR: "dex",
@@ -298,6 +305,7 @@ export const ATK_MODES = {
     HIT_SOUND: "slingstone_hit",
     MISS_SOUND: "slingstone_miss",
     DMG_TYPE: "blunt",
+    ATK_TYPE: "missile"
   },
   "shoot(s)": {
     ATK_ATTR: "dex",
@@ -305,6 +313,7 @@ export const ATK_MODES = {
     HIT_SOUND: "arrow_hit",
     MISS_SOUND: "arrow_miss",
     DMG_TYPE: "slashing",
+    ATK_TYPE: "missile"
   },
   "shoot(p)": {
     ATK_ATTR: "dex",
@@ -312,6 +321,7 @@ export const ATK_MODES = {
     HIT_SOUND: "bolt_hit",
     MISS_SOUND: "bolt_miss",
     DMG_TYPE: "piercing",
+    ATK_TYPE: "missile"
   },
   "throw(b)": {
     ATK_ATTR: "dex",
@@ -319,6 +329,7 @@ export const ATK_MODES = {
     HIT_SOUND: "throw_hit",
     MISS_SOUND: "throw_miss",
     DMG_TYPE: "blunt",
+    ATK_TYPE: "missile"
   },
   "throw(s)": {
     ATK_ATTR: "dex",
@@ -326,6 +337,7 @@ export const ATK_MODES = {
     HIT_SOUND: "throw_hit",
     MISS_SOUND: "throw_miss",
     DMG_TYPE: "slashing",
+    ATK_TYPE: "missile"
   },
   "throw(p)": {
     ATK_ATTR: "dex",
@@ -333,6 +345,7 @@ export const ATK_MODES = {
     HIT_SOUND: "throw_hit",
     MISS_SOUND: "throw_miss",
     DMG_TYPE: "piercing",
+    ATK_TYPE: "missile"
   },
 };
 export const VOICE_MOODS = {
