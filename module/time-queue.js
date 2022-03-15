@@ -35,6 +35,10 @@ class TimeQueue {
     return this.save();
   }
 
+  find(id) {
+    return this._heap.find(id, e => e.id);
+  }
+
   async cancel(id) {
     const result = this._heap.remove(id, e => e.id);
     if (result) {
@@ -78,6 +82,8 @@ class TimeQueue {
   }
 
   async _scheduleDoEvery(interval, start, newTime, macroId, scope, id=Util.uniqueId()) {
+    // if actorId in scope, ensure actor still exists in game
+    if (scope.actorId && !game.actors.get(String(scope.actorId))) return;
     const nextTime = Util.nextTime(interval, start, newTime);
     scope = {
       ...scope,

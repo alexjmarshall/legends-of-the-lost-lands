@@ -29,6 +29,16 @@ BinaryHeap.prototype = {
     return result;
   },
 
+  find: function(nodeId, identify) {
+    var length = this.content.length;
+    for (var i = 0; i < length; i++) {
+      if (identify(this.content[i]) === nodeId) {
+        return true;
+      };
+    }
+    return false;
+  },
+
   remove: function(nodeId, identify) {
     var length = this.content.length;
     // To remove a value, we must search through the array to find
