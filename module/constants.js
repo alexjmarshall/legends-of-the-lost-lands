@@ -45,6 +45,68 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
 export const DMG_TYPES = ["blunt", "piercing", "slashing"];
+export const MATERIAL_WARMTH_WEIGHT = {
+  linen: {
+    weight:3,
+    warmth:12,
+  },
+  wool: {
+    weight:4,
+    warmth:20,
+  },
+  silk: {
+    weight:2,
+    warmth:16,
+  },
+  fur: {
+    weight:6,
+    warmth:36,
+  },
+  padded: {
+    weight:4,
+    warmth:24,
+  },
+  leather: {
+    weight:6,
+    warmth:10,
+  },
+  brigandine: {
+    weight:20,
+    warmth:18,
+  },
+  chain: {
+    weight:12,
+    warmth:2,
+  },
+  "elven chain": {
+    weight:6,
+    warmth:1,
+  },
+  scale: {
+    weight:24,
+    warmth:12,
+  },
+  lamellar: {
+    weight:22,
+    warmth:14,
+  },
+  splint: {
+    weight:18,
+    warmth:16,
+  },
+  "banded mail": {
+    weight:14,
+    warmth:6,
+  },
+  "iron plate": {
+    weight:18,
+    warmth:10,
+  },
+  "steel plate": {
+    weight:16,
+    warmth:8,
+  },
+};
 export const ARMOR_VS_DMG_TYPE = {
   none: {
     base_AC: 0,
