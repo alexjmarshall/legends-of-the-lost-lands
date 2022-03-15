@@ -351,7 +351,8 @@ export function heldWeaponAttackMacro(options={}) {
     const weapIds = weapons.map((w, i) => {
       return Object.create({
         id: w.id,
-        offhand: i === 0 && weapons.length > 1
+        offhand: i === 0 && weapons.length > 1,
+        mainhand: i > 0,
       })
     });
 
@@ -400,7 +401,7 @@ export function attackRoutineMacro(options={}) {
   const targets = [...game.user.targets];
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
-  options.offhand = false;
+  options.twoWeaponFighting = false;
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -657,7 +658,14 @@ async function attack(attackers, targetToken, options) {
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
   const attacks = attacker.attacks;
-  const targetRollData = targetToken?.actor.getRollData();
+  const attackerRollData = token.actor.getRollData();
+  if (!attackerData) {
+    ui.notifications.error("Invalid attacker data");
+    attackers.shift();
+    return attack(attackers, targetToken, options);
+  }
+  const targetActor = targetToken?.actor;
+  const targetRollData = targetActor.getRollData();
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
@@ -721,7 +729,7 @@ async function attack(attackers, targetToken, options) {
     weaponItem = actorItems.get(weapon.id) || actorItems.find(i => Util.stringMatch(i.name, weapon.id));
   }
 
-  // checks for valid data
+  // checks for valid weapon data
   if (!weaponItem) {
     ui.notifications.error("Could not find item on this character");
     weapons.shift();
@@ -732,13 +740,11 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-
   if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-
   const weapName = weaponItem.name;
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
@@ -746,7 +752,6 @@ async function attack(attackers, targetToken, options) {
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
-
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
     weapons.shift();
@@ -764,7 +769,7 @@ async function attack(attackers, targetToken, options) {
     }
     if (weapon.dwSideTwo) {
       weapDmg = dmgs[1];
-      options.offhand = false;
+      options.twoWeaponFighting = false;
     } else {
       weapDmg = dmgs[0];
       if (weaponHeldTwoHands) weapons.push(Object.assign(weapon, {dwSideTwo: true}));
@@ -783,23 +788,20 @@ async function attack(attackers, targetToken, options) {
 
   // reach values
   const reachValues = weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => t) || [];
-  if (!reachValues.length) {
-    ui.notifications.error("Invalid reach specified");
-    weapons.shift();
-    return attack(attackers, targetToken, options);
-  }
-  // reduce max reach by 1 if not holding the weapon with both hands
-  if (!weaponHeldTwoHands) {
-    --reachValues[reachValues.length - 1];
+
+  // reduce max reach to max 1 if not holding the weapon with both hands
+  if (!weaponHeldTwoHands && reachValues.length) {
+    reachValues[reachValues.length - 1] = Math.min(reachValues[reachValues.length - 1], 1);
   }
 
-  // tags
+  // weapon tags
   const bonusToShields = !!weapAttrs.bonus_to_shields?.value;
   const bleedBonus = !!weapAttrs.bleed_bonus?.value;
   const chainWeapon = !!weapAttrs.chain_weapon?.value;
   const fragile = !!weapAttrs.fragile?.value;
-  const unwieldy = weapAttrs.unwieldy?.value;
-  const reload = weapAttrs.reload?.value;
+  const unwieldy = !!weapAttrs.unwieldy?.value;
+  const reload = !!weapAttrs.reload?.value;
+  const energyDrain = !!weapAttrs.energy_drain?.value;
   
   // reload item if needed
   const loaded =  weaponItem.data.data.loaded;
@@ -811,16 +813,18 @@ async function attack(attackers, targetToken, options) {
   }
 
   // automatic throw if target beyond max reach in feet
-  const maxReach = reachValues[reachValues.length - 1] * 5;
+  const maxReach = reachValues[reachValues.length - 1] * 5 || -1;
   if ( range > maxReach && throwable && weapon.atkMode == null ) {
     weapon.atkMode = defaultThrowAtkMode;
     attacker.showAltDialog = false;
   }
   
-  // offhand
-  const offhand = options.offhand ?? weapon.offhand;
+  const mainhand = weapon.mainhand && options.twoWeaponFighting !== false;
+  const offhand = weapon.offhand && options.twoWeaponFighting !== false;
+  
+  const thrown = weapon.atkMode.toLowerCase().includes('throw');
   // throwing offhand weapon is not allowed
-  if ( offhand === true && weapon.atkMode.toLowerCase().includes('throw') ) {
+  if ( offhand === true && thrown ) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -831,7 +835,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  // show attack choice dialogs
+  // attack choice dialog
   if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = atkModes.map(mode => {
       return {label: Util.upperCaseFirst(mode), value: mode}
@@ -855,18 +859,30 @@ async function attack(attackers, targetToken, options) {
     atkMode = 'attack';
   }
 
-  const atkType = Constant.DMG_TYPES[dmgType].ATK_TYPE || 'melee';
-  const targetArmorItem = targetToken?.actor.items.find(i => i.data.data.worn &&
-                          Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
-  const targetArmorType = targetArmorItem?.data.data.attributes.type?.value ||
-                          targetToken?.actor.data.data.attributes.armor_type?.value || 'none';
-  const vsACMod = Constant.DMG_TYPES[dmgType].VS_AC_MODS[targetArmorType];
-  const maxRange = atkType === 'missile' ? (weapAttrs.max_range?.value || 0) : meleeRange;
-  if (range > +maxRange) {
-    ui.notifications.error("Target is beyond maximum range for this weapon");
+  const atkType = Constant.ATK_MODES[atkMode].ATK_TYPE;
+  const dmgType = Constant.ATK_MODES[atkMode].DMG_TYPE;
+
+  // check if target is beyond reach/range
+  const weaponRange = +weapAttrs.range?.value;
+  const missileAtk = atkType === 'missile';
+  if (missileAtk && !weaponRange) {
+    ui.notifications.error("Invalid range specified");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
+  if (!missileAtk && (!maxReach || maxReach < 0)) {
+    ui.notifications.error("Invalid reach specified");
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+  const maxRange = missileAtk ? weaponRange : maxReach;
+  if (range > +maxRange) {
+    ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of this weapon`);
+    weapons.shift();
+    return attack(attackers, targetToken, options);
+  }
+
+  // mod dialog
   if ( options.showModDialog && !options.shownModDialog ) {
     const fields = [
       {label: 'Attack modifiers?', key: 'dialogAtkMod'}
@@ -884,27 +900,32 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  // get actor and its properties
-  const rollData = token.actor.getRollData();
-  const bab = rollData.bab || 0;
-  const strMod = rollData.str_mod || 0;
-  const dexMod = rollData.dex_mod || 0;
-  const offhandAtkPenalty = offhand ? -2 : 0;
-  const attrAtkMod = (atkType === 'missile' || finesse) ? dexMod : strMod;
-  const attrDmgMod = (atkType === 'missile' && dmgType !== 'throw' || offhand) ? 0 : strMod;
-  const actorAtkMod = rollData.atk_mod || 0;
-  const actorDmgMod = rollData.dmg_mod || 0;
-  const attackerAtkMod = attacker.atkMod;
+  // get attacker's properties
+  const bab = attackerRollData.bab || 0;
+  const strMod = attackerRollData.str_mod || 0;
+  const dexMod = attackerRollData.dex_mod || 0;
+  const twoWeaponFightingPenalty = mainhand ? -3 + dexMod : offhand ? -5 + dexMod : 0;
+  const attrAtkMod = Constant.ATK_MODES[ATK_ATTR];
+  const attrDmgMod = Constant.ATK_MODES[DMG_ATTR];
+  const attackerAttrAtkMod = attackerRollData.atk_mod || 0;
+  const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
+  const attackerAtkMod = attacker.atkMod || 0;
+  const attackerDmgMod = attacker.dmgMod || 0;
 
   // get target's properties
-  const preventCrit = targetToken?.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'helmet'));
+  // can be immune to lucky hits, critical hits, bleed, knockdown and impale
+  const immuneLuckyHits = !!targetRollData?.immune_lucky_hits;
+  const immuneCriticalHits = !!targetRollData?.immune_critical_hits;
+  const immuneBleed = !!targetRollData?.immune_bleed;
+  const immuneKnockdown = !!targetRollData?.immune_knockdown;
+  const immuneImpale = !!targetRollData?.immune_impale;
 
   // determine range penalty and reduce qty of thrown weapon/missile
   let rangePenalty;
   if (atkType === 'missile') {
     rangePenalty = -Math.abs(Math.floor(range / 10));
     // reduce qty of thrown weapon/missile
-    if (dmgType === 'throw') {
+    if (thrown) {
       try {
         await Util.reduceItemQty(weaponItem, token.actor);
       } catch (error) {
@@ -913,13 +934,11 @@ async function attack(attackers, targetToken, options) {
         return attack(attackers, targetToken, options);
       }
     } else {
-      const quiver = token.actor.items.find(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'quiver'));
+      const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
       const quiverQty = quiver?.data.data.quantity;
-      const matchWeap = dmgType === 'bolt' ? quiver?.name?.toLowerCase()?.includes('bolt') :
-        dmgType === 'arrow' ? quiver?.name?.toLowerCase()?.includes('arrow') : true;
 
       try {
-        if( !quiver || !quiverQty || !matchWeap ) {
+        if( !quiver || !quiverQty ) {
           throw new Error("Nothing found to shoot from this weapon");
         }
         const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
@@ -934,24 +953,32 @@ async function attack(attackers, targetToken, options) {
     }
   }
 
+  // if (isCrit) dmgText += ` + ${Util.chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
+
   // put together chat message content
   const d20Result = await Util.rollDice("d20");
+  const isLuckyHit = d20Result >= 20 && !immuneLuckyHits;
+  if (isLuckyHit) weapDmg = `${weapDmg}+${weapDmg}`;
   const weapDmgResult = await Util.rollDice(weapDmg);
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${offhandAtkPenalty ? `+${offhandAtkPenalty}` : ''}`;
-  totalAtk += `${actorAtkMod ? `+${actorAtkMod}` : ''}${weapAtkMod ? `+${weapAtkMod}` : ''}${vsACMod ? `+${vsACMod}` : ''}`;
-  totalAtk += `${rangePenalty ? `+${rangePenalty}` : ''}${dialogAtkMod ? `+${dialogAtkMod}` : ''}${attackerAtkMod ? `+${attackerAtkMod}` : ''}`;
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${attrDmgMod ? `+${attrDmgMod}` : ''}`;
-  totalDmg += `${actorDmgMod ? `+${actorDmgMod}` : ''}${dialogDmgMod ? `+${dialogDmgMod}` : ''}`;
-  let dmgText = `${totalDmg ? ` for ${Util.chatInlineRoll(totalDmg)}` : ''}`;
-  const isCrit = d20Result >= critMin && !preventCrit;
-  if (isCrit) dmgText += ` + ${Util.chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
-  dmgText += ' damage';
-  let rangeText = range && rangePenalty ? ` ${range}'` : '';
-  let hitSound = Constant.DMG_TYPES[dmgType].HIT_SOUND, missSound = Constant.DMG_TYPES[dmgType].MISS_SOUND;
-  let resultText = '';
+  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}`;
+  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
+  let dmgText = `${totalDmg ? ` for ${Util.chatInlineRoll(totalDmg)}` : ''} damage`;
+  
+  const rangeText = range && rangePenalty ? ` ${range}'` : '';
+  const hitSound = Constant.ATK_MODES[atkMode].HIT_SOUND;
+  const missSound = Constant.ATK_MODES[atkMode].MISS_SOUND;
+  let resultText = isLuckyHit ? ` <span style="${resultStyle('#FFFF5C')}">LUCKY HIT</span>` : '';
   let resultSound = missSound;
   let isHit = true;
-  let targetAc = targetRollData?.ac;
+  let targetAc = Number(targetRollData?.ac.total[dmgType].ac);
+  if ( targetActor?.type === 'character' || !!targetRollData?.type.value === 'humanoid' ) {
+    // roll for hit location
+    const hitLocRoll = await Util.rollDice("d100");
+    let atkForm = atkMode.includes('swing') ? 'SWING' : 'THRUST'; // TODO swing high/low, from atk mode dialog? -2 to swing high
+    let hitLoc = Constant.HIT_LOC_ARRS[atkForm][hitLocRoll - 1].replace('right ', '').replace('left ', '');
+    targetAc = Number(targetRollData?.ac[hitLoc][dmgType]);
+  }
+  
   if (!isNaN(targetAc)) {
     // handle situational AC mods
     // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
@@ -967,8 +994,9 @@ async function attack(attackers, targetToken, options) {
     ).flat();
     const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
     targetAc += shieldWallMod;
-    if (atkType === 'missile') {
-      // disregard bucklers
+
+    if (missileAtk) {
+      // disregard bucklers vs. missile
       const bucklersHeld = targetToken.actor.items.filter(i => (i.data.data.held_left || i.data.data.held_right) &&
                            !!i.data.data.attributes.shield?.value &&
                            Util.stringMatch(i.data.data.attributes.size?.value, 'T'));
@@ -976,7 +1004,7 @@ async function attack(attackers, targetToken, options) {
         const mod = +i.data.data.attributes.ac_mod?.value || 0;
         targetAc -= mod;
       });
-      // -1 for medium shield
+      // -1 for medium shield vs. missile
       const medShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
                                !!i.data.data.attributes.shield?.value &&
                                Util.stringMatch(i.data.data.attributes.size?.value, 'M'));
@@ -984,60 +1012,61 @@ async function attack(attackers, targetToken, options) {
         targetAc -= 1;
       });
     }
-    if (unwieldy) {
-      // disregard shield mods if weapon is unwieldy, e.g. flail
+
+    if (chainWeapon) {
+      // disregard all shield mods if weapon is unwieldy, e.g. flail
       const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
                                 (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
       targetAc -= shieldAcMods;
     }
+
     const totalAtkResult = await Util.rollDice(totalAtk);
-    isHit = totalAtkResult >= targetAc;
+    // 1 always misses and 20 (lucky hit) always hits
+    isHit = d20Result > 1 && totalAtkResult >= targetAc || isLuckyHit;
     if (isHit) {
-      resultText = ` vs. AC ${targetAc} ${attacker.hitText ? attacker.hitText : `<span style="${resultStyle('#7CCD7C')}">HIT</span>`}`;
+      const hitStyle = attacker.hitText ? attacker.hitText : 
+                       isLuckyHit ? `<span style="${resultStyle('#FFFF5C')}">LUCKY HIT</span>` :
+                       `<span style="${resultStyle('#7CCD7C')}">HIT</span>`;
+      resultText = ` vs. AC ${targetAc} ${hitStyle}${hitLoc ? ` in the ${hitLoc}` : ''}`;
       resultSound = hitSound;
     } else {
       resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#EE6363')}">MISS</span>`;
     }
   }
 
-  if ( isCrit && isHit ) resultText = `${targetAc ? ` vs. AC ${targetAc}` : ''} <span style="${resultStyle('#FFFF5C')}">CRIT</span>`;
-  if ( unwieldy && atkType === 'melee' && d20Result === 1)  {
-    isHit = true;
-    resultText += ` hit self`;
-    resultSound = hitSound;
-  }
-
-  // add hit location based on attack mode, if target is a character
-  const hitLocRoll = await Util.rollDice("d100");
-  const hitLoc = Constant.HIT_LOC_ARRS.SWING[hitLocRoll - 1];
-  if ( targetToken?.actor && isHit ) {
-    resultText += hitLoc ? ` in the ${hitLoc}` : '';
-  }
+  // if ( unwieldy && atkType === 'melee' && d20Result === 1)  { // TODO fumble instead of roll 1. fragile also possible fumble result
+  //   isHit = true;
+  //   resultText += ` hit self`;
+  //   resultSound = hitSound;
+  // }
+  // if ( fragile && atkType === 'melee' && d20Result === 1 ) {
+  //   resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
+  //   resultSound = 'weapon_break';
+  //   try {
+  //     await Util.reduceItemQty(weaponItem, token.actor);
+  //   } catch (error) {
+  //     ui.notifications.error(error);
+  //     weapons.shift();
+  //     return attack(attackers, targetToken, options);
+  //   }
+  // }
 
   if (isHit) resultText += dmgText;
-  if ( fragile && atkType === 'melee' && d20Result === 1 ) {
-    resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
-    resultSound = 'weapon_break';
-    try {
-      await Util.reduceItemQty(weaponItem, token.actor);
-    } catch (error) {
-      ui.notifications.error(error);
-      weapons.shift();
-      return attack(attackers, targetToken, options);
-    }
-  }
 
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
   chatMsgData.bubbleString += `${token.actor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
 
-  const totalDmgResult = await Util.rollDice(totalDmg);
+  // if applying damage automatically, roll it now and add it to attacks object
+  let damage = null;
+  let energyDrainDamage = null;
+  const applyDamage = isHit && targetActor && options.applyEffect === true && game.user.isGM;
 
   attacks.push({
     sound: resultSound,
-    damage: isHit && targetToken?.actor && options.applyEffect === true && game.user.isGM ? totalDmgResult : null,
-    energyDrainDamage: dmgType === 'energy drain' ? totalDmgResult : null
+    damage: applyDamage ? totalDmgResult : null,
+    energyDrainDamage: applyDamage && energyDrain ? totalDmgResult : null // remember to always apply damage for energy drain
   });
 
   const sumDmg = attacks.reduce((sum, a) => sum + a.damage, 0);
