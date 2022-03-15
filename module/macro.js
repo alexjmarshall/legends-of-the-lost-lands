@@ -686,10 +686,9 @@ async function attack(attackers, targetToken, options) {
       const hpUpdate = targetHp - attack.damage;
       const update = {"data.hp.value": hpUpdate};
       if (attack.energyDrainDamage) {
-        const maxMaxHp = +targetToken?.actor.data.data.hp?.max_max;
         const maxHp = +targetToken?.actor.data.data.hp?.max;
-        const dmg = Math.min(attack.energyDrainDamage, maxHp, maxMaxHp);
-        Object.assign(update, {"data.hp.max_max": maxMaxHp - dmg, "data.hp.max": maxHp - dmg});
+        const dmg = Math.min(attack.energyDrainDamage, maxHp);
+        Object.assign(update, {"data.hp.max": maxHp - dmg});
         const storedDamage = targetToken.actor.getFlag("lostlands", "energyDrainDamage") || 0;
         await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + dmg);
       }

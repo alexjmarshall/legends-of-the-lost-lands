@@ -208,11 +208,10 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
 
-      // change requiredClo if season changes
-      const oldSeason = SimpleCalendar.api.timestampToDate(oldTime).currentSeason?.name.toLowerCase();
-      const newSeason = SimpleCalendar.api.timestampToDate(newTime).currentSeason?.name.toLowerCase();
-      if (newSeason != oldSeason) {
-        const reqClo = Fatigue.reqClo(newSeason);
+      // sync requiredClo to current season //TODO random weather
+      const reqClo = Fatigue.reqClo();
+      const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
+      if (reqClo != currentReqCloSetting) {
         await game.settings.set("lostlands", "requiredClo", reqClo);
       }
 
@@ -338,9 +337,9 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const maxMaxHp = actor.data.data.hp?.max_max;
   const token = Util.getTokenFromActor(actor);
 
-  if (maxHp < maxMaxHp && maxHpUpdate >= maxMaxHp) {
-    Fatigue.clearMaxHpDamage(actor);
-  }
+  // if (maxHp < maxMaxHp && maxHpUpdate >= maxMaxHp) {
+  //   Fatigue.clearMaxHpDamage(actor);
+  // }
 
   if ( hpUpdate < 0 && targetHp >= 0 && actor.type === 'character' && actor.hasPlayerOwner ) {
     Util.macroChatMessage(token, actor, {
