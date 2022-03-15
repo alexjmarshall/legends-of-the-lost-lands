@@ -191,9 +191,7 @@ Hooks.on("ready", () => {
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      await Fatigue.syncFatigueClocks(now);
-      const reqClo = Fatigue.reqClo();
-      await game.settings.set("lostlands", "requiredClo", reqClo);
+      await Fatigue.syncFatigueClocks(now, true);
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -208,11 +206,15 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
 
-      // sync requiredClo to current season //TODO random weather
-      const reqClo = Fatigue.reqClo();
-      const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
-      if (reqClo != currentReqCloSetting) {
-        await game.settings.set("lostlands", "requiredClo", reqClo);
+      // sync requiredClo to current season when day changes //TODO weather macro
+      const oldDay = SimpleCalendar.api.secondsToInterval(oldTime)?.day;
+      const newDay = SimpleCalendar.api.secondsToInterval(newTime)?.day;
+      if (oldDay != newDay) {
+        const reqClo = Fatigue.reqClo();
+        const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
+        if (reqClo != currentReqCloSetting) {
+          await game.settings.set("lostlands", "requiredClo", reqClo);
+        }
       }
 
       // if going back in time, clear event queue,
