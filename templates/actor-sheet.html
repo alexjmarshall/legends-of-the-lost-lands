@@ -72,10 +72,10 @@
             {{#each data.equipment as |type key|}}
             <header class="items-header flexrow">
                 <span style="text-align: center;">
-                    {{#ifeq key "holdable"}}Holdable Items{{else}}
-                    {{#ifeq key "wearable"}}Wearable Items{{else}}
-                    {{#ifeq key "magic"}}Misc. Magic Items{{else}}
-                    {{#ifeq key "other"}}Other Items{{else}}
+                    {{#ifeq key "holdable"}}Held{{else}}
+                    {{#ifeq key "wearable"}}Worn{{else}}
+                    {{#ifeq key "magic"}}Misc. Magic{{else}}
+                    {{#ifeq key "other"}}Other{{else}}
                     {{key}}
                     {{/ifeq}}
                     {{/ifeq}}
@@ -140,9 +140,9 @@
             {{#each data.spells as |spelltype key|}}
             <header class="spells-header flexrow">
                 <span style="text-align: center;">
-                    {{#ifeq key "spell_magic"}}Magic Spells{{else}}
-                    {{#ifeq key "spell_cleric"}}Cleric Spells{{else}}
-                    {{#ifeq key "spell_witch"}}Witch Spells{{else}}
+                    {{#ifeq key "spell_magic"}}Magic{{else}}
+                    {{#ifeq key "spell_cleric"}}Cleric{{else}}
+                    {{#ifeq key "spell_witch"}}Witch{{else}}
                     {{key}}
                     {{/ifeq}}
                     {{/ifeq}}
@@ -191,7 +191,7 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each data.features as |source key|}}
             <header class="features-header flexrow">
-                <span style="text-align: center;">{{key}} Features</span>
+                <span style="text-align: center;">{{key}}</span>
             </header>
             <ol class="item-list">
                 {{#each source as |feature id|}}
@@ -242,39 +242,6 @@
         </div>
 
         {{#if isCharacter}}
-        {{!-- Voice Tab --}}
-        <div class="tab voice" data-group="primary" data-tab="voice">
-            <div class="flexrow voice-selection" {{#if hideVoiceSelection}}style="display:none;"{{/if}}>
-                <div class="voice-choice">
-                    <label>Voice</label>
-                    <select class="voice-select" {{#if hasVoice}}disabled{{/if}}>
-                        {{#select systemData.voice}}
-                        {{#each data.voiceProfiles}}
-                        <option value="{{this}}">{{this}}</option>
-                        {{/each}}
-                        {{/select}}
-                    </select>
-                    <a class="voice-preview" title="Preview Voice"><i class="fas fa-volume-up"></i></a>
-                </div>
-                <div><button class="voice-select-button" {{#if hasVoice}}disabled{{/if}}>Select voice</button></div>
-                {{#if isGM}}
-                <div><button class="voice-reset-button" {{#if noVoice}}disabled{{/if}}>Reset voice</button></div>
-                {{/if}}
-            </div>
-            {{#if noVoice}}
-            <p class="voice-note"><span class="label">Note:</span>Before selecting your voice, any sounds you play using the buttons below will be audible only to you.
-                After selecting your voice, sounds you play here will be audible to everyone.
-            </p>
-            {{/if}}
-            {{#if showSoundBoard}}
-            {{#each data.voiceMoods}}
-            <button class="voice-play" title="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}" data-mood="{{this.mood}}">
-                <img style="pointer-events: none;" src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}"/>
-            </button>
-            {{/each}}
-            {{/if}}
-        </div>
-
         {{!-- Fatigue Tab --}}
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
             <div class="flexrow">
@@ -309,6 +276,39 @@
                 <input class="fatigue-label" type="text" value="Food" readonly />
                 <input class="fatigue-value" type="text" value="{{data.fatigue.hungerDesc}}" readonly />
             </div>
+        </div>
+
+        {{!-- Voice Tab --}}
+        <div class="tab voice" data-group="primary" data-tab="voice">
+            <div class="flexrow voice-selection" {{#if hideVoiceSelection}}style="display:none;"{{/if}}>
+                <div class="voice-choice">
+                    <label>Voice</label>
+                    <select class="voice-select" {{#if hasVoice}}disabled{{/if}}>
+                        {{#select systemData.voice}}
+                        {{#each data.voiceProfiles}}
+                        <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                        {{/select}}
+                    </select>
+                    <a class="voice-preview" title="Preview Voice"><i class="fas fa-volume-up"></i></a>
+                </div>
+                <div><button class="voice-select-button" {{#if hasVoice}}disabled{{/if}}>Select voice</button></div>
+                {{#if isGM}}
+                <div><button class="voice-reset-button" {{#if noVoice}}disabled{{/if}}>Reset voice</button></div>
+                {{/if}}
+            </div>
+            {{#if noVoice}}
+            <p class="voice-note"><span class="label">Note:</span>Before selecting your voice, any sounds you play using the buttons below will be audible only to you.
+                After selecting your voice, sounds you play here will be audible to everyone.
+            </p>
+            {{/if}}
+            {{#if showSoundBoard}}
+            {{#each data.voiceMoods}}
+            <button class="voice-play" title="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}" data-mood="{{this.mood}}">
+                <img style="pointer-events: none;" src="{{this.icon}}" alt="{{#ifeq this.mood 'party_fail'}}facepalm{{else}}{{#ifeq this.mood 'party_death'}}rip{{else}}{{#ifeq this.mood 'death'}}dying{{else}}{{#ifeq this.mood 'dying'}}wounded{{else}}{{this.mood}}{{/ifeq}}{{/ifeq}}{{/ifeq}}{{/ifeq}}"/>
+            </button>
+            {{/each}}
+            {{/if}}
         </div>
         {{/if}}
 
