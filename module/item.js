@@ -25,15 +25,16 @@ export class SimpleItem extends Item {
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data.data;
-    const updateData = {};
+    // const updateData = {};
 
     // AC mods
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
     const acMods = Constant.ARMOR_VS_DMG_TYPE[material];
-    const coverage = itemData.attributes.coverage?.value;
-    if (!!acMods && !!coverage) {
-      updateData.ac = {
-        locations: [...new Set(coverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))],
+    const coverage = itemData.attributes.coverage?.value || '';
+    const locations = [...new Set(coverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+    if (!!acMods && locations.length) {
+      itemData.ac = {
+        locations,
         blunt: {
           ac: Constant.AC_MIN + acMods.base_AC + acMods.blunt.ac,
           dr: acMods.blunt.dr
@@ -49,16 +50,27 @@ export class SimpleItem extends Item {
       };
     }
 
-    // update actor if any update data is different than existing data
-    for (const key of Object.keys(updateData)) {
-      if(foundry.utils.fastDeepEqual(updateData[key], itemData[key])) {
-        delete updateData[key];
-      }
+    // armor/clothing warmth/weight
+    const warmthAndWeight = Constant.MATERIAL_WARMTH_WEIGHT[material];
+    if (!!warmthAndWeight && locations.length) {
+      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[1], 0); // index 1 for centre thrust
+      itemData.weight = Math.round(warmthAndWeight.weight / 100 * totalLocationWeight * 10) / 10;
+      itemData.warmth = Math.round(warmthAndWeight.warmth / 100 * totalLocationWeight * 10) / 10;
     }
-    if (this._id && Object.keys(updateData).length) {
-      await Util.wait(200);
-      await this.update({data: updateData});
-    }
+
+    // TODO weights can have 1 decimal place, update weights shown on actor sheet, also update MV calculation so every MV is possible from 12 to 1
+
+    // update item if any update data is different than existing data
+    // for (const key of Object.keys(updateData)) {
+    //   if(foundry.utils.fastDeepEqual(updateData[key], itemData[key])) {
+    //     delete updateData[key];
+    //   }
+    // }
+    // if (this._id && Object.keys(updateData).length) {
+    //   Object.assign(itemData,updateData);
+    //   await Util.wait(200);
+    //   await this.update({data: updateData});
+    // }
   }
 
   /* -------------------------------------------- */
