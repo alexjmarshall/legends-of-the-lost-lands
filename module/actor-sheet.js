@@ -85,7 +85,7 @@ export class SimpleActorSheet extends ActorSheet {
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
-    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Healthy';
+    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'Fine';
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
     fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
@@ -403,8 +403,6 @@ export class SimpleActorSheet extends ActorSheet {
 
       if ( wearingShield && (twoHanded || isHeldOtherHand) ) return ui.notifications.error("Cannot hold with both hands while wearing a shield");
 
-      await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
-
       // handle quick slash attack
       const atkModes = item.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
       const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(slashing)');
@@ -414,6 +412,7 @@ export class SimpleActorSheet extends ActorSheet {
         Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
     }
+    await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
     // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
     // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
   }
