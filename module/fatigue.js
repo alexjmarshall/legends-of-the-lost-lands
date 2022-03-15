@@ -404,7 +404,7 @@ export async function clearMaxHpDamage(actor) {
   // clocks
   for (const type of Object.keys(CLOCKS)) {
     const data = actor.getFlag("lostlands", type);
-    if (data.maxHpDamage !== 0) {
+    if (data?.maxHpDamage !== 0) {
       data.maxHpDamage = 0;
       await actor.setFlag("lostlands", type, data);
     }
