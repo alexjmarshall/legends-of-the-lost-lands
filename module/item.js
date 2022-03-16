@@ -50,13 +50,19 @@ export class SimpleItem extends Item {
       };
     }
 
-    // armor/clothing warmth/weight
+    // armor/clothing warmth, weight and max Dex mod
     const warmthAndWeight = Constant.MATERIAL_WARMTH_WEIGHT[material];
     if (!!warmthAndWeight && locations.length) {
+      // weight
       const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[0], 0); // index 0 for centre swing
-      itemData.weight = Math.round(warmthAndWeight.weight / 100 * totalLocationWeight * 10) / 10;
-      const totalLocationWarmth = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[1], 0); // index 0 for centre thrust
-      itemData.warmth = Math.round(warmthAndWeight.warmth / 100 * totalLocationWarmth * 10) / 10;
+      itemData.weight = Math.round(warmthAndWeight.weight / 10 * totalLocationWeight) / 10;
+
+      // warmth
+      itemData.warmth = warmthAndWeight.warmth;
+
+      // max Dex AC mod penalty
+      const maxDexWeight = material === 'padded' ? warmthAndWeight.weight * 2 : warmthAndWeight.weight;
+      itemData.ac.max_dex_penalty = Math.round((4 - Math.min(0, 6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
     }
 
     // TODO weights can have 1 decimal place, update weights shown on actor sheet, also update MV calculation so every MV is possible from 12 to 1
