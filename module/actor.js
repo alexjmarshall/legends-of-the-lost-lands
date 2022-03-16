@@ -101,7 +101,7 @@ export class SimpleActor extends Actor {
     - cuirass
     - quiver
     - under_shirt (shift)
-    - tunic (dress) -- gambeson here?
+    - tunic (dress)
     - breeches
     - pants
     - bracers
@@ -113,15 +113,12 @@ export class SimpleActor extends Actor {
     */
     // ac, st mods and worn clo
     if ( type === 'character' || type === 'monster' ) {
-      actorData.ac = attributes.ac?.value || Constant.AC_MIN;
-      actorData.mr = attributes.mr?.value || 0;
-      actorData.mdr = attributes.mdr?.value || 0; // TODO derive this from magic armor bonus, needs separate attribute
-
       const naturalAc = attributes.ac?.value || Constant.AC_MIN;
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
+      const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
       
       // max Dex mod penalty
-      const maxDexPenalty = items.filter(i => i.data.data.worn).reduce((sum, i) => sum + (+i.data.data.ac.max_dex_penalty || 0), 0);
+      const maxDexPenalty = wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.max_dex_penalty || 0), 0);
       const maxDexMod = Math.round(4 - maxDexPenalty);
       const dexAcBonus = Math.min(actorData.dex_mod, maxDexMod);
       
@@ -134,6 +131,8 @@ export class SimpleActor extends Actor {
           dr: Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
+      actorData.ac.mdr = attributes.mdr?.value || 0;
+      actorData.ac.mr = attributes.mr?.value || 0;
 
       // ac and dr for every body location
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
@@ -146,7 +145,7 @@ export class SimpleActor extends Actor {
         actorData.clo = 0;
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
           actorData.ac[k] = {};
-          const wornCoveringItems = items.filter(i => i.data.data.worn && i.data.data.ac?.locations.includes(k));
+          const wornCoveringItems = wornOrHeldItems.filter(i => i.data.data.ac?.locations?.includes(k));
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const wornWarmthVals = wornCoveringItems.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
@@ -154,11 +153,18 @@ export class SimpleActor extends Actor {
           const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
           actorData.clo += locWarmth;
 
+          // magic damage reduction
+          const mdr = wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
+          actorData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
+
+          // magic ac bonus
+          const magicBonus = Math.max(...wornCoveringItems.map(i => +i.data.data.ac?.mac || 0));
+
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
-            const wornAc = Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0));
+            const wornAc = Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0)) + magicBonus;
             const ac = !wornCoveringItems.length ? unarmoredAc : wornAc;
             const dr = unarmoredDr + wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0);
             actorData.ac[k][dmgType] = { ac, dr };
@@ -170,14 +176,15 @@ export class SimpleActor extends Actor {
           v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus;
           v.dr = Math.round(v.dr);
         }
+        actorData.ac.mdr = Math.round(actorData.ac.mdr);
+        actorData.ac.mr = Math.round(actorData.ac.mr);
       }
       
       // st_mod
-      const stItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right) && i.data.data.attributes.st_mod?.value);
+      const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
       const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0);
       actorData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
     }
-    
     
     // attitude map
     if (type !== 'container') {

@@ -8,15 +8,20 @@ import * as Constant from "./constants.js";
  */
 export class SimpleItem extends Item {
 
-  /* item template attributes:
+  /*attributes:
   * spells:
   * lvl: number
   * range: number in feet
   * duration: string
   * area: string
   * 
-  * items:
   * value: number in gp
+  * 
+  * held items:
+  * atk_mod, dmg, dmg_mod. holdable, reach, size, speed
+  * 
+  * worn items:
+  * ac_mod, magic, material, coverage, wearable, bulky, st_mod
   */
 
   /** @inheritdoc */
@@ -29,23 +34,38 @@ export class SimpleItem extends Item {
 
     // AC mods
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
-    const acMods = Constant.ARMOR_VS_DMG_TYPE[material];
+    const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material];
     const coverage = itemData.attributes.coverage?.value || '';
+    const acMod = +itemData.attributes.ac_mod?.value || 0;
+    const isMagic = !!itemData.attributes.magic?.value;
     const locations = [...new Set(coverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
-    if (!!acMods && locations.length) {
+    if (!!materialAcMods && locations.length) {
+      let baseAc = Constant.AC_MIN + materialAcMods.base_AC;
+      let mdr = 0;
+      let mac = 0;
+      // if non-magical, add acMod to base AC, if magical, store in separate field as mdr and mac
+      if (isMagic) {
+        mdr = acMod;
+        mac = acMod;
+      } else {
+        baseAc += acMod;
+      }
+
       itemData.ac = {
         locations,
+        mdr,
+        mac,
         blunt: {
-          ac: Constant.AC_MIN + acMods.base_AC + acMods.blunt.ac,
-          dr: acMods.blunt.dr
+          ac: baseAc + materialAcMods.blunt.ac,
+          dr: materialAcMods.blunt.dr
         },
         piercing: {
-          ac: Constant.AC_MIN + acMods.base_AC + acMods.piercing.ac,
-          dr: acMods.piercing.dr
+          ac: baseAc + materialAcMods.piercing.ac,
+          dr: materialAcMods.piercing.dr
         },
         slashing: {
-          ac: Constant.AC_MIN + acMods.base_AC + acMods.slashing.ac,
-          dr: acMods.slashing.dr
+          ac: baseAc + materialAcMods.slashing.ac,
+          dr: materialAcMods.slashing.dr
         },
       };
     }
@@ -56,6 +76,8 @@ export class SimpleItem extends Item {
       // weight
       const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[0], 0); // index 0 for centre swing
       itemData.weight = Math.round(warmthAndWeight.weight / 10 * totalLocationWeight) / 10;
+      // if magic item, halve weight
+      if (isMagic) itemData.weight = Math.round(itemData.weight / 2 * 10) / 10;
 
       // warmth
       itemData.warmth = warmthAndWeight.warmth;
@@ -67,17 +89,6 @@ export class SimpleItem extends Item {
 
     // TODO weights can have 1 decimal place, update weights shown on actor sheet, also update MV calculation so every MV is possible from 12 to 1
 
-    // update item if any update data is different than existing data
-    // for (const key of Object.keys(updateData)) {
-    //   if(foundry.utils.fastDeepEqual(updateData[key], itemData[key])) {
-    //     delete updateData[key];
-    //   }
-    // }
-    // if (this._id && Object.keys(updateData).length) {
-    //   Object.assign(itemData,updateData);
-    //   await Util.wait(200);
-    //   await this.update({data: updateData});
-    // }
   }
 
   /* -------------------------------------------- */
