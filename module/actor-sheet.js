@@ -275,80 +275,110 @@ export class SimpleActorSheet extends ActorSheet {
           }
         }).render(true);
       case "prepare":
-        const isPrepared = !!item.data.data.prepared;
-        const spellLevel = item.data.data.attributes.lvl.value;
-        const actorSlotsAttr = this.actor.data.data.attributes[`${item.type}`]?.[`lvl_${spellLevel}`];
-        const preparedSpells = this.actor.data.items.filter(i => i.type === `${item.type}` && 
-          i.data.data.attributes.lvl?.value === spellLevel && 
-          i.data.data.prepared);
-        const slotsMax = actorSlotsAttr?.max || 0;
-        if (slotsMax === 0) return ui.notifications.error("Cannot prepare spells of this level");
-        if ( !isPrepared && preparedSpells.length >= slotsMax ) {
-          return ui.notifications.error("Cannot prepare any more spells of this level");
-        }
-        if (!isPrepared) {
-          Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
-        }
-        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
+        return this._handlePrepareSpell(item);
       case "wear":
-        const isWorn = !!item.data.data.worn;
-        if (!isWorn) {
-          // can't wear a shield while holding a small shield or holding 2 handed weapon
-          const isShield = !!item.data.data.attributes.shield?.value;
-          const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
-          const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left && i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
-          if (isShield ) {
-            if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
-            if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
-          }
-          // can't stack rings of protection
-          const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
-          const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
-                                    wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
-          if (stackingRingofProt ) {
-            return ui.notifications.error("Cannot wear more than one ring of protection");
-          }
-          // can't wear item if already wearing an item in that slot
-          const itemSlot = item.data.data.attributes.slot?.value;
-          const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
-          const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
-          if ( itemSlot && wornItemsInSlot.length >= slotLimit ) {
-            return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
-          }
-        }
-        
-        let verb = isWorn ? 'doffs' : 'dons';
-        Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
-        return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
+        return this._handleWear(item);
       case "hold_left":
         return this._handleHold(item, "left", event);
       case "hold_right":
         return this._handleHold(item, "right", event);
       case "use":
-        let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
-        let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
-        if (isLostlandsMacro) {
-          let optionsParam = '';
-          if (event.ctrlKey) optionsParam += 'applyEffect: true,';
-          if (event.shiftKey) optionsParam += 'showModDialog: true,';
-          if (event.altKey) optionsParam += 'showAltDialog: true,';
-          optionsParam = `{${optionsParam}}`;
-          itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
-        }
-        let macro = game.macros.find(m => ( m.name === item.name && m.data.command === itemMacroWithId ));
-        if ( !macro ) {
-          macro = await Macro.create({
-            name: item.name,
-            type: "script",
-            command: itemMacroWithId,
-            flags: { "lostlands.attrMacro": true }
-          });
-        }
-        return macro.execute();
+        return this._handleUseItem(item, event);
     }
   }
 
-  async _handleHold(item, hand, event) {
+  async _handleUseItem(item, event) {
+    let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
+    let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
+    if (isLostlandsMacro) {
+      let optionsParam = '';
+      if (event.ctrlKey) optionsParam += 'applyEffect: true,';
+      if (event.shiftKey) optionsParam += 'showModDialog: true,';
+      if (event.altKey) optionsParam += 'showAltDialog: true,';
+      optionsParam = `{${optionsParam}}`;
+      itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
+    }
+    let macro = game.macros.find(m => ( m.name === item.name && m.data.command === itemMacroWithId ));
+    if ( !macro ) {
+      macro = await Macro.create({
+        name: item.name,
+        type: "script",
+        command: itemMacroWithId,
+        flags: { "lostlands.attrMacro": true }
+      });
+    }
+    return macro.execute();
+  }
+
+  _handlePrepareSpell(item) {
+    const isPrepared = !!item.data.data.prepared;
+    const spellLevel = item.data.data.attributes.lvl.value;
+    const actorSlotsAttr = this.actor.data.data.attributes[`${item.type}`]?.[`lvl_${spellLevel}`];
+    const preparedSpells = this.actor.data.items.filter(i => i.type === `${item.type}` && 
+                           i.data.data.attributes.lvl?.value === spellLevel && 
+                           i.data.data.prepared);
+    const slotsMax = actorSlotsAttr?.max || 0;
+    if (slotsMax === 0) {
+      return ui.notifications.error("Cannot prepare spells of this level");
+    } 
+    if ( !isPrepared && preparedSpells.length >= slotsMax ) {
+      return ui.notifications.error("Cannot prepare any more spells of this level");
+    }
+    if (!isPrepared) {
+      Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
+    }
+    return this.actor.updateEmbeddedDocuments("Item", [{_id: item.id, "data.prepared": !isPrepared}]);
+  }
+
+  _handleWear(item) {
+    const isWorn = !!item.data.data.worn;
+    const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
+    if (!isWorn) {
+      // can't wear a bulky item if any of this item's locations are already covered by a bulky item
+      const isBulky = !!item.data.data.attributes.bulky?.value;
+      if (isBulky) {
+        const itemCoverage = item.data.data.attributes.coverage?.value;
+        const itemLocations = [...new Set(itemCoverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+        const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
+        const wornBulkyCoverage = wornBulkyItems.map(i => i.data.data.attributes.coverage?.value).join(',');
+        const wornBulkyLocations = [...new Set(wornBulkyCoverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+        const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
+        if (!!duplicateLocation) {
+          return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
+        }
+      }
+      
+      // can't wear a shield while holding a small shield or holding 2 handed weapon
+      const isShield = !!item.data.data.attributes.shield?.value;
+      const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
+      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left && i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
+      if (isShield ) {
+        if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
+        if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
+      }
+
+      // can't stack rings of protection
+      const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
+                                wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
+      if (stackingRingofProt ) {
+        return ui.notifications.error("Cannot wear more than one ring of protection");
+      }
+
+      // can't wear item if already wearing an item in that slot
+      const itemSlot = item.data.data.attributes.slot?.value;
+      const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
+      const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
+      if ( itemSlot && wornItemsInSlot.length >= slotLimit ) {
+        return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
+      }
+    }
+    
+    let verb = isWorn ? 'doffs' : 'dons';
+    Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
+    return this.actor.updateEmbeddedDocuments("Item", [{_id: item.id, "data.worn": !isWorn}]);
+  }
+
+  _handleHold(item, hand, event) {
     // cases to handle:
     // item is held in this hand
     //    if 2 handed, empty both hands
@@ -428,12 +458,8 @@ export class SimpleActorSheet extends ActorSheet {
         Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
     }
-    await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
-    // TODO as a general rule DON'T automatically reduce HP or add/remove conditions to characters
-    // just prompt in chat and do it manually -- will VASTLY improve safety and confidence in system
+    return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
   }
-
-  
 
   /* -------------------------------------------- */
 
