@@ -26,6 +26,9 @@ class TimeQueue {
 
   async save() {
     const heapString = JSON.stringify(this._heap.content);
+    while(!game?.ready) {
+      await Util.wait(50);
+    }
     return game.settings.set("lostlands", "timeQ", heapString);
   }
 
