@@ -75,23 +75,24 @@ Hooks.once("init", async function() {
     type: Number,
     default: 1,
     config: true,
-    onChange: (requiredClo) => resetExposureClocks(requiredClo)
+    // onChange: (requiredClo) => resetExposureDamage(requiredClo)
   });
 
-  async function resetExposureClocks(requiredClo) {
-    const allChars = game.actors.filter(a => a.type === 'character');
-    return Promise.all(
-      allChars.map(async (char) => {
-        const wornClo = char.data.data.clo;
-        const diff = wornClo - requiredClo;
-        const isFine = diff >= 0 && diff < 10;
-        if (isFine) {
-          return Fatigue.resetFatigueDamage(char, 'exposure');
-        }
-        return Fatigue.resetFatigueClock(char, 'exposure', Util.now());
-      })
-    )
-  }
+  // async function resetExposureDamage(requiredClo) {
+  //   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
+  //   return Promise.all(
+  //     allChars.map(async (char) => {
+  //       const wornClo = char.data.data.clo;
+  //       const diff = wornClo - requiredClo;
+  //       const conditionString = Fatigue.getExposureConditionString(diff);
+  //       const resetExposure = conditionString === 'cool' || conditionString === 'warm';
+  //       if (resetExposure) {
+  //         return Fatigue.resetFatigueDamage(char, 'exposure');
+  //       }
+  //       // return Fatigue.resetFatigueClock(char, 'exposure', Util.now());
+  //     })
+  //   )
+  // }
 
   // Retrieve and assign the initiative formula setting
   const initFormula = game.settings.get("lostlands", "initFormula");
@@ -185,7 +186,9 @@ Hooks.on("ready", () => {
     );
   }
 
-  // Note: if a new character is created, the GM needs to reboot to start their fatigue clocks
+  // Note: can reset events at any time by rebooting or moving calendar back in time
+  // NOTE: do not manually edit max HP field of characters with player owners EXCEPT to increase on level up
+  // if a character dies and is revived, boost their HP to 0+, then have to heal their max HP naturally
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
     if (SimpleCalendar.api.isPrimaryGM()) {
@@ -206,17 +209,6 @@ Hooks.on("ready", () => {
       const timeDiff = data.diff;
       const newTime =  oldTime + timeDiff;
 
-      // sync requiredClo to current season when day changes //TODO weather macro
-      const oldDay = SimpleCalendar.api.secondsToInterval(oldTime)?.day;
-      const newDay = SimpleCalendar.api.secondsToInterval(newTime)?.day;
-      if (oldDay != newDay) {
-        const reqClo = Fatigue.reqClo();
-        const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
-        if (reqClo != currentReqCloSetting) {
-          await game.settings.set("lostlands", "requiredClo", reqClo);
-        }
-      }
-
       // if going back in time, clear event queue,
       //  remove effects that started later than new time
       //  and set flag to ensure clock events are rescheduled
@@ -234,6 +226,17 @@ Hooks.on("ready", () => {
         // add oldTime and newTime to macro scope
         Object.assign(event.scope, {oldTime, newTime});
         macro && await macro.execute(event.scope);
+      }
+
+      // sync requiredClo to current season when day changes //TODO weather macro
+      const oldDay = SimpleCalendar.api.secondsToInterval(oldTime)?.day;
+      const newDay = SimpleCalendar.api.secondsToInterval(newTime)?.day;
+      if (oldDay != newDay) {
+        const reqClo = Fatigue.reqClo();
+        const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
+        if (reqClo != currentReqCloSetting) {
+          await game.settings.set("lostlands", "requiredClo", reqClo);
+        }
       }
 
       locked = false;
@@ -344,7 +347,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   // }
 
   if ( hpUpdate < 0 && targetHp >= 0 && actor.type === 'character' && actor.hasPlayerOwner ) {
-    Util.macroChatMessage(token, actor, {
+    Util.macroChatMessage(actor, {
       flavor: 'Death', 
       content: `${actor.name} has fallen. May the Gods have mercy.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
@@ -363,6 +366,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
 });
 
 Hooks.on("preUpdateItem", (item, change) => {
+  // reset held/worn values to false when changing holdable/wearable attribute
   if (change.data?.attributes?.holdable?.value != null) {
     change.data.held_left = false;
     change.data.held_right = false;
@@ -409,5 +413,7 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
       await Fatigue.resetFatigueType(actor, 'hunger');
       await Fatigue.resetFatigueType(actor, 'thirst');
       return applyRest(restDice);
+    // case 'Warm':
+    //   return Fatigue.resetFatigueType(actor, 'exposure');
   }
 });
