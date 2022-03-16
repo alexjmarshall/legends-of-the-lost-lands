@@ -53,9 +53,10 @@ export class SimpleItem extends Item {
     // armor/clothing warmth/weight
     const warmthAndWeight = Constant.MATERIAL_WARMTH_WEIGHT[material];
     if (!!warmthAndWeight && locations.length) {
-      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[1], 0); // index 1 for centre thrust
+      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[0], 0); // index 0 for centre swing
       itemData.weight = Math.round(warmthAndWeight.weight / 100 * totalLocationWeight * 10) / 10;
-      itemData.warmth = Math.round(warmthAndWeight.warmth / 100 * totalLocationWeight * 10) / 10;
+      const totalLocationWarmth = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[1], 0); // index 0 for centre thrust
+      itemData.warmth = Math.round(warmthAndWeight.warmth / 100 * totalLocationWarmth * 10) / 10;
     }
 
     // TODO weights can have 1 decimal place, update weights shown on actor sheet, also update MV calculation so every MV is possible from 12 to 1
