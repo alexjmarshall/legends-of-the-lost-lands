@@ -159,7 +159,7 @@ async function useItem(itemId, data={
 
   try {
     consumable && await Util.reduceItemQty(item, actor);
-    Util.macroChatMessage(token, actor, {content, flavor, sound, type}, false);
+    Util.macroChatMessage(token || actor, {content, flavor, sound, type}, false);
     Util.chatBubble(token, chatBubbleText);
   } catch (error) {
     throw error;
@@ -195,7 +195,7 @@ export async function drinkPotion(itemId, options={}) {
   
     if (healFormula) {
       const healPoints = await Util.rollDice(healFormula);
-      chatMsgContent = `${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
+      chatMsgContent = `${actor.name} takes ${Util.chatInlineRoll(healPoints)} point${healPoints > 1 ? 's' : ''} of healing`;
       chatMsgType = CONST.CHAT_MESSAGE_TYPES.EMOTE;
       if (options.applyEffect) {
         const currentHp = +actor.data.data.hp?.value;
@@ -478,11 +478,11 @@ async function save(tokens, damage, options={}) {
     }
   }
   const takenDamage = success ? Math.floor(damage / 2) : damage;
-  let content = `${Util.chatInlineRoll(saveText)}${resultText}`;
+  let content = `${actor.name} saves ${Util.chatInlineRoll(saveText)}${resultText}`;
   content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   const chatBubbleText = options.bubbleText;
-  Util.macroChatMessage(token, actor, {
+  Util.macroChatMessage(token, {
     content: content, 
     flavor: flavor,
     sound: options.sound
@@ -658,7 +658,8 @@ async function attack(attackers, targetToken, options) {
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
   const attacks = attacker.attacks;
-  const attackerRollData = token.actor.getRollData();
+  const attackingActor = token.actor;
+  const attackerRollData = attackingActor.getRollData();
   if (!attackerData) {
     ui.notifications.error("Invalid attacker data");
     attackers.shift();
@@ -676,7 +677,7 @@ async function attack(attackers, targetToken, options) {
     // remove commas
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
-    Util.macroChatMessage(token, token.actor, chatMsgData, false);
+    Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);
 
@@ -806,7 +807,7 @@ async function attack(attackers, targetToken, options) {
   const loaded =  weaponItem.data.data.loaded;
   if ( reload && !loaded ) {
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
-    chatMsgData.content += `reloads ${weapName}<br>`;
+    chatMsgData.content += `${attackingActor.name} reloads ${weapName}<br>`;
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -970,7 +971,7 @@ async function attack(attackers, targetToken, options) {
   let resultSound = missSound;
   let isHit = true;
   let targetAc = Number(targetRollData?.ac.total[dmgType].ac);
-  if ( targetActor?.type === 'character' || !!targetRollData?.type.value === 'humanoid' ) {
+  if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) {
     // roll for hit location
     const hitLocRoll = await Util.rollDice("d100");
     let atkForm = atkMode.includes('swing') ? 'SWING' : 'THRUST'; // TODO swing high/low, from atk mode dialog? -2 to swing high
@@ -1055,7 +1056,7 @@ async function attack(attackers, targetToken, options) {
 
   chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
   chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
-  chatMsgData.bubbleString += `${token.actor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
+  chatMsgData.bubbleString += `${attackingActor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
 
   // if applying damage automatically, roll it now and add it to attacks object
   let damage = null;
@@ -1247,8 +1248,8 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       content: `${Util.chatInlineRoll(rxnText)} ${attitudeText}`,
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
-    const token = canvas.tokens.objects.children.find(t => t.actor.id === reactingActor.id);
-    Util.macroChatMessage(token, reactingActor, chatData, false);
+    const token = Util.getTokenFromActor(reactingActor);
+    Util.macroChatMessage(reactingActor, chatData, false);
     Util.chatBubble(token, `${reactingActor.name} reacts to ${targetActor.name}`, {emote: true});
   }
 
@@ -1294,7 +1295,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money`,
       flavor: `Buy`
     };
-    return Util.macroChatMessage(null, actor, chatData, true);
+    return Util.macroChatMessage(actor, chatData, true);
   }
   // case 2: can pay with cp
   if (cp >= totalPriceInCp) {
@@ -1374,7 +1375,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       sound: 'coins',
       flavor: 'Buy'
     }
-    return Util.macroChatMessage(null, actor, chatData, true);
+    return Util.macroChatMessage(actor, chatData, true);
   }
 }
 
@@ -1438,6 +1439,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   if (type == 'exposure') {
     const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
+    
     const diffClo = Fatigue.diffClo(actor);
     dmgMulti = Math.floor(Math.abs(diffClo) / 10);
     if (dmgMulti === 0) return;
@@ -1478,11 +1480,10 @@ async function applyFatigueDamage(actor, type, dice, heal=false, flavor) {
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
 
-  const content = `${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}.`;
+  const content = `${actor.name} takes ${Util.chatInlineRoll(result)} point${result > 1 ? 's' : ''} of ${heal ? `healing` : 'damage'} from ${type}.`;
   flavor = flavor || Util.upperCaseFirst(type);
-  const token = Util.getTokenFromActor(actor);
 
-  await Util.macroChatMessage(token, actor, { content, flavor }, false);
+  await Util.macroChatMessage(actor, { content, flavor }, false);
   await actor.update(update);
 
   return appliedResult;
@@ -1501,8 +1502,7 @@ async function applyRest(actor, wakeTime, sleptTime, restType='Rough') {
 
   const wearingArmor = actor.items.some(i => i.data.data.worn && Util.stringMatch(i.data.data.attributes.slot?.value, 'armor'));
   if (wearingArmor) {
-    const token = Util.getTokenFromActor(actor);
-    return Util.macroChatMessage(token, actor, {
+    return Util.macroChatMessage(actor, {
       content: `${actor.name} slept poorly...`,
       flavor
     }, false);
@@ -1566,7 +1566,6 @@ export async function addDisease(disease=null, options={}) {
 
 export async function applyDisease(actorId, disease, execTime, newTime) {
   const actor = game.actors.get(actorId);
-  const token = Util.getTokenFromActor(actor);
   const type = 'disease';
   const flavor = Util.upperCaseFirst(type);
   const interval = Fatigue.DISEASES[disease].damageInterval;
@@ -1590,7 +1589,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
 
   const resolveDisease = async () => {
     await Fatigue.deleteDisease(actor, disease);
-    confirmed && await Util.macroChatMessage(token, actor, {
+    confirmed && await Util.macroChatMessage(actor, {
       content: `${actor.name}'s ${disease} has resolved.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
       flavor
@@ -1604,7 +1603,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     if (!actorDiseases) return false;
     actorDiseases[disease].confirmed = true;
     await actor.setFlag("lostlands", "disease", actorDiseases);
-    await Util.macroChatMessage(token, actor, { content: `${actor.name} feels unwell...`, flavor }, false);
+    await Util.macroChatMessage(actor, { content: `${actor.name} feels unwell...`, flavor }, false);
     await Util.addCondition("Diseased", actor);
     return applyDisease(actorId, disease, execTime, newTime);
   };

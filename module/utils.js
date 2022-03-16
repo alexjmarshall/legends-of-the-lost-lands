@@ -85,10 +85,10 @@ export function chatBubble(token, text, emote=true) {
   return canvas.hud.bubbles.say(token, text, {emote});
 }
 
-export async function macroChatMessage(token, actor, {content, type, flavor, sound}, chatBubble=true) {
+export async function macroChatMessage(tokenOrActor, {content, type, flavor, sound}, chatBubble=true) {
   if (!content) return;
-
-  const speaker = ChatMessage.getSpeaker(token);
+  const token = getTokenFromActor(tokenOrActor);
+  const speaker = ChatMessage.getSpeaker(token || tokenOrActor);
   type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
   content = content.trim();
