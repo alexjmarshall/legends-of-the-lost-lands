@@ -112,11 +112,14 @@ export class SimpleActor extends Actor {
     - boots (shoes)
     */
     // ac, st mods and worn clo
-    let resetExposure = false, newDiffClo, oldDiffClo;
-    actorData.ac = attributes.ac?.value || Constant.AC_MIN;
+    if ( type === 'character' || type === 'monster' ) {
+      actorData.ac = attributes.ac?.value || Constant.AC_MIN;
+      actorData.mr = attributes.mr?.value;
+      // actorData.dr = 
 
-    if ( type === 'character' || type === 'monster' && attributes.type?.value === 'humanoid' ) {
-
+      const naturalAc = attributes.ac?.value || Constant.AC_MIN;
+      const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
+      
       // max Dex mod penalty
       const maxDexPenalty = items.filter(i => i.data.data.worn).reduce((sum, i) => sum + (+i.data.data.ac.max_dex_penalty || 0), 0);
       const maxDexMod = Math.round(4 - maxDexPenalty);
@@ -127,88 +130,53 @@ export class SimpleActor extends Actor {
       actorData.ac = {touch_ac, total: {}};
       for (const dmgType of Constant.DMG_TYPES) {
         actorData.ac.total[dmgType] = {
-          ac: 0,
-          dr: 0
+          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac,
+          dr: Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
 
       // ac and dr for every body location
-      let wornClo = 0;
-      for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
-        actorData.ac[k] = {};
-        const wornCoveringItems = items.filter(i => i.data.data.worn && i.data.data.ac?.locations.includes(k));
+      if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
+        actorData.clo = 0;
+        for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
+          actorData.ac[k] = {};
+          const wornCoveringItems = items.filter(i => i.data.data.worn && i.data.data.ac?.locations.includes(k));
 
-        // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
-        const wornWarmthVals = wornCoveringItems.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
-        wornWarmthVals.sort((a,b) => b - a);
-        const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
-        wornClo += locWarmth;
+          // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
+          const wornWarmthVals = wornCoveringItems.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
+          wornWarmthVals.sort((a,b) => b - a);
+          const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
+          actorData.clo += locWarmth;
 
-        // worn ac & dr
-        for (const dmgType of Constant.DMG_TYPES) {
-          const unarmoredAc = Constant.AC_MIN + Constant.ARMOR_VS_DMG_TYPE["none"][dmgType].ac;
-          const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE["none"][dmgType].dr;
-          const wornAc = Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0));
-          const ac = !wornCoveringItems.length ? unarmoredAc : wornAc;
-          const dr = unarmoredDr + wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0);
-          actorData.ac[k][dmgType] = { ac, dr };
-          actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
-          actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
+          // worn ac & dr
+          for (const dmgType of Constant.DMG_TYPES) {
+            const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
+            const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
+            const wornAc = Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0));
+            const ac = !wornCoveringItems.length ? unarmoredAc : wornAc;
+            const dr = unarmoredDr + wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0);
+            actorData.ac[k][dmgType] = { ac, dr };
+            actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
+            actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
+          }
+        }
+        for (const v of Object.values(actorData.ac.total)) {
+          v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus;
+          v.dr = Math.round(v.dr);
         }
       }
-
-      actorData.clo = wornClo;
-
-      for (const v of Object.values(actorData.ac.total)) {
-        v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus;
-        v.dr = Math.round(v.dr);
-      }
-
+      
       // st_mod
       const stItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right) && i.data.data.attributes.st_mod?.value);
       const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0);
       actorData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
-
-      // set worn clo if character
-      if (type === 'character') {
-        resetExposure = actorData.clo !== wornClo;
-        const reqClo = game.settings.get("lostlands", "requiredClo");
-        newDiffClo = wornClo - reqClo;
-        oldDiffClo = actorData.clo - reqClo;
-        
-      }
-
-      // reset exposure damage/clock
-      // if (resetExposure && hasPlayerOwner) { // TODO check if need to resetFatigueClock/resetFatigueDamage for exposure on change worn clothing. have to recalculate and compare worn clo there
-        // reset damage if actor was suffering damage but is now fine
-        // reset clock if actor was fine but is now suffering damage
-        // const newConditionString = Fatigue.getExposureConditionString(newDiffClo);
-        // const oldConditionString = Fatigue.getExposureConditionString(oldDiffClo);
-        // const isFine = newConditionString === 'cool' || newConditionString === 'warm';
-        // const wasFine = oldConditionString === 'cool' || oldConditionString === 'warm';
-        // !wasFine && isFine && await Fatigue.resetFatigueDamage(this, 'exposure');
-        // wasFine && !isFine && await Fatigue.resetFatigueClock(this, 'exposure', Util.now());
-      // }
     }
+    
     
     // attitude map
     if (type !== 'container') {
       actorData.attitude_map = actorData.attitude_map || {};
     }
-
-    // update actor only if update data is different than existing data
-    // for (const key of Object.keys(updateData)) {
-    //   if (foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
-    //     delete updateData[key];
-    //   }
-    // }
-    // if (this._id && Object.keys(updateData).length) {
-    //   console.log(updateData);
-    //   await Util.wait(200);
-    //   await this.update({data: updateData});
-    // }
-
-
   }
 
   /* -------------------------------------------- */
