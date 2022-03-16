@@ -72,26 +72,34 @@ export class SimpleActorSheet extends ActorSheet {
   getFatigueData(data) {
     const fatigue = {};
     const tempDescs = [
-      [-4, 'Extremely hot'],
-      [0, 'Hot'],
+      [-Infinity, 'Extremely hot'],
+      [-4, 'Hot'],
       [6, 'Warm'],
       [16, 'Cool'],
       [16, 'Cold'],
-      [26, 'Freezing'],
+      [26, 'Extremely cold'],
     ];
+
     let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
     if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
+
     fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
+
     const diffClo = data.data.clo - reqClo;
-    fatigue.exposureDesc = Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
+    const isWarm = data.effects.find(e => e.label === 'Warm');
+    fatigue.exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
+
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
     fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
+
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
     fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
+
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
     fatigue.thirstDesc = thirstStatus === 2 ? 'Dying of thirst' : thirstStatus === 1 ? 'Thirsty' : 'Fine';
+
     const hungerStatus = this.getFatigueStatus(data, 'hunger');
     fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Fine';
 
@@ -99,7 +107,9 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   getFatigueStatus(data, type) {
-    const flagData = data.flags?.lostlands[type] || {};
+    const isResting = data.effects.find(e => e.label === 'Rest');
+    if (isResting) return 0;
+    const flagData = data.flags?.lostlands?.[type] || {};
     const damage = !!flagData.maxHpDamage;
     if (damage) return 2;
     const startTime = flagData.startTime;
@@ -277,7 +287,7 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error("Cannot prepare any more spells of this level");
         }
         if (!isPrepared) {
-          Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} prepares ${item.name}` });
+          Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
         }
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.prepared": !isPrepared}]);
       case "wear":
@@ -308,7 +318,7 @@ export class SimpleActorSheet extends ActorSheet {
         }
         
         let verb = isWorn ? 'doffs' : 'dons';
-        Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} ${verb} ${item.name}` });
+        Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
         return this.actor.updateEmbeddedDocuments("Item", [{_id: itemId, "data.worn": !isWorn}]);
       case "hold_left":
         return this._handleHold(item, "left", event);
@@ -415,7 +425,7 @@ export class SimpleActorSheet extends ActorSheet {
       if (canQuickSlash && event.altKey) {
         game.lostlands.Macro.quickSlashAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        Util.macroChatMessage(this, this.actor, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
+        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
     }
     await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
