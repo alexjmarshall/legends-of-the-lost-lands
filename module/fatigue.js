@@ -181,7 +181,7 @@ export async function resetFatigueDamage(actor, type) {
   condition && await Util.removeCondition(condition, actor);
 }
 
-export async function resetFatigueClock(actor, type, time) {
+export async function resetFatigueClock(actor, type, time=Util.now()) {
   const data = actor.getFlag("lostlands", type) || {};
   data.startTime = time;
   const {damageInterval} = CLOCKS[type];
@@ -247,6 +247,7 @@ async function syncConditions(char, time) {
   const isDead = Number(char.data.data.hp.value) < 0;
   const isAsleep = game.cub.hasCondition('Asleep', char, {warn: false});
   const isResting = game.cub.hasCondition('Rest', char, {warn: false});
+  const isWarm = game.cub.hasCondition('Warm', char, {warn: false});
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
@@ -265,7 +266,7 @@ async function syncConditions(char, time) {
     if (type === 'exposure') {
       const diff = diffClo(char);
       conditionString = getExposureConditionString(diff);
-      resetExposure = conditionString === 'cool' || conditionString === 'warm';
+      resetExposure = isWarm || conditionString === 'cool' || conditionString === 'warm';
     }
   
     if ( isResting || beforeWarning || resetExposure ) {
@@ -275,15 +276,16 @@ async function syncConditions(char, time) {
 
     const hasCondition = game.cub.hasCondition(condition, char, {warn: false});
     if (hasCondition) continue;
+
     await Util.addCondition(condition, char);
     if (isAsleep) continue;
     
-    const token = Util.getTokenFromActor(char);
     const flavor = Util.upperCaseFirst(type);
     const content = `${char.name} feels ${conditionString}...`;
-    await Util.macroChatMessage(token, char, { content, flavor }, false);
+    await Util.macroChatMessage(char, { content, flavor }, false);
 
-    if (!warningSound) continue;
+    const token = Util.getTokenFromActor(char);
+    if (!token || !warningSound) return;
 
     if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
       return Util.playVoiceSound(warningSound, char, token, {push: true, bubble: true, chance: 1});
@@ -301,11 +303,11 @@ async function syncConditions(char, time) {
 }
 
 export function getExposureConditionString(diffClo) {
-  if (diffClo <= -20) return 'freezing';
+  if (diffClo <= -20) return 'extremely cold';
   if (diffClo <= -10) return 'cold';
   if (diffClo < 0) return 'cool';
   if (diffClo < 10) return 'warm';
-  if (diffClo <= 20) return 'hot';
+  if (diffClo < 20) return 'hot';
   return 'extremely hot';
 }
 
