@@ -41,6 +41,7 @@ export class SimpleActor extends Actor {
     const attributes = actorData.attributes;
     // const updateData = {};
     const type = this.data.type;
+    const hasPlayerOwner = this.hasPlayerOwner;
 
     // level up sound
     if (type === 'character') {
@@ -112,7 +113,7 @@ export class SimpleActor extends Actor {
     */
     // ac, st mods and worn clo
     let resetExposure = false, newDiffClo, oldDiffClo;
-    if ( type === 'character' || type === 'monster' ) {
+    if ( type === 'character' || type === 'monster' && attributes.type?.value === 'humanoid' ) {
       const wornOrHeldShields = items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
                                 (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
       const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), 0);
@@ -121,7 +122,7 @@ export class SimpleActor extends Actor {
       const maxDexBonuses = wornNonShieldItems.concat(wornOrHeldShields).map(i => i.data.data.attributes.max_dex_bonus?.value ?? Infinity);
       const dexAcBonus = Math.min(actorData.dex_mod, ...maxDexBonuses);
       const ac = Constant.AC_MIN + shieldAcMods + armorAcMods + dexAcBonus;
-      // updateData.ac = attributes.ac?.value ?? ac;
+      // updateData.ac = attributes.ac?.value ?? ac; //TODO calculate total AC, and if AC is set here
       
       const touch_ac = Constant.AC_MIN + dexAcBonus;
       actorData.ac = {touch_ac, total: {}};
@@ -167,12 +168,23 @@ export class SimpleActor extends Actor {
 
       // set worn clo if character
       if (type === 'character') {
-        // wornClo = attributes.clo?.value ?? wornClo;
         resetExposure = actorData.clo !== wornClo;
         const reqClo = game.settings.get("lostlands", "requiredClo");
         newDiffClo = wornClo - reqClo;
         oldDiffClo = actorData.clo - reqClo;
         actorData.clo = wornClo;
+      }
+
+      // reset exposure damage/clock
+      if (resetExposure && hasPlayerOwner) { // TODO check if need to resetFatigueClock/resetFatigueDamage for exposure on change worn clothing. have to recalculate and compare worn clo there
+        // reset damage if actor was suffering damage but is now fine
+        // reset clock if actor was fine but is now suffering damage
+        // const newConditionString = Fatigue.getExposureConditionString(newDiffClo);
+        // const oldConditionString = Fatigue.getExposureConditionString(oldDiffClo);
+        // const isFine = newConditionString === 'cool' || newConditionString === 'warm';
+        // const wasFine = oldConditionString === 'cool' || oldConditionString === 'warm';
+        // !wasFine && isFine && await Fatigue.resetFatigueDamage(this, 'exposure');
+        // wasFine && !isFine && await Fatigue.resetFatigueClock(this, 'exposure', Util.now());
       }
     }
     
@@ -193,15 +205,7 @@ export class SimpleActor extends Actor {
     //   await this.update({data: updateData});
     // }
 
-    // reset exposure damage/clock
-    if (resetExposure) {
-      // reset damage if actor was suffering damage but is now fine
-      // reset clock if actor was fine but is now suffering damage
-      const isFine = newDiffClo >= 0 && newDiffClo < 10;
-      const wasFine = oldDiffClo >= 0 && oldDiffClo < 10;
-      !wasFine && isFine && await Fatigue.resetFatigueDamage(this, 'exposure');
-      wasFine && !isFine && await Fatigue.resetFatigueClock(this, 'exposure', Util.now());
-    }
+
   }
 
   /* -------------------------------------------- */
