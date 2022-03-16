@@ -21,13 +21,28 @@
                 <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
                 {{/if}}
             </div>
-            <div class="resource">
-                <label>AC</label>
-                <input type="number" value="{{systemData.ac}}" disabled/>
+            <div class="property property-ac">
+                <label>AC / DR</label>
             </div>
-            <div class="resource">
+            <div class="property">
+                <label>MR / MDR</label>
+            </div>
+            <div class="property">
                 <label>MV</label>
-                <input type="number" value="{{systemData.mv}}" disabled/>
+            </div>
+            <div class="property property-ac">
+                <label>B</label>
+                    <span class="property-field">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
+                <label>P</label>
+                    <span class="property-field">{{systemData.ac.total.piercing.ac}} / {{systemData.ac.total.piercing.dr}}</span>
+                <label>S</label>
+                    <span class="property-field">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
+            </div>
+            <div class="property">
+                <span class="property-field">{{systemData.mr}}% / {{systemData.mdr}}</span>
+            </div>
+            <div class="property">
+                <span class="property-field">{{systemData.mv}}</span>
             </div>
             </div>
         </div>

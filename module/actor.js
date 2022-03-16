@@ -114,8 +114,8 @@ export class SimpleActor extends Actor {
     // ac, st mods and worn clo
     if ( type === 'character' || type === 'monster' ) {
       actorData.ac = attributes.ac?.value || Constant.AC_MIN;
-      actorData.mr = attributes.mr?.value;
-      // actorData.dr = 
+      actorData.mr = attributes.mr?.value || 0;
+      actorData.mdr = attributes.mdr?.value || 0; // TODO derive this from magic armor bonus, needs separate attribute
 
       const naturalAc = attributes.ac?.value || Constant.AC_MIN;
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
@@ -137,6 +137,12 @@ export class SimpleActor extends Actor {
 
       // ac and dr for every body location
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
+        for (const dmgType of Constant.DMG_TYPES) {
+          actorData.ac.total[dmgType] = {
+            ac: 0,
+            dr: 0,
+          }
+        }
         actorData.clo = 0;
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
           actorData.ac[k] = {};
