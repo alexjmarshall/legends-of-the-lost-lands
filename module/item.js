@@ -95,7 +95,7 @@ export class SimpleItem extends Item {
         if (isMagic) itemData.ac.skill_penalty = Math.round(itemData.ac.skill_penalty / 2 * 100) / 100;
 
         const maxDexWeight = padded ? warmthAndWeight.weight * 2 : warmthAndWeight.weight;
-        itemData.ac.max_dex_penalty = Math.round((4 - Math.min(0, 6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
+        itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
         if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
       }
     }
