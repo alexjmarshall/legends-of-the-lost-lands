@@ -347,6 +347,11 @@ export class SimpleActorSheet extends ActorSheet {
           return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
         }
       }
+
+      // can't wear if quantity > 1
+      const itemQty = +item?.data.data.quantity || 0;
+      const wornQtyLimit = 1;
+      if (itemQty > wornQtyLimit) return ui.notifications.error(`Can't wear ${itemQty} at once`);
       
       // can't wear a shield while holding a small shield or holding 2 handed weapon
       const isShield = !!item.data.data.attributes.shield?.value;

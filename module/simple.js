@@ -360,12 +360,12 @@ Hooks.on("preUpdateActor", (actor, change) => {
 });
 
 Hooks.on("preUpdateItem", (item, change) => {
-  // reset held/worn values to false when changing holdable/wearable attribute
-  if (change.data?.attributes?.holdable?.value != null) {
+  // reset held/worn values to false when changing holdable/wearable attribute or quantity
+  if (change.data?.attributes?.holdable?.value != null || change.data?.quantity != null) {
     change.data.held_left = false;
     change.data.held_right = false;
   }
-  if (change.data?.attributes?.wearable?.value != null) {
+  if (change.data?.attributes?.wearable?.value != null || change.data?.quantity != null) {
     change.data.worn = false;
   }
 });
