@@ -79,14 +79,14 @@
   width: 50%;
 }
 .lostlands .left-label {
-  margin-right: 2px;
+  margin-right: 1px;
 }
 .lostlands .property-field {
   background: rgba(0, 0, 0, 0.05);
   padding: 2px 5px;
 }
 .lostlands .property-field-ac {
-  margin-right: 10px;
+  margin-right: 6px;
 }
 .lostlands .container-resource,
 .lostlands .merchant-resource {
