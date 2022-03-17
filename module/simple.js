@@ -375,7 +375,6 @@ Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
 });
 
 Hooks.on("createActiveEffect", (activeEffect, data, options, userId) => {
-  if (!game.user.isGM) return;
   const actor = activeEffect.parent;
   const effect = activeEffect.data.label;
 
