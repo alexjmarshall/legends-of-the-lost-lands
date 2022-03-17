@@ -54,7 +54,7 @@ export class SimpleActor extends Actor {
     }
 
     // encumbrance
-    actorData.enc = Math.round(items.filter(i => i.data.type === 'item').reduce((a, b) => a + (+b.data.data.weight || 0), 0) * 10) / 10;
+    actorData.enc = Math.round(items.filter(i => i.data.type === 'item').reduce((a, b) => a + (+b.data.data.quantity * +b.data.data.weight  || 0), 0) * 10) / 10;
     actorData.enc = attributes.enc?.value ?? actorData.enc;
 
     // derive mv and speed from encumbrance
@@ -191,6 +191,7 @@ export class SimpleActor extends Actor {
     if (type !== 'container') {
       actorData.attitude_map = actorData.attitude_map || {};
     }
+
   }
 
   /* -------------------------------------------- */

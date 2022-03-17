@@ -18,7 +18,7 @@ export class SimpleItem extends Item {
   * value: number in gp
   * 
   * held items:
-  * atk_mod, dmg, dmg_mod. holdable, reach, size, speed
+  * atk_mod, dmg, dmg_mod, holdable, reach, size, speed
   * 
   * worn items:
   * ac_mod, magic, material, coverage, wearable, bulky, st_mod
