@@ -174,8 +174,16 @@ export class SimpleActor extends Actor {
             actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
           }
         }
+
+        const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
+        const isSwashBuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') && actorData.ac.max_dex_mod >= 4;
+        console.log(isSwashBuckler);
+        const level = +attributes.lvl?.value || 1;
+        const classBonus = isBarbarian ? 1 :
+                           isSwashBuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
+        // round ac and add dex bonus and class bonus
         for (const v of Object.values(actorData.ac.total)) {
-          v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus;
+          v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus + classBonus;
           v.dr = Math.round(v.dr);
         }
         actorData.ac.mdr = Math.round(actorData.ac.mdr);
