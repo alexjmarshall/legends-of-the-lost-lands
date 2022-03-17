@@ -53,18 +53,19 @@ export class SimpleActor extends Actor {
       }
     }
 
-    // encumbrance and mv
+    // encumbrance
     actorData.enc = Math.round(items.filter(i => i.data.type === 'item').reduce((a, b) => a + (+b.data.data.weight || 0), 0) * 10) / 10;
     actorData.enc = attributes.enc?.value ?? actorData.enc;
-    // derive mv and speed from encumbrance for characters
+
+    // derive mv and speed from encumbrance
     if ( type === 'character' || type === 'monster' ) {
       const str = attributes.ability_scores?.str?.value || 0;
-      const strEnc = (Math.floor(str / 3) + 1) * 3;
-      let mv = (5 - Math.ceil((actorData.enc || 1) / (strEnc || 1))) * 3;
-      mv = Math.max(0, mv);
-      if(mv === 12) mv = attributes.maxmv?.value ?? mv;
+      let mv = 12 - Math.floor(Math.max(0, actorData.enc - str) / str * 3);
+      mv = Math.max(0, mv) || 0;
+      const maxMv = attributes.maxmv?.value;
+      mv = maxMv ? Math.round(mv * maxMv / 12) : mv;
       mv = attributes.mv?.value ?? mv;
-      actorData.mv = mv || 0;
+      actorData.mv = mv;
       actorData.speed = mv * 5 || 0;
     }
 
