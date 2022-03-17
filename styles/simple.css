@@ -270,9 +270,7 @@
   margin: 0;
   padding: 0;
 }
-.lostlands .attributes-list li > *,
-.lostlands .fatigue-label,
-.lostlands .fatigue-value {
+.lostlands .attributes-list li > *{
   margin: 0 3px;
   height: 28px;
   line-height: 24px;
@@ -281,7 +279,20 @@
   border-radius: 0;
   border-bottom: 1px solid #AAA;
 }
-.lostlands .attribute-key-wrapper,
+.lostlands .fatigue-label,
+.lostlands .fatigue-value {
+  margin: 0 3px;
+  padding: 1px;
+  height: 28px;
+  line-height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #AAA;
+}
+.lostlands .attribute-key-wrapper{
+  max-width: 263px;
+}
 .lostlands .fatigue-label {
   max-width: 263px;
 }

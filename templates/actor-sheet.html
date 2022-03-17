@@ -42,7 +42,7 @@
                 <span class="property-field">{{systemData.ac.mr}}% / {{systemData.ac.mdr}}</span>
             </div>
             <div class="property">
-                <span class="property-field">{{systemData.mv}}</span>
+                <span style="margin-right:0" class="property-field">{{systemData.mv}}</span>
             </div>
             </div>
         </div>
@@ -259,37 +259,29 @@
         {{#if isCharacter}}
         {{!-- Fatigue Tab --}}
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
-            <!-- <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Max HP" readonly />
-                <input class="fatigue-value" type="number" name="data.hp.max_max" value="{{systemData.hp.max_max}}" {{#if isPlayer}}readonly{{/if}} />
-            </div> -->
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Environment Temp." readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.tempDesc}}" readonly />
-            </div>
-            <!-- <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Worn Clo" readonly />
-                <input class="fatigue-value" type="text" value="{{systemData.clo}}" readonly />
-            </div> -->
-            <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Personal Temp." readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.exposureDesc}}" readonly />
+                <label class="fatigue-label">Environment Temp.</label>
+                <span class="fatigue-value">{{data.fatigue.tempDesc}}</span>
             </div>
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Disease" readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.diseaseDesc}}" readonly />
+                <label class="fatigue-label">Personal Temp.</label>
+                <span class="fatigue-value">{{data.fatigue.exposureDesc}}</span>
             </div>
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Exhaustion" readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.exhaustionDesc}}" readonly />
+                <label class="fatigue-label">Disease</label>
+                <span class="fatigue-value">{{data.fatigue.diseaseDesc}}</span>
             </div>
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Thirst" readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.thirstDesc}}" readonly />
+                <label class="fatigue-label">Exhaustion</label>
+                <span class="fatigue-value">{{data.fatigue.exhaustionDesc}}</span>
             </div>
             <div class="flexrow">
-                <input class="fatigue-label" type="text" value="Hunger" readonly />
-                <input class="fatigue-value" type="text" value="{{data.fatigue.hungerDesc}}" readonly />
+                <label class="fatigue-label">Thirst</label>
+                <span class="fatigue-value">{{data.fatigue.thirstDesc}}</span>
+            </div>
+            <div class="flexrow">
+                <label class="fatigue-label">Hunger</label>
+                <span class="fatigue-value">{{data.fatigue.hungerDesc}}</span>
             </div>
         </div>
 
