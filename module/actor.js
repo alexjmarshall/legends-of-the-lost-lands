@@ -177,7 +177,6 @@ export class SimpleActor extends Actor {
 
         const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
         const isSwashBuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') && actorData.ac.max_dex_mod >= 4;
-        console.log(isSwashBuckler);
         const level = +attributes.lvl?.value || 1;
         const classBonus = isBarbarian ? 1 :
                            isSwashBuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
