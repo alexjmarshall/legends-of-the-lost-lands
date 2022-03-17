@@ -82,13 +82,23 @@ export class SimpleItem extends Item {
       // warmth
       itemData.warmth = warmthAndWeight.warmth;
 
-      // max Dex AC mod penalty
-      const maxDexWeight = material === 'padded' ? warmthAndWeight.weight * 2 : warmthAndWeight.weight;
-      itemData.ac.max_dex_penalty = Math.round((4 - Math.min(0, 6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
+      // spell failure, skill check penalty and max dex mod penalty
+      const isArmor = Constant.ARMOR_VS_DMG_TYPE[material];
+      if (isArmor) {
+        const padded = material === 'padded';
+        const spellFailure = padded ? warmthAndWeight.weight * 5 : warmthAndWeight.weight * 5 / 2;
+        itemData.ac.spell_failure = Math.round(spellFailure * totalLocationWeight) / 100;
+        if (isMagic) itemData.ac.spell_failure = Math.round(itemData.ac.spell_failure / 2 * 100) / 100;
+
+        const skillPenalty = spellFailure / 5 - 2;
+        itemData.ac.skill_penalty = Math.round(skillPenalty * totalLocationWeight) / 100;
+        if (isMagic) itemData.ac.skill_penalty = Math.round(itemData.ac.skill_penalty / 2 * 100) / 100;
+
+        const maxDexWeight = padded ? warmthAndWeight.weight * 2 : warmthAndWeight.weight;
+        itemData.ac.max_dex_penalty = Math.round((4 - Math.min(0, 6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
+        if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
+      }
     }
-
-    // TODO weights can have 1 decimal place, update weights shown on actor sheet, also update MV calculation so every MV is possible from 12 to 1
-
   }
 
   /* -------------------------------------------- */
