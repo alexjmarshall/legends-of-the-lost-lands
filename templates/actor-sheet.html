@@ -8,13 +8,13 @@
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" />
             </h1>
             <div class="resource">
-                <label>HP</label>
+                <label class="left-label">HP</label>
                 <input type="number" name="data.hp.value" value="{{systemData.hp.value}}"/>
                 <span> / </span>
                 <input type="number" name="data.hp.max" value="{{systemData.hp.max}}"/>
             </div>
             <div class="resource">
-                <label>XP</label>
+                <label class="left-label">XP</label>
                 <input type="number" name="data.xp.value" value="{{systemData.xp.value}}"/>
                 {{#if isCharacter}}
                 <span> / </span>
@@ -31,12 +31,12 @@
                 <label>MV</label>
             </div>
             <div class="property property-ac">
-                <label>B</label>
-                    <span class="property-field">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
-                <label>P</label>
-                    <span class="property-field">{{systemData.ac.total.piercing.ac}} / {{systemData.ac.total.piercing.dr}}</span>
-                <label>S</label>
-                    <span class="property-field">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
+                <label class="left-label">B</label>
+                    <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
+                <label class="left-label">P</label>
+                    <span class="property-field property-field-ac">{{systemData.ac.total.piercing.ac}} / {{systemData.ac.total.piercing.dr}}</span>
+                <label class="left-label">S</label>
+                    <span class="property-field property-field-ac">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
             </div>
             <div class="property">
                 <span class="property-field">{{systemData.ac.mr}}% / {{systemData.ac.mdr}}</span>
@@ -166,7 +166,8 @@
             </header>
                 {{#each spelltype as |level key|}}
                 <header class="spells-header flexrow">
-                    <span style="text-align: left;">{{key}}</span>
+                    <span>Spell Failure: {{../../systemData.ac.sf}}%</span>
+                    <span style="text-align: center;">{{key}}</span>
                     <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
                 </header>
                 <ol class="item-list">
@@ -206,7 +207,8 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each data.features as |source key|}}
             <header class="features-header flexrow">
-                <span style="text-align: center;">{{key}}</span>
+                <span>Skill Check Penalty: {{../systemData.ac.sp}}</span>
+                <span style="text-align: left;">{{key}}</span>
             </header>
             <ol class="item-list">
                 {{#each source as |feature id|}}
