@@ -336,15 +336,9 @@ Hooks.on("updateToken", (token, moved, data) => {
 // Play 'hurt'/'death' voice sounds on HP decrease
 Hooks.on("preUpdateActor", (actor, change) => {
   const hpUpdate = change.data?.hp?.value;
-  const maxHpUpdate = change.data?.hp?.max;
   const targetHp = actor.data.data.hp?.value;
   const maxHp = actor.data.data.hp?.max;
-  const maxMaxHp = actor.data.data.hp?.max_max;
   const token = Util.getTokenFromActor(actor);
-
-  // if (maxHp < maxMaxHp && maxHpUpdate >= maxMaxHp) {
-  //   Fatigue.clearMaxHpDamage(actor);
-  // }
 
   if ( hpUpdate < 0 && targetHp >= 0 && actor.type === 'character' && actor.hasPlayerOwner ) {
     Util.macroChatMessage(actor, {
