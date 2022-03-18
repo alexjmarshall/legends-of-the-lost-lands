@@ -413,7 +413,7 @@ export class SimpleActorSheet extends ActorSheet {
     const isHeld = !!item.data.data[`held_${hand}`];
     let isHeldOtherHand = !!item.data.data[`held_${otherHand}`];
     const itemHeldInOtherHand = this.actor.data.items.find(i => i.data.data[`held_${otherHand}`]);
-    const thisHandFull = this.actor.data.items.find(i => i.data.data[`held_${hand}`]);
+    const thisHandFull = this.actor.data.items.some(i => i.data.data[`held_${hand}`]);
 
     if (isHeld) {
       if (twoHanded) {
