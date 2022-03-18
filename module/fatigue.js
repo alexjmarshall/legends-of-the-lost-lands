@@ -3,7 +3,7 @@ import { TimeQ } from './time-queue.js';
 import * as Constant from "./constants.js";
 
 // TODO update rules doc
-// TODO if max HP less than half max max HP, MV is halved (use condition/effect)
+// TODO if total of max HP damage > max HP, MV halved (use condition/effect)
 // TODO button to level up char, add level/HD to top bar of actor sheet, allow players to click this button, shows chat msg and rolls HP based on HD in attributes
 // TODO XP progressions for basic attributes, and button on charsheet, allow players to click. don't allow players to edit HP or XP
 // TODO d6 skills like swim/climb in features or attributes?
@@ -97,12 +97,14 @@ export const CLOCKS = {
     damageInterval: { day: 3 },
     damageDice: 'd3',
     condition: "Hungry",
+    warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 4 === 0
   },
   "thirst": {
     warningInterval: { hour: 12 },
     damageInterval: { day: 1 },
     damageDice: 'd6',
     condition: "Thirsty",
+    warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 1 === 0
   },
   "exhaustion": {
     warningInterval: { hour: 12 },
@@ -110,12 +112,14 @@ export const CLOCKS = {
     damageInterval: { day: 1 },
     damageDice: 'd6',
     condition: "Sleepy",
+    warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 2 === 0
   },
   "exposure": {
     warningInterval: { minute: 0 },
     damageInterval: { hour: 1 },
     damageDice: 'd6',
     condition: "Hot/Cold",
+    warnCondition: (date) => date.second === 0 && date.minute % 10 === 0
   },
 };
 export const DISEASES = {
@@ -177,8 +181,8 @@ export async function resetFatigueDamage(actor, type) {
     await actor.setFlag("lostlands", type, data);
     await restoreMaxHpDamage(actor, damage);
   }
-  const { condition } = CLOCKS[type];
-  condition && await Util.removeCondition(condition, actor);
+  // const { condition } = CLOCKS[type];
+  // condition && await Util.removeCondition(condition, actor);
 }
 
 export async function resetFatigueClock(actor, type, time=Util.now()) {
@@ -204,14 +208,13 @@ export function reqClo(season) {
 }
 
 export async function syncFatigueClocks(time, resetClocks=false) {
-
   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
   
   return Promise.all(
     allChars.map(async (char) => {
       await syncStartTimes(char, time);
       await syncDamageClocks(char, time, resetClocks);
-      await syncConditions(char, time);
+      await resetDamageAndWarn(char, time);
     })
   );
 }
@@ -243,29 +246,31 @@ async function syncStartTimes(char, time) {
   }
 }
 
-async function syncConditions(char, time) {
+async function resetDamageAndWarn(char, time) {
   const isDead = Number(char.data.data.hp.value) < 0;
+  if (isDead) return;
+
   const isAsleep = game.cub.hasCondition('Asleep', char, {warn: false});
   const isResting = game.cub.hasCondition('Rest', char, {warn: false});
   const isWarm = game.cub.hasCondition('Warm', char, {warn: false});
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
-
-    if (isDead) continue;
-
     let { condition, warningInterval, warningSound } = clock;
     const data = char.getFlag("lostlands", type);
     const startTime = data.startTime;
     if ( !warningInterval || !condition ) continue;
+
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const beforeWarning = time < startTime + warningIntervalInSeconds;
 
     let conditionString = condition.toLowerCase();
+    let typeString = Util.upperCaseFirst(type);
     let resetExposure = false;
     if (type === 'exposure') {
       const diff = diffClo(char);
       conditionString = getExposureConditionString(diff);
+      typeString = diffClo < 0 ? 'Cold' : 'Heat';
       resetExposure = isWarm || conditionString === 'cool' || conditionString === 'warm';
     }
   
@@ -274,13 +279,13 @@ async function syncConditions(char, time) {
       continue;
     }
 
-    const hasCondition = game.cub.hasCondition(condition, char, {warn: false});
-    if (hasCondition) continue;
-
-    await Util.addCondition(condition, char);
     if (isAsleep) continue;
     
-    const flavor = Util.upperCaseFirst(type);
+    const date = SimpleCalendar.api.timestampToDate(time);
+    const doWarn = clock.warnCondition(date);
+    if (!doWarn) continue;
+
+    const flavor = typeString;
     const content = `${char.name} feels ${conditionString}...`;
     await Util.macroChatMessage(char, { content, flavor }, false);
 
@@ -293,13 +298,6 @@ async function syncConditions(char, time) {
       
     return Util.playSound(warningSound, token, {push: true, bubble: true});
   }
-
-  // diseases
-  const charDiseases = char.getFlag("lostlands", "disease") || {};
-  const diseased = Object.values(charDiseases).some(d => d.confirmed);
-
-  diseased ? await Util.addCondition("Diseased", char) :
-             await Util.removeCondition("Diseased", char);
 }
 
 export function getExposureConditionString(diffClo) {
@@ -340,7 +338,6 @@ async function syncDamageClocks(char, time, override=false) {
   let setDiseases = false;
 
   for (const [disease, data] of Object.entries(charDiseases)) {
-
     if ( data.intervalId && !override ) continue;
 
     const damageInterval = DISEASES[disease].damageInterval;
@@ -367,7 +364,7 @@ export async function deleteDisease(actor, disease) {
   delete diseases[disease];
 
   if (!Object.keys(diseases).length) {
-    await Util.removeCondition("Diseased", actor);
+    // await Util.removeCondition("Diseased", actor);
     await actor.unsetFlag("lostlands", "disease");
   }
 
@@ -388,7 +385,7 @@ export async function deleteAllDiseases(actor) {
   try {
     await actor.unsetFlag("lostlands", "disease");
     damage && await restoreMaxHpDamage(actor, damage);
-    await Util.removeCondition("Diseased", actor);
+    // await Util.removeCondition("Diseased", actor);
   } catch (error) {
     throw new Error(error);
   }

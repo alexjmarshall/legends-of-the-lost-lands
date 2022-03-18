@@ -1426,7 +1426,6 @@ function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
 export async function applyFatigue(actorId, type, execTime, newTime, heal=false) {
   const actor = game.actors.get(actorId);
   if (!actor) return;
-  let dmgMulti, typeString = type;
 
   const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
@@ -1436,13 +1435,16 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
     if (isAsleep) return;
   }
 
+  let dmgMulti = 0;
+  let typeString = type;
+
   if (type == 'exposure') {
     const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
     
     const diffClo = Fatigue.diffClo(actor);
     dmgMulti = Math.floor(Math.abs(diffClo) / 10);
-    if (dmgMulti === 0) return;
+    if (!dmgMulti) return;
     typeString = diffClo < 0 ? 'cold' : 'heat';
   }
   
@@ -1604,7 +1606,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     actorDiseases[disease].confirmed = true;
     await actor.setFlag("lostlands", "disease", actorDiseases);
     await Util.macroChatMessage(actor, { content: `${actor.name} feels unwell...`, flavor }, false);
-    await Util.addCondition("Diseased", actor);
+    // await Util.addCondition("Diseased", actor);
     return applyDisease(actorId, disease, execTime, newTime);
   };
 
@@ -1645,6 +1647,3 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
 
   return true;
 }
-
-// TODO simpify fatigue conditions -- just note on char sheet whether hhungry/thristy etc., use a generalized fatigued/exhausted condition
-// TODO bug: can't delete dex ability scores in attributes tab
