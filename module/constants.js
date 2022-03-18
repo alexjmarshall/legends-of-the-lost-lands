@@ -334,15 +334,6 @@ export const ARMOR_VS_DMG_TYPE = {
   },
 }
 export const ATK_MODES = {
-  "attack": {
-    ATK_ATTR: "str",
-    DMG_ATTR: "str",
-    HIT_SOUND: undefined,
-    MISS_SOUND: undefined,
-    DMG_TYPE: undefined,
-    ATK_TYPE: "melee",
-    ATK_FORM: "swing",
-  },
   "swing(b)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
