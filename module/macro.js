@@ -660,13 +660,13 @@ async function attack(attackers, targetToken, options) {
   const attacks = attacker.attacks;
   const attackingActor = token.actor;
   const attackerRollData = attackingActor.getRollData();
-  if (!attackerData) {
+  if (!attackerRollData) {
     ui.notifications.error("Invalid attacker data");
     attackers.shift();
     return attack(attackers, targetToken, options);
   }
   const targetActor = targetToken?.actor;
-  const targetRollData = targetActor.getRollData();
+  const targetRollData = targetActor?.getRollData();
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
@@ -740,6 +740,7 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
+  const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
   if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
@@ -748,10 +749,10 @@ async function attack(attackers, targetToken, options) {
   const weapName = weaponItem.name;
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
-  const weapAtkMod = weapAttrs.atk_mod?.value;
+  const weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
-  const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
+
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
     weapons.shift();
@@ -822,7 +823,7 @@ async function attack(attackers, targetToken, options) {
   const mainhand = weapon.mainhand && options.twoWeaponFighting !== false;
   const offhand = weapon.offhand && options.twoWeaponFighting !== false;
   
-  const thrown = weapon.atkMode.toLowerCase().includes('throw');
+  const thrown = Constant.ATK_MODES[weapon.atkMode]?.ATK_FORM === 'throw';
   // throwing offhand weapon is not allowed
   if ( offhand === true && thrown ) {
     weapons.shift();
@@ -854,6 +855,7 @@ async function attack(attackers, targetToken, options) {
       ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}`);
     }
   }
+
   let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
   if (!Object.keys(Constant.ATK_MODES).includes(atkMode)) {
     atkMode = 'attack';
@@ -861,6 +863,7 @@ async function attack(attackers, targetToken, options) {
 
   const atkType = Constant.ATK_MODES[atkMode].ATK_TYPE;
   const dmgType = Constant.ATK_MODES[atkMode].DMG_TYPE;
+  const atkForm = Constant.ATK_MODES[atkMode].ATK_FORM;
 
   // check if target is beyond reach/range
   const weaponRange = +weapAttrs.range?.value;
@@ -890,10 +893,10 @@ async function attack(attackers, targetToken, options) {
     if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers?', key: 'dialogDmgMod'});
     return modDialog(options, 'Attack', fields, () => attack(attackers, targetToken, options));
   }
-  let dialogAtkMod = '', dialogDmgMod = '';
+  let dialogAtkMod = 0, dialogDmgMod = 0;
   try {
-    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : '';
-    dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : '';
+    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : 0;
+    dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : 0;
   } catch {
     ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
@@ -902,11 +905,12 @@ async function attack(attackers, targetToken, options) {
 
   // get attacker's properties
   const bab = attackerRollData.bab || 0;
-  const strMod = attackerRollData.str_mod || 0;
   const dexMod = attackerRollData.dex_mod || 0;
   const twoWeaponFightingPenalty = mainhand ? -3 + dexMod : offhand ? -5 + dexMod : 0;
-  const attrAtkMod = Constant.ATK_MODES[ATK_ATTR];
-  const attrDmgMod = Constant.ATK_MODES[DMG_ATTR];
+  const atkAttr = Constant.ATK_MODES[atkMode].ATK_ATTR;
+  const dmgAttr = Constant.ATK_MODES[atkMode].DMG_ATTR;
+  const attrAtkMod = attackerRollData[`${atkAttr}_mod`] || 0;
+  const attrDmgMod = attackerRollData[`${dmgAttr}_mod`] || 0;
   const attackerAttrAtkMod = attackerRollData.atk_mod || 0;
   const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
   const attackerAtkMod = attacker.atkMod || 0;
@@ -921,7 +925,7 @@ async function attack(attackers, targetToken, options) {
   const immuneImpale = !!targetRollData?.immune_impale;
 
   // determine range penalty and reduce qty of thrown weapon/missile
-  let rangePenalty;
+  let rangePenalty = 0;
   if (atkType === 'missile') {
     rangePenalty = -Math.abs(Math.floor(range / 10));
     // reduce qty of thrown weapon/missile
@@ -953,87 +957,138 @@ async function attack(attackers, targetToken, options) {
     }
   }
 
-  // if (isCrit) dmgText += ` + ${Util.chatInlineRoll(`/r ${weapDmg}#${weapName} damage`)}`;
-
-  // put together chat message content
+  // attack
   const d20Result = await Util.rollDice("d20");
-  const isLuckyHit = d20Result >= 20 && !immuneLuckyHits;
-  if (isLuckyHit) weapDmg = `${weapDmg}+${weapDmg}`;
-  const weapDmgResult = await Util.rollDice(weapDmg);
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}`;
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
-  let dmgText = `${totalDmg ? ` for ${Util.chatInlineRoll(totalDmg)}` : ''} damage`;
-  
-  const rangeText = range && rangePenalty ? ` ${range}'` : '';
+  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}`;
   const hitSound = Constant.ATK_MODES[atkMode].HIT_SOUND;
   const missSound = Constant.ATK_MODES[atkMode].MISS_SOUND;
-  let resultText = isLuckyHit ? ` <span style="${resultStyle('#FFFF5C')}">LUCKY HIT</span>` : '';
+  let resultText = '';
   let resultSound = missSound;
   let isHit = true;
   let targetAc = Number(targetRollData?.ac.total[dmgType].ac);
-  if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) {
-    // roll for hit location
-    const hitLocRoll = await Util.rollDice("d100");
-    let atkForm = atkMode.includes('swing') ? 'SWING' : 'THRUST'; // TODO swing high/low, from atk mode dialog? -2 to swing high
-    let hitLoc = Constant.HIT_LOC_ARRS[atkForm][hitLocRoll - 1].replace('right ', '').replace('left ', '');
-    targetAc = Number(targetRollData?.ac[hitLoc][dmgType]);
-  }
+  let weapDmgResult = await Util.rollDice(weapDmg);
   
   if (!isNaN(targetAc)) {
-    // handle situational AC mods
-    // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
-    const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
-      t.actor.id !== targetToken.actor.id &&
-      t.actor.id !== token.actor.id &&
-      measureRange(targetToken, t) < 10);
-    const adjLargeShieldMods = adjFriendlyTokens.map(t => 
-      t.actor.items.filter(i => i.data.data.worn &&
-                                !!i.data.data.attributes.shield?.value &&
-                                Util.stringMatch(i.data.data.attributes.size?.value, 'L')
-      ).map(i => +i.data.data.attributes.ac_mod?.value || 0)
-    ).flat();
-    const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
-    targetAc += shieldWallMod;
+    let hitLoc = '';
+    let coverageArea = '';
+    let shield;
 
-    if (missileAtk) {
-      // disregard bucklers vs. missile
-      const bucklersHeld = targetToken.actor.items.filter(i => (i.data.data.held_left || i.data.data.held_right) &&
-                           !!i.data.data.attributes.shield?.value &&
-                           Util.stringMatch(i.data.data.attributes.size?.value, 'T'));
-      bucklersHeld.forEach(i =>{
-        const mod = +i.data.data.attributes.ac_mod?.value || 0;
-        targetAc -= mod;
-      });
-      // -1 for medium shield vs. missile
-      const medShieldsWorn = targetToken.actor.items.filter(i => i.data.data.worn &&
-                               !!i.data.data.attributes.shield?.value &&
-                               Util.stringMatch(i.data.data.attributes.size?.value, 'M'));
-      medShieldsWorn.forEach((i) => {
-        targetAc -= 1;
-      });
-    }
+    // roll for hit location if character or humanoid
+    if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) {
+      const hitLocRoll = await Util.rollDice("d100");
+      let hitLocTable = atkForm === 'swing' ? 'SWING' : 'THRUST'; // use thrust table for everything besides swings TODO swing high/low, from atk mode dialog? -2 to swing high
+      hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
+      coverageArea = hitLoc.replace('right ', '').replace('left ', '');
+      targetAc = Number(targetRollData?.ac?.[coverageArea]?.[dmgType]?.ac) || targetAc;
 
-    if (chainWeapon) {
-      // disregard all shield mods if weapon is unwieldy, e.g. flail
-      const wornOrHeldShields = targetToken.actor.items.filter(i => i.data.data.worn && !!i.data.data.attributes.shield?.value ||
-                                (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
-      const shieldAcMods = wornOrHeldShields.reduce((a, b) => a + (+b.data.data.attributes.ac_mod?.value || 0), shieldWallMod);
-      targetAc -= shieldAcMods;
+      resultText += `${hitLoc ? ` in the ${hitLoc} ` : ''}`;
+
+      // handle situational AC mods
+      // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
+      const largeShieldCoverage = Constant.SHIELD_TYPES.large.coverage;
+      const largeShieldLocs = Util.getArrFromCSL(largeShieldCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
+      if(largeShieldLocs.includes(coverageArea)) {
+        const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
+          t.actor.id !== targetToken.actor.id &&
+          t.actor.id !== token.actor.id &&
+          measureRange(targetToken, t) < 10);
+        const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
+          i.data.data.attributes.shield?.value &&
+          Util.stringMatch(i.data.data.attributes.size?.value, 'L'))
+        ).flat();
+        const adjLargeShieldMods = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType].ac + +s.data.data.ac?.mac) || 0);
+        // take best
+        const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
+        targetAc += shieldWallMod;
+      }
+
+      // handle effects based on target shield
+      shield = targetActor?.items.find(i => (i.data.data.held_left || i.data.data.held_right || i.data.data.worn) &&
+        i.data.data.attributes.shield?.value &&
+        i.data.data.ac?.locations?.includes(coverageArea));
+      if (shield) {
+        let shieldBonus = 0;
+        for (const dmgType of Constant.DMG_TYPES) {
+          shieldBonus += +shield?.data.data.ac[dmgType].ac || 0;
+        }
+        shieldBonus = Math.round(shieldBonus / Constant.DMG_TYPES.length) + (+shield?.data.data.ac.mac || 0);
+
+        if (missileAtk) {
+          // disregard bucklers vs. missile
+          const holdingBuckler = (shield?.data.data.held_left || shield?.data.data.held_right) && Util.stringMatch(shield?.data.data.attributes.size?.value, 'T');
+          if (holdingBuckler) {
+            targetAc -= shieldBonus;
+          }
+        }
+
+        if (chainWeapon) {
+          // disregard all shield mods if weapon is unwieldy, e.g. flail
+          targetAc -= shieldBonus;
+        }
+      }
     }
 
     const totalAtkResult = await Util.rollDice(totalAtk);
+    const isLuckyHit = d20Result >= 20 && !immuneLuckyHits;
+    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 1 always misses and 20 (lucky hit) always hits
     isHit = d20Result > 1 && totalAtkResult >= targetAc || isLuckyHit;
+
     if (isHit) {
-      const hitStyle = attacker.hitText ? attacker.hitText : 
-                       isLuckyHit ? `<span style="${resultStyle('#FFFF5C')}">LUCKY HIT</span>` :
-                       `<span style="${resultStyle('#7CCD7C')}">HIT</span>`;
-      resultText = ` vs. AC ${targetAc} ${hitStyle}${hitLoc ? ` in the ${hitLoc}` : ''}`;
+      let hitDesc = ' and hits';
+      let damagedArmorString = '';
+      const isCriticalHit = await Util.rollDice('d100') <= totalAtkResult - targetAc;
+
+      if (isCriticalHit) {
+        hitDesc = ' and strikes a weak spot';
+        const nonBulkyArmor = targetActor.items.find(i => i.data.data.worn &&
+          !i.data.data.attributes.bulky?.value &&
+          !i.data.data.attributes.shield?.value &&
+          i.data.data.ac?.locations?.includes(coverageArea));
+        const baseAc = Number(nonBulkyArmor?.data.data.attributes.base_ac?.value);
+        if (nonBulkyArmor && baseAc) {
+          const itemUpdate = {'_id': nonBulkyArmor._id, 'data.attributes.base_ac.value': baseAc - 1};
+          if (baseAc < 2) {
+            const qty = nonBulkyArmor.data.data.quantity;
+            Object.assign(itemUpdate, {'data.quantity': qty - 1});
+          }
+          await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+          damagedArmorString += ` and penetrates ${nonBulkyArmor.name}`;
+        } else {
+          weapDmgResult = await new Roll(weapDmg).evaluate({maximize: true}).total;
+        }
+      }
+
+      if (isLuckyHit) {
+        hitDesc += ' brutally hard';
+        const bulkyArmor = shield || targetActor.items.find(i => i.data.data.worn &&
+          !i.data.data.attributes.bulky?.value &&
+          i.data.data.ac?.locations?.includes(coverageArea));
+        const baseAc = Number(bulkyArmor?.data.data.attributes.base_ac?.value);
+        if (bulkyArmor && baseAc) {
+          const itemUpdate = {'_id': bulkyArmor._id, 'data.attributes.base_ac.value': baseAc - 1};
+          if (baseAc < 2) {
+            const qty = bulkyArmor.data.data.quantity;
+            Object.assign(itemUpdate, {'data.quantity': qty - 1});
+          }
+          await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+          damagedArmorString = ` and damages ${bulkyArmor.name}` + damagedArmorString;
+        } else {
+          weapDmgResult = weapDmgResult + await Util.rollDice(weapDmg);
+        }
+      }
+
       resultSound = hitSound;
+      resultText += hitDesc + damagedArmorString;
     } else {
-      resultText = ` vs. AC ${targetAc} <span style="${resultStyle('#EE6363')}">MISS</span>`;
+      resultText += ` and misses`;
     }
   }
+
+  // damage
+  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
+  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)} damage`;
+  
 
   // if ( unwieldy && atkType === 'melee' && d20Result === 1)  { // TODO fumble instead of roll 1. fragile also possible fumble result
   //   isHit = true;
@@ -1052,25 +1107,29 @@ async function attack(attackers, targetToken, options) {
   //   }
   // }
 
+  // result
   if (isHit) resultText += dmgText;
+  const rangeText = range && rangePenalty ? ` ${range}'` : '';
 
-  chatMsgData.content += `${Util.chatInlineRoll(totalAtk)}${resultText}<br>`;
-  chatMsgData.flavor += `${weapName} (${dmgType}${rangeText}), `;
-  chatMsgData.bubbleString += `${attackingActor.name} ${getAttackChatBubble(targetToken?.actor.name, weapName, dmgType)}<br>`;
+  chatMsgData.content += `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}`;
+  chatMsgData.content += `${resultText}<br>`;
+  
+  chatMsgData.flavor += `${weapName} (${dmgType} ${atkForm}${rangeText}), `;
+  // TODO chat bubble exceptions, like punching, grappling etc.
+  chatMsgData.bubbleString += `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}<br>`;
 
   // if applying damage automatically, roll it now and add it to attacks object
-  let damage = null;
-  let energyDrainDamage = null;
   const applyDamage = isHit && targetActor && options.applyEffect === true && game.user.isGM;
+  const totalDmgResult = applyDamage ? await Util.rollDice(totalDmg) : 0;
 
   attacks.push({
     sound: resultSound,
     damage: applyDamage ? totalDmgResult : null,
-    energyDrainDamage: applyDamage && energyDrain ? totalDmgResult : null // remember to always apply damage for energy drain
+    energyDrainDamage: applyDamage && energyDrain ? totalDmgResult : null // remember to always apply damage automatically for energy drain, or it won't be recorded
   });
 
   const sumDmg = attacks.reduce((sum, a) => sum + a.damage, 0);
-  const targetHp = +targetToken?.actor.data.data.hp?.value;
+  const targetHp = +targetActor?.data.data.hp?.value;
   if (sumDmg >= targetHp) {
     while (weapons.length) weapons.shift();
   } else {
@@ -1078,37 +1137,6 @@ async function attack(attackers, targetToken, options) {
   }
 
   return attack(attackers, targetToken, options);
-}
-
-function getAttackChatBubble(targetName, weapName, dmgType) {
-  switch (dmgType) {
-    case "arrow":
-      return `shoots an arrow${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
-    case "attack":
-      return `attacks${targetName ? ` ${targetName}` : ''}`;
-    case "bludgeon":
-      return `bludgeons${targetName ? ` ${targetName}` : ''} with ${weapName}`;
-    case "bolt":
-      return `shoots a bolt${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
-    case "hew":
-      return `hews${targetName ? ` ${targetName}` : ''} with ${weapName}`;
-    case "grapple":
-      return `grapples${targetName ? ` ${targetName}` : ''}`;
-    case "hook":
-      return `hooks${targetName ? ` ${targetName}` : ''} with ${weapName}`;
-    case "punch":
-      return `punches${targetName ? ` ${targetName}` : ''}`;
-    case "cut":
-      return `cuts${targetName ? ` ${targetName}` : ''} with ${weapName}`;
-    case "thrust":
-      return `thrusts ${weapName}${targetName ? ` at ${targetName}` : ''}`;
-    case "slingstone":
-      return `slings a stone${targetName ? ` at ${targetName}` : ''} from ${weapName}`;
-    case "throw":
-      return `throws ${weapName}${targetName ? ` at ${targetName}` : ''}`;
-    case "energy drain":
-      return `drains life energy${targetName ? ` from ${targetName}` : ''}`;
-  }
 }
 
 function resultStyle(bgColour) {
