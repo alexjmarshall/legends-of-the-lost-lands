@@ -115,6 +115,8 @@ export class SimpleActor extends Actor {
     // ac, st mods and worn clo
     if ( type === 'character' || type === 'monster' ) {
       const naturalAc = attributes.ac?.value || Constant.AC_MIN;
+      const naturalDr = attributes.dr?.value || 0;
+
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
 
@@ -124,17 +126,27 @@ export class SimpleActor extends Actor {
       const maxDexPenalty = wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.max_dex_penalty || 0), 0);
       const max_dex_mod = Math.round(4 - maxDexPenalty);
       const dexAcBonus = Math.min(updateData.dex_mod, max_dex_mod);
+
+      // class bonus        
+      const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
+      const isSwashbuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') &&
+                             max_dex_mod >= 4;
+      const level = +attributes.lvl?.value || 1;
+      const classBonus = isBarbarian ? 1 :
+                         isSwashbuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
       
       const touch_ac = Constant.AC_MIN + dexAcBonus;
 
       updateData.ac = {touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {}};
       for (const dmgType of Constant.DMG_TYPES) {
         updateData.ac.total[dmgType] = {
-          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac,
-          dr: Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
+          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + classBonus,
+          dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
-      
+
+      // TODO try removing all conditions/warnings from fatigue damage
+      // TODO decrease the value of armor/shield base_ac to represent armor damage from lucky hits (shield/bulky)/critical hits (non-bulky)
 
       // ac and dr for every body location
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
@@ -144,46 +156,46 @@ export class SimpleActor extends Actor {
             dr: 0,
           }
         }
+
         updateData.clo = 0;
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
           updateData.ac[k] = {};
-          const wornCoveringItems = wornOrHeldItems.filter(i => i.data.data.ac?.locations?.includes(k));
+          const coveringItems = wornOrHeldItems.filter(i => i.data.data.ac?.locations?.includes(k));
+          const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
+          const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
-          const wornWarmthVals = wornCoveringItems.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
+          const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
           wornWarmthVals.sort((a,b) => b - a);
           const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
           updateData.clo += locWarmth;
 
           // magic damage reduction
-          const mdr = wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
+          const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
           updateData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
           // magic ac bonus
-          const magicBonus = Math.max(...wornCoveringItems.map(i => +i.data.data.ac?.mac || 0));
+          const magicBonus = Math.max(...coveringItems.map(i => +i.data.data.ac?.mac || 0));
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
+            const shieldAcBonus = shield?.data.data.ac[dmgType].ac || 0;
+            const shieldDrBonus = shield?.data.data.ac[dmgType].dr || 0;
+
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
-            const wornAc = Math.max(...wornCoveringItems.map(i => +i.data.data.ac[dmgType].ac || 0)) + magicBonus;
-            const ac = !wornCoveringItems.length ? unarmoredAc : wornAc;
-            const dr = unarmoredDr + wornCoveringItems.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0);
+            const wornAc = Math.max(...garments.map(i => +i.data.data.ac[dmgType].ac || 0)) + magicBonus;
+            const ac = (!garments.length ? unarmoredAc : wornAc) + shieldAcBonus + dexAcBonus + classBonus;
+            const dr = unarmoredDr + garments.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0) + shieldDrBonus;
             updateData.ac[k][dmgType] = { ac, dr };
             updateData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
             updateData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
           }
         }
 
-        const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
-        const isSwashBuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') &&
-                               updateData.ac.max_dex_mod >= 4;
-        const level = +attributes.lvl?.value || 1;
-        const classBonus = isBarbarian ? 1 :
-                           isSwashBuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
-        // round ac and add dex bonus and class bonus
+        // round ac
         for (const v of Object.values(updateData.ac.total)) {
-          v.ac = (Math.round(v.ac) || touch_ac) + dexAcBonus + classBonus;
+          v.ac = (Math.round(v.ac) || touch_ac);
           v.dr = Math.round(v.dr);
         }
         updateData.ac.mdr = Math.round(updateData.ac.mdr);

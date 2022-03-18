@@ -32,6 +32,19 @@ export class SimpleItem extends Item {
     const itemData = this.data.data;
     // const updateData = {};
 
+    // populate shield values from constants
+    const isShield = itemData.attributes.shield?.value;
+    if (isShield) {
+      const sizes = {L: "large", M: "medium"};
+      const size = sizes[itemData.attributes.size?.value];
+      if (itemData.attributes.material?.value) {
+        itemData.attributes.material.value = Constant.SHIELD_TYPES[size].material;
+      }
+      if (itemData.attributes.coverage?.value) {
+        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage;
+      }
+    }
+
     // AC mods
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material];
@@ -40,7 +53,7 @@ export class SimpleItem extends Item {
     const isMagic = !!itemData.attributes.magic?.value;
     const locations = [...new Set(coverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
     if (!!materialAcMods && locations.length) {
-      let baseAc = Constant.AC_MIN + materialAcMods.base_AC;
+      let baseAc = materialAcMods.base_AC;
       let mdr = 0;
       let mac = 0;
       // if non-magical, add acMod to base AC, if magical, store in separate field as mdr and mac
@@ -51,20 +64,27 @@ export class SimpleItem extends Item {
         baseAc += acMod;
       }
 
+      if (itemData.attributes.base_ac?.max !== undefined) {
+        itemData.attributes.base_ac.max = baseAc;
+        baseAc = itemData.attributes.base_ac.value ?? baseAc;
+      }
+
+      let acBonus = isShield ? baseAc : Constant.AC_MIN + baseAc;
+
       itemData.ac = {
         locations,
         mdr,
         mac,
         blunt: {
-          ac: baseAc + materialAcMods.blunt.ac,
+          ac: acBonus + materialAcMods.blunt.ac,
           dr: materialAcMods.blunt.dr
         },
         piercing: {
-          ac: baseAc + materialAcMods.piercing.ac,
+          ac: acBonus + materialAcMods.piercing.ac,
           dr: materialAcMods.piercing.dr
         },
         slashing: {
-          ac: baseAc + materialAcMods.slashing.ac,
+          ac: acBonus + materialAcMods.slashing.ac,
           dr: materialAcMods.slashing.dr
         },
       };

@@ -45,7 +45,21 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
 export const DMG_TYPES = ["blunt", "piercing", "slashing"];
+export const SHIELD_TYPES = {
+  large: {
+    coverage: "chest,gut,neck,shoulder,upper arm,elbow,forearm,hand,groin,hip",
+    material: "wood",
+  },
+  medium: {
+    coverage: "chest,gut,elbow,forearm,hand",
+    material: "wood",
+  },
+};
 export const MATERIAL_WARMTH_WEIGHT = {
+  wood: {
+    weight:8,
+    warmth:0,
+  },
   linen: {
     weight:3,
     warmth:12,
@@ -165,6 +179,21 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     slashing: {
       ac:-1,
+      dr:0,
+    },
+  },
+  wood: {
+    base_AC: 3,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:0,
+      dr:0,
+    },
+    slashing: {
+      ac:0,
       dr:0,
     },
   },

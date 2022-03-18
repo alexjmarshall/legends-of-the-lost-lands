@@ -21,10 +21,10 @@
             {{!-- Handle resources. --}}
             {{#if attr.isResource}}
             {{#if ../isPlayer}}
-                <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max" value="{{attr.max}}"
-                    data-dtype="Number" readonly />
+            <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
+            value="{{attr.value}}" data-dtype="Number" />
             {{else}}
-            <div class="attribute-group flexrow">
+            <div class="attribute-group flexrow" style="min-width:125px;">
                 <span class="attribute-col flexcol">
                     <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min">{{localize "SIMPLE.ResourceMin"}}</label>
                     <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min" value="{{attr.min}}"
