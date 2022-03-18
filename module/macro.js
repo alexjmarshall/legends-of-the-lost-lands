@@ -311,6 +311,7 @@ export function heldWeaponAttackMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
+  const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
 
@@ -359,6 +360,7 @@ export function heldWeaponAttackMacro(options={}) {
     attackers.push({
       token: token,
       weapons: weapIds,
+      ranTarget,
       chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: [],
       unarmed
@@ -377,6 +379,7 @@ export function quickSlashAttackMacro(itemId, options={}) {
   if (!weapon) return ui.notifications.error("Could not find weapon on this character");
 
   const targets = [...game.user.targets];
+  const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
 
@@ -387,6 +390,7 @@ export function quickSlashAttackMacro(itemId, options={}) {
     weapons: [{id: itemId, atkMode: 'Swing (S)'}],
     chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
     flavor,
+    ranTarget,
     attacks: [],
     showAltDialog: false,
     throwable: false
@@ -399,6 +403,7 @@ export function attackRoutineMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
+  const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
   options.twoWeaponFighting = false;
@@ -420,6 +425,7 @@ export function attackRoutineMacro(options={}) {
     attackers.push({
       token: token,
       weapons: attacks,
+      ranTarget,
       chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: []
     })
@@ -552,8 +558,8 @@ export function backstabMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
-  const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = targets[ranTargetIndex];
+  if (targets.length > 1) return ui.notifications.error("Select one target");
+  const targetToken = targets[0];
 
   const attackers = [];
   for (const token of selectedTokens) {
@@ -578,13 +584,13 @@ export function backstabMacro(options={}) {
     }
     const weapon = heldWeapons[0];
     if(!weapon.data.data.attributes.light?.value) {
-      ui.notifications.error(`${token.actor.name} cannot backstab with this weapon`);
+      ui.notifications.error(`${token.actor.name} cannot backstab with ${weapon.name}`);
       continue;
     }
     const flavor = `${weapon.name} (backstab)`;
     attackers.push({
       token: token,
-      weapons: [{id: weapon.id, dmgType: 'thrust'}],
+      weapons: [{id: weapon.id, dmgType: 'thrust'}], // TODO
       chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
       flavor,
       attacks: [],
@@ -636,6 +642,7 @@ export async function attackMacro(weapons, options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets= [...game.user.targets];
+  const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
   const targetToken = targets[ranTargetIndex];
 
@@ -644,6 +651,7 @@ export async function attackMacro(weapons, options={}) {
     attackers.push({
       token: token,
       weapons: weapons,
+      ranTarget,
       chatMsgData: { content: '', flavor: '', sound: '', bubbleString: '' },
       attacks: []
     })
@@ -670,13 +678,13 @@ async function attack(attackers, targetToken, options) {
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
-  const attackerSize = Constant.SIZE_VALUES[attackerRollData.size] || 2;
-  const targetSize = Constant.SIZE_VALUES[targetRollData.size] || 2;
+  const attackerSize = Constant.SIZE_VALUES[attackerRollData.size] ?? 2;
+  const targetSize = Constant.SIZE_VALUES[targetRollData?.size] ?? 2;
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
-    // remove commas
+    // remove comma at end
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
     chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
     Util.macroChatMessage(token, chatMsgData, false);
@@ -717,11 +725,14 @@ async function attack(attackers, targetToken, options) {
       name: 'Fist',
       data:{
         data: {
+          held_left: true,
+          held_right: true,
           attributes: {
             atk_mod: { value: 0 },
             dmg: { value: '1d2/1d2' },
-            atk_modes: { value: 'Swing (B)' },
+            atk_modes: { value: 'Swing (B), Thrust (B)' },
             double_weapon: { value: true },
+            reach: { value: '0,1'},
           },
           quantity: 2
         }
@@ -751,11 +762,16 @@ async function attack(attackers, targetToken, options) {
   const weapName = weaponItem.name;
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
-  const weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   const weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize;
-  const weapSize = +weapAttrs.size?.value || 0;
+  const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value] ?? 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
+  let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
+  
+  // +1 if holding a weapon of same size in both hands
+  // -2 if holding a weapon one size larger in one hand
+  if (weapSize === attackerSize && weaponHeldTwoHands) weapAtkMod++;
+  if (weapSize > attackerSize && !weaponHeldTwoHands) weapAtkMod = weapAtkMod - 2;
 
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
@@ -783,7 +799,7 @@ async function attack(attackers, targetToken, options) {
 
   // atk modes
   const atkModes = weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
-  if (!atkModes.length) {
+  if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
     ui.notifications.error("Invalid attack mode(s) specified");
     weapons.shift();
     return attack(attackers, targetToken, options);
@@ -800,7 +816,8 @@ async function attack(attackers, targetToken, options) {
   }
 
   // weapon tags
-  const bonusToShields = !!weapAttrs.bonus_to_shields?.value;
+  const bonusToGroups = !!weapAttrs.bonus_to_groups?.value;
+  const bonusToShields = !!weapAttrs.bonus_to_shields?.value; // TODO test monster attacks with attack routine and feature items not held weapons
   const bleedBonus = !!weapAttrs.bleed_bonus?.value;
   const chainWeapon = !!weapAttrs.chain_weapon?.value;
   const fragile = !!weapAttrs.fragile?.value;
@@ -841,9 +858,10 @@ async function attack(attackers, targetToken, options) {
   }
 
   // attack choice dialog
-  if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
+  const formatAtkMode = (mode) => Util.upperCaseFirst(mode.replace(/\(/, ' (').replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
+  if ( atkModes.length && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = atkModes.map(mode => {
-      return {label: Util.upperCaseFirst(mode), value: mode}
+      return {label: formatAtkMode(mode), value: mode}
     });
     return altDialog(
       weapon, 
@@ -852,7 +870,7 @@ async function attack(attackers, targetToken, options) {
       () => attack(attackers, targetToken, options)
     );
   }
-  if ( weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
+  if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
     try {
       await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
     } catch {
@@ -860,14 +878,11 @@ async function attack(attackers, targetToken, options) {
     }
   }
 
-  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
-  if (!Object.keys(Constant.ATK_MODES).includes(atkMode)) {
-    atkMode = 'attack';
-  }
+  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || weapon.altDialogChoice || atkModes[0];
 
-  const atkType = Constant.ATK_MODES[atkMode].ATK_TYPE;
-  const dmgType = Constant.ATK_MODES[atkMode].DMG_TYPE;
-  const atkForm = Constant.ATK_MODES[atkMode].ATK_FORM;
+  const atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
+  const dmgType = Constant.ATK_MODES[atkMode]?.DMG_TYPE || 'blunt';
+  const atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM || 'attack';
 
   // check if target is beyond reach/range
   const weaponRange = +weapAttrs.range?.value;
@@ -884,7 +899,7 @@ async function attack(attackers, targetToken, options) {
   }
   const maxRange = missileAtk ? weaponRange : maxReach;
   if (range > +maxRange) {
-    ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of this weapon`);
+    ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of ${weapon.name}`);
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
@@ -932,7 +947,7 @@ async function attack(attackers, targetToken, options) {
   // determine range penalty and reduce qty of thrown weapon/missile TODO if ran target, range penalty 0 and apply bonus to groups
   let rangePenalty = 0;
   if (atkType === 'missile') {
-    rangePenalty = -Math.abs(Math.floor(range / 10));
+    rangePenalty = attacker.ranTarget ? 0 : -Math.abs(Math.floor(range / 10));
     // reduce qty of thrown weapon/missile
     if (thrown) {
       try {
@@ -965,14 +980,14 @@ async function attack(attackers, targetToken, options) {
   // attack
   const d20Result = await Util.rollDice("d20");
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}`;
-  const hitSound = Constant.ATK_MODES[atkMode].HIT_SOUND;
-  const missSound = Constant.ATK_MODES[atkMode].MISS_SOUND;
+  const hitSound = Constant.ATK_MODES[atkMode]?.HIT_SOUND;
+  const missSound = Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let resultText = '';
   let dmgEffect = '';
-  let dr = Number(targetRollData?.ac.total[dmgType].dr) || 0;
+  let dr = Number(targetRollData?.ac.total[dmgType]?.dr) || 0;
   let resultSound = missSound;
   let isHit = true;
-  let targetAc = Number(targetRollData?.ac.total[dmgType].ac);
+  let targetAc = Number(targetRollData?.ac.total[dmgType]?.ac);
   let rolledWeapDmg = await Util.rollDice(weapDmg);
   let weapDmgResult = rolledWeapDmg;
   let armorIsMetal = false;
@@ -1010,7 +1025,7 @@ async function attack(attackers, targetToken, options) {
           i.data.data.attributes.shield?.value &&
           Util.stringMatch(i.data.data.attributes.size?.value, 'L'))
         ).flat();
-        const adjLargeShieldMods = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType].ac + +s.data.data.ac?.mac) || 0);
+        const adjLargeShieldMods = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.ac + +s.data.data.ac?.mac) || 0);
         // take best
         const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
         targetAc += shieldWallMod;
@@ -1022,8 +1037,8 @@ async function attack(attackers, targetToken, options) {
         i.data.data.ac?.locations?.includes(coverageArea));
       if (shield) {
         let shieldBonus = 0;
-        for (const dmgType of Constant.DMG_TYPES) {
-          shieldBonus += +shield?.data.data.ac[dmgType].ac || 0;
+        for (const dmType of Constant.DMG_TYPES) {
+          shieldBonus += +shield?.data.data.ac[dmType].ac || 0;
         }
         shieldBonus = Math.round(shieldBonus / Constant.DMG_TYPES.length) + (+shield?.data.data.ac.mac || 0);
         if (bonusToShields) shieldBonus = Math.min(0, shieldBonus - 1);
@@ -1043,6 +1058,11 @@ async function attack(attackers, targetToken, options) {
         }
       }
 
+      // bonus to groups
+      if (atkType === 'missile' && attacker.ranTarget && bonusToGroups) {
+        targetAc -= 2;
+      }
+
       // check for metal armor
       armorIsMetal = targetActor?.items.some(i => i.data.data.worn &&
         i.data.data.attributes.metal?.value &&
@@ -1059,12 +1079,11 @@ async function attack(attackers, targetToken, options) {
       let hitDesc = ' and hits';
       let resultDesc = '';
 
-      const isCriticalHit = true// await Util.rollDice('d100') <= totalAtkResult - targetAc && !immuneCriticalHits;
+      const isCriticalHit = await Util.rollDice('d100') <= totalAtkResult - targetAc && !immuneCriticalHits;
       const maxWeapDmg = await new Roll(weapDmg).evaluate({maximize: true}).total;
 
       // critical hits
       if (isCriticalHit) {
-        hitDesc = ' and strikes a weak spot';
         let verb = 'penetrates';
         const nonBulkyArmor = targetActor.items.find(i => i.data.data.worn &&
           !i.data.data.attributes.bulky?.value &&
@@ -1080,15 +1099,15 @@ async function attack(attackers, targetToken, options) {
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          resultDesc += ` and ${verb} their ${nonBulkyArmor.name}`;
+          hitDesc = ` and ${verb} their ${nonBulkyArmor.name}`;
         } else {
           weapDmgResult = maxWeapDmg;
+          hitDesc = ' and finds a weak spot';
         }
       }
 
       // lucky hits
       if (isLuckyHit) {
-        hitDesc += ' brutally hard';
         let verb = 'cracks';
         const bulkyArmor = shield || targetActor.items.find(i => i.data.data.worn &&
           i.data.data.attributes.bulky?.value &&
@@ -1103,9 +1122,10 @@ async function attack(attackers, targetToken, options) {
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          resultDesc = ` and ${verb} their ${bulkyArmor.name}` + resultDesc;
+          hitDesc = ` and ${verb} their ${bulkyArmor.name}` + hitDesc;
         } else {
           weapDmgResult = weapDmgResult + weapDmgResult;
+          hitDesc += ' brutally hard';
         }
       }
 
@@ -1135,7 +1155,7 @@ async function attack(attackers, targetToken, options) {
         if (!isCriticalHit && !isLuckyHit) {
           hitDesc = ` and impales them`;
         } else {
-          resultDesc += ` and impales them`;
+          hitDesc += ` and impales them`;
         }
         dmgEffect += stuck ? ' and the weapon is stuck in their body' : '';
       }
@@ -1143,8 +1163,7 @@ async function attack(attackers, targetToken, options) {
       // knockdown TODO check not already prone
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 5 * (weapDmgResult - weapSpeed + strMod - dr) - 10 * (targetSize - attackerSize);
-      console.log(knockdownChance);
+      const knockdownChance = knockDownMulti * 2 * (weapDmgResult + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
@@ -1168,7 +1187,7 @@ async function attack(attackers, targetToken, options) {
 
   // damage
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
-  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)} damage` + dmgEffect;
+  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage` + dmgEffect;
   
 
   // if ( unwieldy && atkType === 'melee' && d20Result === 1)  { // TODO fumble instead of roll 1. fragile also possible fumble result
@@ -1190,14 +1209,16 @@ async function attack(attackers, targetToken, options) {
 
   // result
   if (isHit) resultText += dmgText;
-  const rangeText = range && rangePenalty ? ` ${range}'` : '';
+  const rangeText = atkType === 'missile' && range ? ` ${range}'` : '';
 
-  chatMsgData.content += `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}`;
-  chatMsgData.content += `${resultText}<br>`;
+  chatMsgData.content += atkForm === 'attack' ? `${attackingActor.name} attacks${targetActor ? ` ${targetActor.name}` : ''}`:
+    `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}`;
+  chatMsgData.content += `${resultText}.<br>`;
   
-  chatMsgData.flavor += `${weapName} (${dmgType} ${atkForm}${rangeText}), `;
+  chatMsgData.flavor += atkForm === 'attack' ? `${weapName}, ` : `${weapName} (${dmgType} ${atkForm}${rangeText}), `; // TODO remove dmg type from here?
   // TODO chat bubble exceptions, like punching, grappling etc.
-  chatMsgData.bubbleString += `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}<br>`;
+  chatMsgData.bubbleString += atkForm === 'attack' ? `${attackingActor.name} attacks${targetActor ? ` at ${targetActor.name}` : ''}<br>` :
+    `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}<br>`;
 
   // if applying damage automatically, roll it now and add it to attacks object
   const applyDamage = isHit && targetActor && options.applyEffect === true && game.user.isGM;
