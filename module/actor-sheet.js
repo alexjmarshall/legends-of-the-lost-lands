@@ -120,7 +120,7 @@ export class SimpleActorSheet extends ActorSheet {
     const time = Util.now();
     const warn = time >= startTime + warningIntervalInSeconds;
     if (warn) return 1;
-    
+
     return 0;
   }
 
@@ -341,26 +341,27 @@ export class SimpleActorSheet extends ActorSheet {
       const isBulky = !!item.data.data.attributes.bulky?.value;
       if (isBulky) {
         const itemCoverage = item.data.data.attributes.coverage?.value;
-        const itemLocations = [...new Set(itemCoverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+        const itemLocations = Util.getArrFromCSL(itemCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
         const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
         const wornBulkyCoverage = wornBulkyItems.map(i => i.data.data.attributes.coverage?.value).join(',');
-        const wornBulkyLocations = [...new Set(wornBulkyCoverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+        const wornBulkyLocations = Util.getArrFromCSL(wornBulkyCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
         const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
         if (!!duplicateLocation) {
           return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
         }
       }
 
-      // can't wear if quantity > 1
+      // can't wear if quantity greater or less than 1
       const itemQty = +item?.data.data.quantity || 0;
-      const wornQtyLimit = 1;
-      if (itemQty > wornQtyLimit) return ui.notifications.error(`Can't wear ${itemQty} at once`);
+      if (itemQty !== 1) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
       
-      // can't wear a shield while holding a small shield or holding 2 handed weapon
+      // can't wear a shield if already wearing a shield, or while holding a small shield or 2 handed weapon
       const isShield = !!item.data.data.attributes.shield?.value;
-      const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
+      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
       const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left && i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
-      if (isShield ) {
+      const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
+      if (isShield) {
+        if (wearingShield) return ui.notifications.error("Can only wear one shield");
         if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
         if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
       }
