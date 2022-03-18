@@ -344,11 +344,21 @@ Hooks.on("preUpdateActor", (actor, change) => {
 
 Hooks.on("preUpdateItem", (item, change) => {
   // reset held/worn values to false when changing holdable/wearable attribute or quantity
-  if (change.data?.attributes?.holdable?.value != null || change.data?.quantity != null) {
+  let heldQtyLimit = 1;
+  const charSize = Constant.SIZE_VALUES[item.actor?.data.data.attributes.size?.value] ?? 2;
+  const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
+  if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
+  else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
+
+  const invalidHold = (item.data.data.held_left || item.data.data.held_right) &&
+    (change.data?.quantity < 1 || change.data?.quantity > heldQtyLimit);
+  if (change.data?.attributes?.holdable?.value != null || invalidHold) {
     change.data.held_left = false;
     change.data.held_right = false;
   }
-  if (change.data?.attributes?.wearable?.value != null || change.data?.quantity != null) {
+  const wearQtyLimit = 1;
+  const invalidWear = item.data.data.worn && (change.data?.quantity < 1 || change.data?.quantity > wearQtyLimit);
+  if (change.data?.attributes?.wearable?.value != null || invalidWear) {
     change.data.worn = false;
   }
 });
