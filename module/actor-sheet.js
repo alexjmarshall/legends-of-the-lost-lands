@@ -109,15 +109,18 @@ export class SimpleActorSheet extends ActorSheet {
   getFatigueStatus(data, type) {
     const isResting = data.effects.find(e => e.label === 'Rest');
     if (isResting) return 0;
+
     const flagData = data.flags?.lostlands?.[type] || {};
     const damage = !!flagData.maxHpDamage;
     if (damage) return 2;
+
     const startTime = flagData.startTime;
     const warningInterval = Fatigue.CLOCKS[type].warningInterval;
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const time = Util.now();
     const warn = time >= startTime + warningIntervalInSeconds;
     if (warn) return 1;
+    
     return 0;
   }
 
