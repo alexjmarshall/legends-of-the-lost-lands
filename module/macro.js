@@ -670,6 +670,8 @@ async function attack(attackers, targetToken, options) {
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
+  const attackerSize = Constant.SIZE_VALUES[attackerRollData.size] || 2;
+  const targetSize = Constant.SIZE_VALUES[targetRollData.size] || 2;
 
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
@@ -750,6 +752,8 @@ async function attack(attackers, targetToken, options) {
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
   const weapAtkMod = +weapAttrs.atk_mod?.value || 0;
+  const weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize;
+  const weapSize = +weapAttrs.size?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
 
@@ -906,6 +910,7 @@ async function attack(attackers, targetToken, options) {
   // get attacker's properties
   const bab = attackerRollData.bab || 0;
   const dexMod = attackerRollData.dex_mod || 0;
+  const strMod = attackerRollData.str_mod || 0;
   const twoWeaponFightingPenalty = mainhand ? -3 + dexMod : offhand ? -5 + dexMod : 0;
   const atkAttr = Constant.ATK_MODES[atkMode].ATK_ATTR;
   const dmgAttr = Constant.ATK_MODES[atkMode].DMG_ATTR;
@@ -924,7 +929,7 @@ async function attack(attackers, targetToken, options) {
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
 
-  // determine range penalty and reduce qty of thrown weapon/missile
+  // determine range penalty and reduce qty of thrown weapon/missile TODO if ran target, range penalty 0 and apply bonus to groups
   let rangePenalty = 0;
   if (atkType === 'missile') {
     rangePenalty = -Math.abs(Math.floor(range / 10));
@@ -963,15 +968,23 @@ async function attack(attackers, targetToken, options) {
   const hitSound = Constant.ATK_MODES[atkMode].HIT_SOUND;
   const missSound = Constant.ATK_MODES[atkMode].MISS_SOUND;
   let resultText = '';
+  let dmgEffect = '';
+  let dr = Number(targetRollData?.ac.total[dmgType].dr) || 0;
   let resultSound = missSound;
   let isHit = true;
   let targetAc = Number(targetRollData?.ac.total[dmgType].ac);
-  let weapDmgResult = await Util.rollDice(weapDmg);
+  let rolledWeapDmg = await Util.rollDice(weapDmg);
+  let weapDmgResult = rolledWeapDmg;
+  let armorIsMetal = false;
   
   if (!isNaN(targetAc)) {
     let hitLoc = '';
     let coverageArea = '';
     let shield;
+    const deepImpaleAreas = ['chest', 'gut'];
+    const doubleBleedAreas = ['neck','face','skull'];
+    const doubleKnockdownAreas = ['face', 'eye', 'skull'];
+    const invalidKnockdownAreas = ['hand','forearm']; // TODO not sure where to handle dr...need to cleanly separate process for character/humanoid and other targets
 
     // roll for hit location if character or humanoid
     if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) {
@@ -980,6 +993,7 @@ async function attack(attackers, targetToken, options) {
       hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
       coverageArea = hitLoc.replace('right ', '').replace('left ', '');
       targetAc = Number(targetRollData?.ac?.[coverageArea]?.[dmgType]?.ac) || targetAc;
+      dr = Number(targetRollData?.ac?.[coverageArea]?.[dmgType]?.dr) || dr;
 
       resultText += `${hitLoc ? ` in the ${hitLoc} ` : ''}`;
 
@@ -1012,74 +1026,141 @@ async function attack(attackers, targetToken, options) {
           shieldBonus += +shield?.data.data.ac[dmgType].ac || 0;
         }
         shieldBonus = Math.round(shieldBonus / Constant.DMG_TYPES.length) + (+shield?.data.data.ac.mac || 0);
+        if (bonusToShields) shieldBonus = Math.min(0, shieldBonus - 1);
 
-        if (missileAtk) {
-          // disregard bucklers vs. missile
-          const holdingBuckler = (shield?.data.data.held_left || shield?.data.data.held_right) && Util.stringMatch(shield?.data.data.attributes.size?.value, 'T');
-          if (holdingBuckler) {
+        if (shieldBonus) {
+          if (missileAtk) {
+            // disregard bucklers vs. missile
+            const holdingBuckler = (shield?.data.data.held_left || shield?.data.data.held_right) && Util.stringMatch(shield?.data.data.attributes.size?.value, 'T');
+            if (holdingBuckler) {
+              targetAc -= shieldBonus;
+            }
+          }
+          if (chainWeapon) {
+            // disregard all shield mods if weapon is unwieldy, e.g. flail
             targetAc -= shieldBonus;
           }
         }
-
-        if (chainWeapon) {
-          // disregard all shield mods if weapon is unwieldy, e.g. flail
-          targetAc -= shieldBonus;
-        }
       }
+
+      // check for metal armor
+      armorIsMetal = targetActor?.items.some(i => i.data.data.worn &&
+        i.data.data.attributes.metal?.value &&
+        i.data.data.ac?.locations?.includes(coverageArea));
     }
 
     const totalAtkResult = await Util.rollDice(totalAtk);
     const isLuckyHit = d20Result >= 20 && !immuneLuckyHits;
     resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
-    // 1 always misses and 20 (lucky hit) always hits
-    isHit = d20Result > 1 && totalAtkResult >= targetAc || isLuckyHit;
+    // 1 always misses and 20 always hits
+    isHit = d20Result > 1 && totalAtkResult >= targetAc || d20Result === 20;
 
     if (isHit) {
       let hitDesc = ' and hits';
-      let damagedArmorString = '';
-      const isCriticalHit = await Util.rollDice('d100') <= totalAtkResult - targetAc;
+      let resultDesc = '';
 
+      const isCriticalHit = true// await Util.rollDice('d100') <= totalAtkResult - targetAc && !immuneCriticalHits;
+      const maxWeapDmg = await new Roll(weapDmg).evaluate({maximize: true}).total;
+
+      // critical hits
       if (isCriticalHit) {
         hitDesc = ' and strikes a weak spot';
+        let verb = 'penetrates';
         const nonBulkyArmor = targetActor.items.find(i => i.data.data.worn &&
           !i.data.data.attributes.bulky?.value &&
           !i.data.data.attributes.shield?.value &&
-          i.data.data.ac?.locations?.includes(coverageArea));
+          i.data.data.ac?.locations?.includes(coverageArea) &&
+          Number(i.data.data.attributes.base_ac?.value) > 0);
         const baseAc = Number(nonBulkyArmor?.data.data.attributes.base_ac?.value);
         if (nonBulkyArmor && baseAc) {
           const itemUpdate = {'_id': nonBulkyArmor._id, 'data.attributes.base_ac.value': baseAc - 1};
           if (baseAc < 2) {
+            verb = 'destroys';
             const qty = nonBulkyArmor.data.data.quantity;
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
-          await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          damagedArmorString += ` and penetrates ${nonBulkyArmor.name}`;
+          options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+          resultDesc += ` and ${verb} their ${nonBulkyArmor.name}`;
         } else {
-          weapDmgResult = await new Roll(weapDmg).evaluate({maximize: true}).total;
+          weapDmgResult = maxWeapDmg;
         }
       }
 
+      // lucky hits
       if (isLuckyHit) {
         hitDesc += ' brutally hard';
+        let verb = 'cracks';
         const bulkyArmor = shield || targetActor.items.find(i => i.data.data.worn &&
-          !i.data.data.attributes.bulky?.value &&
-          i.data.data.ac?.locations?.includes(coverageArea));
+          i.data.data.attributes.bulky?.value &&
+          i.data.data.ac?.locations?.includes(coverageArea) &&
+          Number(i.data.data.attributes.base_ac?.value) > 0);
         const baseAc = Number(bulkyArmor?.data.data.attributes.base_ac?.value);
         if (bulkyArmor && baseAc) {
           const itemUpdate = {'_id': bulkyArmor._id, 'data.attributes.base_ac.value': baseAc - 1};
           if (baseAc < 2) {
+            verb = 'destroys';
             const qty = bulkyArmor.data.data.quantity;
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
-          await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          damagedArmorString = ` and damages ${bulkyArmor.name}` + damagedArmorString;
+          options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+          resultDesc = ` and ${verb} their ${bulkyArmor.name}` + resultDesc;
         } else {
-          weapDmgResult = weapDmgResult + await Util.rollDice(weapDmg);
+          weapDmgResult = weapDmgResult + weapDmgResult;
         }
       }
 
+      // impale
+      const isImpale = atkForm === 'thrust' && weapDmgResult % maxWeapDmg === 0 && !immuneImpale;
+      if (isImpale) {
+        let stuck = false;
+        let explode = false;
+        const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
+        const maxDeepImpales = Math.min(weapSize, targetSize);
+        let num = 0;
+
+        do {
+          const impaleDmg = await Util.rollDice(weapDmg);
+          num++;
+          // ~25% chance of rolling damage again and weapon getting stuck
+          console.log(canDeepImpale, num <= maxDeepImpales, impaleDmg >= Math.round(maxWeapDmg * 3 / 4))
+          if (canDeepImpale && num <= maxDeepImpales && impaleDmg >= Math.round(maxWeapDmg * 3 / 4)) {
+            explode = true;
+            stuck = true;
+          } else {
+            explode = false;
+          } 
+          weapDmgResult += impaleDmg;
+        } while (explode);
+
+        if (!isCriticalHit && !isLuckyHit) {
+          hitDesc = ` and impales them`;
+        } else {
+          resultDesc += ` and impales them`;
+        }
+        dmgEffect += stuck ? ' and the weapon is stuck in their body' : '';
+      }
+
+      // knockdown TODO check not already prone
+      const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
+                             doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
+      const knockdownChance = knockDownMulti * 5 * (weapDmgResult - weapSpeed + strMod - dr) - 10 * (targetSize - attackerSize);
+      console.log(knockdownChance);
+      const isKnockdown = atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
+      if (isKnockdown) {
+        dmgEffect += " and knocks them down";
+        // TODO add prone condition
+      }
+
+      // bleed
+      const minBleedDmg = bleedBonus ? 5 : 6;
+      const isBleed = dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= 25 && !immuneBleed;
+      if (isBleed) {
+        dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound!' : ' and they begin to bleed heavily!';
+        // TODO add bleed/heavy bleed condition
+      }
+
       resultSound = hitSound;
-      resultText += hitDesc + damagedArmorString;
+      resultText += hitDesc + resultDesc;
     } else {
       resultText += ` and misses`;
     }
@@ -1087,7 +1168,7 @@ async function attack(attackers, targetToken, options) {
 
   // damage
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
-  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)} damage`;
+  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)} damage` + dmgEffect;
   
 
   // if ( unwieldy && atkType === 'melee' && d20Result === 1)  { // TODO fumble instead of roll 1. fragile also possible fumble result
@@ -1125,7 +1206,7 @@ async function attack(attackers, targetToken, options) {
   attacks.push({
     sound: resultSound,
     damage: applyDamage ? totalDmgResult : null,
-    energyDrainDamage: applyDamage && energyDrain ? totalDmgResult : null // remember to always apply damage automatically for energy drain, or it won't be recorded
+    energyDrainDamage: applyDamage && energyDrain ? totalDmgResult : null // TODO remember to always apply damage automatically for energy drain, or it won't be recorded
   });
 
   const sumDmg = attacks.reduce((sum, a) => sum + a.damage, 0);
