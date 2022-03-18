@@ -944,10 +944,19 @@ async function attack(attackers, targetToken, options) {
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
 
-  // determine range penalty and reduce qty of thrown weapon/missile TODO if ran target, range penalty 0 and apply bonus to groups
+  // determine range penalty and reduce qty of thrown weapon/missile
   let rangePenalty = 0;
   if (atkType === 'missile') {
     rangePenalty = attacker.ranTarget ? 0 : -Math.abs(Math.floor(range / 10));
+    // bonus to groups
+    if (attacker.ranTarget && bonusToGroups) {
+      weapAtkMod =  weapAtkMod + 2;
+    }
+    // bonus to-hit large monsters
+    if (targetSize > 2) {
+      weapAtkMod =  weapAtkMod + 2;
+    }
+
     // reduce qty of thrown weapon/missile
     if (thrown) {
       try {
@@ -1002,7 +1011,7 @@ async function attack(attackers, targetToken, options) {
     const invalidKnockdownAreas = ['hand','forearm']; // TODO not sure where to handle dr...need to cleanly separate process for character/humanoid and other targets
 
     // roll for hit location if character or humanoid
-    if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) {
+    if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) { // TODO test with monster enemies with hardcoded armor types
       const hitLocRoll = await Util.rollDice("d100");
       let hitLocTable = atkForm === 'swing' ? 'SWING' : 'THRUST'; // use thrust table for everything besides swings TODO swing high/low, from atk mode dialog? -2 to swing high
       hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
@@ -1056,11 +1065,6 @@ async function attack(attackers, targetToken, options) {
             targetAc -= shieldBonus;
           }
         }
-      }
-
-      // bonus to groups
-      if (atkType === 'missile' && attacker.ranTarget && bonusToGroups) {
-        targetAc -= 2;
       }
 
       // check for metal armor
@@ -1161,13 +1165,14 @@ async function attack(attackers, targetToken, options) {
       }
 
       // knockdown TODO check not already prone
+      const isProne = game.cub.hasCondition('Prone', targetActor, {warn: false});
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * 2 * (weapDmgResult + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
-      const isKnockdown = atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
+      const isKnockdown = !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
-        // TODO add prone condition
+        // add prone condition manually
       }
 
       // bleed
@@ -1175,7 +1180,7 @@ async function attack(attackers, targetToken, options) {
       const isBleed = dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= 25 && !immuneBleed;
       if (isBleed) {
         dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound!' : ' and they begin to bleed heavily!';
-        // TODO add bleed/heavy bleed condition
+        // add bleed/heavy bleed condition manually
       }
 
       resultSound = hitSound;
