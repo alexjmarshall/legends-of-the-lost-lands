@@ -75,24 +75,7 @@ Hooks.once("init", async function() {
     type: Number,
     default: 1,
     config: true,
-    // onChange: (requiredClo) => resetExposureDamage(requiredClo)
   });
-
-  // async function resetExposureDamage(requiredClo) {
-  //   const allChars = game.actors.filter(a => a.type === 'character' && a.hasPlayerOwner);
-  //   return Promise.all(
-  //     allChars.map(async (char) => {
-  //       const wornClo = char.data.data.clo;
-  //       const diff = wornClo - requiredClo;
-  //       const conditionString = Fatigue.getExposureConditionString(diff);
-  //       const resetExposure = conditionString === 'cool' || conditionString === 'warm';
-  //       if (resetExposure) {
-  //         return Fatigue.resetFatigueDamage(char, 'exposure');
-  //       }
-  //       // return Fatigue.resetFatigueClock(char, 'exposure', Util.now());
-  //     })
-  //   )
-  // }
 
   // Retrieve and assign the initiative formula setting
   const initFormula = game.settings.get("lostlands", "initFormula");
@@ -229,8 +212,8 @@ Hooks.on("ready", () => {
       }
 
       // sync requiredClo to current season when day changes //TODO weather macro
-      const oldDay = SimpleCalendar.api.secondsToInterval(oldTime)?.day;
-      const newDay = SimpleCalendar.api.secondsToInterval(newTime)?.day;
+      const oldDay = SimpleCalendar.api.timestampToDate(oldTime)?.day;
+      const newDay = SimpleCalendar.api.timestampToDate(newTime)?.day;
       if (oldDay != newDay) {
         const reqClo = Fatigue.reqClo();
         const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
@@ -406,7 +389,5 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
       await Fatigue.resetFatigueType(actor, 'hunger');
       await Fatigue.resetFatigueType(actor, 'thirst');
       return applyRest(restDice);
-    // case 'Warm':
-    //   return Fatigue.resetFatigueType(actor, 'exposure');
   }
 });
