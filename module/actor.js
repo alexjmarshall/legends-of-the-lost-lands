@@ -161,9 +161,11 @@ export class SimpleActor extends Actor {
 
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
           actorData.ac[k] = {};
-          const coveringItems = wornOrHeldItems.filter(i => i.data.data.ac?.locations?.includes(k));
+          const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
           const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
-          const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
+          const armor = garments.filter(i => Object.keys(i.data.data.ac || {}).length);
+          // can only wear one shield
+          const shield = armor.find(i => i.data.data.attributes.shield?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
@@ -176,18 +178,19 @@ export class SimpleActor extends Actor {
           actorData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
           // magic ac bonus
-          const magicBonus = Math.max(...coveringItems.map(i => +i.data.data.ac?.mac || 0));
+          const magicBonus = Math.max(0, ...coveringItems.map(i => +i.data.data.ac?.mac || 0));
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            const shieldAcBonus = shield?.data.data.ac[dmgType].ac || 0;
-            const shieldDrBonus = shield?.data.data.ac[dmgType].dr || 0;
+            const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
+            const shieldDrBonus = shield?.data.data.ac?.[dmgType]?.dr || 0;
 
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
-            const wornAc = Math.max(...garments.map(i => +i.data.data.ac[dmgType].ac || 0)) + magicBonus;
-            const ac = (!garments.length ? unarmoredAc : wornAc) + shieldAcBonus + dexAcBonus + classBonus;
-            const dr = unarmoredDr + garments.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0) + shieldDrBonus;
+
+            const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
+            const ac = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
+            const dr = unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus;
             actorData.ac[k][dmgType] = { ac, dr };
             actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
             actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;

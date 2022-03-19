@@ -342,11 +342,9 @@ export class SimpleActorSheet extends ActorSheet {
       // can't wear a bulky item if any of this item's locations are already covered by a bulky item
       const isBulky = !!item.data.data.attributes.bulky?.value;
       if (isBulky) {
-        const itemCoverage = item.data.data.attributes.coverage?.value;
-        const itemLocations = Util.getArrFromCSL(itemCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
+        const itemLocations = item.data.data.locations;
         const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
-        const wornBulkyCoverage = wornBulkyItems.map(i => i.data.data.attributes.coverage?.value).join(',');
-        const wornBulkyLocations = Util.getArrFromCSL(wornBulkyCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
+        const wornBulkyLocations = wornBulkyItems.map(i => i.data.data.locations).map();
         const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
         if (!!duplicateLocation) {
           return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
@@ -456,6 +454,7 @@ export class SimpleActorSheet extends ActorSheet {
       }
 
       const itemQty = +item?.data.data.quantity || 0;
+      if (itemQty < 1) return ui.notifications.error(`Can't hold with quantity of ${itemQty}`);
       let heldQtyLimit = 1;
       if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
       else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;

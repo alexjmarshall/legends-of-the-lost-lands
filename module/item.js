@@ -53,6 +53,10 @@ export class SimpleItem extends Item {
     const acMod = +itemData.attributes.ac_mod?.value || 0;
     const isMagic = !!itemData.attributes.magic?.value;
     const locations = Util.getArrFromCSL(coverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
+
+    itemData.locations = locations;
+
+    // armor values
     if (!!materialAcMods && locations.length) {
       let baseAc = materialAcMods.base_AC;
       let mdr = 0;
@@ -73,7 +77,6 @@ export class SimpleItem extends Item {
       let acBonus = isShield ? baseAc : Constant.AC_MIN + baseAc;
 
       itemData.ac = {
-        locations,
         mdr,
         mac,
         blunt: {
@@ -128,7 +131,6 @@ export class SimpleItem extends Item {
         if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
       }
     }
-
   }
 
   /* -------------------------------------------- */

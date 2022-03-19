@@ -1059,7 +1059,7 @@ async function attack(attackers, targetToken, options) {
       // handle effects based on target shield
       shield = targetActor?.items.find(i => (i.data.data.held_left || i.data.data.held_right || i.data.data.worn) &&
         i.data.data.attributes.shield?.value &&
-        i.data.data.ac?.locations?.includes(coverageArea));
+        i.data.data.locations?.includes(coverageArea));
       if (shield) {
         let shieldBonus = 0;
         for (const dmType of Constant.DMG_TYPES) {
@@ -1086,7 +1086,7 @@ async function attack(attackers, targetToken, options) {
       // check for metal armor
       armorIsMetal = targetActor?.items.some(i => i.data.data.worn &&
         i.data.data.attributes.metal?.value &&
-        i.data.data.ac?.locations?.includes(coverageArea));
+        i.data.data.locations?.includes(coverageArea));
     }
 
     const totalAtkResult = await Util.rollDice(totalAtk);
@@ -1108,7 +1108,7 @@ async function attack(attackers, targetToken, options) {
         const nonBulkyArmor = targetActor.items.find(i => i.data.data.worn &&
           !i.data.data.attributes.bulky?.value &&
           !i.data.data.attributes.shield?.value &&
-          i.data.data.ac?.locations?.includes(coverageArea) &&
+          i.data.data.locations?.includes(coverageArea) &&
           Number(i.data.data.attributes.base_ac?.value) > 0);
         const baseAc = Number(nonBulkyArmor?.data.data.attributes.base_ac?.value);
         if (nonBulkyArmor && baseAc) {
@@ -1131,7 +1131,7 @@ async function attack(attackers, targetToken, options) {
         let verb = 'cracks';
         const bulkyArmor = shield || targetActor.items.find(i => i.data.data.worn &&
           i.data.data.attributes.bulky?.value &&
-          i.data.data.ac?.locations?.includes(coverageArea) &&
+          i.data.data.locations?.includes(coverageArea) &&
           Number(i.data.data.attributes.base_ac?.value) > 0);
         const baseAc = Number(bulkyArmor?.data.data.attributes.base_ac?.value);
         if (bulkyArmor && baseAc) {
@@ -1236,7 +1236,7 @@ async function attack(attackers, targetToken, options) {
     `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}`;
   chatMsgData.content += `${resultText}.<br>`;
   
-  chatMsgData.flavor += atkForm === 'attack' ? `${weapName}, ` : `${weapName} (${dmgType} ${atkForm}${rangeText}), `; // TODO remove dmg type from here?
+  chatMsgData.flavor += atkForm === 'attack' ? `${weapName}, ` : `${weapName} (${atkForm}${rangeText}), `;
   // TODO chat bubble exceptions, like punching, grappling etc.
   chatMsgData.bubbleString += atkForm === 'attack' ? `${attackingActor.name} attacks${targetActor ? ` at ${targetActor.name}` : ''}<br>` :
     `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}<br>`;
