@@ -767,11 +767,19 @@ async function attack(attackers, targetToken, options) {
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
+  let sitAtkMod = 0;
   
   // +1 if holding a weapon of same size in both hands
-  // -2 if holding a weapon one size larger in one hand
-  if (weapSize === attackerSize && weaponHeldTwoHands) weapAtkMod++;
-  if (weapSize > attackerSize && !weaponHeldTwoHands) weapAtkMod = weapAtkMod - 2;
+  if (weapSize === attackerSize && weaponHeldTwoHands) sitAtkMod++;
+    // -2 if holding a weapon one size larger in one hand
+  if (weapSize > attackerSize && !weaponHeldTwoHands) sitAtkMod = sitAtkMod - 2;
+  // -3 if target is size S and attacker is bigger than medium
+  if (targetSize === 1 && attackerSize > 2) sitAtkMod = sitAtkMod - 3;
+  // -2 if target is size T and attacker is medium
+  if (targetSize === 0 && attackerSize === 2) sitAtkMod = sitAtkMod - 2;
+  // -4 if target is size T and attacker is bigger than medium
+  if (targetSize === 0 && attackerSize > 2) sitAtkMod = sitAtkMod - 4;
+
 
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
@@ -944,17 +952,17 @@ async function attack(attackers, targetToken, options) {
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
 
-  // determine range penalty and reduce qty of thrown weapon/missile
+  // determine range penalty, handle missile situational mods, and reduce qty of thrown weapon/missile
   let rangePenalty = 0;
   if (atkType === 'missile') {
     rangePenalty = attacker.ranTarget ? 0 : -Math.abs(Math.floor(range / 10));
     // bonus to groups
     if (attacker.ranTarget && bonusToGroups) {
-      weapAtkMod =  weapAtkMod + 2;
+      sitAtkMod =  sitAtkMod + 2;
     }
-    // bonus to-hit large monsters
+    // bonus to-hit large monsters with missiles
     if (targetSize > 2) {
-      weapAtkMod =  weapAtkMod + 2;
+      sitAtkMod =  sitAtkMod + 2;
     }
 
     // reduce qty of thrown weapon/missile
@@ -988,7 +996,7 @@ async function attack(attackers, targetToken, options) {
 
   // attack
   const d20Result = await Util.rollDice("d20");
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}`;
+  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}+${sitAtkMod}`;
   const hitSound = Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let resultText = '';
@@ -1106,7 +1114,7 @@ async function attack(attackers, targetToken, options) {
           hitDesc = ` and ${verb} their ${nonBulkyArmor.name}`;
         } else {
           weapDmgResult = maxWeapDmg;
-          hitDesc = ' and finds a weak spot';
+          hitDesc = ' and strikes a weak spot';
         }
       }
 
@@ -1164,7 +1172,7 @@ async function attack(attackers, targetToken, options) {
         dmgEffect += stuck ? ' and the weapon is stuck in their body' : '';
       }
 
-      // knockdown TODO check not already prone
+      // knockdown
       const isProne = game.cub.hasCondition('Prone', targetActor, {warn: false});
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
@@ -1179,7 +1187,7 @@ async function attack(attackers, targetToken, options) {
       const minBleedDmg = bleedBonus ? 5 : 6;
       const isBleed = dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= 25 && !immuneBleed;
       if (isBleed) {
-        dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound!' : ' and they begin to bleed heavily!';
+        dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound' : ' and they begin to bleed heavily';
         // add bleed/heavy bleed condition manually
       }
 
