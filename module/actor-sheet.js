@@ -344,7 +344,7 @@ export class SimpleActorSheet extends ActorSheet {
       if (isBulky) {
         const itemLocations = item.data.data.locations;
         const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
-        const wornBulkyLocations = wornBulkyItems.map(i => i.data.data.locations).map();
+        const wornBulkyLocations = wornBulkyItems.map(i => i.data.data.locations).flat();
         const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
         if (!!duplicateLocation) {
           return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
