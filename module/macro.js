@@ -684,9 +684,10 @@ async function attack(attackers, targetToken, options) {
   // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
-    // remove comma at end
-    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '');
-    chatMsgData.flavor += targetToken?.actor.name ? ` vs. ${targetToken.actor.name}` : '';
+    // remove comma at end of flavor and add names
+    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor.name ? ` vs. ${targetActor.name}` : ''}`;
+    // add follow up attack to content
+    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/.<br>\s*$/, '') + ` and is fast enough to make a follow-up attack!`;
     Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);
@@ -762,7 +763,9 @@ async function attack(attackers, targetToken, options) {
   const weapName = weaponItem.name;
   weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
-  const weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize;
+  const weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize * 2;
+  const targetWeapSpeeds = targetActor.items.filter(i => i.data.data.held_left || i.data.data.held_right).map(i => +i.data.data.attributes.speed?.value).filter(i => i);
+  const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize * 2;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value] ?? 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
@@ -779,6 +782,11 @@ async function attack(attackers, targetToken, options) {
   if (targetSize === 0 && attackerSize === 2) sitAtkMod = sitAtkMod - 2;
   // -4 if target is size T and attacker is bigger than medium
   if (targetSize === 0 && attackerSize > 2) sitAtkMod = sitAtkMod - 4;
+  // chance of second attack by weapon speed
+  const speedDiff = weapSpeed - targetWeapSpeed;
+  if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= speedDiff) {
+    attacker.followAttack = true;
+  }
 
 
   if (!weapDmg) {
@@ -1173,7 +1181,7 @@ async function attack(attackers, targetToken, options) {
       }
 
       // knockdown
-      const isProne = game.cub.hasCondition('Prone', targetActor, {warn: false});
+      const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * 2 * (weapDmgResult + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
@@ -1247,6 +1255,7 @@ async function attack(attackers, targetToken, options) {
   const targetHp = +targetActor?.data.data.hp?.value;
   if (sumDmg >= targetHp) {
     while (weapons.length) weapons.shift();
+    attacker.kill = true;
   } else {
     weapons.shift();
   }
