@@ -46,12 +46,13 @@ export class SimpleItem extends Item {
     }
 
     // AC mods
+    // TODO how to handle non-armor magic AC items?
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material];
     const coverage = itemData.attributes.coverage?.value || '';
     const acMod = +itemData.attributes.ac_mod?.value || 0;
     const isMagic = !!itemData.attributes.magic?.value;
-    const locations = [...new Set(coverage.split(',').map(l => l.toLowerCase().trim()).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l)))];
+    const locations = Util.getArrFromCSL(coverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
     if (!!materialAcMods && locations.length) {
       let baseAc = materialAcMods.base_AC;
       let mdr = 0;
@@ -95,9 +96,16 @@ export class SimpleItem extends Item {
     if (!!warmthAndWeight && locations.length) {
       // weight
       const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[0], 0); // index 0 for centre swing
-      itemData.weight = Math.round(warmthAndWeight.weight / 10 * totalLocationWeight) / 10;
+      let weight = Math.round(warmthAndWeight.weight * totalLocationWeight) / 100;
       // if magic item, halve weight
-      if (isMagic) itemData.weight = Math.round(itemData.weight / 2 * 10) / 10;
+      if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
+      // adjust weight by owner size
+      const ownerData = this.actor?.data?.data;
+      if (ownerData) {
+        const charSize = Constant.SIZE_VALUES[ownerData.attributes?.size?.value] ?? 2;
+        weight = Math.round( Util.encMulti(weight, charSize) * 10 ) / 10;
+      }
+      itemData.weight = weight;
 
       // warmth
       itemData.warmth = warmthAndWeight.warmth;
@@ -119,6 +127,7 @@ export class SimpleItem extends Item {
         if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
       }
     }
+
   }
 
   /* -------------------------------------------- */

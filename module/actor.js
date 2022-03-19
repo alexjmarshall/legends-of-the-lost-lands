@@ -1,7 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Util from "./utils.js";
 import * as Constant from "./constants.js";
-import * as Fatigue from './fatigue.js';
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -43,6 +42,7 @@ export class SimpleActor extends Actor {
     const type = this.data.type;
     const hasPlayerOwner = this.hasPlayerOwner;
     const updateData = {};
+    const charSize = Constant.SIZE_VALUES[attributes?.size?.value] ?? 2;
 
     // level up sound
     if (type === 'character') {
@@ -59,7 +59,8 @@ export class SimpleActor extends Actor {
 
     // derive mv and speed from encumbrance
     if ( type === 'character' || type === 'monster' ) {
-      const str = attributes.ability_scores?.str?.value || 0;
+      let str = attributes.ability_scores?.str?.value || 0;
+      str = Math.round( Util.encMulti(str, charSize) );
       let mv = 12 - Math.floor(Math.max(0, updateData.enc - str) / str * 3);
       mv = Math.max(0, mv) || 0;
       const maxMv = attributes.maxmv?.value;
@@ -137,29 +138,29 @@ export class SimpleActor extends Actor {
       
       const touch_ac = Constant.AC_MIN + dexAcBonus;
 
-      updateData.ac = {touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {}};
+      actorData.ac = {touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {}};
       for (const dmgType of Constant.DMG_TYPES) {
-        updateData.ac.total[dmgType] = {
+        actorData.ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + classBonus,
           dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
 
-      // TODO try removing all conditions/warnings from fatigue damage
       // TODO decrease the value of armor/shield base_ac to represent armor damage from lucky hits (shield/bulky)/critical hits (non-bulky)
 
       // ac and dr for every body location
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
         for (const dmgType of Constant.DMG_TYPES) {
-          updateData.ac.total[dmgType] = {
+          actorData.ac.total[dmgType] = {
             ac: 0,
             dr: 0,
           }
         }
 
         updateData.clo = 0;
+
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
-          updateData.ac[k] = {};
+          actorData.ac[k] = {};
           const coveringItems = wornOrHeldItems.filter(i => i.data.data.ac?.locations?.includes(k));
           const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
           const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
@@ -172,7 +173,7 @@ export class SimpleActor extends Actor {
 
           // magic damage reduction
           const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
-          updateData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
+          actorData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
           // magic ac bonus
           const magicBonus = Math.max(...coveringItems.map(i => +i.data.data.ac?.mac || 0));
@@ -187,18 +188,18 @@ export class SimpleActor extends Actor {
             const wornAc = Math.max(...garments.map(i => +i.data.data.ac[dmgType].ac || 0)) + magicBonus;
             const ac = (!garments.length ? unarmoredAc : wornAc) + shieldAcBonus + dexAcBonus + classBonus;
             const dr = unarmoredDr + garments.reduce((sum, i) => sum + +i.data.data.ac[dmgType].dr || 0, 0) + shieldDrBonus;
-            updateData.ac[k][dmgType] = { ac, dr };
-            updateData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
-            updateData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
+            actorData.ac[k][dmgType] = { ac, dr };
+            actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
+            actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
           }
         }
 
         // round ac
-        for (const v of Object.values(updateData.ac.total)) {
+        for (const v of Object.values(actorData.ac.total)) {
           v.ac = (Math.round(v.ac) || touch_ac);
           v.dr = Math.round(v.dr);
         }
-        updateData.ac.mdr = Math.round(updateData.ac.mdr);
+        actorData.ac.mdr = Math.round(actorData.ac.mdr);
       }
       
       // st_mod
@@ -207,7 +208,7 @@ export class SimpleActor extends Actor {
       updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
       // magic resistance
-      updateData.ac.mr = +attributes.mr?.value || 0;
+      actorData.ac.mr = +attributes.mr?.value || 0;
     }
     
     // attitude map

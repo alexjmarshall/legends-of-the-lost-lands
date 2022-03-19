@@ -195,6 +195,10 @@ export function pCTokens() {
   return canvas.tokens.objects.children.filter(t => t.actor.type === 'character' && t.actor.hasPlayerOwner);
 }
 
+export function sizeMulti(val, charSize) {
+  return charSize > 2 ? val * 3 / 2 :charSize === 1 ? val * 2 / 3 : charSize < 1 ? val / 2 : val;
+}
+
 export function upperCaseFirst(string) {
   if (!string) return;
   return string.charAt(0).toUpperCase() + string.slice(1);
