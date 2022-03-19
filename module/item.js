@@ -99,11 +99,12 @@ export class SimpleItem extends Item {
       let weight = Math.round(warmthAndWeight.weight * totalLocationWeight) / 100;
       // if magic item, halve weight
       if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
-      // adjust weight by owner size
+      // adjust garment weight by owner size
       const ownerData = this.actor?.data?.data;
-      if (ownerData) {
+      const isGarment = !itemData.attributes.shield?.value;
+      if (ownerData && isGarment) {
         const charSize = Constant.SIZE_VALUES[ownerData.attributes?.size?.value] ?? 2;
-        weight = Math.round( Util.encMulti(weight, charSize) * 10 ) / 10;
+        weight = Math.round( Util.sizeMulti(weight, charSize) * 10 ) / 10;
       }
       itemData.weight = weight;
 

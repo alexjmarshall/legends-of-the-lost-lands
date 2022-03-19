@@ -60,7 +60,7 @@ export class SimpleActor extends Actor {
     // derive mv and speed from encumbrance
     if ( type === 'character' || type === 'monster' ) {
       let str = attributes.ability_scores?.str?.value || 0;
-      str = Math.round( Util.encMulti(str, charSize) );
+      str = Math.round( Util.sizeMulti(str, charSize) );
       let mv = 12 - Math.floor(Math.max(0, updateData.enc - str) / str * 3);
       mv = Math.max(0, mv) || 0;
       const maxMv = attributes.maxmv?.value;
