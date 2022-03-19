@@ -86,8 +86,8 @@ export class SimpleActorSheet extends ActorSheet {
     fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
 
     const diffClo = data.data.clo - reqClo;
-    const isWarm = data.effects.find(e => e.label === 'Warm');
-    fatigue.exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
+    const isWarm = data.effects.some(e => e.label === 'Warm');
+    fatigue.exposureDesc = isWarm && diffClo < 10 ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
 
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
@@ -107,9 +107,8 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   getFatigueStatus(data, type) {
-    const isResting = data.effects.find(e => e.label === 'Rest');
+    const isResting = data.effects.some(e => e.label === 'Rest');
     if (isResting) return 0;
-
     const flagData = data.flags?.lostlands?.[type] || {};
     const damage = !!flagData.maxHpDamage;
     if (damage) return 2;
