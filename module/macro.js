@@ -1201,7 +1201,7 @@ async function attack(attackers, targetToken, options) {
       const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 2 * (weapDmgResult + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
+      const knockdownChance = knockDownMulti * 2 * (rolledWeapDmg + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
