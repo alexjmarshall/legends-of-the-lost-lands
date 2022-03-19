@@ -687,7 +687,7 @@ async function attack(attackers, targetToken, options) {
     // remove comma at end of flavor and add names
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor.name ? ` vs. ${targetActor.name}` : ''}`;
     // add follow up attack to content
-    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/.<br>\s*$/, '') + ` and is fast enough to make a follow-up attack!`;
+    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/.<br>\s*$/, '') + ` and is fast enough to attack again!`;
     Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);
