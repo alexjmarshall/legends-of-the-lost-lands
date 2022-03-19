@@ -768,10 +768,12 @@ async function attack(attackers, targetToken, options) {
   const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize * 2;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value] ?? 0;
   const weapCategory = weapAttrs.category?.value;
+  const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
+  let sitDmgMod = 0;
 
 
   if (!weapDmg) {
@@ -947,7 +949,7 @@ async function attack(attackers, targetToken, options) {
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
 
-    // situational mods
+  // situational mods
   // +1 if holding a weapon of same size in both hands
   if (weapSize === attackerSize && weaponHeldTwoHands) sitAtkMod++;
     // -2 if holding a weapon one size larger in one hand
@@ -968,6 +970,12 @@ async function attack(attackers, targetToken, options) {
   if (weapCategory != null && !weapProfs.includes(weapCategory)) {
     sitAtkMod = sitAtkMod - 2;
   }
+  // dmg bonus vs. large
+  if (targetSize > 2) {
+    sitDmgMod += weapDmgVsLrg;
+  }
+
+
 
   // determine range penalty, handle missile situational mods, and reduce qty of thrown weapon/missile
   let rangePenalty = 0;
@@ -1216,7 +1224,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}`;
+  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}+${sitDmgMod}`;
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage` + dmgEffect;
   
 
