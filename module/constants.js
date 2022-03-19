@@ -639,3 +639,21 @@ export const SIZE_VALUES = {
   H: 4, // huge
   G: 5, // gargantuan
 };
+
+export const WEAPON_PROFICIENCY_CATEGORIES = [
+"axes",
+"bludgeons",
+"bows",
+"crossbows",
+"curved swords",
+"daggers",
+"hammers",
+"large swords",
+"piercing swords",
+"polearms",
+"spears",
+"spiked bludgeons",
+"staves",
+"straight swords",
+"whip/sling",
+];

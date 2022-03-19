@@ -46,11 +46,11 @@ export class SimpleActor extends Actor {
 
     // level up sound
     if (type === 'character') {
-      if (actorData.xp?.value >= actorData.xp?.max && !actorData.islevelup) {
+      if (actorData.xp?.value >= actorData.xp?.max && !actorData.is_level_up) {
         Util.playSound('level_up', null, {push: false, bubble: false});
-        updateData.islevelup = true;
-      } else if (actorData.xp?.max > actorData.xp?.value && actorData.islevelup !== false) {
-        updateData.islevelup = false;
+        updateData.is_level_up = true;
+      } else if (actorData.xp?.max > actorData.xp?.value && actorData.is_level_up !== false) {
+        updateData.is_level_up = false;
       }
     }
 
@@ -212,6 +212,12 @@ export class SimpleActor extends Actor {
 
       // magic resistance
       actorData.ac.mr = +attributes.mr?.value || 0;
+
+      // weap profs
+      updateData.weap_profs = Util.getArrFromCSL(attributes.weap_profs?.value || '').map(p => p.toLowerCase());
+      if (updateData.weap_profs.some(p => !Constant.WEAPON_PROFICIENCY_CATEGORIES.includes(p))) {
+        ui.notifications.error(`Invalid weapon proficiency specified for ${this.name}`);
+      }
     }
     
     // attitude map

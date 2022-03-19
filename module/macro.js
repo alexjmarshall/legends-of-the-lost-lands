@@ -767,26 +767,11 @@ async function attack(attackers, targetToken, options) {
   const targetWeapSpeeds = targetActor.items.filter(i => i.data.data.held_left || i.data.data.held_right).map(i => +i.data.data.attributes.speed?.value).filter(i => i);
   const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize * 2;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value] ?? 0;
+  const weapCategory = weapAttrs.category?.value;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
-  
-  // +1 if holding a weapon of same size in both hands
-  if (weapSize === attackerSize && weaponHeldTwoHands) sitAtkMod++;
-    // -2 if holding a weapon one size larger in one hand
-  if (weapSize > attackerSize && !weaponHeldTwoHands) sitAtkMod = sitAtkMod - 2;
-  // -3 if target is size S and attacker is bigger than medium
-  if (targetSize === 1 && attackerSize > 2) sitAtkMod = sitAtkMod - 3;
-  // -2 if target is size T and attacker is medium
-  if (targetSize === 0 && attackerSize === 2) sitAtkMod = sitAtkMod - 2;
-  // -4 if target is size T and attacker is bigger than medium
-  if (targetSize === 0 && attackerSize > 2) sitAtkMod = sitAtkMod - 4;
-  // chance of second attack by weapon speed
-  const speedDiff = weapSpeed - targetWeapSpeed;
-  if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= speedDiff) {
-    attacker.followAttack = true;
-  }
 
 
   if (!weapDmg) {
@@ -795,7 +780,7 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  // handle double weapon TODO test
+  // handle double weapon
   const isDoubleWeapon = !!weapAttrs.double_weapon?.value;
   if (isDoubleWeapon) {
     const dmgs = weapDmg.toLowerCase().replace(/\s/g,'').split('/') || [];
@@ -951,6 +936,8 @@ async function attack(attackers, targetToken, options) {
   const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
   const attackerAtkMod = attacker.atkMod || 0;
   const attackerDmgMod = attacker.dmgMod || 0;
+  const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
+    Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
 
   // get target's properties
   // can be immune to lucky hits, critical hits, bleed, knockdown and impale
@@ -959,6 +946,28 @@ async function attack(attackers, targetToken, options) {
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
+
+    // situational mods
+  // +1 if holding a weapon of same size in both hands
+  if (weapSize === attackerSize && weaponHeldTwoHands) sitAtkMod++;
+    // -2 if holding a weapon one size larger in one hand
+  if (weapSize > attackerSize && !weaponHeldTwoHands) sitAtkMod = sitAtkMod - 2;
+  // -3 if target is size S and attacker is bigger than medium
+  if (targetSize === 1 && attackerSize > 2) sitAtkMod = sitAtkMod - 3;
+  // -2 if target is size T and attacker is medium
+  if (targetSize === 0 && attackerSize === 2) sitAtkMod = sitAtkMod - 2;
+  // -4 if target is size T and attacker is bigger than medium
+  if (targetSize === 0 && attackerSize > 2) sitAtkMod = sitAtkMod - 4;
+  // chance of second attack by weapon speed
+  const speedDiff = weapSpeed - targetWeapSpeed;
+  if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= speedDiff) {
+    attacker.followAttack = true;
+  }
+  // -2 if weapon category defined but not in attacker's weapon proficiencies
+  // TODO weap specialization and mastery
+  if (weapCategory != null && !weapProfs.includes(weapCategory)) {
+    sitAtkMod = sitAtkMod - 2;
+  }
 
   // determine range penalty, handle missile situational mods, and reduce qty of thrown weapon/missile
   let rangePenalty = 0;
