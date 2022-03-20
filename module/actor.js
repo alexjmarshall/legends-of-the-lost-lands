@@ -75,9 +75,9 @@ export class SimpleActor extends Actor {
       const otherActors = game.actors?.filter(a => a.name !== this.name && a.hasPlayerOwner) || [];
       for(let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
-        if(container && container._id) {
+        if(container && container.id) {
           const containerWeight = Math.floor(updateData.enc / (attributes.factor?.value || 1)) || 1;
-          const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
+          const containerUpdateData = { id: container.id, "data.weight": containerWeight };
           if(containerWeight !== container.data.data.weight) await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
           break;
         }
@@ -164,8 +164,11 @@ export class SimpleActor extends Actor {
           const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
           const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
           const armor = garments.filter(i => Object.keys(i.data.data.ac || {}).length);
-          // can only wear one shield
-          const shield = armor.find(i => i.data.data.attributes.shield?.value);
+          
+          // can only wear one shield and one bulky armor
+          const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
+          const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
+          const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
@@ -182,6 +185,11 @@ export class SimpleActor extends Actor {
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
+            let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
+              .map(i => i.id);
+            if (bulkyArmor?.id) sorted_armor_ids = [bulkyArmor.id, ...sorted_armor_ids];
+            if (shield?.id) sorted_armor_ids = [shield.id, ...sorted_armor_ids];
+
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
             const shieldDrBonus = shield?.data.data.ac?.[dmgType]?.dr || 0;
 
@@ -191,7 +199,8 @@ export class SimpleActor extends Actor {
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
             const ac = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
             const dr = unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus;
-            actorData.ac[k][dmgType] = { ac, dr };
+
+            actorData.ac[k][dmgType] = { ac, dr, sorted_armor_ids };
             actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
             actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
           }
@@ -231,7 +240,7 @@ export class SimpleActor extends Actor {
         delete updateData[key];
       }
     }
-    if (this._id && Object.keys(updateData).length) {
+    if (this.id && Object.keys(updateData).length) {
       await Util.wait(200);
       this.update({data: updateData});
     }
