@@ -1038,23 +1038,26 @@ async function attack(attackers, targetToken, options) {
     let hitLoc = '';
     let coverageArea = '';
     let shield;
-    const deepImpaleAreas = ['chest', 'gut'];
-    const doubleBleedAreas = ['neck','face','skull'];
-    const doubleKnockdownAreas = ['face', 'eye', 'skull'];
-    const invalidKnockdownAreas = ['hand','forearm']; // TODO not sure where to handle dr...need to cleanly separate process for character/humanoid and other targets
+    const deepImpaleAreas = ['chest','gut','thigh'];
+    const doubleBleedAreas = ['neck','shoulder'];
+    const easyBleedAreas = ['neck','face','skull','eye','forearm','elbow'];
+    const doubleKnockdownAreas = ['face','eye','skull','knee'];
+    const invalidKnockdownAreas = ['hand','forearm'];
 
     // roll for hit location if character or humanoid
     if ( targetActor?.type === 'character' || !!targetRollData?.type?.value === 'humanoid' ) { // TODO test with monster enemies with hardcoded armor types
       const hitLocRoll = await Util.rollDice("d100");
-      let hitLocTable = atkForm === 'swing' ? 'SWING' : 'THRUST'; // use thrust table for everything besides swings TODO swing high/low, from atk mode dialog? -2 to swing high
+      let hitLocTable = atkForm === 'swing' ? 'SWING' : 'THRUST'; // use thrust table for everything besides swings TODO swing high/low, from atk mode dialog? -2 to swing high extra damage
       hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
       coverageArea = hitLoc.replace('right ', '').replace('left ', '');
       targetAc = Number(targetRollData?.ac?.[coverageArea]?.[dmgType]?.ac) || targetAc;
+      
       dr = Number(targetRollData?.ac?.[coverageArea]?.[dmgType]?.dr) || dr;
+      weapDmgResult = Math.min(1, weapDmgResult - dr);
 
       resultText += `${hitLoc ? ` in the ${hitLoc} ` : ''}`;
 
-      // handle situational AC mods
+      // shield mods
       // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
       const largeShieldCoverage = Constant.SHIELD_TYPES.large.coverage;
       const largeShieldLocs = Util.getArrFromCSL(largeShieldCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
@@ -1167,7 +1170,7 @@ async function attack(attackers, targetToken, options) {
       }
 
       // impale
-      const isImpale = atkForm === 'thrust' && weapDmgResult % maxWeapDmg === 0 && !immuneImpale;
+      const isImpale = dmgType === 'piercing' && rolledWeapDmg === maxWeapDmg && !immuneImpale; // TODO can ONLY happen on crit?
       if (isImpale) {
         let stuck = false;
         let explode = false;
@@ -1201,7 +1204,7 @@ async function attack(attackers, targetToken, options) {
       const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 2 * (rolledWeapDmg + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
+      const knockdownChance = knockDownMulti * 2 * (weapDmgResult + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance && !immuneKnockdown;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
@@ -1209,7 +1212,9 @@ async function attack(attackers, targetToken, options) {
       }
 
       // bleed
-      const minBleedDmg = bleedBonus ? 5 : 6;
+      let minBleedDmg = 6;
+      if (bleedBonus) minBleedDmg--;
+      if (easyBleedAreas.includes(coverageArea)) minBleedDmg = minBleedDmg - 2;
       const isBleed = dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= 25 && !immuneBleed;
       if (isBleed) {
         dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound' : ' and they begin to bleed heavily';
