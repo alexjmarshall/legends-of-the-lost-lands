@@ -307,13 +307,13 @@ export async function useChargedItem(itemId, options={}) {
   }
 }
 
-export function heldWeaponAttackMacro(options={}) {
+export async function heldWeaponAttackMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
   const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = targets[ranTargetIndex];
+  const targetToken = options.targetToken || targets[ranTargetIndex];
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -326,6 +326,21 @@ export function heldWeaponAttackMacro(options={}) {
     );
     if ( weapons.some(w => !Object.keys(Constant.SIZE_VALUES).includes(w.data.data.attributes.size.value.toUpperCase())) ) {
       return ui.notifications.error("Invalid weapon size specified");
+    }
+
+    // sweep NOTE: have to enforce manually that targets are in an adjacent group
+    const hasSweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value);
+    const sweeping = hasSweepWeap && ranTarget && targets.length <= 4 && selectedTokens.length === 1 && !options.skipSweep;
+    if (sweeping) {
+      options.skipSweep = true;
+      options.atkMod = -4;
+      options.atkMode = 'swing(s)';
+      for (const t of targets) {
+        options.targetToken = t;
+        heldWeaponAttackMacro(options);
+        await Util.wait(200);
+      }
+      return;
     }
 
     // if no weapons, return error if hands full, otherwise add dummy weapon object
@@ -354,16 +369,18 @@ export function heldWeaponAttackMacro(options={}) {
         _id: w._id,
         offhand: i === 0 && weapons.length > 1,
         mainhand: i > 0,
+        atkMode: options.atkMode,
       })
     });
-
+    
     attackers.push({
       token: token,
       weapons: weapIds,
       ranTarget,
       chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: [],
-      unarmed
+      unarmed,
+      atkMod: options.atkMod,
     })
   }
 
