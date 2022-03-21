@@ -81,7 +81,7 @@ class TimeQueue {
                             return game.lostlands.TimeQ._scheduleDoEvery(interval, start, newTime, macroId, scope, id);`
     const newMacro = await Util.getMacroByCommand(newMacroName, newMacroCommand);
 
-    return this._scheduleDoEvery(interval, start, start, newMacro.id, scope, id);
+    return this._scheduleDoEvery(interval, start, start, newMacro._id, scope, id);
   }
 
   async _scheduleDoEvery(interval, start, newTime, macroId, scope, id=Util.uniqueId()) {

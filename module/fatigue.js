@@ -190,9 +190,9 @@ export async function resetFatigueClock(actor, type, time=Util.now()) {
   data.startTime = time;
   const {damageInterval} = CLOCKS[type];
   data.intervalId && await TimeQ.cancel(data.intervalId);
-  const scope = {actorId: actor.id, type};
+  const scope = {actorId: actor._id, type};
   const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
-  data.intervalId = await TimeQ.doEvery(damageInterval, time, macro.id, scope);
+  data.intervalId = await TimeQ.doEvery(damageInterval, time, macro._id, scope);
   await actor.setFlag("lostlands", type, data);
 }
 
@@ -310,7 +310,7 @@ export function getExposureConditionString(diffClo) {
 }
 
 async function syncDamageClocks(char, time, override=false) {
-  const actorId = char.id;
+  const actorId = char._id;
   
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
@@ -328,7 +328,7 @@ async function syncDamageClocks(char, time, override=false) {
     const startTime = Util.prevTime(damageInterval, data.startTime, time);
     const scope = {actorId, type};
     const macro = await Util.getMacroByCommand(`${FATIGUE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${FATIGUE_DAMAGE_COMMAND};`);
-    data.intervalId = await TimeQ.doEvery(damageInterval, startTime, macro.id, scope);
+    data.intervalId = await TimeQ.doEvery(damageInterval, startTime, macro._id, scope);
     
     await char.setFlag("lostlands", type, data);
   }
@@ -344,7 +344,7 @@ async function syncDamageClocks(char, time, override=false) {
     const startTime = Util.prevTime(damageInterval, data.startTime, time);
     const scope = {actorId, disease};
     const macro = await Util.getMacroByCommand(`${DISEASE_DAMAGE_COMMAND}`, `return game.lostlands.Macro.${DISEASE_DAMAGE_COMMAND};`);
-    data.intervalId = await TimeQ.doEvery(damageInterval, startTime, macro.id, scope);
+    data.intervalId = await TimeQ.doEvery(damageInterval, startTime, macro._id, scope);
     setDiseases = true;
   }
 

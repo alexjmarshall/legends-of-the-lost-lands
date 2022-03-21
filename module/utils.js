@@ -41,7 +41,7 @@ export const playVoiceSound = (() => {
 
   return async function(mood, actor, token, {push = true, bubble = true, chance = 1}={}) {
     
-    const actorId = actor.isToken ? actor.token.id : actor.id;
+    const actorId = actor.isToken ? actor.token._id : actor._id;
     if (speakingActorIds.has(actorId)) return;
     const isSleeping = game.cub.hasCondition("Asleep", actor, {warn: false});
     if (isSleeping) return;
@@ -103,7 +103,7 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
 
 export function getTokenFromActor(actor) {
   const token = actor?.isToken ? actor.token.data :
-    canvas.tokens?.objects?.children.find(t => t.actor.id === actor?.id);
+    canvas.tokens?.objects?.children.find(t => t.actor._id === actor?._id);
   return token;
 }
 
@@ -188,7 +188,7 @@ export function charsOwnedByUser() {
 }
 
 export function isOwned(actor) {
-  return charsOwnedByUser().some(a => a.id === actor.id);
+  return charsOwnedByUser().some(a => a._id === actor._id);
 }
 
 export function pCTokens() {

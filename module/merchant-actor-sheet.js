@@ -30,7 +30,7 @@ export class MerchantActorSheet extends ActorSheet {
     context.isPlayer = !context.isGM;
     // item price
     const merchantActor = context.actor.isToken ? context.actor :
-                          canvas.tokens.objects.children.find(t => t.actor.id === context.actor.id && t.data.actorLink === true)?.actor;
+                          canvas.tokens.objects.children.find(t => t.actor._id === context.actor._id && t.data.actorLink === true)?.actor;
     const character = game.user.character;
     const attitude = merchantActor && character ? await reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
                      Constant.ATTITUDES.UNCERTAIN;

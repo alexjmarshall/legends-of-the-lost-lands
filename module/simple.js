@@ -205,7 +205,7 @@ Hooks.on("ready", () => {
       await Fatigue.syncFatigueClocks(newTime, resetClocks);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
-        let macro = game.macros.find(m => m.id === event.macroId);
+        let macro = game.macros.find(m => m._id === event.macroId);
         // add oldTime and newTime to macro scope
         Object.assign(event.scope, {oldTime, newTime});
         macro && await macro.execute(event.scope);
