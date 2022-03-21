@@ -876,7 +876,6 @@ async function attack(attackers, targetToken, options) {
   }
   if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
     try {
-      console.log(weaponItem)
       await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
     } catch (error) {
       ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
