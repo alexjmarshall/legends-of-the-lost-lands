@@ -75,9 +75,9 @@ export class SimpleActor extends Actor {
       const otherActors = game.actors?.filter(a => a.name !== this.name && a.hasPlayerOwner) || [];
       for(let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
-        if(container && container.id) {
+        if(container && container._id) {
           const containerWeight = Math.floor(updateData.enc / (attributes.factor?.value || 1)) || 1;
-          const containerUpdateData = { id: container.id, "data.weight": containerWeight };
+          const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
           if(containerWeight !== container.data.data.weight) await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
           break;
         }
@@ -186,9 +186,9 @@ export class SimpleActor extends Actor {
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
             let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
-              .map(i => i.id);
-            if (bulkyArmor?.id) sorted_armor_ids = [bulkyArmor.id, ...sorted_armor_ids];
-            if (shield?.id) sorted_armor_ids = [shield.id, ...sorted_armor_ids];
+              .map(i => i._id);
+            if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
+            if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
 
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
             const shieldDrBonus = shield?.data.data.ac?.[dmgType]?.dr || 0;
@@ -198,7 +198,8 @@ export class SimpleActor extends Actor {
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
             const ac = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
-            const dr = unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus;
+            // max dr is 2
+            const dr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
 
             actorData.ac[k][dmgType] = { ac, dr, sorted_armor_ids };
             actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
@@ -240,7 +241,7 @@ export class SimpleActor extends Actor {
         delete updateData[key];
       }
     }
-    if (this.id && Object.keys(updateData).length) {
+    if (this._id && Object.keys(updateData).length) {
       await Util.wait(200);
       this.update({data: updateData});
     }
