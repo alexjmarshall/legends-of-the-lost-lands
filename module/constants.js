@@ -109,15 +109,15 @@ export const MATERIAL_WARMTH_WEIGHT = {
     warmth:16,
   },
   "banded mail": {
-    weight:14,
+    weight:16,
     warmth:6,
   },
   "iron plate": {
-    weight:18,
+    weight:20,
     warmth:10,
   },
   "steel plate": {
-    weight:16,
+    weight:18,
     warmth:8,
   },
 };
@@ -541,7 +541,7 @@ export const VOICE_SOUNDS = new Map();
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
 export const HIT_LOCATIONS = {
   foot: {
-    weights: [4,4,2,2,8,8],
+    weights: [2,4,0,2,8,8],
     bilateral: true
   },
   shin: {
@@ -557,7 +557,7 @@ export const HIT_LOCATIONS = {
     bilateral: true
   },
   hip: {
-    weights: [6,4,2,2,10,6],
+    weights: [6,4,4,2,10,6],
     bilateral: true
   },
   groin: {
@@ -593,10 +593,10 @@ export const HIT_LOCATIONS = {
     weights: [4,3,6,8,1,1]
   },
   face: {
-    weights: [2,4,4,8,1,1]
+    weights: [3,4,4,8,1,1]
   },
   eye: {
-    weights: [0,2,2,4,0,0],
+    weights: [1,2,2,4,0,0],
     bilateral: true
   },
   skull: {
@@ -641,19 +641,19 @@ export const SIZE_VALUES = {
 };
 
 export const WEAPON_PROFICIENCY_CATEGORIES = [
-"axes",
-"bludgeons",
-"bows",
-"crossbows",
-"curved swords",
-"daggers",
-"hammers",
-"large swords",
-"piercing swords",
-"polearms",
-"spears",
-"spiked bludgeons",
-"staves",
-"straight swords",
-"whip/sling",
+  "axes",
+  "bludgeons",
+  "bows",
+  "crossbows",
+  "curved swords",
+  "daggers",
+  "hammers",
+  "large swords",
+  "piercing swords",
+  "polearms",
+  "spears",
+  "spiked bludgeons",
+  "staves",
+  "straight swords",
+  "whip/sling",
 ];
