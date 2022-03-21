@@ -329,7 +329,7 @@ export class SimpleActorSheet extends ActorSheet {
     if (!isPrepared) {
       Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
     }
-    return this.actor.updateEmbeddedDocuments("Item", [{_id: item.id, "data.prepared": !isPrepared}]);
+    return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.prepared": !isPrepared}]);
   }
 
   _handleWear(item) {
@@ -387,7 +387,7 @@ export class SimpleActorSheet extends ActorSheet {
     
     let verb = isWorn ? 'doffs' : 'dons';
     Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
-    return this.actor.updateEmbeddedDocuments("Item", [{_id: item.id, "data.worn": !isWorn}]);
+    return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.worn": !isWorn}]);
   }
 
   _handleHold(item, hand, event) {
@@ -405,7 +405,7 @@ export class SimpleActorSheet extends ActorSheet {
     //        if cannot, error msg
     //      if not held in other hand
     //        hold in this hand
-    let itemUpdate = {_id: item.id, data: {}};
+    let itemUpdate = {_id: item._id, data: {}};
     const otherHand = hand === 'left' ? 'right' : 'left';
     const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
     const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
@@ -458,7 +458,7 @@ export class SimpleActorSheet extends ActorSheet {
       let heldQtyLimit = 1;
       if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
       else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
-      if (itemQty > heldQtyLimit) return ui.notifications.error(`Can hold only ${heldQtyLimit} quantity in one hand`);
+      if (itemQty > heldQtyLimit) return ui.notifications.error(`Can hold only ${heldQtyLimit} quantity`);
 
       if ( wearingShield && (twoHanded || isHeldOtherHand) ) return ui.notifications.error("Cannot hold with both hands while wearing a shield");
 
@@ -466,7 +466,7 @@ export class SimpleActorSheet extends ActorSheet {
       const atkModes = item.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
       const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(slashing)');
       if (canQuickSlash && event.altKey) {
-        game.lostlands.Macro.quickSlashAttackMacro(item.id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
+        game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
         Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
