@@ -927,6 +927,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // get attacker's properties
+  const immuneFumbles = !!attackerRollData.immune_fumbles || attackingActor._id === targetActor._id;
   const bab = attackerRollData.bab || 0;
   const dexMod = attackerRollData.dex_mod || 0;
   const strMod = attackerRollData.str_mod || 0;
@@ -945,7 +946,7 @@ async function attack(attackers, targetToken, options) {
   // get target's properties
   // can be immune to lucky hits, critical hits, bleed, knockdown and impale
   const immuneLuckyHits = !!targetRollData?.immune_lucky_hits;
-  const immuneCriticalHits = !!targetRollData?.immune_critical_hits;
+  const immuneCriticalHits = !!targetRollData?.immune_critical_hits || attackingActor._id === targetActor._id;
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
@@ -1024,18 +1025,29 @@ async function attack(attackers, targetToken, options) {
   // attack
   const d20Result = await Util.rollDice("d20");
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}+${sitAtkMod}`;
+  const totalAtkResult = await Util.rollDice(totalAtk);
   const hitSound = Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let resultText = '';
   let dmgEffect = '';
   let dr = Number(targetRollData?.ac.total[dmgType]?.dr) || 0;
   let resultSound = missSound;
-  let isHit = true;
   let targetAc = Number(targetRollData?.ac?.total[dmgType]?.ac);
+  let isHit = true;
+
+  
   let rolledWeapDmg = await Util.rollDice(weapDmg);
   const maxWeapDmg = await new Roll(weapDmg).evaluate({maximize: true}).total;
   let weapDmgResult = rolledWeapDmg;
   let armorIsMetal = false;
+
+  const adjTokens = (token, disposition) => {
+    return canvas.tokens.objects.children.filter(t => 
+      (disposition ? t.data.disposition === disposition : true) &&
+      t.actor._id !== targetActor._id &&
+      t.actor._id !== attackingActor._id &&
+      measureRange(token, t) < 10);
+  }
   
   if (!isNaN(targetAc)) {
     let hitLoc = '';
@@ -1075,10 +1087,7 @@ async function attack(attackers, targetToken, options) {
       const largeShieldCoverage = Constant.SHIELD_TYPES.large.coverage;
       const largeShieldLocs = Util.getArrFromCSL(largeShieldCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
       if(largeShieldLocs.includes(coverageArea)) {
-        const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
-          t.actor._id !== targetToken.actor._id &&
-          t.actor._id !== token.actor._id &&
-          measureRange(targetToken, t) < 10);
+        const adjFriendlyTokens = adjTokens(targetToken, 1);
         const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
           i.data.data.attributes.shield?.value &&
           Util.stringMatch(i.data.data.attributes.size?.value, 'L'))
@@ -1120,11 +1129,11 @@ async function attack(attackers, targetToken, options) {
 
     }
 
-    const totalAtkResult = await Util.rollDice(totalAtk);
     const isLuckyHit = d20Result >= 20 && !immuneLuckyHits;
     resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 1 always misses and 20 always hits
     isHit = d20Result > 1 && totalAtkResult >= targetAc || d20Result === 20;
+
 
     if (isHit) {
       let hitDesc = '';
@@ -1276,7 +1285,29 @@ async function attack(attackers, targetToken, options) {
       hitDesc = hitDesc || ' and hits';
       resultText += hitDesc + resultDesc;
     } else {
-      resultText += ` and misses`;
+      resultText += ` but misses`;
+      // fumbles
+      if (!immuneFumbles && await Util.rollDice('d100') <= targetAc - totalAtkResult) {
+        // NOTE have to handle all of these manually
+        const heldItems = attackingActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
+        const adjTargets = adjTokens(token);
+        const selectRandom = (arr) => {
+          const res = Math.floor(Math.random() * arr.length);
+          return arr[res];
+        }
+        const fumbles = [
+          { text: ' and slips and falls', condition: true }, 
+          { text: ' and stumbles, leaving an opening for an attack', condition: true },
+          { text: ` and drops ${selectRandom(heldItems)?.name}`, condition: heldItems.length },
+          { text: ` and hits themselves instead!`, condition: fragile },
+          { text: ` and ${weapName} breaks!`, condition: unwieldy },
+          { text: ` and hits ${selectRandom(adjTargets)?.name} instead!`, condition: atkType === 'melee' && adjTargets.length },
+        ];
+        const fumble = selectRandom(fumbles);
+        if (fumble.condition) {
+          resultText += ' wildly'  + fumble.text;
+        } 
+      }
     }
   }
 
@@ -1284,24 +1315,6 @@ async function attack(attackers, targetToken, options) {
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${dialogDmgMod}+${sitDmgMod}`;
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage` + dmgEffect;
   
-
-  // if ( unwieldy && atkType === 'melee' && d20Result === 1)  { // TODO fumble instead of roll 1. fragile also possible fumble result
-  //   isHit = true;
-  //   resultText += ` hit self`;
-  //   resultSound = hitSound;
-  // }
-  // if ( fragile && atkType === 'melee' && d20Result === 1 ) {
-  //   resultText += ` <span style="${resultStyle('#EE6363')}">WEAPON BREAK</span>`;
-  //   resultSound = 'weapon_break';
-  //   try {
-  //     await Util.reduceItemQty(weaponItem, token.actor);
-  //   } catch (error) {
-  //     ui.notifications.error(error);
-  //     weapons.shift();
-  //     return attack(attackers, targetToken, options);
-  //   }
-  // }
-
   // TODO use separate variables not object properties
 
   // result
