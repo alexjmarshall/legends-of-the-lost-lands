@@ -17,7 +17,7 @@ export async function createLostlandsMacro(data, slot) {
   // case 1: item
   if (data.data) {
     const item = data.data;
-    const itemMacroWithId = item.data.macro?.replace(/itemId/g, item.id);
+    const itemMacroWithId = item.data.macro?.replace(/itemId/g, item._id);
     macroData.name = item.name;
     macroData.command = itemMacroWithId;
     macroData.type = "script";
@@ -276,7 +276,7 @@ export async function useChargedItem(itemId, options={}) {
   const sound = item.data.data.attributes.sound?.value || null; // TODO generic use charges sound
   const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
   const chargesLeft = charges - numChargesUsed;
-  const itemUpdate = {'id': item.id, 'data.attributes.charges.value': chargesLeft};
+  const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
 
   if (!charges) return ui.notifications.error(`${item.name} has no charges remaining`);
 
@@ -351,7 +351,7 @@ export function heldWeaponAttackMacro(options={}) {
     // extract item ids and flag first weapon as offhand
     const weapIds = weapons.map((w, i) => {
       return Object.create({
-        id: w.id,
+        _id: w._id,
         offhand: i === 0 && weapons.length > 1,
         mainhand: i > 0,
       })
@@ -478,7 +478,7 @@ async function save(tokens, damage, options={}) {
     const qtyUpdate = itemQty - 1;
     options.sound = options.critFailSound || options.sound;
     try {
-      await actor.updateEmbeddedDocuments("Item", [{'id': options.critFailBrokenItem.id, 'data.quantity': qtyUpdate}]);
+      await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
     } catch {
       ui.notifications.error(`Error updating quantity of ${options.critFailBrokenItem.name}`);
     }
@@ -590,7 +590,7 @@ export function backstabMacro(options={}) {
     const flavor = `${weapon.name} (backstab)`;
     attackers.push({
       token: token,
-      weapons: [{id: weapon.id, dmgType: 'thrust'}], // TODO
+      weapons: [{id: weapon._id, dmgType: 'thrust'}], // TODO
       chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
       flavor,
       attacks: [],
@@ -687,7 +687,8 @@ async function attack(attackers, targetToken, options) {
     // remove comma at end of flavor and add names
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor.name ? ` vs. ${targetActor.name}` : ''}`;
     // add follow up attack to content
-    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + ` and is fast enough to attack again!`;
+    const followAttackText = ` and ${attackingActor.name} is fast enough to attack again!`
+    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText;
     Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);
@@ -740,7 +741,7 @@ async function attack(attackers, targetToken, options) {
       }
     }
   } else {
-    weaponItem = actorItems.get(weapon.id) || actorItems.find(i => Util.stringMatch(i.name, weapon.id));
+    weaponItem = actorItems.get(weapon._id) || actorItems.find(i => Util.stringMatch(i.name, weapon._id));
   }
 
   // checks for valid weapon data
@@ -765,7 +766,7 @@ async function attack(attackers, targetToken, options) {
   const weapAttrs = weaponItem.data.data.attributes;
   const weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize * 2;
   const targetWeapSpeeds = targetActor?.items.filter(i => i.data.data.held_left || i.data.data.held_right).map(i => +i.data.data.attributes.speed?.value).filter(i => i);
-  const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize * 2;
+  const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value] ?? 0;
   const weapCategory = weapAttrs.category?.value;
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
@@ -831,7 +832,7 @@ async function attack(attackers, targetToken, options) {
   // reload item if needed
   const loaded =  weaponItem.data.data.loaded;
   if ( reload && !loaded ) {
-    await token.actor.updateEmbeddedDocuments("Item", [{'id': weaponItem.id, 'data.loaded': true}]);
+    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
     chatMsgData.content += `${attackingActor.name} reloads ${weapName}<br>`;
     weapons.shift();
     return attack(attackers, targetToken, options);
@@ -873,11 +874,12 @@ async function attack(attackers, targetToken, options) {
       () => attack(attackers, targetToken, options)
     );
   }
-  if ( weaponItem.id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
+  if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
     try {
-      await token.actor.updateEmbeddedDocuments("Item", [{'id': weaponItem.id, 'data.atk_mode': weapon.altDialogChoice}]);
-    } catch {
-      ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}`);
+      console.log(weaponItem)
+      await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
+    } catch (error) {
+      ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
     }
   }
 
@@ -962,7 +964,8 @@ async function attack(attackers, targetToken, options) {
   if (targetSize === 0 && attackerSize > 2) sitAtkMod = sitAtkMod - 4;
   // chance of second attack by weapon speed
   const speedDiff = weapSpeed - targetWeapSpeed;
-  if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= speedDiff) {
+  const followAttackChance = speedDiff * 2;
+  if ( weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= followAttackChance) {
     attacker.followAttack = true;
   }
   // -2 if weapon category defined but not in attacker's weapon proficiencies
@@ -993,7 +996,7 @@ async function attack(attackers, targetToken, options) {
     // reduce qty of thrown weapon/missile
     if (thrown) {
       try {
-        await Util.reduceItemQty(weaponItem, token.actor);
+        await Util.reduceItemQty(weaponItem, attackingActor);
       } catch (error) {
         ui.notifications.error(error);
         weapons.shift();
@@ -1007,9 +1010,9 @@ async function attack(attackers, targetToken, options) {
         if( !quiver || !quiverQty ) {
           throw new Error("Nothing found to shoot from this weapon");
         }
-        const itemsUpdate = [{'id': quiver.id, 'data.quantity': quiverQty - 1}];
+        const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
         // set crossbow to unloaded
-        if (reloadable) await itemsUpdate.push({'id': weaponItem.id, 'data.loaded': false});
+        if (reloadable) itemsUpdate.push({'_id': weaponItem._id, 'data.loaded': false});
         await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
       } catch (error) {
         ui.notifications.error(error);
@@ -1031,6 +1034,7 @@ async function attack(attackers, targetToken, options) {
   let isHit = true;
   let targetAc = Number(targetRollData?.ac?.total[dmgType]?.ac);
   let rolledWeapDmg = await Util.rollDice(weapDmg);
+  const maxWeapDmg = await new Roll(weapDmg).evaluate({maximize: true}).total;
   let weapDmgResult = rolledWeapDmg;
   let armorIsMetal = false;
   
@@ -1045,6 +1049,12 @@ async function attack(attackers, targetToken, options) {
     const doubleKnockdownAreas = ['skull','knee'];
     const invalidKnockdownAreas = ['hand','forearm','elbow','upper arm'];
     let sortedWornArmors = [];
+
+    const applyArmor = (armor) => {
+      const currentAC = +armor?.data.data.attributes.base_ac?.value;
+      const maxAc = +armor?.data.data.attributes.base_ac?.max;
+      return Math.ceil(Math.random() * maxAc) <= currentAC;
+    }
 
     // roll for hit location if character or humanoid
     if ( targetActor.type === 'character' || targetRollData.type?.value === 'humanoid' ) { // TODO test with monster enemies with hardcoded armor types
@@ -1067,8 +1077,8 @@ async function attack(attackers, targetToken, options) {
       const largeShieldLocs = Util.getArrFromCSL(largeShieldCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
       if(largeShieldLocs.includes(coverageArea)) {
         const adjFriendlyTokens = canvas.tokens.objects.children.filter(t => t.data.disposition === 1 &&
-          t.actor.id !== targetToken.actor.id &&
-          t.actor.id !== token.actor.id &&
+          t.actor._id !== targetToken.actor._id &&
+          t.actor._id !== token.actor._id &&
           measureRange(targetToken, t) < 10);
         const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
           i.data.data.attributes.shield?.value &&
@@ -1108,13 +1118,7 @@ async function attack(attackers, targetToken, options) {
       }
 
       // TODO store injuries like diseases, remove when character HP equal maxHP and no fatigue damage to maxHp
-      // simplify:
-      //  bleed prevention & crit absorption always have chance of working equal to base_ac value / base_ac max!!!
-      // bulky armor does 1 dmg reduction from blunt and can take damage to prevent blunt crits,
-      // non-bulky armor does 1 dmg reduction from piercing and can take damage to prevent piercing crits
-      // metal armor does 1 dmg reduction from slashing and can take damage to prevent slash crits
-      // crit always damages armor, impale might damage more than 1 layer -- above damage reduction just allows the damage to PREVENT the extra crit damage
-      // actually max damage from crit is never absorbed, non-bulky prevents IMPALE damage (1 per layer?!) -- get non-nulky layers, sort from best to worst AC, and dmg on each impale
+
     }
 
     const totalAtkResult = await Util.rollDice(totalAtk);
@@ -1124,94 +1128,46 @@ async function attack(attackers, targetToken, options) {
     isHit = d20Result > 1 && totalAtkResult >= targetAc || d20Result === 20;
 
     if (isHit) {
-      let hitDesc = ' and hits';
+      let hitDesc = '';
       let resultDesc = '';
 
-      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= totalAtkResult - targetAc;
-      const maxWeapDmg = Math.max(1, await new Roll(weapDmg).evaluate({maximize: true}).total - dr);
-
       // critical hits
+      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= totalAtkResult - targetAc;
+      
       if (isCriticalHit) {
-        let verb = 'penetrates';
-        const nonBulkyArmor = targetActor.items.find(i => i.data.data.worn &&
-          !i.data.data.attributes.bulky?.value &&
-          !i.data.data.attributes.shield?.value &&
-          i.data.data.locations?.includes(coverageArea) &&
-          Number(i.data.data.attributes.base_ac?.value) > 0);
-        const baseAc = Number(nonBulkyArmor?.data.data.attributes.base_ac?.value);
-        if (nonBulkyArmor && baseAc) {
-          const itemUpdate = {'id': nonBulkyArmor.id, 'data.attributes.base_ac.value': baseAc - 1};
-          if (baseAc < 2) {
-            verb = 'destroys';
-            const qty = nonBulkyArmor.data.data.quantity;
-            Object.assign(itemUpdate, {'data.quantity': qty - 1});
-          }
-          options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          hitDesc = ` and ${verb} their ${nonBulkyArmor.name}`;
-        } else {
-          weapDmgResult = maxWeapDmg;
-          hitDesc = ' and strikes a weak spot';
-        }
+        // avoids bulky/shield
+        sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.bulky?.value && !i.data.data.attributes.shield?.value);
+        rolledWeapDmg = maxWeapDmg;
+        weapDmgResult = Math.max(1, maxWeapDmg - dr);
+        hitDesc += ' and finds a weak spot';
       }
 
       // lucky hits
       if (isLuckyHit) {
-        let verb = 'cracks';
-        const bulkyArmor = shield || targetActor.items.find(i => i.data.data.worn &&
-          i.data.data.attributes.bulky?.value &&
-          i.data.data.locations?.includes(coverageArea) &&
-          Number(i.data.data.attributes.base_ac?.value) > 0);
-        const baseAc = Number(bulkyArmor?.data.data.attributes.base_ac?.value);
-        if (bulkyArmor && baseAc) {
-          const itemUpdate = {'id': bulkyArmor.id, 'data.attributes.base_ac.value': baseAc - 1};
+        const bulkyOrShield = sortedWornArmors.find(i => i.data.data.attributes.bulky?.value || i.data.data.attributes.shield?.value);
+        if (bulkyOrShield) sortedWornArmors.shift();
+        if (applyArmor(bulkyOrShield)) {
+          const baseAc = Number(bulkyOrShield.data.data.attributes.base_ac?.value);
+          sortedWornArmors.shift();
+          let verb = 'cracks';
+          const itemUpdate = {'_id': bulkyOrShield._id, 'data.attributes.base_ac.value': baseAc - 1};
           if (baseAc < 2) {
             verb = 'destroys';
-            const qty = bulkyArmor.data.data.quantity;
+            const qty = bulkyOrShield.data.data.quantity;
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          hitDesc = ` and ${verb} their ${bulkyArmor.name}` + hitDesc; // TODO and hits and impales?
+          hitDesc += ` and ${verb} their ${bulkyOrShield.name}`;
         } else {
-          weapDmgResult = weapDmgResult + weapDmgResult + (coverageArea === 'head' ? weapDmgResult : 0);
-          hitDesc += ' brutally hard';
+          weapDmgResult = weapDmgResult + weapDmgResult;
+          hitDesc += ' and hits brutally hard';
         }
-      }
-
-      // impale
-      const isImpale = !immuneImpale && dmgType === 'piercing' && rolledWeapDmg === maxWeapDmg;
-      if (isImpale) {
-        let stuck = false;
-        let explode = false;
-        const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
-        const maxDeepImpales = Math.min(weapSize, targetSize);
-        let num = 0;
-        const deepImpaleChance = 25;
-
-        do {
-          const impaleDmg = maxImpaleAreas.includes(coverageArea) ? maxWeapDmg : await Util.rollDice(weapDmg);
-          num++;
-          // ~25% chance of rolling damage again and weapon getting stuck
-          if ( canDeepImpale && num <= maxDeepImpales && await Util.rollDice('d100') <= deepImpaleChance ) { // TODO impale shield with javelin?
-            explode = true;
-            stuck = true;
-          } else {
-            explode = false;
-          } 
-          weapDmgResult += impaleDmg;
-        } while (explode);
-
-        if (!isCriticalHit && !isLuckyHit) {
-          hitDesc = ` and impales them`;
-        } else {
-          hitDesc += ` and impales them`;
-        }
-        dmgEffect += stuck ? ' and the weapon is stuck in their body' : '';
       }
 
       // knockdown
       const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
-                             doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
+                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * 2 * (weapDmgResult + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !immuneKnockdown && !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
@@ -1219,19 +1175,106 @@ async function attack(attackers, targetToken, options) {
         // add prone condition manually
       }
 
+      // impale
+      // steel plate cannot be impaled
+      const steelPlate = sortedWornArmors.some(i => i.data.data.attributes.material?.value === 'steel plate');
+      const isImpale = !steelPlate && !immuneImpale && dmgType === 'piercing' && rolledWeapDmg === maxWeapDmg;
+      if (isImpale) {
+        let stuck = false;
+        const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
+        const maxImpales = 1 + Math.min(weapSize, targetSize);
+        let impaleDmg = 0;
+        let armorPenString = '';
+
+        for (let i = 0; i < maxImpales; i++) {
+          const armor = sortedWornArmors[0];
+          sortedWornArmors.shift();
+          let rolledDmg = maxImpaleAreas.includes(coverageArea) ? maxWeapDmg : await Util.rollDice(weapDmg);
+          let dmg = rolledDmg;
+          
+          if (applyArmor(armor)) {
+            let verb = 'penetrates';
+            const bulky = !!armor.data.data.attributes.bulky?.value;
+            const isShield = !!armor.data.data.attributes.shield?.value;
+            // if armor is non-bulky or shield it absorbs the impale damage
+            if (!bulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
+              dmg = 0;
+            }
+            // damage armor
+            const baseAc = Number(armor?.data.data.attributes.base_ac?.value);
+            const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': baseAc - 1};
+            const armorDestroyed = baseAc < 2;
+            if (armorDestroyed) {
+              verb = 'destroys';
+              const qty = armor.data.data.quantity;
+              Object.assign(itemUpdate, {'data.quantity': qty - 1});
+            }
+            options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+            // append string
+            armorPenString += ` and ${verb} their ${armor.name}`;
+          }
+
+          // beyond first impale level, no more damage done if target area is shallow and
+          // weapon gets stuck if not a shot missile
+          if (i > 0) {
+            if (!canDeepImpale) dmg = 0;
+            stuck = canDeepImpale && atkForm !== 'shoot';
+          }
+
+          impaleDmg += dmg;
+
+          // remove attacker's weapon if it's stuck
+          // if (stuck) {
+          //   try {
+          //     await Util.reduceItemQty(weaponItem, attackingActor);
+          //   } catch (error) {
+          //     ui.notifications.error(error);
+          //     weapons.shift();
+          //     return attack(attackers, targetToken, options);
+          //   }
+          // }
+          // ~25% chance of rolling damage again and weapon getting stuck if not shoot
+          if (!isHit || rolledDmg < Math.round(maxWeapDmg * 3 / 4)) {
+            break;
+          }
+        }
+
+        // apply damage and append results string to hitDesc
+        weapDmgResult += impaleDmg;
+        const impaleDesc = armorPenString + (impaleDmg > 0 ? ` and impales them` : '');
+        dmgEffect += stuck ? ` and the weapon is stuck` : '';
+        hitDesc += impaleDesc;
+      }
+
       // bleed
-      armorIsMetal = sortedWornArmors.some(i => i.data.data.attributes.metal?.value);
+      // steel plate cannot be cut
       let minBleedDmg = 6;
       let bleedChance = 25;
       if (bleedBonus) minBleedDmg--;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
-      const isBleed = !immuneBleed && dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
+      const isBleed = !immuneBleed && !steelPlate && dmgType === 'slashing' && !armorIsMetal && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
       if (isBleed) {
-        dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound!' : ' and the wound bleeds heavily';
+        const metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
+        if(applyArmor(metalArmor)) {
+          const baseAc = Number(metalArmor.data.data.attributes.base_ac?.value);
+          sortedWornArmors.shift();
+          let verb = 'cuts through';
+          const itemUpdate = {'_id': metalArmor._id, 'data.attributes.base_ac.value': baseAc - 1};
+          if (baseAc < 2) {
+            verb = 'destroys';
+            const qty = metalArmor.data.data.quantity;
+            Object.assign(itemUpdate, {'data.quantity': qty - 1});
+          }
+          options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
+          hitDesc += ` and ${verb} their ${metalArmor.name}`;
+        } else {
+          dmgEffect += doubleBleedAreas.includes(coverageArea) ? ' and blood spurts from the wound!' : ' and the wound bleeds heavily';
         // add bleed/heavy bleed condition manually
+        }
       }
 
       resultSound = hitSound;
+      hitDesc = hitDesc || ' and hits';
       resultText += hitDesc + resultDesc;
     } else {
       resultText += ` and misses`;
@@ -1384,7 +1427,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
   if ( !reactingActor || !targetActor ) return;
   const targetLevel = targetActor.data.data.attributes.lvl?.value || 1;
   const attitudeMap = reactingActor.data.data.attitude_map;
-  const attitudeObj = attitudeMap[targetActor.id];
+  const attitudeObj = attitudeMap[targetActor._id];
   let attitude = attitudeObj?.attitude;
   const flavor = options.flavor || 'Reaction Roll'
 
@@ -1416,7 +1459,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     else attitude = Constant.ATTITUDES.HELPFUL;
     const attitudeMapUpdate = {
       attitude_map: {
-        [targetActor.id]: {attitude: attitude, lvl: targetLevel}
+        [targetActor._id]: {attitude: attitude, lvl: targetLevel}
       }
     };
     await reactingActor.update({data: attitudeMapUpdate});
@@ -1448,8 +1491,8 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   if (!priceInCp) return;
   const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
   const actor = game.user.character || token?.actor;
-  const sameActor = actor?.isToken ? merchant.isToken && actor.token.id === merchant.token.id :
-    actor?.id === merchant.id;
+  const sameActor = actor?.isToken ? merchant.isToken && actor.token._id === merchant.token._id :
+    actor?._id === merchant._id;
   if ( !actor || sameActor ) return ui.notifications.error("Select buying token");
   const merchantGold = +merchant.data.data.attributes.gold?.value;
   if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set");
@@ -1502,12 +1545,12 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
     spUpdateQty = Math.floor(changeInCp / 5);
     cpUpdateQty = changeInCp - spUpdateQty * 5;
   }
-  const cpUpdate = {id: cpItem?.id, "data.quantity": cpUpdateQty},
-        spUpdate = {id: spItem?.id, "data.quantity": spUpdateQty},
-        gpUpdate = {id: gpItem?.id, "data.quantity": gpUpdateQty};
+  const cpUpdate = {id: cpItem?._id, "data.quantity": cpUpdateQty},
+        spUpdate = {id: spItem?._id, "data.quantity": spUpdateQty},
+        gpUpdate = {id: gpItem?._id, "data.quantity": gpUpdateQty};
   // add to updates if item has id and update quantity is different than existing quantity
-  const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u.id &&
-    u["data.quantity.quantity"] !== actorItems.get(u.id)?.data.data.quantity);
+  const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u._id &&
+    u["data.quantity.quantity"] !== actorItems.get(u._id)?.data.data.quantity);
   
   // show confirmation dialog if haven't shown split item dialog
   if (!options.shownSplitDialog) {
@@ -1533,7 +1576,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
 
   async function finalizePurchase() {
     await actor.updateEmbeddedDocuments("Item", updates);
-    await merchant.updateEmbeddedDocuments("Item", [{'id': item.id, 'data.quantity': merchantQty - qty}]);
+    await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
     await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / 50)});
 
     // add item to actor
@@ -1552,7 +1595,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
     });
     if (targetItem) {
       const currentTargetQty = +targetItem.data.data.quantity;
-      await actor.updateEmbeddedDocuments("Item", [{ "id": targetItem.id, "data.quantity": currentTargetQty + qty }]);
+      await actor.updateEmbeddedDocuments("Item", [{ "id": targetItem._id, "data.quantity": currentTargetQty + qty }]);
     } else {
       await actor.createEmbeddedDocuments("Item", [itemData]);
     }
@@ -1737,11 +1780,11 @@ export async function addDisease(disease=null, options={}) {
 
   const startTime = Util.now();
   const interval = Fatigue.DISEASES[disease].damageInterval;
-  const actorId = actor.id;
+  const actorId = actor._id;
   const scope = {actorId, disease};
   const command = Fatigue.DISEASE_DAMAGE_COMMAND;
   const macro = await Util.getMacroByCommand(`${command}`, `return game.lostlands.Macro.${command};`);
-  const intervalId = await TimeQ.doEvery(interval, startTime, macro.id, scope);
+  const intervalId = await TimeQ.doEvery(interval, startTime, macro._id, scope);
 
   charDiseases[disease] = {
     startTime,
