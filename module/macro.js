@@ -338,7 +338,7 @@ export async function heldWeaponAttackMacro(options={}) {
       for (const t of targets) {
         options.targetToken = t;
         heldWeaponAttackMacro(options);
-        await Util.wait(200);
+        await Util.wait(500);
       }
       return;
     }
@@ -370,6 +370,8 @@ export async function heldWeaponAttackMacro(options={}) {
         offhand: i === 0 && weapons.length > 1,
         mainhand: i > 0,
         atkMode: options.atkMode,
+        hitSound: options.hitSound,
+        missSound: options.missSound,
       })
     });
     
@@ -1043,8 +1045,8 @@ async function attack(attackers, targetToken, options) {
   const d20Result = await Util.rollDice("d20");
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${dialogAtkMod}+${sitAtkMod}`;
   const totalAtkResult = await Util.rollDice(totalAtk);
-  const hitSound = Constant.ATK_MODES[atkMode]?.HIT_SOUND;
-  const missSound = Constant.ATK_MODES[atkMode]?.MISS_SOUND;
+  const hitSound = weapon.hitSound ?? Constant.ATK_MODES[atkMode]?.HIT_SOUND;
+  const missSound = weapon.missSound ?? Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let resultText = '';
   let dmgEffect = '';
   let dr = Number(targetRollData?.ac.total[dmgType]?.dr) || 0;
