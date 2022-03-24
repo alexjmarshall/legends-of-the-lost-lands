@@ -35,6 +35,8 @@ export class SimpleActorSheet extends ActorSheet {
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
 
+    context.parryBonus = context.systemData.ac?.parry?.parry_bonus;
+
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
     items.forEach(item => item.data.totalWeight = Math.round(item.data.quantity * item.data.weight * 10) / 10 || 0);

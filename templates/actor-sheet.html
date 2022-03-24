@@ -79,7 +79,7 @@
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
                 <span>Max Dex Bonus: {{systemData.ac.max_dex_mod}}</span>
-                <span></span>
+                <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
