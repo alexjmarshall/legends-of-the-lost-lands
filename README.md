@@ -1,3 +1,3 @@
-# Legends of the Lost Lands System
+# Legends of the Lost Lands Role-Playing Game System
 
-A system for play in the Lost Lands.
+https://trello.com/b/fcSHGw7w/dd
