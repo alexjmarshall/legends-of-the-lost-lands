@@ -102,6 +102,13 @@ export class SimpleItem extends Item {
       };
     }
 
+    // derive weight from size for weapons
+    const isWeapon = !!itemData.attributes.atk_modes;
+    const size = Constant.SIZE_VALUES[itemData.attributes.size?.value];
+    if (isWeapon && size != null) {
+      itemData.weight = Math.max(0.5, size);
+    }
+
     // armor/clothing warmth, weight and max Dex mod
     if (materialProps && locations.length) {
       // weight -- use swing weightings (index 0) if worn, otherwise thrust weightings (index 1)
@@ -144,9 +151,11 @@ export class SimpleItem extends Item {
       if (materialProps.gp_value && itemData.attributes.gp_value) {
         const maxWeight = materialProps.weight;
         const ratio = weight / maxWeight;
-        itemData.attributes.gp_value.value = Math.round(materialProps.gp_value * ratio * 100) / 100;
+        const baseValue = Math.round(materialProps.gp_value * ratio * 100) / 100;
+        itemData.attributes.gp_value.value = baseValue;
         // TODO take magic bonus into account
       }
+
     }
   }
 
