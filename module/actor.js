@@ -115,6 +115,7 @@ export class SimpleActor extends Actor {
     if ( type === 'character' || type === 'monster' ) {
       const naturalAc = attributes.ac?.value || Constant.AC_MIN;
       const naturalDr = attributes.dr?.value || 0;
+      const ac_mod = +attributes.ac_mod?.value || 0;
 
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
@@ -127,19 +128,19 @@ export class SimpleActor extends Actor {
       const dexAcBonus = Math.min(updateData.dex_mod, max_dex_mod);
 
       // class bonus        
-      const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
-      const isSwashbuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') &&
-                             max_dex_mod >= 4;
-      const level = +attributes.lvl?.value || 1;
-      const classBonus = isBarbarian ? 1 :
-                         isSwashbuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
+      // const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
+      // const isSwashbuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') &&
+      //                        max_dex_mod >= 4;
+      // const level = +attributes.lvl?.value || 1;
+      // isBarbarian ? 1 :
+      //                    isSwashbuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
 
-      const touch_ac = Constant.AC_MIN + dexAcBonus + classBonus;
+      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
 
       const ac = { touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {} };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
-          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + classBonus,
+          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
           dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
@@ -193,7 +194,7 @@ export class SimpleActor extends Actor {
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
-            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod;
             // max dr is 2
             const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
 
