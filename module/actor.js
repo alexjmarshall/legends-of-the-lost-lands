@@ -63,7 +63,7 @@ export class SimpleActor extends Actor {
       str = Math.round( Util.sizeMulti(str, charSize) );
       let mv = 12 - Math.floor(Math.max(0, updateData.enc - str) / str * 3);
       mv = Math.max(0, mv) || 0;
-      const maxMv = attributes.maxmv?.value;
+      const maxMv = attributes.max_mv?.value;
       mv = maxMv ? Math.round(mv * maxMv / 12) : mv;
       mv = attributes.mv?.value ?? mv;
       updateData.mv = mv;
@@ -71,14 +71,16 @@ export class SimpleActor extends Actor {
     }
 
     // encumbrance for containers
-    if(this.data.type === 'container') {
+    if (this.data.type === 'container') {
       const otherActors = game.actors?.filter(a => a.name !== this.name && a.hasPlayerOwner) || [];
-      for(let otherActor of otherActors) {
+      for (let otherActor of otherActors) {
         let container = otherActor.items.find(item => item.name === this.name);
-        if(container && container._id) {
+        if (container && container._id) {
           const containerWeight = Math.floor(updateData.enc / (attributes.factor?.value || 1)) || 1;
           const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
-          if(containerWeight !== container.data.data.weight) await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
+        if (containerWeight !== container.data.data.weight) {
+          await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
+        }
           break;
         }
       }
@@ -93,7 +95,7 @@ export class SimpleActor extends Actor {
       updateData.con_mod = Math.floor(attributes.ability_scores?.con?.value / 3 - 3) || 0;
       updateData.cha_mod = Math.floor(attributes.ability_scores?.cha?.value / 3 - 3) || 0;
     }
-    
+
     /* AC
     slots:
     - coif
@@ -135,23 +137,21 @@ export class SimpleActor extends Actor {
       const level = +attributes.lvl?.value || 1;
       const classBonus = isBarbarian ? 1 :
                          isSwashbuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
-      
-      const touch_ac = Constant.AC_MIN + dexAcBonus;
 
-      actorData.ac = {touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {}};
+      const touch_ac = Constant.AC_MIN + dexAcBonus + classBonus;
+
+      const ac = { touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {} };
       for (const dmgType of Constant.DMG_TYPES) {
-        actorData.ac.total[dmgType] = {
+        ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + classBonus,
           dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
 
-      // TODO decrease the value of armor/shield base_ac to represent armor damage from lucky hits (shield/bulky)/critical hits (non-bulky)
-
       // ac and dr for every body location
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
         for (const dmgType of Constant.DMG_TYPES) {
-          actorData.ac.total[dmgType] = {
+          ac.total[dmgType] = {
             ac: 0,
             dr: 0,
           }
@@ -160,15 +160,15 @@ export class SimpleActor extends Actor {
         updateData.clo = 0;
 
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
-          actorData.ac[k] = {};
+          ac[k] = {};
           const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
           const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
           const armor = garments.filter(i => Object.keys(i.data.data.ac || {}).length);
           
-          // can only wear one shield and one bulky armor
+          // can only wear one shield and one rigid armor
           const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
-          const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
-          const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
+          const rigidArmor = armor.find(i => i.data.data.attributes.rigid?.value);
+          const nonRigidArmor = armor.filter(i => !i.data.data.attributes.rigid?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
@@ -178,16 +178,16 @@ export class SimpleActor extends Actor {
 
           // magic damage reduction
           const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
-          actorData.ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
+          ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
           // magic ac bonus
           const magicBonus = Math.max(0, ...coveringItems.map(i => +i.data.data.ac?.mac || 0));
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
+            let sorted_armor_ids = nonRigidArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
               .map(i => i._id);
-            if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
+            if (rigidArmor?._id) sorted_armor_ids = [rigidArmor._id, ...sorted_armor_ids];
             if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
 
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
@@ -197,22 +197,22 @@ export class SimpleActor extends Actor {
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
-            const ac = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + classBonus;
             // max dr is 2
-            const dr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
+            const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
 
-            actorData.ac[k][dmgType] = { ac, dr, sorted_armor_ids };
-            actorData.ac.total[dmgType].ac += (ac * v.weights[0] + ac * v.weights[1]) / 200;
-            actorData.ac.total[dmgType].dr += (dr * v.weights[0] + dr * v.weights[1]) / 200;
+            ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids };
+            ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
+            ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
           }
         }
 
         // round ac
-        for (const v of Object.values(actorData.ac.total)) {
+        for (const v of Object.values(ac.total)) {
           v.ac = (Math.round(v.ac) || touch_ac);
           v.dr = Math.round(v.dr);
         }
-        actorData.ac.mdr = Math.round(actorData.ac.mdr);
+        ac.mdr = Math.round(ac.mdr);
       }
       
       // st_mod
@@ -221,7 +221,10 @@ export class SimpleActor extends Actor {
       updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
       // magic resistance
-      actorData.ac.mr = +attributes.mr?.value || 0;
+      ac.mr = +attributes.mr?.value || 0;
+
+      // add AC to updateData
+      actorData.ac = ac;
 
       // weap profs
       updateData.weap_profs = Util.getArrFromCSL(attributes.weap_profs?.value || '').map(p => p.toLowerCase());
@@ -241,6 +244,7 @@ export class SimpleActor extends Actor {
         delete updateData[key];
       }
     }
+    
     if (this._id && Object.keys(updateData).length) {
       await Util.wait(200);
       this.update({data: updateData});
