@@ -151,7 +151,8 @@ export class SimpleItem extends Item {
       if (materialProps.gp_value && itemData.attributes.gp_value) {
         const maxWeight = materialProps.weight;
         const ratio = weight / maxWeight;
-        const baseValue = Math.round(materialProps.gp_value * ratio * 100) / 100;
+        // round to nearest even number, 2 decimal places
+        const baseValue = 2 * Math.round(materialProps.gp_value * ratio * 50) / 100;
         itemData.attributes.gp_value.value = baseValue;
         // TODO take magic bonus into account
       }
