@@ -971,7 +971,7 @@ async function attack(attackers, targetToken, options) {
   // get target's properties
   // can be immune to lucky hits, critical hits, bleed, knockdown and impale
   const immuneLuckyHits = !!targetRollData?.immune_lucky_hits;
-  const immuneCriticalHits = !!targetRollData?.immune_critical_hits || attackingActor._id === targetActor._id;
+  const immuneCriticalHits = !!targetRollData?.immune_critical_hits; /// || attackingActor._id === targetActor._id;
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
