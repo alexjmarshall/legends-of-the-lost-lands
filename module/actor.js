@@ -119,6 +119,13 @@ export class SimpleActor extends Actor {
 
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
+      const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
+        .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
+      const parryBonus = parryItem?.data.data.attributes.parry_bonus?.value || 0;
+      const parry = {
+        parry_item_id: parryItem?._id,
+        parry_bonus: parryBonus,
+      };
 
       // spell failure, skill check penalty and max dex mod
       const sf = Math.round(wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.spell_failure || 0), 0));
@@ -137,10 +144,10 @@ export class SimpleActor extends Actor {
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
 
-      const ac = { touch_ac, sf, sp, max_dex_mod, mdr:0, mr:0, total: {} };
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr:0, mr:0, total: {} };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
-          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
+          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod + parryBonus,
           dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
@@ -194,7 +201,7 @@ export class SimpleActor extends Actor {
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
-            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod;
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus;
             // max dr is 2
             const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
 
