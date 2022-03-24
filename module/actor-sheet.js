@@ -38,24 +38,29 @@ export class SimpleActorSheet extends ActorSheet {
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
     items.forEach(item => item.data.totalWeight = Math.round(item.data.quantity * item.data.weight * 10) / 10 || 0);
-    context.data.equipment = this.sortEquipmentByType(items);
-    context.hasEquipment = Object.values(context.data.equipment).flat().length > 0;
+    context.equipment = this.sortEquipmentByType(items);
+    context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort spells
     const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
-    context.data.spells = this.sortSpellsByType(spells, context.data.data.attributes);
-    context.hasSpells = Object.values(context.data.spells).flat().length > 0;
+    context.spells = this.sortSpellsByType(spells, context.data.data.attributes);
+    context.hasSpells = Object.values(context.spells).flat().length > 0;
 
     // sort features
     const features = context.data.items.filter(i => i.type === 'feature');
-    context.data.features = this.sortFeaturesBySource(features, context.data.data.attributes);
-    context.hasFeatures = Object.values(context.data.features).flat().length > 0;
+    context.features = this.sortFeaturesBySource(features, context.data.data.attributes);
+    context.hasFeatures = Object.values(context.features).flat().length > 0;
 
-    context.data.voiceProfiles = Constant.VOICE_SOUNDS.keys();
-    context.data.voiceMoods = [];
+    // skill check penalty
+    const sp = context.systemData.ac?.sp;
+    context.sp = `${Number(sp) > 0 ? '-' : ''}${context.systemData.ac?.sp}`;
+
+    context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
+    const voiceMoods = [];
     for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
-      context.data.voiceMoods.push( { mood: key, icon: value } );
+      voiceMoods.push( { mood: key, icon: value } );
     }
+    context.voidMoods = voiceMoods;
     context.hasVoice = !!context.systemData.voice;
     context.noVoice = !context.systemData.voice;
     context.hideVoiceSelection = context.isPlayer && context.hasVoice;
@@ -63,7 +68,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     // fatigue
     if (context.isCharacter) {
-      context.data.fatigue = this.getFatigueData(context.data);
+      context.fatigue = this.getFatigueData(context.data);
     }
 
     return context;
