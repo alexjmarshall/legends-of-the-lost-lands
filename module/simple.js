@@ -169,9 +169,6 @@ Hooks.on("ready", () => {
     );
   }
 
-  // Note: can reset events at any time by rebooting or moving calendar back in time
-  // NOTE: do not manually edit max HP field of characters with player owners EXCEPT to increase on level up
-  // if a character dies and is revived, boost their HP to 0+, then have to heal their max HP naturally
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
 
     if (SimpleCalendar.api.isPrimaryGM()) {

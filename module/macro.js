@@ -328,7 +328,6 @@ export async function heldWeaponAttackMacro(options={}) {
       return ui.notifications.error("Invalid weapon size specified");
     }
 
-    // sweep NOTE: have to enforce manually that targets are in an adjacent group
     const hasSweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value);
     const sweeping = hasSweepWeap && ranTarget && targets.length <= 4 && selectedTokens.length === 1 && !options.skipSweep;
     if (sweeping) {
@@ -1342,7 +1341,6 @@ async function attack(attackers, targetToken, options) {
       
       // fumbles
       if (!immuneFumbles && await Util.rollDice('d100') <= targetAc - totalAtkResult) {
-        // NOTE have to handle all of these manually
         const heldItems = attackingActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
         const adjTargets = adjTokens(token);
         const selectRandom = (arr) => {

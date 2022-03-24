@@ -26,11 +26,7 @@ export class SimpleActor extends Actor {
   /** @inheritdoc */
   async prepareDerivedData() {
 
-    // NOTE: avoid creating active effects that modify actor properties
-    //   that affect the derived data calculations below
-    //   e.g. ability scores, xp, enc, mv 
-
-    // types: character, monster, container, merchant
+    // actor types: character, monster, container, merchant
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
