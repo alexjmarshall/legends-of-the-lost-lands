@@ -55,7 +55,7 @@ export const SHIELD_TYPES = {
     material: "wood",
   },
 };
-export const MATERIAL_WARMTH_WEIGHT = {
+export const MATERIAL_PROPS = {
   wood: {
     weight:8,
     warmth:0,
@@ -79,46 +79,68 @@ export const MATERIAL_WARMTH_WEIGHT = {
   padded: {
     weight:4,
     warmth:24,
+    metal:false,
+    rigid:false,
   },
   leather: {
     weight:6,
     warmth:10,
+    metal:false,
+    rigid:true,
   },
   brigandine: {
     weight:20,
-    warmth:18,
+    warmth:16,
+    metal:true,
+    rigid:true,
+  },
+  scale: {
+    weight:22,
+    warmth:14,
+    metal:true,
+    rigid:false,
   },
   chain: {
     weight:12,
     warmth:2,
+    metal:true,
+    rigid:false,
   },
   "elven chain": {
     weight:6,
     warmth:1,
+    metal:true,
+    rigid:false,
   },
-  scale: {
-    weight:24,
-    warmth:12,
+  "banded mail": {
+    weight:14,
+    warmth:4,
+    metal:true,
+    rigid:false,
   },
   lamellar: {
-    weight:22,
-    warmth:14,
+    weight:20,
+    warmth:12,
+    metal:true,
+    rigid:true,
   },
   splint: {
     weight:18,
-    warmth:16,
-  },
-  "banded mail": {
-    weight:16,
-    warmth:6,
+    warmth:14,
+    metal:true,
+    rigid:true,
   },
   "iron plate": {
-    weight:20,
+    weight:18,
     warmth:10,
+    metal:true,
+    rigid:true,
   },
   "steel plate": {
-    weight:18,
+    weight:16,
     warmth:8,
+    metal:true,
+    rigid:true,
   },
 };
 export const ARMOR_VS_DMG_TYPE = {
@@ -141,11 +163,11 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 1,
     blunt: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     piercing: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     slashing: {
       ac:-1,
@@ -156,7 +178,7 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 2,
     blunt: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     piercing: {
       ac:-2,
@@ -174,11 +196,11 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     piercing: {
-      ac:0,
+      ac:1,
       dr:0,
     },
     slashing: {
-      ac:-1,
+      ac:0,
       dr:0,
     },
   },
@@ -197,71 +219,86 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:0,
     },
   },
+  scale: {
+    base_AC: 4,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:1,
+      dr:1,
+    },
+  },
   brigandine: {
     base_AC: 4,
     blunt: {
-      ac:2,
+      ac:0,
       dr:1,
     },
     piercing: {
       ac:1,
-      dr:1,
+      dr:0,
     },
     slashing: {
-      ac:0,
+      ac:2,
       dr:1,
     },
   },
   chain: {
     base_AC: 5,
     blunt: {
-      ac:-1,
+      ac:-2,
       dr:0,
     },
     piercing: {
-      ac:1,
-      dr:0,
+      ac:0,
+      dr:1,
     },
     slashing: {
-      ac:1,
+      ac:2,
       dr:1,
     },
   },
   "elven chain": {
     base_AC: 5,
     blunt: {
-      ac:-1,
+      ac:-2,
       dr:0,
     },
     piercing: {
-      ac:1,
-      dr:0,
+      ac:0,
+      dr:1,
     },
     slashing: {
-      ac:1,
+      ac:2,
       dr:1,
     },
   },
-  scale: {
+  "banded mail": {
     base_AC: 6,
     blunt: {
-      ac:0,
+      ac:1,
       dr:0,
     },
     piercing: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     slashing: {
-      ac:-1,
-      dr:0,
+      ac:2,
+      dr:1,
     },
   },
   lamellar: {
     base_AC: 7,
     blunt: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     piercing: {
       ac:1,
@@ -275,23 +312,8 @@ export const ARMOR_VS_DMG_TYPE = {
   splint: {
     base_AC: 7,
     blunt: {
-      ac:1,
-      dr:0,
-    },
-    piercing: {
-      ac:0,
-      dr:0,
-    },
-    slashing: {
-      ac:1,
-      dr:0,
-    },
-  },
-  "banded mail": {
-    base_AC: 7,
-    blunt: {
-      ac:0,
-      dr:0,
+      ac:2,
+      dr:1,
     },
     piercing: {
       ac:1,
@@ -306,7 +328,7 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 8,
     blunt: {
       ac: 0,
-      dr: 0,
+      dr: 1,
     },
     piercing: {
       ac: 1,
@@ -314,22 +336,22 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     slashing: {
       ac: 1,
-      dr: 1,
+      dr: 2,
     },
   },
   "steel plate": {
     base_AC: 9,
     blunt: {
-      ac: 1,
-      dr: 0,
+      ac: 0,
+      dr: 1,
     },
     piercing: {
-      ac: 2,
-      dr: 1,
+      ac: 3,
+      dr: 0,
     },
     slashing: {
-      ac: 1,
-      dr: 1,
+      ac: 2,
+      dr: 2,
     },
   },
 }
