@@ -70,15 +70,15 @@ export class SimpleItem extends Item {
         baseAc += acMod;
       }
 
-      // infer max base ac, metal and rigid from material
+      // infer max base ac, metal and rigid property values from material
       if (itemData.attributes.base_ac?.max !== undefined) {
         itemData.attributes.base_ac.max = baseAc;
         baseAc = itemData.attributes.base_ac.value ?? baseAc;
       }
-      if (itemData.attributes.metal?.value !== undefined) {
+      if (materialProps.metal && itemData.attributes.metal) {
         itemData.attributes.metal.value = materialProps.metal;
       }
-      if (itemData.attributes.rigid?.value !== undefined) {
+      if (materialProps.rigid && itemData.attributes.rigid) {
         itemData.attributes.rigid.value = materialProps.rigid;
       }
 
@@ -138,6 +138,14 @@ export class SimpleItem extends Item {
         const maxDexWeight = padded ? materialProps.weight * 2 : materialProps.weight;
         itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
         if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
+      }
+
+      // derive gp value from material and weight
+      if (materialProps.gp_value && itemData.attributes.gp_value) {
+        const maxWeight = materialProps.weight;
+        const ratio = weight / maxWeight;
+        itemData.attributes.gp_value.value = Math.round(materialProps.gp_value * ratio * 100) / 100;
+        // TODO take magic bonus into account
       }
     }
   }
