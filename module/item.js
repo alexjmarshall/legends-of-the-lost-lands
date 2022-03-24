@@ -21,7 +21,7 @@ export class SimpleItem extends Item {
   * atk_mod, dmg, dmg_mod, holdable, reach, size, speed
   * 
   * worn items:
-  * ac_mod, magic, material, coverage, wearable, bulky, st_mod
+  * ac_mod, magic, material, coverage, wearable, rigid, st_mod
   */
 
   /** @inheritdoc */
@@ -49,6 +49,7 @@ export class SimpleItem extends Item {
     // TODO how to handle non-armor magic AC items?
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material];
+    const materialProps = Constant.MATERIAL_PROPS[material];
     const coverage = itemData.attributes.coverage?.value || '';
     const acMod = +itemData.attributes.ac_mod?.value || 0;
     const isMagic = !!itemData.attributes.magic?.value;
@@ -69,9 +70,16 @@ export class SimpleItem extends Item {
         baseAc += acMod;
       }
 
+      // infer max base ac, metal and rigid from material
       if (itemData.attributes.base_ac?.max !== undefined) {
         itemData.attributes.base_ac.max = baseAc;
         baseAc = itemData.attributes.base_ac.value ?? baseAc;
+      }
+      if (itemData.attributes.metal?.value !== undefined) {
+        itemData.attributes.metal.value = materialProps.metal;
+      }
+      if (itemData.attributes.rigid?.value !== undefined) {
+        itemData.attributes.rigid.value = materialProps.rigid;
       }
 
       let acBonus = isShield ? baseAc : Constant.AC_MIN + baseAc;
@@ -95,11 +103,12 @@ export class SimpleItem extends Item {
     }
 
     // armor/clothing warmth, weight and max Dex mod
-    const warmthAndWeight = Constant.MATERIAL_WARMTH_WEIGHT[material];
-    if (!!warmthAndWeight && locations.length) {
-      // weight
-      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[0], 0); // index 0 for centre swing
-      let weight = Math.round(warmthAndWeight.weight * totalLocationWeight) / 100;
+    if (materialProps && locations.length) {
+      // weight -- use swing weightings (index 0) if worn, otherwise thrust weightings (index 1)
+      const isWorn = !!itemData.worn;
+      const weightingsIndex = isWorn ? 0 : 1;
+      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);
+      let weight = Math.round(materialProps.weight * totalLocationWeight) / 100;
       // if magic item, halve weight
       if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
       // adjust garment weight by owner size
@@ -112,13 +121,13 @@ export class SimpleItem extends Item {
       itemData.weight = weight;
 
       // warmth
-      itemData.warmth = warmthAndWeight.warmth;
+      itemData.warmth = materialProps.warmth;
 
       // spell failure, skill check penalty and max dex mod penalty
       const isArmor = Constant.ARMOR_VS_DMG_TYPE[material];
       if (isArmor) {
         const padded = material === 'padded';
-        const spellFailure = padded ? warmthAndWeight.weight * 5 : warmthAndWeight.weight * 5 / 2;
+        const spellFailure = padded ? materialProps.weight * 5 : materialProps.weight * 5 / 2;
         itemData.ac.spell_failure = Math.round(spellFailure * totalLocationWeight) / 100;
         if (isMagic) itemData.ac.spell_failure = Math.round(itemData.ac.spell_failure / 2 * 100) / 100;
 
@@ -126,7 +135,7 @@ export class SimpleItem extends Item {
         itemData.ac.skill_penalty = Math.round(skillPenalty * totalLocationWeight) / 100;
         if (isMagic) itemData.ac.skill_penalty = Math.round(itemData.ac.skill_penalty / 2 * 100) / 100;
 
-        const maxDexWeight = padded ? warmthAndWeight.weight * 2 : warmthAndWeight.weight;
+        const maxDexWeight = padded ? materialProps.weight * 2 : materialProps.weight;
         itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
         if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
       }
