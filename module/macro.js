@@ -882,17 +882,27 @@ async function attack(attackers, targetToken, options) {
 
   // attack choice dialog
   const formatAtkMode = (mode) => Util.upperCaseFirst(mode.replace(/\(/, ' (').replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
+
   if ( atkModes.length && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
     const choices = atkModes.map(mode => {
-      return {label: formatAtkMode(mode), value: mode}
+      return {
+        label: formatAtkMode(mode), 
+        value: mode, 
+        callback: () => attack(attackers, targetToken, options)
+      }
     });
-    return altDialog(
-      weapon, 
-      `${weapon.name} Attack Mode`, 
-      choices, 
-      () => attack(attackers, targetToken, options)
-    );
+
+    if (choices.length > 1) {
+      return altDialog(
+        weapon, 
+        `${weapon.name} Attack Mode`, 
+        choices
+      );
+    }
+
+    weapon.altDialogChoice = choices[0].value;
   }
+
   if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
     try {
       await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
@@ -1420,7 +1430,7 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / 5) * 5;
 }
 
-function altDialog(options, title, buttons, callback) {
+function altDialog(options, title, buttons) {
   return new Dialog({
     title,
     content: ``,
@@ -1433,7 +1443,7 @@ function altDialog(options, title, buttons, callback) {
       callback: () => {
         options.shownAltDialog= true;
         options.altDialogChoice = button.value;
-        return callback();
+        return button.callback();
       }
     }]));
   }
