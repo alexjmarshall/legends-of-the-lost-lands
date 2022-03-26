@@ -320,10 +320,19 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const maxHp = actor.data.data.hp?.max;
   const token = Util.getTokenFromActor(actor);
 
-  if ( hpUpdate <= 0 && targetHp > 0 && actor.type === 'character' && actor.hasPlayerOwner ) {
+  if (hpUpdate <= -10  && targetHp > -10 ) {
+    Util.macroChatMessage(actor, {
+      flavor: 'Death', 
+      content: `${actor.name} dies`,
+      type: CONST.CHAT_MESSAGE_TYPES.IC,
+    }, false);
+    return;
+  }
+
+  if ( hpUpdate <= 0 && targetHp > 0 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Incapacitated', 
-      content: `${actor.name} has fallen. May the Gods have mercy.`,
+      content: `${actor.name} collapses`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
     }, false);
   }
