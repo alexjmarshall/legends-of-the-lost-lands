@@ -619,12 +619,12 @@ const BASIC_INJURIES = {
         text: ' and shatters a bone',
       },
       critical: {
-        text: ' and shatters the bones and dislocates the joint',
+        text: ' and shatters and dislocates the joint',
       },
     },
     piercing: {
       light: {
-        text: ' and pierces the joint',
+        text: ' and splits the joint',
       },
       serious: {
         text: ' and chips a bone',
@@ -668,7 +668,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and pierces the foot',
+          text: ' and and tears through muscle',
         },
         serious: {
           text: ' and severs a ligament',
@@ -912,7 +912,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and pierces the hand',
+          text: ' and and tears through muscle',
         },
         serious: {
           text: ' and severs a tendon',
@@ -1037,7 +1037,7 @@ export const HIT_LOCATIONS = {
           text: ' and lacerates the eye',
         },
         serious: {
-          text: ' and pierces the eye',
+          text: ' and dislodges the eye from its socket',
         },
         critical: {
           text: ' and penetrates the eye and into the brain',
@@ -1049,10 +1049,10 @@ export const HIT_LOCATIONS = {
           text: ' and lacerates the eye',
         },
         serious: {
-          text: ' and slices through the eye',
+          text: ' and eviscerates the eye',
         },
         critical: {
-          text: ' and slice through the eye and into the brain',
+          text: ' and cleaves through the eye socket and into the brain',
           fatal: true,
         },
       }
