@@ -121,7 +121,7 @@ export class SimpleActor extends Actor {
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
       const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
         .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
-      const parryBonus = parryItem?.data.data.attributes.parry_bonus?.value || 0;
+      const parryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || 0;
       const parry = {
         parry_item_id: parryItem?._id,
         parry_bonus: parryBonus,
@@ -205,7 +205,7 @@ export class SimpleActor extends Actor {
             // max dr is 2
             const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
 
-            ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids };
+            ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
             ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
           }
