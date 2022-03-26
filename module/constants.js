@@ -574,70 +574,530 @@ export const VOICE_SOUNDS = new Map();
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
 
+const BASIC_INJURIES = {
+  limb: {
+    blunt: {
+      light: {
+        text: ' and bruises a bone',
+      }, 
+      serious: {
+        text: ' and breaks a bone',
+      },
+      critical: {
+        text: ' and a broken bone pokes through pulped red flesh',
+      },
+    },
+    piercing: {
+      light: {
+        text: ' and tears through muscle',
+      },
+      serious: {
+        text: ' and chips a bone',
+      },
+      critical: {
+        text: ' and severs a tendon',
+      },
+    },
+    slashing: {
+      light: {
+        text: ' and severs a muscle',
+      },
+      serious: {
+        text: ' and severs a tendon',
+      },
+      critical: {
+        text: ' and severs an artery',
+      },
+    }
+  },
+  joint: {
+    blunt: {
+      light: {
+        text: ' and cracks a bone',
+      },
+      serious: {
+        text: ' and shatters a bone',
+      },
+      critical: {
+        text: ' and shatters the bones and dislocates the joint',
+      },
+    },
+    piercing: {
+      light: {
+        text: ' and pierces the joint',
+      },
+      serious: {
+        text: ' and chips a bone',
+      },
+      critical: {
+        text: ' and severs a ligament',
+      },
+    },
+    slashing: {
+      light: {
+        text: ' and chips a bone',
+      },
+      serious: {
+        text: ' and severs a ligament',
+      },
+      critical: (part) => ({
+        text: ` and lops off the ${part}`,
+        removal: true,
+      }),
+    },
+  },
+};
 
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
 export const HIT_LOCATIONS = {
   foot: {
     weights: [2,4,0,2,8,8],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: {
+        light: {
+          text: ' and crushes a toe',
+        },
+        serious: {
+          text: ' and breaks the ankle',
+        },
+        critical: {
+          text: ' and crushes the foot into red pulp',
+          removal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and pierces the foot',
+        },
+        serious: {
+          text: ' and severs a ligament',
+        },
+        critical: {
+          text: ' and severs a toe',
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and severs a ligament',
+        },
+        serious: {
+          text: ' and severs a toe',
+        },
+        critical: {
+          text: ' and lops off the foot',
+          removal: true,
+        },
+      }
+    },
   },
   shin: {
     weights: [8,6,2,2,16,12],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.limb.blunt,
+      piercing: BASIC_INJURIES.limb.piercing,
+      slashing: BASIC_INJURIES.limb.slashing,
+    },
   },
   knee: {
     weights: [8,6,4,2,16,12],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.joint.blunt,
+      piercing: BASIC_INJURIES.joint.piercing,
+      slashing: {
+        light: BASIC_INJURIES.joint.slashing.light,
+        serious: BASIC_INJURIES.joint.slashing.serious,
+        critical: BASIC_INJURIES.joint.slashing.critical('lower leg'),
+      },
+    },
   },
   thigh: {
     weights: [10,14,4,6,16,18],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.limb.blunt,
+      piercing: BASIC_INJURIES.limb.piercing,
+      slashing: BASIC_INJURIES.limb.slashing,
+    },
   },
   hip: {
     weights: [6,4,4,2,10,6],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.joint.blunt,
+      piercing: BASIC_INJURIES.joint.piercing,
+      slashing: {
+        light: BASIC_INJURIES.joint.slashing.light,
+        serious: BASIC_INJURIES.joint.slashing.serious,
+        critical: BASIC_INJURIES.joint.slashing.critical('leg'),
+      },
+    },
   },
   groin: {
     weights: [2,6,1,2,4,8],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and cracks the pelvis',
+        },
+        serious: {
+          text: ' and breaks the pelvis',
+        },
+        critical: {
+          text: ' and breaks the lower back',
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and gouges a hole in the flesh',
+        },
+        serious: {
+          text: ' and chips a bone',
+        },
+        critical: {
+          text: ' and severs a ligament',
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and lacerates the genitals',
+        },
+        serious: {
+          text: ' and severs a ligament',
+        },
+        critical: {
+          text: ' and disembowels them',
+        },
+      },
+    },
   },
   gut: {
     weights: [8,16,3,8,12,18],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and bruises the bowels',
+        },
+        serious: {
+          text: ' and snaps a rib',
+        },
+        critical: {
+          text: ' and snaps the spine',
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and gouges a hole in the flesh',
+        },
+        serious: {
+          text: ' and penetrates the abdomen',
+        },
+        critical: {
+          text: ' and penetrates the viscera',
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and slices through abdominal muscle',
+        },
+        serious: {
+          text: ' and lacerates the bowels',
+        },
+        critical: {
+          text: ' and cleaves through the spine',
+        },
+      },
+    },
   },
   chest: {
     weights: [4,10,6,16,2,5],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and bruises a rib',
+        },
+        serious: {
+          text: ' and breaks a rib',
+        },
+        critical: {
+          text: ' and crushes the sternum',
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and cracks a rib',
+        },
+        serious: {
+          text: ' and punctures a lung',
+        },
+        critical: {
+          text: ' and pierces the heart',
+          fatal: true,
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and slices through muscle',
+        },
+        serious: {
+          text: ' and cleaves through the ribs',
+        },
+        critical: {
+          text: ' and cleaves through the ribs and punctures a lung',
+        },
+      },
+    },
   },
   shoulder: {
     weights: [8,6,12,12,2,2],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.joint.blunt,
+      piercing: BASIC_INJURIES.joint.piercing,
+      slashing: {
+        light: BASIC_INJURIES.joint.slashing.light,
+        serious: BASIC_INJURIES.joint.slashing.serious,
+        critical: BASIC_INJURIES.joint.slashing.critical('arm'),
+      },
+    },
   },
   "upper arm": {
     weights: [6,4,10,8,2,2],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.limb.blunt,
+      piercing: BASIC_INJURIES.limb.piercing,
+      slashing: BASIC_INJURIES.limb.slashing,
+    },
   },
   elbow: {
     weights: [8,4,10,6,2,2],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.joint.blunt,
+      piercing: BASIC_INJURIES.joint.piercing,
+      slashing: {
+        light: BASIC_INJURIES.joint.slashing.light,
+        serious: BASIC_INJURIES.joint.slashing.serious,
+        critical: BASIC_INJURIES.joint.slashing.critical('forearm'),
+      },
+    },
   },
   forearm: {
     weights: [8,4,8,4,4,2],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: BASIC_INJURIES.limb.blunt,
+      piercing: BASIC_INJURIES.limb.piercing,
+      slashing: BASIC_INJURIES.limb.slashing,
+    },
   },
   hand: {
     weights: [6,4,6,4,2,2],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: {
+        light: {
+          text: ' and crushes a finger',
+        },
+        serious: {
+          text: ' and breaks the wrist',
+        },
+        critical: {
+          text: ' and crushes the hand into red pulp',
+          removal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and pierces the hand',
+        },
+        serious: {
+          text: ' and severs a tendon',
+        },
+        critical: {
+          text: ' and severs a finger',
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and severs a ligament',
+        },
+        serious: {
+          text: ' and severs a finger',
+        },
+        critical: {
+          text: ' and lops off the hand',
+          removal: true,
+        },
+      },
+    },
   },
   neck: {
-    weights: [4,3,6,8,1,1]
+    weights: [4,3,6,8,1,1],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and bruises the larynx',
+        },
+        serious: {
+          text: ' and bruises the spine',
+        },
+        critical: {
+          text: ' and snaps the neck',
+          fatal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and pierces the larynx',
+        },
+        serious: {
+          text: ' and penetrates the throat',
+        },
+        critical: {
+          text: ' and pierces an artery',
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and severs a muscle',
+        },
+        serious: {
+          text: ' and severs an artery',
+        },
+        critical: {
+          text: ' and lops off the head',
+          fatal: true,
+        },
+      }
+    },
   },
   face: {
-    weights: [3,4,4,8,1,1]
+    weights: [3,4,4,8,1,1],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and breaks the nose',
+        },
+        serious: {
+          text: ' and breaks the jaw',
+        },
+        critical: {
+          text: ' and smashes the bones of the face into the brain',
+          fatal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and pierces the cheek',
+        },
+        serious: {
+          text: ' and breaks teeth',
+        },
+        critical: {
+          text: ' and smashes through teeth and into the brain',
+          fatal: true,
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and splits the nose',
+        },
+        serious: {
+          text: ' and splits the jaw',
+        },
+        critical: {
+          text: ' and splits the face and cleaves the brain',
+          fatal: true,
+        },
+      },
+    },
   },
   eye: {
     weights: [1,2,2,4,0,0],
-    bilateral: true
+    bilateral: true,
+    injury: {
+      blunt: {
+        light: {
+          text: ' and bruises the eye socket',
+        },
+        serious: {
+          text: ' and shatters the eye socket',
+        },
+        critical: {
+          text: ' and smashes the eye socket into the brain',
+          fatal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and lacerates the eye',
+        },
+        serious: {
+          text: ' and pierces the eye',
+        },
+        critical: {
+          text: ' and penetrates the eye and into the brain',
+          fatal: true,
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and lacerates the eye',
+        },
+        serious: {
+          text: ' and slices through the eye',
+        },
+        critical: {
+          text: ' and slice through the eye and into the brain',
+          fatal: true,
+        },
+      }
+    },
   },
   skull: {
     weights: [8,3,18,6,2,1],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and bruises the skull',
+        },
+        serious: {
+          text: ' and cracks the skull',
+        },
+        critical: {
+          text: ' and smashes the skull into the brain',
+          fatal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and lacerates the scalp',
+        },
+        serious: {
+          text: ' and cracks the skull',
+        },
+        critical: {
+          text: ' and penetrates the skull and pierces the brain',
+          fatal: true,
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and lacerates the scalp',
+        },
+        serious: {
+          text: ' and severs an ear',
+        },
+        critical: {
+          text: ' and punctures the skull and cleaves the brain',
+          fatal: true,
+        },
+      },
+    },
   },
 };
 
