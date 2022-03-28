@@ -1132,7 +1132,7 @@ async function attack(attackers, targetToken, options) {
     const invalidKnockdownAreas = ['hand','forearm','elbow','upper arm'];
     let sortedWornArmors = [];
     const parry = targetRollData.ac.parry;
-    const isParrying = parry?.parry_item_id && parry?.parry_bonus > 0;
+    const isParrying = parry?.parry_item_id && parry?.parry_bonus > 0 && targetHp > 0;
 
     const applyArmor = (armor) => {
       const currentAC = +armor?.data.data.attributes.base_ac?.value;
@@ -1213,9 +1213,6 @@ async function attack(attackers, targetToken, options) {
       if (isCriticalHit) {
         sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.rigid?.value && !i.data.data.attributes.shield?.value);
         hitDesc = ' and strikes a weak spot';
-
-        rolledWeapDmg = maxWeapDmg;
-        weapDmgResult = Math.max(1, maxWeapDmg - dr);
       }
 
       // lucky hits
@@ -1240,13 +1237,17 @@ async function attack(attackers, targetToken, options) {
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           hitDesc += ` and ${verb} their ${armor.name}`;
         } else {
-          weapDmgResult = weapDmgResult + weapDmgResult;
+          rolledWeapDmg = maxWeapDmg;
+          weapDmgResult = Math.max(1, maxWeapDmg - dr);
           hitDesc += isCriticalHit ? ' brutally hard' : ' and hits brutally hard';
         }
 
         // steel plate can't be fully bypassed by lucky hits
         if (!isSteelPlate) sortedWornArmors.shift();
       }
+
+      // handle crit multiplier after lucky hit damage modification
+      if (isCriticalHit) weapDmgResult = weapDmgResult + weapDmgResult;
 
       // knockdown
       const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
@@ -1339,12 +1340,12 @@ async function attack(attackers, targetToken, options) {
       // bleeding does extra damage immediately, then again after the interval
       // impale can also cause severe bleed
       // metal armor cannot be cut
-      const metalArmor = applyArmor(sortedWornArmors.find(i => i.data.data.attributes.metal?.value));
+      const metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
       let minBleedDmg = 6;
       let bleedChance = 25;
       if (bleedBonus) minBleedDmg--;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
-      const isBleed = !immuneBleed && !metalArmor && dmgType === 'slashing' && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
+      const isBleed = !immuneBleed && !applyArmor(metalArmor) && dmgType === 'slashing' && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
       
       if (isBleed) {
         const armor = sortedWornArmors[0];
@@ -1380,25 +1381,48 @@ async function attack(attackers, targetToken, options) {
         sortedWornArmors.shift();
       }
 
-      // switch dmgType to blunt if metal armor/plate remains
-      const steelPlateRemains = applyArmor(sortedWornArmors.find(i => i.data.data.attributes.material?.value === 'steel plate'));
-      if ( metalArmor && dmgType === 'slashing' || steelPlateRemains && dmgType === 'piercing' ) {
-        dmgType = 'blunt';
-      }
-
       injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[dmgType] || {};
 
       resultSound = hitSound;
       hitDesc = hitDesc || ' and hits';
       resultText += hitDesc;
+
+      // switch dmgType to blunt if metal armor/plate remains
+      const steelPlateArmor = sortedWornArmors.find(i => i.data.data.attributes.material?.value === 'steel plate');
+      if ( applyArmor(metalArmor) && dmgType === 'slashing' || applyArmor(steelPlateArmor) && dmgType === 'piercing' ) {
+        dmgType = 'blunt';
+        if (/hits$/.test(hitDesc)) {
+          const bluntingArmor = steelPlateArmor || metalArmor;
+          hitDesc += ` though ${bluntingArmor.name} turns the blade`;
+        }
+      }
+
     } else {
       const deflectingArmor = totalAtkResult >= unarmoredAc + shieldBonus ? sortedWornArmors.find(i => !i.data.data.attributes.shield?.value) : sortedWornArmors[0];
-      missDesc = totalAtkResult < unarmoredAc ? ` but misses entirely.` :
-        ` but the blow is deflected${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
       
+      const targetHasItems = targetActor.items.length;
+      let parryItem = targetActor.items.get(parry?.parry_item_id);
+      if (!parryItem && targetHasItems) {
+        parryItem = targetActor.items.reduce((a,b) => (+b.data.data.attributes.parry_bonus?.value || 0) > (+a.data.data.attributes.parry_bonus?.value || 0) ? b : a);
+      }
+      let targetParryBonus = +parryItem.data.data.attributes.parry_bonus?.value || 0;
+      let maxDexMod= +targetRollData.ac.max_dex_mod || 0;
+      if (targetHp <= 0) {
+        targetParryBonus = 0;
+        maxDexMod = 0;
+      }
+      const parryDesc = ` but ${targetActor.name} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
+      // determine miss desc
       if (isParrying) {
-        const parryItem = targetActor.items.get(parry.parry_item_id);
-        missDesc = ` but ${targetActor.name} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
+        missDesc = parryDesc;
+      } else if (totalAtkResult < unarmoredAc - targetParryBonus - maxDexMod) {
+        missDesc = ` but misses entirely.`;
+      } else if (totalAtkResult < unarmoredAc - targetParryBonus) {
+        missDesc = ` but ${targetActor.name} dodges the blow.`;
+      } else if (totalAtkResult < unarmoredAc) {
+        missDesc = parryDesc;
+      } else {
+        ` but the blow is deflected${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
       }
 
       // fumbles
@@ -1451,21 +1475,36 @@ async function attack(attackers, targetToken, options) {
     resultText += dmgText;
 
 
-    if (totalDmgResult < 2) {
+    if (totalDmgResult < 2 && targetHp > 0) {
       resultText = resultText.replace('hits', 'grazes');
     }
 
-    const negHPs = targetHp - totalDmgResult;
-    const injury = negHPs > 0 ? '' : negHPs < -5 ? injuryObj.critical.text : negHPs < -2 ? injuryObj.serious.text : injuryObj.light.text;
-    resultText += injury.text;
+    // TODO find a way to get the Dies Instantly chat result!
+    const negHPs = Math.max(targetHp - totalDmgResult, totalDmgResult * -1);
+    const injury = negHPs < -5 ? injuryObj.critical : negHPs < -2 ? injuryObj.serious : injuryObj.light;
+    if (negHPs) resultText += injury.text;
 
-    // if (killText.includes('artery') || killText.includes('lops off')) {
-    //   dmgEffect = dmgEffect.replace(minorBleedDesc,'');
-    //   if (!dmgEffect.includes(majorBleedDesc)) {
-    //     dmgEffect += majorBleedDesc;
-    //   }
-    // }
-    // resultText += dmgEffect;
+    // hard code bleed effects for certain injuries
+    if ( resultText.includes('severs') || resultText.includes('lacerates') ) {
+      dmgEffect = dmgEffect.replace(majorBleedDesc,'');
+      if (!dmgEffect.includes(minorBleedDesc)) {
+        dmgEffect += minorBleedDesc;
+      }
+    }
+
+    if ( resultText.includes('artery') || resultText.includes('lops off' )) {
+      dmgEffect = dmgEffect.replace(minorBleedDesc,'');
+      if (!dmgEffect.includes(majorBleedDesc)) {
+        dmgEffect += majorBleedDesc;
+      }
+    }
+
+    // remove bleed effects if target is dead
+    if (targetHp <= -10) {
+      dmgEffect = dmgEffect.replace(minorBleedDesc,'').replace(majorBleedDesc,'');
+    }
+
+    resultText += dmgEffect;
 
   }
 
