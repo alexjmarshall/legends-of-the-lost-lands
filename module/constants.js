@@ -668,7 +668,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and and tears through muscle',
+          text: ' and tears through muscle',
         },
         serious: {
           text: ' and severs a ligament',
@@ -912,7 +912,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and and tears through muscle',
+          text: ' and tears through muscle',
         },
         serious: {
           text: ' and severs a tendon',
@@ -995,7 +995,7 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the cheek',
         },
         serious: {
-          text: ' and breaks teeth',
+          text: ' and breaks the teeth',
         },
         critical: {
           text: ' and smashes through teeth and into the brain',
