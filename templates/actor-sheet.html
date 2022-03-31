@@ -21,30 +21,26 @@
                 <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
                 {{/if}}
             </div>
-            <div class="property property-ac">
-                <label>AC / DR</label>
-            </div>
-            <div class="property">
-                <label>MR / MDR</label>
-            </div>
-            <div class="property">
-                <label>MV</label>
-            </div>
-            <div class="property property-ac">
-                <label class="left-label">B</label>
+            <div class="properties">
+                <div class="property">
+                    <label class="property-label">AC / DR</label>
+                    <label class="left-label">B</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
-                <label class="left-label">P</label>
+                    <label class="left-label">P</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.piercing.ac}} / {{systemData.ac.total.piercing.dr}}</span>
-                <label class="left-label">S</label>
+                    <label class="left-label">S</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
+                </div>
+                <div class="property">
+                    <label class="property-label">MR / MDR</label>
+                    <span class="property-field">{{systemData.ac.mr}}% / {{systemData.ac.mdr}}</span>
+                </div>
+                <div class="property">
+                    <label class="property-label">MV</label>
+                    <span style="margin-right:0" class="property-field">{{systemData.mv}}</span>
+                </div>
             </div>
-            <div class="property">
-                <span class="property-field">{{systemData.ac.mr}}% / {{systemData.ac.mdr}}</span>
-            </div>
-            <div class="property">
-                <span style="margin-right:0" class="property-field">{{systemData.mv}}</span>
-            </div>
-            </div>
+
         </div>
     </header>
 

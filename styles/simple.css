@@ -68,15 +68,20 @@
   float: left;
   text-align: center;
 }
-.lostlands .property {
-  width: 25%;
-  height: 20px;
-  margin-top: 1px;
-  float: left;
-  text-align: center;
+.lostlands .properties {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
 }
-.lostlands .property-ac {
-  width: 50%;
+.lostlands .property {
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+.lostlands .property-label {
+  width: 100%;
 }
 .lostlands .left-label {
   margin-right: 1px;
