@@ -1433,7 +1433,8 @@ async function attack(attackers, targetToken, options) {
       }
 
       // fumbles
-      if (!immuneFumbles && await Util.rollDice('d100') <= targetAc - totalAtkResult) {
+      const fumbleChance = unwieldy ? Math.ceil(1.5 * (targetAc - totalAtkResult)) : targetAc - totalAtkResult;
+      if (!immuneFumbles && await Util.rollDice('d100') <= fumbleChance) {
         const heldItems = attackingActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
         const adjTargets = adjTokens(token);
         const selectRandom = (arr) => {
