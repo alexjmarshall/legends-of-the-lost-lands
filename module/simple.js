@@ -348,6 +348,17 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
+Hooks.on("preCreateItem", (item, data) => {
+  console.log(data)
+  if (data.data?.attributes?.wearable?.value != null) {
+    data.data.worn = false;
+  }
+  if (data.data?.attributes?.holdable?.value != null) {
+    data.data.held_right = false;
+    data.data.held_left = false;
+  }
+});
+
 Hooks.on("preUpdateItem", (item, change) => {
   // reset held/worn values to false when changing holdable/wearable attribute or quantity
   let heldQtyLimit = 1;
