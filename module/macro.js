@@ -405,7 +405,7 @@ export function quickSlashAttackMacro(itemId, options={}) {
   const flavor = `${weapon.name} (quick slash)`;
   attackers.push({
     token: token,
-    weapons: [{id: itemId, atkMode: 'Swing (S)'}],
+    weapons: [{_id: itemId, atkMode: 'swing(s)'}],
     chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
     flavor,
     ranTarget,
@@ -1457,6 +1457,8 @@ async function attack(attackers, targetToken, options) {
 
       resultText += missDesc;
     }
+  } else {
+    resultText += ` ${Util.chatInlineRoll(totalAtk)}`;
   }
 
   // damage
