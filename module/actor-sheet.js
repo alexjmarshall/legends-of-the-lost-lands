@@ -397,7 +397,7 @@ export class SimpleActorSheet extends ActorSheet {
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.worn": !isWorn}]);
   }
 
-  _handleHold(item, hand, event) {
+  async _handleHold(item, hand, event) {
     // cases to handle:
     // item is held in this hand
     //    if 2 handed, empty both hands
@@ -471,9 +471,10 @@ export class SimpleActorSheet extends ActorSheet {
 
       // handle quick slash attack
       const atkModes = item.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
-      const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(slashing)');
+      const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(s)');
       if (canQuickSlash && event.altKey) {
-        game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
+        await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
+        return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
         Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
       }
