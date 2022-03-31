@@ -74,6 +74,13 @@
   margin-top: 1px;
   float: left;
   text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+.lostlands .property-label {
+  width: 100%;
 }
 .lostlands .property-ac {
   width: 50%;
