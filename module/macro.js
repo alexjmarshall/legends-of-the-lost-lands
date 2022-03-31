@@ -842,7 +842,6 @@ async function attack(attackers, targetToken, options) {
   // weapon tags
   const bonusToGroups = !!weapAttrs.bonus_to_groups?.value;
   const bonusToShields = !!weapAttrs.bonus_to_shields?.value; // TODO test monster attacks with attack routine and feature items not held weapons
-  const bleedBonus = !!weapAttrs.bleed_bonus?.value;
   const chainWeapon = !!weapAttrs.chain_weapon?.value;
   const fragile = !!weapAttrs.fragile?.value;
   const unwieldy = !!weapAttrs.unwieldy?.value;
@@ -1089,7 +1088,7 @@ async function attack(attackers, targetToken, options) {
   // attack
   const d20Result = await Util.rollDice("d20");
   let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${sitAtkMod}+${dialogAtkMod}`;
-  const totalAtkResult = await Util.rollDice(totalAtk);
+  let totalAtkResult = await Util.rollDice(totalAtk);
   const hitSound = weapon.hitSound ?? Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = weapon.missSound ?? Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let hitDesc = '';
@@ -1200,14 +1199,18 @@ async function attack(attackers, targetToken, options) {
     }
 
     resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
-    // 1 always misses and 20 always hits
-    isHit = d20Result > 1 && totalAtkResult >= targetAc || d20Result === 20;
+    // 20 always hits
+    if( d20Result === 20 && totalAtkResult < targetAc) {
+      totalAtkResult = targetAc;
+    }
+    isHit = totalAtkResult >= targetAc || d20Result === 20;
 
 
-
+    // TODO remove bleed bonus for overall curved swords explanation: -1 min bleed, 1.5x crit, 1/2 knockdown damage
     if (isHit) {
       // critical hits
-      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= totalAtkResult - targetAc;
+      const critChance = Util.stringMatch(weapCategory, 'curved swords') ? Math.ceil(1.5 * (totalAtkResult - targetAc)) : totalAtkResult - targetAc
+      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
 
       // avoids rigid armor/shield
       if (isCriticalHit) {
@@ -1227,7 +1230,7 @@ async function attack(attackers, targetToken, options) {
         // if damage type is blunt, armor must be rigid or shield to absorb the damage
         if ( armor && (dmgType !== 'blunt' || isRigid || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          let verb = isSteelPlate ? 'dents' : (isRigid || isShield) ? 'cracks' : 'tears';
+          let verb = isSteelPlate ? 'dents' : isRigid ? 'punctures' : isShield ? 'splinters' : 'tears';
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
@@ -1250,10 +1253,11 @@ async function attack(attackers, targetToken, options) {
       if (isCriticalHit) weapDmgResult = weapDmgResult + weapDmgResult;
 
       // knockdown
+      const knockdownDamage = Util.stringMatch(weapCategory, 'curved swords') ? Math.ceil(weapDmgResult / 2) : weapDmgResult;
       const isProne = targetActor.data.effects.some(e => e.data.label === 'Prone');
       const knockDownMulti = invalidKnockdownAreas.includes(coverageArea) ? 0 :
                              doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 2 * (weapDmgResult + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
+      const knockdownChance = knockDownMulti * 2 * (knockdownDamage + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !immuneKnockdown && !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
@@ -1343,21 +1347,24 @@ async function attack(attackers, targetToken, options) {
       const metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
       let minBleedDmg = 6;
       let bleedChance = 25;
-      if (bleedBonus) minBleedDmg--;
+      if (Util.stringMatch(weapCategory, 'curved swords')) minBleedDmg--;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
       const isBleed = !immuneBleed && !applyArmor(metalArmor) && dmgType === 'slashing' && rolledWeapDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
       
       if (isBleed) {
         const armor = sortedWornArmors[0];
         let doBleed = true;
-        if (applyArmor(armor)) {
+        (function() {if (applyArmor(armor)) {
           const isRigid = !!armor.data.data.attributes.rigid?.value;
           const isShield = !!armor.data.data.attributes.shield?.value;
-          let verb = (isRigid || isShield) ? 'cracks' : 'tears';
+          let verb = isRigid ? 'punctures' : isShield ? 'splinters' : 'tears';
 
           // if armor is rigid or shield it absorbs damage and negates bleed
           if (isRigid || (isShield && !['forearm','hand'].includes(coverageArea))) {
             doBleed = false;
+
+            // if weapon is a curved sword, break here and don't damage armor
+            if (Util.stringMatch(weapCategory, 'curved swords')) return;
           }
           // damage armor
           const baseAc = Number(armor?.data.data.attributes.base_ac?.value);
@@ -1371,7 +1378,7 @@ async function attack(attackers, targetToken, options) {
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           // append string
           hitDesc += ` and ${verb} their ${armor.name}`;
-        }
+        }})()
 
         if (doBleed) {
           dmgEffect += doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
@@ -1400,12 +1407,12 @@ async function attack(attackers, targetToken, options) {
     } else {
       const deflectingArmor = totalAtkResult >= unarmoredAc + shieldBonus ? sortedWornArmors.find(i => !i.data.data.attributes.shield?.value) : sortedWornArmors[0];
       
-      const targetHasItems = targetActor.items.length;
+      const targetHeldItems = !!targetActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
       let parryItem = targetActor.items.get(parry?.parry_item_id);
-      if (!parryItem && targetHasItems) {
-        parryItem = targetActor.items.reduce((a,b) => (+b.data.data.attributes.parry_bonus?.value || 0) > (+a.data.data.attributes.parry_bonus?.value || 0) ? b : a);
+      if (!parryItem && targetHeldItems.length) {
+        parryItem = targetHeldItems.reduce((a,b) => (+b.data.data.attributes.parry_bonus?.value || 0) > (+a.data.data.attributes.parry_bonus?.value || 0) ? b : a);
       }
-      let targetParryBonus = +parryItem.data.data.attributes.parry_bonus?.value || 0;
+      let targetParryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || 0;
       let maxDexMod= +targetRollData.ac.max_dex_mod || 0;
       if (targetHp <= 0) {
         targetParryBonus = 0;
@@ -1422,7 +1429,7 @@ async function attack(attackers, targetToken, options) {
       } else if (totalAtkResult < unarmoredAc) {
         missDesc = parryDesc;
       } else {
-        ` but the blow is deflected${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
+        missDesc = ` but the blow is deflected${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
       }
 
       // fumbles
@@ -1435,7 +1442,7 @@ async function attack(attackers, targetToken, options) {
         };
         const fumbles = [
           ` and${isParrying ? ` ${attackingActor.name}` : ''} slips and falls`, 
-          ` and${isParrying ? ` ${attackingActor.name}` : ''} stumbles, leaving an opening for attack`,
+          ` and${isParrying ? ` ${attackingActor.name}` : ''} stumbles, leaving them open to attack`,
         ];
         fragile && fumbles.push(` and ${weapName} breaks!`);
         unwieldy && fumbles.push(` and${isParrying ? ` ${attackingActor.name}` : ''} hits themselves instead!`);
@@ -1481,8 +1488,8 @@ async function attack(attackers, targetToken, options) {
 
     // TODO find a way to get the Dies Instantly chat result!
     const negHPs = Math.max(targetHp - totalDmgResult, totalDmgResult * -1);
-    const injury = negHPs < -5 ? injuryObj.critical : negHPs < -2 ? injuryObj.serious : injuryObj.light;
-    if (negHPs) resultText += injury.text;
+    const injury = negHPs < -5 ? injuryObj.critical : negHPs < -2 ? injuryObj.serious : negHPs < 0 ? injuryObj.light : {};
+    if (negHPs) resultText += injury.text || '';
 
     // hard code bleed effects for certain injuries
     if ( resultText.includes('severs') || resultText.includes('lacerates') ) {
