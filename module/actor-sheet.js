@@ -34,7 +34,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
-
+    context.showMR = context.systemData.ac.mr || context.systemData.ac.mdr; // TODO allow showing these separately on sheet
     context.parryBonus = context.systemData.ac?.parry?.parry_bonus;
 
     // sort equipment
@@ -62,7 +62,7 @@ export class SimpleActorSheet extends ActorSheet {
     for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
       voiceMoods.push( { mood: key, icon: value } );
     }
-    context.voidMoods = voiceMoods;
+    context.voiceMoods = voiceMoods;
     context.hasVoice = !!context.systemData.voice;
     context.noVoice = !context.systemData.voice;
     context.hideVoiceSelection = context.isPlayer && context.hasVoice;
