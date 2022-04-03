@@ -462,7 +462,7 @@ async function save(tokens, damage, options={}) {
   if(!tokens.length) return;
   const token = tokens[0];
   const actor = token.actor;
-  const saveTarget = +token.actor.data.data.attributes.st?.value;
+  const saveTarget = +token.actor.data.data.st;
   if(!saveTarget) {
     ui.notifications.error(`${actor.name} has no save target number set`);
     tokens.shift();
