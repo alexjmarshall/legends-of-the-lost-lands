@@ -914,13 +914,6 @@ async function attack(attackers, targetToken, options) {
       weapons.shift();
       return attack(attackers, targetToken, options);
     }
-  } else if (Util.stringMatch(weaponItem.data.data.atk_mode, 'parry')) {
-    // reset parry
-    try {
-      await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': choices[0].value}]);
-    } catch (error) {
-      ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
-    }
   }
 
   let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || weapon.altDialogChoice || atkModes[0];
