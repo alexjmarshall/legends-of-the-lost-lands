@@ -59,15 +59,11 @@ export class SimpleItem extends Item {
 
     // armor values
     if (!!materialAcMods && locations.length) {
-      let baseAc = materialAcMods.base_AC;
+      let baseAc = materialAcMods.base_AC + acMod;
       let mdr = 0;
-      let mac = 0;
-      // if non-magical, add acMod to base AC, if magical, store in separate field as mdr and mac
+      // if magical, add acMod to mdr
       if (isMagic) {
         mdr = acMod;
-        mac = acMod;
-      } else {
-        baseAc += acMod;
       }
 
       // infer max base ac, metal and rigid property values from material
@@ -86,7 +82,6 @@ export class SimpleItem extends Item {
 
       itemData.ac = {
         mdr,
-        mac,
         blunt: {
           ac: acBonus + materialAcMods.blunt.ac,
           dr: materialAcMods.blunt.dr
