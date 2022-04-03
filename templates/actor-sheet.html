@@ -31,9 +31,21 @@
                     <label class="left-label">S</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
                 </div>
+                {{#if systemData.ac.mr}}
                 <div class="property">
-                    <label class="property-label">MR / MDR</label>
-                    <span class="property-field">{{systemData.ac.mr}}% / {{systemData.ac.mdr}}</span>
+                    <label class="property-label">MR</label>
+                    <span class="property-field">{{systemData.ac.mr}}%</span>
+                </div>
+                {{/if}}
+                {{#if systemData.ac.mdr}}
+                <div class="property">
+                    <label class="property-label">MDR</label>
+                    <span class="property-field">{{systemData.ac.mdr}}</span>
+                </div>
+                {{/if}}
+                <div class="property">
+                    <label class="property-label">ST</label>
+                    <span class="property-field">{{systemData.st}}</span>
                 </div>
                 <div class="property">
                     <label class="property-label">MV</label>
