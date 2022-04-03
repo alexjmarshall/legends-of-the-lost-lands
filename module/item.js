@@ -131,15 +131,12 @@ export class SimpleItem extends Item {
         const padded = material === 'padded';
         const spellFailure = padded ? materialProps.weight * 5 : materialProps.weight * 5 / 2;
         itemData.ac.spell_failure = Math.round(spellFailure * totalLocationWeight) / 100;
-        if (isMagic) itemData.ac.spell_failure = Math.round(itemData.ac.spell_failure / 2 * 100) / 100;
 
         const skillPenalty = spellFailure / 5 - 2;
         itemData.ac.skill_penalty = Math.round(skillPenalty * totalLocationWeight) / 100;
-        if (isMagic) itemData.ac.skill_penalty = Math.round(itemData.ac.skill_penalty / 2 * 100) / 100;
 
         const maxDexWeight = padded ? materialProps.weight * 2 : materialProps.weight;
         itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
-        if (isMagic) itemData.ac.max_dex_penalty = Math.round(itemData.ac.max_dex_penalty / 2 * 100) / 100;
       }
 
       // derive gp value from material and weight
