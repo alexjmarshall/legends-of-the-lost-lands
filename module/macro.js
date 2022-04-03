@@ -452,8 +452,12 @@ export function attackRoutineMacro(options={}) {
 }
 
 export async function saveMacro(damage=0, options={}) {
-  const tokens = canvas.tokens.controlled;
-  if(!canvas.tokens.controlled.length) return ui.notifications.error("Select token(s) to make a saving throw");
+  const tokens = canvas.tokens.controlled || [];
+  if(!tokens.length) {
+    const token = Util.getTokenFromActor(game.user.character);
+    if (!token) return ui.notifications.error("Select token(s) to make a saving throw");
+    tokens.push(token);
+  } 
   
   return save(tokens, damage, options);
 }
@@ -876,6 +880,10 @@ async function attack(attackers, targetToken, options) {
 
   // attack choice dialog
   const formatAtkMode = (mode) => Util.upperCaseFirst(mode.replace(/\(/, ' (').replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
+
+  // add parry choice if weapon has parry bonus defined
+  parryBonus && atkModes.push('parry');
+
   const choices = atkModes.map(mode => {
     return {
       label: formatAtkMode(mode), 
@@ -883,17 +891,8 @@ async function attack(attackers, targetToken, options) {
       callback: () => attack(attackers, targetToken, options)
     }
   });
-  // add parry choice if weapon has parry bonus defined
-  if (parryBonus) {
-    choices.push({
-      label: 'Parry',
-      value: 'parry',
-      callback: () => attack(attackers, targetToken, options)
-    });
-  }
 
   if ( choices.length && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
-
     return altDialog(
       weapon, 
       `${weapon.name} Attack Mode`, 
