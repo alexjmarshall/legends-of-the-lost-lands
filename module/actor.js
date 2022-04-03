@@ -184,9 +184,6 @@ export class SimpleActor extends Actor {
           const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
           ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
-          // magic ac bonus
-          const magicBonus = Math.max(0, ...coveringItems.map(i => +i.data.data.ac?.mac || 0));
-
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
             let sorted_armor_ids = nonRigidArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
@@ -200,7 +197,7 @@ export class SimpleActor extends Actor {
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
-            const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0)) + magicBonus;
+            const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
             const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus;
             // max dr is 2
             const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
@@ -218,11 +215,6 @@ export class SimpleActor extends Actor {
         }
         ac.mdr = Math.round(ac.mdr);
       }
-      
-      // st_mod
-      const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
-      const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0);
-      updateData.st_mod = st_mod + (+attributes.st_mod?.value || 0);
 
       // magic resistance
       ac.mr = +attributes.mr?.value || 0;
@@ -235,6 +227,12 @@ export class SimpleActor extends Actor {
       if (updateData.weap_profs.some(p => !Constant.WEAPON_PROFICIENCY_CATEGORIES.includes(p))) {
         ui.notifications.error(`Invalid weapon proficiency specified for ${this.name}`);
       }
+
+      // st
+      const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
+      const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0) + (+attributes.st_mod?.value || 0);
+      updateData.st = (+attributes.st?.value + st_mod) || 0; // saving NaN here is what caused race condition!!!
+
     }
     
     // attitude map
