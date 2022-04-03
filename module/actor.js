@@ -231,7 +231,7 @@ export class SimpleActor extends Actor {
       // st
       const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
       const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0) + (+attributes.st_mod?.value || 0);
-      updateData.st = (+attributes.st?.value + st_mod) || 0; // saving NaN here is what caused race condition!!!
+      updateData.st = (+attributes.base_st?.value + st_mod) || 0; // saving NaN here is what caused race condition!!!
 
     }
     
