@@ -581,10 +581,10 @@ const BASIC_INJURIES = {
         text: ' and bruises a bone',
       }, 
       serious: {
-        text: ' and breaks a bone',
+        text: ' and snaps through bone',
       },
       critical: {
-        text: ' and a broken bone pokes through pulped red flesh',
+        text: ' and snaps through bone and the bone juts out of the open wound',
       },
     },
     piercing: {
@@ -592,7 +592,7 @@ const BASIC_INJURIES = {
         text: ' and tears through muscle',
       },
       serious: {
-        text: ' and chips a bone',
+        text: ' and tears through muscle and chips a bone',
       },
       critical: {
         text: ' and severs a tendon',
@@ -606,7 +606,7 @@ const BASIC_INJURIES = {
         text: ' and severs a tendon',
       },
       critical: {
-        text: ' and severs an artery',
+        text: ' and cleaves through flesh and severs an artery',
       },
     }
   },
@@ -616,7 +616,7 @@ const BASIC_INJURIES = {
         text: ' and cracks a bone',
       },
       serious: {
-        text: ' and shatters a bone',
+        text: ' and dislocates the joint',
       },
       critical: {
         text: ' and shatters and dislocates the joint',
@@ -685,7 +685,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs a toe',
         },
         critical: {
-          text: ' and lops off the foot',
+          text: ' and severs the foot',
           removal: true,
         },
       }
@@ -929,7 +929,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs a finger',
         },
         critical: {
-          text: ' and lops off the hand',
+          text: ' and severs the hand',
           removal: true,
         },
       },
@@ -1034,7 +1034,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and lacerates the eye',
+          text: ' and tears the eyelid',
         },
         serious: {
           text: ' and dislodges the eye from its socket',
@@ -1046,7 +1046,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and lacerates the eye',
+          text: ' and lacerates the brow',
         },
         serious: {
           text: ' and eviscerates the eye',
