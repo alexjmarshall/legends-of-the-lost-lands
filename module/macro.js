@@ -1230,7 +1230,7 @@ async function attack(attackers, targetToken, options) {
             Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
-          hitDesc += ` and ${verb} their ${armor.name}`;
+          hitDesc += ` and ${verb} ${armor.name}`;
         } else {
           rolledWeapDmg = maxWeapDmg;
           weapDmgResult = Math.max(1, maxWeapDmg - dr);
@@ -1253,6 +1253,8 @@ async function attack(attackers, targetToken, options) {
       const isKnockdown = !immuneKnockdown && !isProne && atkForm === 'swing' && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
         dmgEffect += " and knocks them down";
+        // remove any other weapons
+        while (weapons.length) weapons.shift();
         // add prone condition manually
       }
 
@@ -1293,7 +1295,7 @@ async function attack(attackers, targetToken, options) {
             }
             // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
             // append string
-            armorPenString += ` and ${verb} their ${armor.name}`;
+            armorPenString += ` and ${verb} ${armor.name}`;
           }
 
           // beyond first impale level, no more damage done if target area is shallow or spiked bludgeon
@@ -1369,7 +1371,7 @@ async function attack(attackers, targetToken, options) {
           }
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           // append string
-          hitDesc += ` and ${verb} their ${armor.name}`;
+          hitDesc += ` and ${verb} ${armor.name}`;
         }})()
 
         if (doBleed) {
@@ -1381,10 +1383,9 @@ async function attack(attackers, targetToken, options) {
       }
 
       injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[dmgType] || {};
-
+      
       resultSound = hitSound;
       hitDesc = hitDesc || ' and hits';
-      resultText += hitDesc;
 
       // switch dmgType to blunt if metal armor/plate remains
       const steelPlateArmor = sortedWornArmors.find(i => i.data.data.attributes.material?.value === 'steel plate');
@@ -1392,9 +1393,11 @@ async function attack(attackers, targetToken, options) {
         dmgType = 'blunt';
         if (/hits$/.test(hitDesc)) {
           const bluntingArmor = steelPlateArmor || metalArmor;
-          hitDesc += ` though ${bluntingArmor.name} turns the blade`;
+          hitDesc += ` but fails to penetrate ${bluntingArmor.name}`;
         }
       }
+
+      resultText += hitDesc;
 
     } else {
       const deflectingArmor = totalAtkResult >= unarmoredAc + shieldBonus ? sortedWornArmors.find(i => !i.data.data.attributes.shield?.value) : sortedWornArmors[0];
@@ -1421,7 +1424,7 @@ async function attack(attackers, targetToken, options) {
       } else if (totalAtkResult < unarmoredAc) {
         missDesc = parryDesc;
       } else {
-        missDesc = ` but the blow is deflected${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
+        missDesc = ` but the blow is turned${deflectingArmor ? ` by ${deflectingArmor.name}` : ''}`;
       }
 
       // fumbles
