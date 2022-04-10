@@ -12,7 +12,6 @@ import * as Constant from "./constants.js";
 // TODO sounds for spells
 // TODO convert all mp3s to ogg
 // TODO record all actor attributes by type in actor.js, and item attributes by type in item.js
-// TODO convert to silver standard, items have sp value instead of gp_value -- fix buyMacro and selling in foundry.js?
 // TODO set default settings in day night cycle based on season in simple calendar
 // TODO banker sheet & macro -- money change, trust fund (stored on PC), storage (stored on banker)
 // TODO inn sheet & macro -- allow players to choose food/sleep quality level on sheet, diff inns have diff quality levels (set in attributes),

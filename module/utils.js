@@ -23,10 +23,10 @@ export function sizeComparator(a, b) {
 
 export function expandPrice(priceInCps) {
   if (!priceInCps) return;
-  const gp = Math.floor(priceInCps / 50);
-  priceInCps -= gp * 50;
-  const sp = Math.floor(priceInCps / 5);
-  const cp = priceInCps - sp * 5;
+  const gp = Math.floor(priceInCps / Constant.CURRENCY_RATIOS.cps_per_gp);
+  priceInCps -= gp * Constant.CURRENCY_RATIOS.cps_per_gp;
+  const sp = Math.floor(priceInCps / Constant.CURRENCY_RATIOS.cps_per_sp);
+  const cp = priceInCps - sp * Constant.CURRENCY_RATIOS.cps_per_sp;
   return {gp, sp, cp};
 }
 
@@ -103,7 +103,7 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
 
 export function getTokenFromActor(actor) {
   const token = actor?.isToken ? actor.token.data :
-    canvas.tokens?.objects?.children.find(t => t.actor._id === actor?._id);
+    canvas.tokens?.objects?.children.find(t => t.actor._id === actor?._id && t.name == actor?.name);
   return token;
 }
 

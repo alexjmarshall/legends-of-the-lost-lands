@@ -148,7 +148,7 @@ async function useItem(itemId, data={
   const sound = data.sound || item.data.data.attributes.sound?.value;
   const flavor = data.flavor || item.name;
   const desc = item.data.data.description
-  const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}`;
+  const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}.`;
   const content = data.chatMsgContent || desc || chatBubbleText;
   const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
   const holdable = item.data.data.attributes.holdable?.value;
@@ -507,7 +507,7 @@ async function save(tokens, damage, options={}) {
   }
   const takenDamage = success ? Math.floor(damage / 2) : damage;
   let content = `${actor.name} saves ${Util.chatInlineRoll(saveText)}${resultText}`;
-  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}`;
+  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}.`;
   const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
   const chatBubbleText = options.bubbleText;
   Util.macroChatMessage(token, {
@@ -908,7 +908,7 @@ async function attack(attackers, targetToken, options) {
     }
     if (Util.stringMatch(weapon.altDialogChoice, 'parry')) {
       Util.macroChatMessage(token, {
-        content: `${attackingActor.name} takes a parrying stance with ${weaponItem.name}`,
+        content: `${attackingActor.name} takes a parrying stance with ${weaponItem.name}.`,
         flavor: `${weaponItem.name} (parry)`
       }, false);
       weapons.shift();
@@ -1222,12 +1222,13 @@ async function attack(attackers, targetToken, options) {
         // if damage type is blunt, armor must be rigid or shield to absorb the damage
         if ( armor && (dmgType !== 'blunt' || isRigid || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          let verb = isSteelPlate ? 'dents' : isRigid ? 'punctures' : isShield ? 'splinters' : 'tears';
+          let verb = isSteelPlate ? 'dents' : isRigid ? 'punctures' : isShield ? 'splinters' : 'tears through';
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
             const qty = armor.data.data.quantity;
-            Object.assign(itemUpdate, {'data.quantity': qty - 1});
+            Object.assign(itemUpdate, {'data.quantity': qty - 1}); // TODO test NaN?
+            console.log(qty - 1);
           }
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           hitDesc += ` and ${verb} ${armor.name}`;
@@ -1351,7 +1352,7 @@ async function attack(attackers, targetToken, options) {
         (function() {if (applyArmor(armor)) {
           const isRigid = !!armor.data.data.attributes.rigid?.value;
           const isShield = !!armor.data.data.attributes.shield?.value;
-          let verb = isRigid ? 'punctures' : isShield ? 'splinters' : 'tears';
+          let verb = isRigid ? 'cracks' : isShield ? 'cleaves' : 'cuts through';
 
           // if armor is rigid or shield it absorbs damage and negates bleed
           if (isRigid || (isShield && !['forearm','hand'].includes(coverageArea))) {
@@ -1668,7 +1669,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
     }
     const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
     const chatData = {
-      content: `${Util.chatInlineRoll(rxnText)} ${attitudeText}`,
+      content: `${Util.chatInlineRoll(rxnText)} ${attitudeText}.`,
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
     const token = Util.getTokenFromActor(reactingActor);
@@ -1696,14 +1697,13 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   if (!qty) qty = merchantQty;
 
   // pay for item
-  // note: 1 gp = 10 sp = 50 cp
   const actorItems = actor.data.items;
   const gpItem = actorItems.find(i => Util.stringMatch(i.name, 'Gold Pieces'));
   const gp = +gpItem?.data.data.quantity || 0;
-  const gpInCp = gp * 50;
+  const gpInCp = gp * Constant.CURRENCY_RATIOS.cps_per_gp;
   const spItem = actorItems.find(i => Util.stringMatch(i.name, 'Silver Pieces'));
   const sp = +spItem?.data.data.quantity || 0;
-  const spInCp = sp * 5;
+  const spInCp = sp * Constant.CURRENCY_RATIOS.cps_per_sp;
   const cpItem = actorItems.find(i => Util.stringMatch(i.name, 'Copper Pieces'));
   const cp = +cpItem?.data.data.quantity || 0;
   const totalMoneyInCp = gpInCp + spInCp + cp;
@@ -1715,7 +1715,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   // case 1: not enough money
   if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
-      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money`,
+      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
       flavor: `Buy`
     };
     return Util.macroChatMessage(actor, chatData, true);
@@ -1727,22 +1727,22 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   } else if (cp + spInCp >= totalPriceInCp) {
     const cpAndSpInCp = cp + spInCp;
     let changeInCp = cpAndSpInCp - totalPriceInCp;
-    spUpdateQty = Math.floor(changeInCp / 5);
-    cpUpdateQty = changeInCp - spUpdateQty * 5;
+    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_sp);
+    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCY_RATIOS.cps_per_sp;
   // case 4: payment requires gp
   } else {
     let changeInCp = totalMoneyInCp - totalPriceInCp;
-    gpUpdateQty = Math.floor(changeInCp / 50);
-    changeInCp -= gpUpdateQty * 50;
-    spUpdateQty = Math.floor(changeInCp / 5);
-    cpUpdateQty = changeInCp - spUpdateQty * 5;
+    gpUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_gp);
+    changeInCp -= gpUpdateQty * Constant.CURRENCY_RATIOS.cps_per_gp;
+    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_sp);
+    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCY_RATIOS.cps_per_sp;
   }
-  const cpUpdate = {id: cpItem?._id, "data.quantity": cpUpdateQty},
-        spUpdate = {id: spItem?._id, "data.quantity": spUpdateQty},
-        gpUpdate = {id: gpItem?._id, "data.quantity": gpUpdateQty};
+  const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty},
+        spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty},
+        gpUpdate = {_id: gpItem?._id, "data.quantity": gpUpdateQty};
   // add to updates if item has id and update quantity is different than existing quantity
   const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u._id &&
-    u["data.quantity.quantity"] !== actorItems.get(u._id)?.data.data.quantity);
+    u["data.quantity"] !== Number(actorItems.get(u._id)?.data.data.quantity));
   
   // show confirmation dialog if haven't shown split item dialog
   if (!options.shownSplitDialog) {
@@ -1769,7 +1769,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   async function finalizePurchase() {
     await actor.updateEmbeddedDocuments("Item", updates);
     await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
-    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / 50)});
+    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / Constant.CURRENCY_RATIOS.cps_per_gp)});
 
     // add item to actor
     const itemData = {
@@ -1787,14 +1787,14 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
     });
     if (targetItem) {
       const currentTargetQty = +targetItem.data.data.quantity;
-      await actor.updateEmbeddedDocuments("Item", [{ "id": targetItem._id, "data.quantity": currentTargetQty + qty }]);
+      await actor.updateEmbeddedDocuments("Item", [{ "_id": targetItem._id, "data.quantity": currentTargetQty + qty }]);
     } else {
       await actor.createEmbeddedDocuments("Item", [itemData]);
     }
 
     // create chat message
     const chatData = {
-      content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}`,
+      content: `${actor.name} buys ${qty} ${item.name}${qty > 1 ? 's' : ''} from ${merchant.name} for ${totalPriceString}.`,
       sound: 'coins',
       flavor: 'Buy'
     }

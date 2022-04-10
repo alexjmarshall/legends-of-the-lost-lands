@@ -139,13 +139,13 @@ export class SimpleItem extends Item {
         itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
       }
 
-      // derive gp value from material and weight
-      if (materialProps.gp_value && itemData.attributes.gp_value) {
+      // derive sp value from material and weight
+      if (materialProps.sp_value && itemData.attributes.sp_value) {
         const maxWeight = materialProps.weight;
         const ratio = weight / maxWeight;
         // round to nearest even number, 2 decimal places
-        const baseValue = 2 * Math.round(materialProps.gp_value * ratio * 50) / 100;
-        itemData.attributes.gp_value.value = baseValue;
+        const baseValue = 2 * Math.round(materialProps.sp_value * ratio * 50) / 100;
+        itemData.attributes.sp_value.value = baseValue;
         // TODO take magic bonus into account
       }
 

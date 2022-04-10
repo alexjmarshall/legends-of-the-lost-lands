@@ -653,6 +653,11 @@ const BASIC_INJURIES = {
   },
 };
 
+export const CURRENCY_RATIOS = {
+  cps_per_sp: 12,
+  cps_per_gp: 240,
+};
+
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
 export const HIT_LOCATIONS = {
   foot: {
