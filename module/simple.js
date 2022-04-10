@@ -323,7 +323,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if (hpUpdate <= -10  && targetHp > -10 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Death', 
-      content: `${actor.name} dies`,
+      content: `${actor.name} dies.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
     }, false);
     return;
@@ -332,7 +332,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if ( hpUpdate <= 0 && targetHp > 0 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Incapacitated', 
-      content: `${actor.name} collapses`,
+      content: `${actor.name} collapses.`,
       type: CONST.CHAT_MESSAGE_TYPES.IC,
     }, false);
   }
@@ -349,7 +349,6 @@ Hooks.on("preUpdateActor", (actor, change) => {
 });
 
 Hooks.on("preCreateItem", (item, data) => {
-  console.log(data)
   if (data.data?.attributes?.wearable?.value != null) {
     data.data.worn = false;
   }

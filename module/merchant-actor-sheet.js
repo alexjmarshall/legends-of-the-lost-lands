@@ -38,7 +38,7 @@ export class MerchantActorSheet extends ActorSheet {
     const items = context.data.items.filter(i => i.type === 'item');
     const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
     items.forEach(item => {
-      let priceInCps = Math.ceil(+item.data.attributes.gp_value?.value * sellFactor * sellAdj * 50);
+      let priceInCps = Math.ceil(+item.data.attributes.sp_value?.value * sellFactor * sellAdj * Constant.CURRENCY_RATIOS.cps_per_sp);
       item.data.price = Util.expandPrice(priceInCps);
     });
     context.data.items = items;
@@ -93,7 +93,7 @@ export class MerchantActorSheet extends ActorSheet {
         if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
           return ui.notifications.error("There was a problem reading the price of this item");
         }
-        const totalPriceInCp = Math.round((copperPrice + silverPrice * 5 + goldPrice * 50));
+        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.CURRENCY_RATIOS.cps_per_sp + goldPrice * Constant.CURRENCY_RATIOS.cps_per_gp));
         return buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;
