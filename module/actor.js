@@ -8,21 +8,6 @@ import * as Constant from "./constants.js";
  */
 export class SimpleActor extends Actor {
 
-  /* character template attributes:
-  * bab
-  * lvl
-  * lvl_title
-  * class
-  * race
-  * ability_scores.str, int, wis, dex, con, cha
-  * spell_cleric.lvl_1, spell_magic.lvl_1, etc.: resource, min 0 value and max spell slots
-  * st
-  * 
-  * optional:
-  * max_mv
-  * 
-  */
-
   /** @inheritdoc */
   async prepareDerivedData() {
 
@@ -92,6 +77,22 @@ export class SimpleActor extends Actor {
       updateData.cha_mod = Math.floor(attributes.ability_scores?.cha?.value / 3 - 3) || 0;
     }
 
+    // derive monster data from HD - BAB, ST, XP
+    if (type === 'monster') {
+      const hdVals = attributes.hd?.value?.split('+') || [];
+      const hdBase = Number(hdVals[0]) + (hdVals.length > 1 ? 1 : 0) || 0;
+      if (attributes.bab?.value !== undefined) {
+        attributes.bab.value = attributes.bab.value ?? hdBase;
+      }
+      const intelligent = attributes.intelligent?.value ?? attributes.type?.value === 'humanoid';
+      const stBase = 17 - (intelligent ? hdBase : Math.floor(hdBase / 2));
+      if (attributes.base_st?.value !== undefined) {
+        attributes.base_st.value = attributes.base_st.value ?? stBase;
+      }
+      const xpMulti = Number(attributes.xp_multi?.value) || 1;
+      updateData.xp = {value: hdBase  < 1 ? 10 : hdBase === 1 ? 20 : hdBase * hdBase * 10 * xpMulti };
+    }
+
     /* AC
     slots:
     - coif
@@ -117,7 +118,7 @@ export class SimpleActor extends Actor {
       const naturalDr = attributes.dr?.value || 0;
       const ac_mod = +attributes.ac_mod?.value || 0;
 
-      const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.material?.value] ? attributes.material?.value : "none";
+      const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.hide?.value] ? attributes.hide?.value : "none";
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
       const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
         .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
@@ -242,7 +243,7 @@ export class SimpleActor extends Actor {
 
     // update actor if any update data is different than existing data
     for (const key of Object.keys(updateData)) {
-      if(foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
+      if (foundry.utils.fastDeepEqual(updateData[key], actorData[key])) {
         delete updateData[key];
       }
     }
