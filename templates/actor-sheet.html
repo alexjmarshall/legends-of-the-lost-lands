@@ -162,6 +162,7 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each spells as |spelltype key|}}
             <header class="spells-header flexrow">
+                <span>{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.ac.sf}}% {{/ifeq}}</span>
                 <span style="text-align: center;">
                     {{#ifeq key "spell_magic"}}Magic{{else}}
                     {{#ifeq key "spell_cleric"}}Cleric{{else}}
@@ -171,11 +172,11 @@
                     {{/ifeq}}
                     {{/ifeq}}
                 </span>
+                <span></span>
             </header>
                 {{#each spelltype as |level key|}}
                 <header class="spells-header flexrow">
-                    <span>Spell Failure: {{../../systemData.ac.sf}}%</span>
-                    <span style="text-align: center;">{{key}}</span>
+                    <span>{{key}}</span>
                     <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
                 </header>
                 <ol class="item-list">
@@ -273,11 +274,11 @@
         {{!-- Fatigue Tab --}}
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
             <div class="flexrow">
-                <label class="fatigue-label">Environment Temp.</label>
+                <label class="fatigue-label">Environment Temperature</label>
                 <span class="fatigue-value">{{fatigue.tempDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Personal Temp.</label>
+                <label class="fatigue-label">Personal Temperature</label>
                 <span class="fatigue-value">{{fatigue.exposureDesc}}</span>
             </div>
             <div class="flexrow">
