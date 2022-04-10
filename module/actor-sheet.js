@@ -334,7 +334,7 @@ export class SimpleActorSheet extends ActorSheet {
       return ui.notifications.error("Cannot prepare any more spells of this level");
     }
     if (!isPrepared) {
-      Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}` });
+      Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}.` });
     }
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.prepared": !isPrepared}]);
   }
@@ -393,7 +393,7 @@ export class SimpleActorSheet extends ActorSheet {
     }
     
     let verb = isWorn ? 'doffs' : 'dons';
-    Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}` });
+    Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}.` });
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.worn": !isWorn}]);
   }
 
@@ -476,7 +476,7 @@ export class SimpleActorSheet extends ActorSheet {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}` });
+        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}.` });
       }
     }
     return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
