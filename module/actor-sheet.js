@@ -56,6 +56,13 @@ export class SimpleActorSheet extends ActorSheet {
     // skill check penalty
     const sp = context.systemData.ac?.sp;
     context.sp = `${Number(sp) > 0 ? '-' : ''}${context.systemData.ac?.sp}`;
+    context.showSp = !!sp;
+
+    // spell failure
+    context.showSf = !!context.systemData.ac?.sf;
+
+    // max dex bonus
+    context.showMaxDexMod = context.systemData.ac?.max_dex_mod < 4;
 
     context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     const voiceMoods = [];
