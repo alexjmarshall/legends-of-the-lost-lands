@@ -9,16 +9,18 @@
             </h1>
             <div class="resource">
                 <label class="left-label">HP</label>
-                <input type="number" name="data.hp.value" value="{{systemData.hp.value}}"/>
+                <input type="number" name="data.hp.value" value="{{systemData.hp.value}}" {{#if isPlayer}}disabled{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}"/>
+                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}" {{#if isPlayer}}disabled{{/if}}/>
             </div>
             <div class="resource">
                 <label class="left-label">XP</label>
-                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}"/>
                 {{#if isCharacter}}
+                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}" {{#if isPlayer}}disabled{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.xp.max" value="{{systemData.xp.max}}"/>
+                <input type="number" name="data.xp.max" value="{{systemData.xp.max}}" {{#if isPlayer}}disabled{{/if}}/>
+                {{else}}
+                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}" disabled/>
                 {{/if}}
             </div>
             <div class="properties">
@@ -86,7 +88,7 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>Max Dex Bonus: {{systemData.ac.max_dex_mod}}</span>
+                <span>{{#if showMaxDexMod}} Dex Bonus: {{systemData.ac.max_dex_mod}} {{/if}}</span>
                 <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
@@ -162,7 +164,7 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span>{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.ac.sf}}% {{/ifeq}}</span>
+                <span>{{#if ../showSf}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.ac.sf}}% {{/ifeq}}{{/if}}</span>
                 <span style="text-align: center;">
                     {{#ifeq key "spell_magic"}}Magic{{else}}
                     {{#ifeq key "spell_cleric"}}Cleric{{else}}
@@ -216,7 +218,7 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>Skill Check Penalty: {{../sp}}</span>
+                <span>{{#if ../showSp}} Skill Check Penalty: {{../sp}} {{/if}}</span>
                 <span style="text-align: left;">{{key}}</span>
             </header>
             <ol class="item-list">
