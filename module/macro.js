@@ -703,7 +703,7 @@ async function attack(attackers, targetToken, options) {
   const attackerSize = Constant.SIZE_VALUES[attackerRollData.size];
   const targetSize = Constant.SIZE_VALUES[targetRollData?.size];
 
-  // if this attacker's weapons are finished, remove attacker and create attack chat msg // TODO update text of reaction roll to match attack roll
+  // if this attacker's weapons are finished, remove attacker and create attack chat msg
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     // remove comma at end of flavor and add names
@@ -1667,14 +1667,15 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       [Constant.ATTITUDES.ACCEPTING]: "#a6ce7e",
       [Constant.ATTITUDES.HELPFUL]: "#7CCD7C",
     }
-    const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
+    // const attitudeText = `<span style="${resultStyle(attitudeColours[attitude])}">${attitude.toUpperCase()}</span>`;
+    const attitudeText = `${reactingActor.name} considers ${targetActor.name} (${Util.chatInlineRoll(rxnText)}) and feels ${attitude}...`;
     const chatData = {
-      content: `${Util.chatInlineRoll(rxnText)} ${attitudeText}.`,
+      content: attitudeText,
       flavor: `Reaction Roll vs. ${targetActor.name}`
     }
     const token = Util.getTokenFromActor(reactingActor);
     Util.macroChatMessage(reactingActor, chatData, false);
-    Util.chatBubble(token, `${reactingActor.name} reacts to ${targetActor.name}`, {emote: true});
+    Util.chatBubble(token, `${reactingActor.name} considers ${targetActor.name}`, {emote: true});
   }
 
   return attitude;
