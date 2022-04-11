@@ -196,12 +196,13 @@ export class SimpleActor extends Actor {
             const shieldDrBonus = shield?.data.data.ac?.[dmgType]?.dr || 0;
 
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
-            const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
+            const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
             const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus;
-            // max dr is 2
-            const locDr = Math.min(2, unarmoredDr + armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
+            // max armor dr is 2
+            const armorDr = Math.min(2, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
+            const locDr = armorDr + unarmoredDr;
 
             ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
