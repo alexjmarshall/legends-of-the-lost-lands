@@ -204,6 +204,11 @@ export function upperCaseFirst(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+export function lowerCaseFirst(string) {
+  if (!string) return;
+  return string.charAt(0).toLowerCase() + string.slice(1);
+}
+
 export const now = () => game.time.worldTime;
 
 export async function removeCondition(condition, actor, {warn=false}={}) {
