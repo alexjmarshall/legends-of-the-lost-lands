@@ -101,7 +101,7 @@ export class SimpleItem extends Item {
     const isWeapon = !!itemData.attributes.atk_modes;
     const size = Constant.SIZE_VALUES[itemData.attributes.size?.value];
     if (isWeapon && size != null) {
-      itemData.weight = Math.max(0.5, size);
+      itemData.weight = itemData.weight ?? Math.max(0.5, size);
     }
 
     // armor/clothing warmth, weight and max Dex mod
