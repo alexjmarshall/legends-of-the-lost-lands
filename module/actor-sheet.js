@@ -61,9 +61,6 @@ export class SimpleActorSheet extends ActorSheet {
     // spell failure
     context.showSf = !!context.systemData.ac?.sf;
 
-    // max dex bonus
-    context.showMaxDexMod = context.systemData.ac?.max_dex_mod < 4;
-
     context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     const voiceMoods = [];
     for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
@@ -247,7 +244,30 @@ export class SimpleActorSheet extends ActorSheet {
     switch ( button.dataset.action ) {
       case "create":
         const cls = getDocumentClass("Item");
-        return cls.create(data, {parent: this.actor});
+        let createData = data;
+        // Set default icon by type here feature, spell, equipment
+        const img = createData.type === 'feature' ? "icons/svg/feature.svg" :
+         createData.type === 'spell_magic' ? "icons/svg/spell.svg" :
+         createData.type === 'spell_cleric' ? "icons/svg/prayer.svg" :
+         createData.type === 'spell_witch' ? "icons/svg/pentacle.svg" :
+         createData.type === 'item' ? "icons/svg/equipment.svg" : null;
+        if (img) {
+          createData.img = img;
+        }
+
+        // Set sheet for non-default types
+        const sheetClass = createData.type === 'feature' ? "lostlands.FeatureItemSheet" :
+         createData.type !== 'item' ? "lostlands.SpellItemSheet" : null;
+        if (sheetClass) {
+          createData = foundry.utils.mergeObject(createData, {
+            flags: {
+              core: {
+                sheetClass: sheetClass
+              }
+            }
+          });
+        }
+        return cls.create(createData, {parent: this.actor});
       case "edit":
         return item.sheet.render(true);
       case "delete":
@@ -365,9 +385,10 @@ export class SimpleActorSheet extends ActorSheet {
         }
       }
 
-      // can't wear if quantity greater or less than 1
+      // can't wear if quantity greater or less than 1 unless quiver
       const itemQty = +item?.data.data.quantity || 0;
-      if (itemQty !== 1) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
+      const isQuiver = item.data.data.attributes.quiver?.value;
+      if (itemQty !== 1 && !isQuiver) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
       
       // can't wear a shield if already wearing a shield,
       //    while holding a small shield or 2 handed weapon
