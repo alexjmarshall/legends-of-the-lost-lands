@@ -61,9 +61,7 @@
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="description">Description</a>
-        {{#if hasEquipment}}
         <a class="item" data-tab="items">Items</a>
-        {{/if}}
         {{#if hasSpells}}
         <a class="item" data-tab="spells">Spells</a>
         {{/if}}
@@ -88,7 +86,7 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>{{#if showMaxDexMod}} Dex Bonus: {{systemData.ac.max_dex_mod}} {{/if}}</span>
+                <span>Max Dex Bonus: {{systemData.ac.max_dex_mod}}</span>
                 <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
@@ -242,6 +240,15 @@
                 {{/each}}
             </ol>
             {{/each}}
+            <div class="flexrow" style="margin: 0.5em 0;">
+                <span style="max-width:23px;">
+                </span>
+                <span>
+                    {{#if isGM}}
+                    <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="feature" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
+                    {{/if}}
+                </span>
+            </div>
         </div>
 
         {{!-- Attributes Tab --}}
