@@ -320,6 +320,15 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const maxHp = actor.data.data.hp?.max;
   const token = Util.getTokenFromActor(actor);
 
+  if (hpUpdate <= -10  && targetHp > 0 ) {
+    Util.macroChatMessage(actor, {
+      flavor: 'Instant Death', 
+      content: `${actor.name} dies instantly.`,
+      type: CONST.CHAT_MESSAGE_TYPES.IC,
+    }, false);
+    return;
+  }
+
   if (hpUpdate <= -10  && targetHp > -10 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Death', 
@@ -343,7 +352,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
     Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
   } else if ( hpUpdate < maxHp / 2 && targetHp >= maxHp / 2 ) {
     Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
-  } else if (hpUpdate < targetHp) {
+  } else if (hpUpdate > 0 && hpUpdate < targetHp) {
     Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
   }
 });
