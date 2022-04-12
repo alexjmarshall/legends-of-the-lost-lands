@@ -34,7 +34,6 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
-    context.showMR = context.systemData.ac.mr || context.systemData.ac.mdr; // TODO allow showing these separately on sheet
     context.parryBonus = context.systemData.ac?.parry?.parry_bonus;
 
     // sort equipment
@@ -50,7 +49,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sort features
     const features = context.data.items.filter(i => i.type === 'feature');
-    context.features = this.sortFeaturesBySource(features, context.data.data.attributes);
+    context.features = this.sortFeaturesBySource(features, context.data.data);
     context.hasFeatures = Object.values(context.features).flat().length > 0;
 
     // skill check penalty
@@ -73,9 +72,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.showSoundBoard = context.isGM || context.hasVoice;
 
     // fatigue
-    if (context.isCharacter) {
-      context.fatigue = this.getFatigueData(context.data);
-    }
+    context.fatigue = this.getFatigueData(context.data);
 
     return context;
   }
@@ -173,14 +170,26 @@ export class SimpleActorSheet extends ActorSheet {
     return sortedSpells;
   }
 
-  sortFeaturesBySource(features) {
+  sortFeaturesBySource(features, actorData) {
     const sortedFeatures = {};
+    const addSt = feature => {
+      const baseSt = feature.data.attributes.base_st?.value;
+      const modAttr = feature.data.attributes.mod_attr?.value?.trim().toLowerCase();
+      const skillPenalty = actorData.ac.sp;
+      const modAttrVal = actorData[`${modAttr}_mod`];
+      if (baseSt) {
+        feature.st = (+baseSt || 0) - (+modAttrVal || 0) + (+skillPenalty);
+      }
+    };
     const classArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'class'));
+    classArr.forEach(f => addSt(f));
     if (classArr.length) sortedFeatures['Class'] = classArr;
     const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
+    raceArr.forEach(f => addSt(f));
     if (raceArr.length) sortedFeatures['Race'] = raceArr;
     const otherArr = features.filter(f => !Util.stringMatch(f.data.attributes.source?.value, 'class') && 
       !Util.stringMatch(f.data.attributes.source?.value, 'race'));
+    otherArr.forEach(f => addSt(f));
     if (otherArr.length) sortedFeatures['Other'] = otherArr;
 
     return sortedFeatures;
