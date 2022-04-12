@@ -300,6 +300,9 @@
   border-radius: 0;
   border-bottom: 1px solid #AAA;
 }
+.lostlands .fatigue-value:read-only {
+  pointer-events: none;
+}
 .lostlands .attribute-key-wrapper{
   max-width: 263px;
 }
