@@ -81,16 +81,18 @@ export class SimpleActor extends Actor {
     if (type === 'monster') {
       const hdVals = attributes.hd?.value?.split('+') || [];
       const hdBase = Number(hdVals[0]) + (hdVals.length > 1 ? 1 : 0) || 0;
+      updateData.attributes = updateData.attributes || {};
       if (attributes.bab?.value !== undefined) {
-        attributes.bab.value = attributes.bab.value ?? hdBase;
+        Object.assign(updateData.attributes, {bab: { value: hdBase} });
       }
       const intelligent = attributes.intelligent?.value ?? attributes.type?.value === 'humanoid';
       const stBase = 17 - (intelligent ? hdBase : Math.floor(hdBase / 2));
       if (attributes.base_st?.value !== undefined) {
-        attributes.base_st.value = attributes.base_st.value ?? stBase;
+        Object.assign(updateData.attributes, {base_st: { value: stBase} });
       }
       const xpMulti = Number(attributes.xp_multi?.value) || 1;
-      updateData.xp = {value: hdBase  < 1 ? 10 : hdBase === 1 ? 20 : hdBase * hdBase * 10 * xpMulti };
+      const xp = hdBase  < 1 ? 10 : hdBase === 1 ? 20 : hdBase * hdBase * 10 * xpMulti;
+      updateData.xp = {value: xp};
     }
 
     /* AC
@@ -114,6 +116,21 @@ export class SimpleActor extends Actor {
     */
     // ac, st mods and worn clo
     if ( type === 'character' || type === 'monster' ) {
+      // set remove body part locations
+      const injuryArr = Util.getArrFromCSL(actorData.injuries || '');
+      const removedLocations = injuryArr.map(i => i.toLowerCase().replace(/  +/g, ' ').trim())
+        .map(loc => {
+          if (!loc.includes('severed')) return null;
+          loc = loc.replace('severed', '');
+          if (game.lostlands.Constant.HIT_LOC_ARRS.THRUST.includes(loc)) return loc;
+          const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
+          loc = loc.replace(side,'').trim();
+          if (side) {
+            return game.lostlands.Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
+          } 
+        }).flat().filter(l => game.lostlands.Constant.HIT_LOC_ARRS.THRUST.includes(l));
+      actorData.removedLocs = removedLocations;
+
       const naturalAc = attributes.ac?.value || Constant.AC_MIN;
       const naturalDr = attributes.dr?.value || 0;
       const ac_mod = +attributes.ac_mod?.value || 0;
@@ -221,7 +238,7 @@ export class SimpleActor extends Actor {
       // magic resistance
       ac.mr = +attributes.mr?.value || 0;
 
-      // add AC to updateData
+      // add AC to actorData
       actorData.ac = ac;
 
       // weap profs
@@ -233,7 +250,7 @@ export class SimpleActor extends Actor {
       // st
       const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
       const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0) + (+attributes.st_mod?.value || 0);
-      updateData.st = (+attributes.base_st?.value + st_mod) || 0; // saving NaN here is what caused race condition!!!
+      updateData.st = (+attributes.base_st?.value - st_mod) || 0;
 
     }
     

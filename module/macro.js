@@ -536,96 +536,96 @@ export async function learnSpellMacro(options={}) {
   return saveMacro(0, options);
 }
 
-export async function thiefSkillMacro(skill, options={}) {
-  const char = Util.selectedCharacter();
-  const actor = char.actor;
-  const token = char.token;
+// export async function thiefSkillMacro(skill, options={}) {
+//   const char = Util.selectedCharacter();
+//   const actor = char.actor;
+//   const token = char.token;
 
-  options.flavor = skill;
-  options.saveAttr = 'dex';
-  const lockPickItem = actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, 'lockpicks'));
-  switch (skill.toLowerCase().replace(/\s/g,'')) {
-    case 'openlocks':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks`);
-      // options.bubbleText = `${actor.name} attempts to pick a lock...`;
-      options.critFailText = ` and their lock pick breaks!`;
-      options.critFailSound = 'break_lock_pick';
-      options.critFailBrokenItem = lockPickItem;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
-      break;
-    case 'disarmtraps':
-      if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks`);
-      // options.bubbleText = `${actor.name} attempts to disarm a trap...`;
-      options.critFailText = ` and the trap fires!`;
-      options.critFailSound = 'break_lock_pick';
-      options.critFailBrokenItem = lockPickItem;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
-      break;
-    case 'pickpockets':
-      // options.bubbleText = `${actor.name} attempts to pick a pocket...`;
-      options.critFailText = ` and is immediately caught!`;
-      await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
-      break;
-    case 'movesilently':
-      options.critFailText = ` and is immediately caught!`;
-      break;
-    // case 'hideinshadows':
-    //   options.critFailText = ` and is immediately caught!`;
-  }
+//   options.flavor = skill;
+//   options.saveAttr = 'dex';
+//   const lockPickItem = actor.items.find(i => i.type === 'item' && Util.stringMatch(i.name, 'lockpicks'));
+//   switch (skill.toLowerCase().replace(/\s/g,'')) {
+//     case 'openlocks':
+//       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot open locks without lock picks`);
+//       // options.bubbleText = `${actor.name} attempts to pick a lock...`;
+//       options.critFailText = ` and their lock pick breaks!`;
+//       options.critFailSound = 'break_lock_pick';
+//       options.critFailBrokenItem = lockPickItem;
+//       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
+//       break;
+//     case 'disarmtraps':
+//       if(!lockPickItem || +lockPickItem.data.data.quantity < 1) return ui.notifications.error(`Cannot disarm traps without lock picks`);
+//       // options.bubbleText = `${actor.name} attempts to disarm a trap...`;
+//       options.critFailText = ` and the trap fires!`;
+//       options.critFailSound = 'break_lock_pick';
+//       options.critFailBrokenItem = lockPickItem;
+//       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
+//       break;
+//     case 'pickpockets':
+//       // options.bubbleText = `${actor.name} attempts to pick a pocket...`;
+//       options.critFailText = ` and is immediately caught!`;
+//       await Util.playVoiceSound(Constant.VOICE_MOODS.OK, actor, token, {push: true, bubble: true, chance: 0.7});
+//       break;
+//     case 'movesilently':
+//       options.critFailText = ` and is immediately caught!`;
+//       break;
+//     // case 'hideinshadows':
+//     //   options.critFailText = ` and is immediately caught!`;
+//   }
 
-  return saveMacro(0, options);
-}
+//   return saveMacro(0, options);
+// }
 
-export function backstabMacro(options={}) {
-  const selectedTokens = canvas.tokens.controlled;
-  if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
-  const targets = [...game.user.targets];
-  if (targets.length > 1) return ui.notifications.error("Select one target");
-  const targetToken = targets[0];
+// export function backstabMacro(options={}) {
+//   const selectedTokens = canvas.tokens.controlled;
+//   if(!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
+//   const targets = [...game.user.targets];
+//   if (targets.length > 1) return ui.notifications.error("Select one target");
+//   const targetToken = targets[0];
 
-  const attackers = [];
-  for (const token of selectedTokens) {
-    const backstabItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Backstab'));
-    const dmgMulti = +backstabItem.data.data.attributes.dmg_multi?.value;
-    if(!dmgMulti) {
-      ui.notifications.error(`${token.actor.name} has no damage multiplier set on backstab feature`);
-      continue;
-    }
-    if(!backstabItem) {
-      ui.notifications.error(`Backstab feature not found on this character`);
-      continue;
-    }
-    const heldWeapons = token.actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right));
-    if (!heldWeapons.length) {
-      ui.notifications.error(`${token.actor.name} is not holding any weapons`);
-      continue;
-    }
-    if (heldWeapons.length > 1) {
-      ui.notifications.error(`${token.actor.name} must be holding only one weapon to backstab`);
-      continue;
-    }
-    const weapon = heldWeapons[0];
-    if(!weapon.data.data.attributes.light?.value) {
-      ui.notifications.error(`${token.actor.name} cannot backstab with ${weapon.name}`);
-      continue;
-    }
-    const flavor = `${weapon.name} (backstab)`;
-    attackers.push({
-      token: token,
-      weapons: [{_id: weapon._id, dmgType: 'thrust'}], // TODO
-      chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
-      flavor,
-      attacks: [],
-      dmgMulti: dmgMulti,
-      showAltDialog: false,
-      atkMod: 4,
-      throwable: false,
-      hitText: `<span style="${resultStyle('#FFFF5C')}">BACKSTAB</span>`
-    })
-  }
+//   const attackers = [];
+//   for (const token of selectedTokens) {
+//     const backstabItem = token.actor.items.find(i => i.type === 'feature' && Util.stringMatch(i.name, 'Backstab'));
+//     const dmgMulti = +backstabItem.data.data.attributes.dmg_multi?.value;
+//     if(!dmgMulti) {
+//       ui.notifications.error(`${token.actor.name} has no damage multiplier set on backstab feature`);
+//       continue;
+//     }
+//     if(!backstabItem) {
+//       ui.notifications.error(`Backstab feature not found on this character`);
+//       continue;
+//     }
+//     const heldWeapons = token.actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right));
+//     if (!heldWeapons.length) {
+//       ui.notifications.error(`${token.actor.name} is not holding any weapons`);
+//       continue;
+//     }
+//     if (heldWeapons.length > 1) {
+//       ui.notifications.error(`${token.actor.name} must be holding only one weapon to backstab`);
+//       continue;
+//     }
+//     const weapon = heldWeapons[0];
+//     if(!weapon.data.data.attributes.light?.value) {
+//       ui.notifications.error(`${token.actor.name} cannot backstab with ${weapon.name}`);
+//       continue;
+//     }
+//     const flavor = `${weapon.name} (backstab)`;
+//     attackers.push({
+//       token: token,
+//       weapons: [{_id: weapon._id, dmgType: 'thrust'}], 
+//       chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
+//       flavor,
+//       attacks: [],
+//       dmgMulti: dmgMulti,
+//       showAltDialog: false,
+//       atkMod: 4,
+//       throwable: false,
+//       hitText: `<span style="${resultStyle('#FFFF5C')}">BACKSTAB</span>`
+//     })
+//   }
 
-  return attack(attackers, targetToken, options);
-}
+//   return attack(attackers, targetToken, options);
+// }
 
 /*
 * options:
@@ -639,6 +639,7 @@ export function backstabMacro(options={}) {
 *  applyEffect: true/false (press ctrl)
 * }
 * TODO if select random targets (at least 3) and shoot attack, waive ranged penalty
+* TODO store removed body parts - other injuries?
 */
 export async function attackMacro(weapons, options={}) {
   if (!Array.isArray(weapons)) weapons = [weapons];
@@ -904,7 +905,7 @@ async function attack(attackers, targetToken, options) {
     }
     if (Util.stringMatch(weapon.altDialogChoice, 'parry')) {
       Util.macroChatMessage(token, {
-        content: `${attackingActor.name} takes a parrying stance with ${weaponItem.name}.`,
+        content: `${attackingActor.name} takes a parrying stance with ${weaponItem.name}.`, //TODO use stance language for all changes to atk mode atkForm + 'ing'
         flavor: `${weaponItem.name} (parry)`
       }, false);
       weapons.shift();
@@ -968,10 +969,12 @@ async function attack(attackers, targetToken, options) {
     if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers?', key: 'dialogDmgMod'});
     return modDialog(options, 'Attack', fields, () => attack(attackers, targetToken, options));
   }
-  let dialogAtkMod = 0, dialogDmgMod = 0;
+  let dialogAtkMod = {}, dialogDmgMod = {};
   try {
-    dialogAtkMod = options.dialogAtkMod ? await new Roll(options.dialogAtkMod).evaluate().total : 0;
-    dialogDmgMod = options.dialogDmgMod ? await new Roll(options.dialogDmgMod).evaluate().total : 0;
+    dialogAtkMod.formula = options.dialogAtkMod && await new Roll(options.dialogAtkMod).evaluate() ? options.dialogAtkMod : 0;
+    if (/^[\+|\-|\*|\/]/.test(dialogAtkMod.formula)) dialogAtkMod.includesSign = true;
+    dialogDmgMod.formula = options.dialogDmgMod && await new Roll(options.dialogDmgMod).evaluate() ? options.dialogDmgMod : 0;
+    if (/^[\+|\-|\*|\/]/.test(dialogDmgMod.formula)) dialogDmgMod.includesSign = true;
   } catch {
     ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
@@ -1005,7 +1008,7 @@ async function attack(attackers, targetToken, options) {
 
   // situational mods
   // +1 if holding a weapon of same size in both hands
-  if (weapSize === attackerSize && weaponHeldTwoHands) sitAtkMod++;
+  if (weapSize === attackerSize && weaponHeldTwoHands && !missileAtk) sitAtkMod++;
     // -2 if holding a weapon one size larger in one hand
   if (weapSize > attackerSize && !weaponHeldTwoHands) sitAtkMod = sitAtkMod - 2;
   // -3 if target is size S and attacker is bigger than medium
@@ -1017,7 +1020,7 @@ async function attack(attackers, targetToken, options) {
   // chance of second attack by weapon speed
   const speedDiff = weapSpeed - targetWeapSpeed;
   const followAttackChance = speedDiff * 2;
-  if ( weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= followAttackChance) {
+  if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= followAttackChance) {
     attacker.followAttack = true;
   }
   // -2 if weapon category defined but not in attacker's weapon proficiencies
@@ -1088,7 +1091,13 @@ async function attack(attackers, targetToken, options) {
 
   // attack
   const d20Result = await Util.rollDice("d20");
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${sitAtkMod}+${dialogAtkMod}`;
+  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${sitAtkMod}`;
+  // have to add dialog mod afterwards, in case it multiples/divides
+  let dialogAtk = '';
+  if (dialogAtkMod.formula) {
+    dialogAtk = `${!dialogAtkMod.includesSign ? `+` : ''}${dialogAtkMod.formula}`;
+    totalAtk = /^[\*|\/]/.test(dialogAtk) ? `(${totalAtk})${dialogAtk}` : `${totalAtk}${dialogAtk}`;
+  }
   let totalAtkResult = await Util.rollDice(totalAtk);
   const hitSound = weapon.hitSound || weapAttrs.hit_sound?.value || Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = weapon.missSound || weapAttrs.miss_sound?.value || Constant.ATK_MODES[atkMode]?.MISS_SOUND;
@@ -1145,9 +1154,13 @@ async function attack(attackers, targetToken, options) {
 
     // roll for hit location if character or humanoid
     if ( targetActor?.type === 'character' || targetRollData.type === 'humanoid' ) { // TODO test with monster enemies with hardcoded armor types
-      const hitLocRoll = await Util.rollDice("d100");
-      let hitLocTable = atkForm === 'swing' || atkForm === 'attack' ? 'SWING' : 'THRUST'; // TODO swing high/low, from atk mode dialog? -2 to swing high extra damage
-      hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
+      const removedLocs = targetActor.data.data.removedLocs;
+      do {
+        const hitLocRoll = await Util.rollDice("d100");
+        let hitLocTable = (atkForm === 'swing' || atkForm === 'attack') ? 'SWING' : 'THRUST';
+        hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
+      } while ( removedLocs.some(l => Util.stringMatch(hitLoc, l)) )
+      
       coverageArea = hitLoc.replace('right ', '').replace('left ', '');
       const acObj = targetRollData.ac[coverageArea][dmgType] || {};
       targetAc = acObj.ac ?? targetAc;
@@ -1157,7 +1170,7 @@ async function attack(attackers, targetToken, options) {
       dr = acObj.dr ?? dr;
       weapDmgResult = Math.max(1, weapDmgResult - dr);
 
-      resultText += `${hitLoc ? ` the ${hitLoc}` : ` ${targetActor.name}`}`;
+      resultText += `${hitLoc ? ` the ${hitLoc} of ${targetActor.name}` : ` ${targetActor.name}`}`;
 
       // shield mods
       // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
@@ -1181,6 +1194,7 @@ async function attack(attackers, targetToken, options) {
       //   i.data.data.locations?.includes(coverageArea));
       shieldBonus = acObj.shield_bonus;
       if (shieldBonus) {
+        const shield = sortedWornArmors.find(i => !i.data.data.attributes.shield?.value);
         if (bonusToShields) shieldBonus = Math.min(0, shieldBonus - 1);
 
         if (missileAtk) {
@@ -1192,7 +1206,7 @@ async function attack(attackers, targetToken, options) {
         }
         if (chainWeapon) {
           // disregard all shield mods if weapon is unwieldy, e.g. flail
-          sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.shield?.value);
+          sortedWornArmors = sortedWornArmors.filter(i => !i.data.data.attributes.shield?.value);
         }
       }
 
@@ -1438,9 +1452,9 @@ async function attack(attackers, targetToken, options) {
         const hide = targetActor.data.data.attributes.hide?.value;
         let deflectingArmorName = deflectingArmor?.name;
         let hideBonus = 0;
-        if (Constant.ARMOR_VS_DMG_TYPE[hide] && !deflectingArmorName) {
+        if (Constant.ARMOR_VS_DMG_TYPE[hide] && !deflectingArmorName && coverageArea !== 'eye') {
           const hideDesc = hide === 'leather' || hide === 'scale' ? `${hide}y` : hide === 'padded' ? hide : `${hide}-like`;
-          deflectingArmorName = ` the ${hideDesc} hide`;
+          deflectingArmorName = ` its ${hideDesc} hide`;
           hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
         }
         missDesc = atkForm === 'shoot' && totalAtkResult < targetAc - hideBonus ? 
@@ -1480,12 +1494,17 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${sitDmgMod}+${dialogDmgMod}`;
+  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${sitDmgMod}`;
+  let dialogDmg = '';
+  if (dialogDmgMod.formula) {
+    dialogDmg = `${!dialogDmgMod.includesSign ? `+` : ''}${dialogDmgMod.formula}`;
+    totalDmg = /^[\*|\/]/.test(dialogDmg) ? `(${totalDmg})${dialogDmg}` : `${totalDmg}${dialogDmg}`;
+  }
+  let totalDmgResult = await Util.rollDice(totalDmg);
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage`;
-  
-  // TODO use separate variables not object properties
-  const totalDmgResult = await Util.rollDice(totalDmg);
-  const injury = (totalDmgResult > 5 ? injuryObj.critical : totalDmgResult > 2 ? injuryObj.serious : injuryObj.light) || {};
+    
+  const injuryLevel = totalDmgResult > 5 ? 'critical' : totalDmgResult > 2 ? 'serious' : 'light';
+  const injury = injuryObj[injuryLevel] || {};
 
   attacks.push({
     instantKill: totalDmgResult > targetHp && !!injury.fatal,
@@ -1509,10 +1528,17 @@ async function attack(attackers, targetToken, options) {
     if (totalDmgResult < 2 && targetHp > 0) {
       resultText = resultText.replace('hits', 'grazes');
     }
-
+// TODO attack high and low (-2) and individual loc (penalty by size. -3 every halving), add armpit hit loc, store missing body parts, handle bleed dmg like disease
+// set atk mode for weapons as a stance, like parry
+// fix disease macros, collect list of GM macros
+// add XP macro
+// finalize death & dying mechanic
+// disable holding hand if missing anything on that arm
     if (sumDmg > targetHp) {
       resultText += injury.text?.replace('them', targetActor.name) || '';
       if (targetHp > 0) while (weapons.length) weapons.shift();
+      // store missing body parts
+
     }
 
     // hard code desc for certain injuries
@@ -1617,7 +1643,7 @@ function modDialog(options, title, fields=[{label:'', key:''}], callback) {
         callback: html => {
           options.shownModDialog = true;
           fields.forEach(field => {
-            options[field.key] = html.find(`[id=${field.key}]`).val();
+            options[field.key] = html.find(`[id=${field.key}]`)?.val().trim().toLowerCase().replace('x','*');
           });
           callback();
         }
@@ -2113,4 +2139,3 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
 
   return true;
 }
-
