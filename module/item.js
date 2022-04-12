@@ -15,13 +15,6 @@ export class SimpleItem extends Item {
   * duration: string
   * area: string
   * 
-  * value: number in gp
-  * 
-  * held items:
-  * atk_mod, dmg, dmg_mod, holdable, reach, size, speed
-  * 
-  * worn items:
-  * ac_mod, magic, material, coverage, wearable, rigid, st_mod
   */
 
   /** @inheritdoc */
@@ -30,8 +23,13 @@ export class SimpleItem extends Item {
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data.data;
-    // const updateData = {};
 
+    if (this.data.type === 'item') {
+      this.prepareItem(itemData)
+    }
+  }
+
+  prepareItem(itemData) {
     // populate shield values from constants
     const isShield = itemData.attributes.shield?.value;
     if (isShield) {
@@ -101,7 +99,7 @@ export class SimpleItem extends Item {
     const isWeapon = !!itemData.attributes.atk_modes;
     const size = Constant.SIZE_VALUES[itemData.attributes.size?.value];
     if (isWeapon && size != null) {
-      itemData.weight = itemData.weight ?? Math.max(0.5, size);
+      itemData.weight = Math.max(0.5, size);
     }
 
     // armor/clothing warmth, weight and max Dex mod
