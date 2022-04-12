@@ -5,7 +5,8 @@
     "basicProps": {
       "description": "",
       "attributes": {},
-      "groups": {}
+      "groups": {},
+      "injuries": "None"
     }
   },
   "character": {
