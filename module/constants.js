@@ -583,7 +583,7 @@ const BASIC_INJURIES = {
   limb: {
     blunt: {
       light: {
-        text: ' and bruises a bone',
+        text: ' and cracks a bone',
       }, 
       serious: {
         text: ' and snaps through bone',
@@ -600,7 +600,7 @@ const BASIC_INJURIES = {
         text: ' and tears through muscle and chips a bone',
       },
       critical: {
-        text: ' and tears through muscle and severs a tendon',
+        text: ' and severs a tendon',
       },
     },
     slashing: {
@@ -608,7 +608,7 @@ const BASIC_INJURIES = {
         text: ' and severs a muscle',
       },
       serious: {
-        text: ' and cleaves through muscle and severs a tendon',
+        text: ' and severs a tendon',
       },
       critical: {
         text: ' and cleaves through muscle and severs an artery',
@@ -658,6 +658,13 @@ export const CURRENCY_RATIOS = {
   cps_per_gp: 240,
 };
 
+export const LIMB_GROUPS = {
+  "lower leg": ["foot","shin"],
+  "leg": ["foot","shin","knee","thigh"],
+  "forearm": ["hand","forearm"],
+  "arm": ["hand","forearm","elbow","upper arm"],
+};
+
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
 export const HIT_LOCATIONS = {
   foot: {
@@ -666,7 +673,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and crushes a toe',
+          text: ' and breaks a toe',
         },
         serious: {
           text: ' and breaks the ankle',
@@ -707,7 +714,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: BASIC_INJURIES.limb.blunt,
       piercing: BASIC_INJURIES.limb.piercing,
-      slashing: BASIC_INJURIES.limb.slashing,
+      slashing: ' and cleaves through muscle and severs a tendon and chips a bone',
     },
   },
   knee: {
@@ -791,7 +798,7 @@ export const HIT_LOCATIONS = {
           text: ' and bruises the bowels',
         },
         serious: {
-          text: ' and crushes the abdomen causing internal bleeding',
+          text: ' and crushes the viscera causing internal bleeding',
         },
         critical: {
           text: ' and snaps the spine',
@@ -813,7 +820,7 @@ export const HIT_LOCATIONS = {
           text: ' and slices into abdominal muscle',
         },
         serious: {
-          text: ' and lacerates the bowels',
+          text: ' and slices into the abdomen and lacerates the bowels',
         },
         critical: {
           text: ' and disembowels them',
@@ -902,7 +909,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: BASIC_INJURIES.limb.blunt,
       piercing: BASIC_INJURIES.limb.piercing,
-      slashing: BASIC_INJURIES.limb.slashing,
+      slashing: ' and cleaves through muscle and severs a tendon and chips a bone',
     },
   },
   hand: {
@@ -911,7 +918,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and crushes a finger',
+          text: ' and breaks a finger',
         },
         serious: {
           text: ' and breaks the wrist',
@@ -969,7 +976,7 @@ export const HIT_LOCATIONS = {
           text: ' and penetrates the throat',
         },
         critical: {
-          text: ' and pierces an artery',
+          text: ' and penetrates the throat and pierces an artery',
         },
       },
       slashing: {
@@ -977,7 +984,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs a muscle',
         },
         serious: {
-          text: ' and severs an artery',
+          text: ' and cleaves through muscle and severs an artery',
         },
         critical: {
           text: ' and lops off the head',
@@ -1009,7 +1016,7 @@ export const HIT_LOCATIONS = {
           text: ' and breaks the teeth',
         },
         critical: {
-          text: ' and smashes through teeth and into the brain',
+          text: ' and smashes through the teeth and pierces the brain',
           fatal: true,
         },
       },
@@ -1021,7 +1028,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the jaw',
         },
         critical: {
-          text: ' and splits the face and cleaves through the brain',
+          text: ' and splits the face and cleaves the brain',
           fatal: true,
         },
       },
@@ -1033,10 +1040,10 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the eye socket',
+          text: ' and cracks the eye socket',
         },
         serious: {
-          text: ' and shatters the eye socket',
+          text: ' and shatters the eye socket, knocking them out',
         },
         critical: {
           text: ' and smashes the eye socket into the brain',
@@ -1045,13 +1052,13 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and tears the eyelid',
+          text: ' and lacerates the eye',
         },
         serious: {
           text: ' and dislodges the eye from its socket',
         },
         critical: {
-          text: ' and penetrates the eye and into the brain',
+          text: ' and penetrates the eye and pierces the brain',
           fatal: true,
         },
       },
@@ -1063,7 +1070,7 @@ export const HIT_LOCATIONS = {
           text: ' and eviscerates the eye',
         },
         critical: {
-          text: ' and cleaves through the eye socket and into the brain',
+          text: ' and cleaves through the brow and into the brain',
           fatal: true,
         },
       }
@@ -1074,10 +1081,10 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the skull knocking them out',
+          text: ' and bruises the skull, knocking them out',
         },
         serious: {
-          text: ' and cracks the skull knocking them out',
+          text: ' and cracks the skull, knocking them out',
         },
         critical: {
           text: ' and smashes the skull into the brain',
