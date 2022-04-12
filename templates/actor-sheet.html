@@ -71,8 +71,8 @@
         <a class="item" data-tab="attributes">Attributes</a>
         {{#if isCharacter}}
         <a class="item" data-tab="voice">Voice</a>
-        <a class="item" data-tab="fatigue">Fatigue</a>
         {{/if}}
+        <a class="item" data-tab="fatigue">Fatigue</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -137,8 +137,8 @@
                     <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
                     <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
                     <div class="item-controls">
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="item" data-action="edit"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="item" data-action="delete"><i class="fas fa-trash"></i></a>
                     </div>
                 </li>
                 {{/each}}
@@ -216,8 +216,9 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>{{#if ../showSp}} Skill Check Penalty: {{../sp}} {{/if}}</span>
-                <span style="text-align: left;">{{key}}</span>
+                <span>{{#if ../showSp}} Skill Penalty: {{../sp}} {{/if}}</span>
+                <span style="text-align: center;">{{key}}</span>
+                <span></span>
             </header>
             <ol class="item-list">
                 {{#each source as |feature id|}}
@@ -230,11 +231,11 @@
                     <img class="item-row" data-action="edit" src="{{feature.img}}" title="{{feature.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{feature.name}}</h4>
                     <div class="item-row flex2" data-action="edit">
-                        {{#if feature.data.attributes.st.value}}<label class="label">ST:</label><span>{{feature.data.attributes.st.value}}</span>{{/if}}
+                        {{#if feature.st}}<label class="label">ST:</label><span>{{feature.st}}</span>{{/if}}
                     </div>
                     <div class="item-controls">
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="feature" data-action="edit"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="feature" data-action="delete"><i class="fas fa-trash"></i></a>
                     </div>
                 </li>
                 {{/each}}
@@ -245,7 +246,7 @@
                 </span>
                 <span>
                     {{#if isGM}}
-                    <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="feature" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
+                    <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="feature" data-action="create"><i class="fas fa-plus"></i> Create Feature </a>
                     {{/if}}
                 </span>
             </div>
@@ -279,15 +280,14 @@
             </div>
         </div>
 
-        {{#if isCharacter}}
         {{!-- Fatigue Tab --}}
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
             <div class="flexrow">
-                <label class="fatigue-label">Environment Temperature</label>
+                <label class="fatigue-label">Environment Temp.</label>
                 <span class="fatigue-value">{{fatigue.tempDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Personal Temperature</label>
+                <label class="fatigue-label">Personal Temp.</label>
                 <span class="fatigue-value">{{fatigue.exposureDesc}}</span>
             </div>
             <div class="flexrow">
@@ -306,8 +306,13 @@
                 <label class="fatigue-label">Hunger</label>
                 <span class="fatigue-value">{{fatigue.hungerDesc}}</span>
             </div>
+            <div class="flexrow">
+                <label class="fatigue-label">Injuries</label>
+                <input class="fatigue-value" type="text" name="data.injuries" value="{{systemData.injuries}}" {{#if isPlayer}}readonly{{/if}}/>
+            </div>
         </div>
 
+        {{#if isCharacter}}
         {{!-- Voice Tab --}}
         <div class="tab voice" data-group="primary" data-tab="voice">
             <div class="flexrow voice-selection" {{#if hideVoiceSelection}}style="display:none;"{{/if}}>
@@ -328,7 +333,7 @@
                 {{/if}}
             </div>
             {{#if noVoice}}
-            <p class="voice-note"><span class="label">Note:</span>Before selecting your voice, any sounds you play using the buttons below will be audible only to you.
+            <p class="voice-note"><span class="label">Note:</span>Before selecting your voice, any sounds you play using the preview button will be audible only to you.
                 After selecting your voice, sounds you play here will be audible to everyone.
             </p>
             {{/if}}
