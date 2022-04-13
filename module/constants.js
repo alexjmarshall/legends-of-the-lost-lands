@@ -82,14 +82,14 @@ export const MATERIAL_PROPS = {
     sp_value:90,
   },
   fur: {
-    weight:5,
+    weight:3,
     warmth:36,
     sp_value:50,
   },
   padded: {
     weight:4,
     warmth:20,
-    sp_value:15,
+    sp_value:16,
     metal:false,
     rigid:false,
   },
@@ -183,7 +183,7 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 1,
     blunt: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     piercing: {
       ac:0,
@@ -242,11 +242,11 @@ export const ARMOR_VS_DMG_TYPE = {
   scale: {
     base_AC: 4,
     blunt: {
-      ac:0,
+      ac:1,
       dr:0,
     },
     piercing: {
-      ac:1,
+      ac:0,
       dr:0,
     },
     slashing: {
@@ -277,10 +277,10 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     slashing: {
-      ac:2,
+      ac:1,
       dr:1,
     },
   },
@@ -292,37 +292,37 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     slashing: {
-      ac:2,
+      ac:1,
       dr:1,
     },
   },
   "banded mail": {
     base_AC: 6,
     blunt: {
-      ac:1,
+      ac:-1,
       dr:0,
     },
     piercing: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     slashing: {
-      ac:2,
+      ac:1,
       dr:1,
     },
   },
   lamellar: {
     base_AC: 7,
     blunt: {
-      ac:0,
+      ac:-1,
       dr:1,
     },
     piercing: {
       ac:1,
-      dr:0,
+      dr:1,
     },
     slashing: {
       ac:0,
@@ -332,7 +332,7 @@ export const ARMOR_VS_DMG_TYPE = {
   splint: {
     base_AC: 7,
     blunt: {
-      ac:2,
+      ac:0,
       dr:1,
     },
     piercing: {
@@ -340,7 +340,7 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:0,
     },
     slashing: {
-      ac:0,
+      ac:1,
       dr:1,
     },
   },
@@ -362,7 +362,7 @@ export const ARMOR_VS_DMG_TYPE = {
   "steel plate": {
     base_AC: 9,
     blunt: {
-      ac: 0,
+      ac: 1,
       dr: 1,
     },
     piercing: {

@@ -131,8 +131,10 @@ export class SimpleActor extends Actor {
         }).flat().filter(l => game.lostlands.Constant.HIT_LOC_ARRS.THRUST.includes(l));
       actorData.removedLocs = removedLocations;
 
-      const naturalAc = attributes.ac?.value || Constant.AC_MIN;
-      const naturalDr = attributes.dr?.value || 0;
+      const naturalAc = +attributes.ac?.value || Constant.AC_MIN;
+      const naturalDr = +attributes.dr?.value || 0;
+      const naturalMdr = +attributes.mdr?.value || 0;
+      const mr = +attributes.mr?.value || 0;
       const ac_mod = +attributes.ac_mod?.value || 0;
 
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.hide?.value] ? attributes.hide?.value : "none";
@@ -152,17 +154,9 @@ export class SimpleActor extends Actor {
       const max_dex_mod = Math.round(4 - maxDexPenalty);
       const dexAcBonus = Math.min(updateData.dex_mod, max_dex_mod);
 
-      // class bonus        
-      // const isBarbarian = attributes.class?.value.toLowerCase().includes('barbarian');
-      // const isSwashbuckler = attributes.class?.value.toLowerCase().includes('swashbuckler') &&
-      //                        max_dex_mod >= 4;
-      // const level = +attributes.lvl?.value || 1;
-      // isBarbarian ? 1 :
-      //                    isSwashbuckler ? Math.floor((level - 1) / 4) + 1 || 0 : 0;
-
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr:0, mr:0, total: {} };
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {} };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod + parryBonus,
@@ -234,9 +228,6 @@ export class SimpleActor extends Actor {
         }
         ac.mdr = Math.round(ac.mdr);
       }
-
-      // magic resistance
-      ac.mr = +attributes.mr?.value || 0;
 
       // add AC to actorData
       actorData.ac = ac;
