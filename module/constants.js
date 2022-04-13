@@ -228,15 +228,15 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 3,
     blunt: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     piercing: {
       ac:0,
-      dr:0,
+      dr:1,
     },
     slashing: {
       ac:0,
-      dr:0,
+      dr:1,
     },
   },
   scale: {
@@ -262,7 +262,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac:1,
-      dr:0,
+      dr:1,
     },
     slashing: {
       ac:2,
@@ -763,7 +763,7 @@ export const HIT_LOCATIONS = {
           text: ' and breaks the pelvis',
         },
         critical: {
-          text: ' and crushes the pelvis causing internal bleeding',
+          text: ' and crushes the pelvis and the wound bleeds internally',
         },
       },
       piercing: {
@@ -795,13 +795,13 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the bowels',
+          text: ' and breaks a rib',
         },
         serious: {
-          text: ' and crushes the viscera causing internal bleeding',
+          text: ' and crushes the ribs into the viscera and the wound bleeds internally',
         },
         critical: {
-          text: ' and snaps the spine',
+          text: ' shatters the ribs and snaps the spine',
         },
       },
       piercing: {
@@ -817,10 +817,10 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and slices into abdominal muscle',
+          text: ' and slices through abdominal muscle',
         },
         serious: {
-          text: ' and slices into the abdomen and lacerates the bowels',
+          text: ' and slices through abdominal muscle and lacerates the bowels',
         },
         critical: {
           text: ' and disembowels them',
@@ -840,7 +840,7 @@ export const HIT_LOCATIONS = {
           text: ' and breaks a rib',
         },
         critical: {
-          text: ' and crushes the sternum into the heart causing internal bleeding',
+          text: ' and caves in the sternum and the wound bleeds internally',
         },
       },
       piercing: {
