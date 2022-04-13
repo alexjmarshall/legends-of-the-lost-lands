@@ -1109,7 +1109,7 @@ async function attack(attackers, targetToken, options) {
   const targetHp = +targetActor?.data.data.hp?.value;
   const minorBleedDesc = ' and the wound bleeds heavily';
   const majorBleedDesc = ' and blood spurts from the wound!';
-  const knockoutDesc = ` knocks them down`; //${targetActor ? targetActor.name : 'them'}
+  const knockoutDesc = ` knocks them down`;
 
   
   let rolledWeapDmg = await Util.rollDice(weapDmg);
@@ -1159,7 +1159,7 @@ async function attack(attackers, targetToken, options) {
       targetAc = acObj.ac ?? targetAc;
       sortedWornArmors = acObj.sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
 
-      
+      // apply dr
       dr = acObj.dr ?? dr;
       weapDmgResult = Math.max(1, weapDmgResult - dr);
 
@@ -1182,30 +1182,21 @@ async function attack(attackers, targetToken, options) {
       }
 
       // handle effects based on target shield
-      // shield = targetActor?.items.find(i => (i.data.data.held_left || i.data.data.held_right || i.data.data.worn) &&
-      //   i.data.data.attributes.shield?.value &&
-      //   i.data.data.locations?.includes(coverageArea));
       shieldBonus = acObj.shield_bonus;
       if (shieldBonus) {
-        const shield = sortedWornArmors.find(i => !i.data.data.attributes.shield?.value);
-        if (bonusToShields) shieldBonus = Math.min(0, shieldBonus - 1);
-
-        if (missileAtk) {
-          // disregard bucklers vs. missile
-          const holdingBuckler = (shield?.data.data.held_left || shield?.data.data.held_right) && Util.stringMatch(shield?.data.data.attributes.size?.value, 'T');
-          if (holdingBuckler) {
-            targetAc -= shieldBonus;
-          }
+        if (bonusToShields) {
+          targetAc -= Math.min(1, shieldBonus);
         }
         if (chainWeapon) {
           // disregard all shield mods if weapon is unwieldy, e.g. flail
           sortedWornArmors = sortedWornArmors.filter(i => !i.data.data.attributes.shield?.value);
+          targetAc -= shieldBonus;
         }
       }
 
     }
 
-    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
+    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc}/DR ${dr})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
       totalAtkResult = targetAc;
@@ -1214,6 +1205,7 @@ async function attack(attackers, targetToken, options) {
 
 
     // TODO remove bleed bonus for overall curved swords explanation: -1 min bleed, 1.5x crit, 1/2 knockdown damage
+    // TODO show dmg modifications for dr, critical hit and lucky hit in chat, use brackets as necessary like dialogMod multiplier - can wait until after lucky/crit to roll dmg
     if (isHit) {
       const armorUpdates = [];
 
@@ -1518,6 +1510,7 @@ async function attack(attackers, targetToken, options) {
 // fix disease macros, collect list of GM macros
 // add XP macro
 // finalize death & dying mechanic
+// MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced
     if (sumDmg > targetHp) {
       resultText += injury.text;
       if (targetHp > 0) while (weapons.length) weapons.shift();
@@ -1540,7 +1533,7 @@ async function attack(attackers, targetToken, options) {
       }
     }
 
-    if ( resultText.includes('viscera')) {
+    if ( resultText.includes('pierces the viscera') || resultText.includes('disembowels')) {
       dmgEffect = dmgEffect.replace(minorBleedDesc,'').replace(majorBleedDesc,'');
       dmgEffect += ' and dark blood gushes from the wound';
     }
