@@ -204,7 +204,8 @@ export class SimpleActor extends Actor {
             if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
 
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
-            const shieldDrBonus = shield?.data.data.ac?.[dmgType]?.dr || 0;
+            // no shield dr vs. piercing on forearm or hand
+            const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
 
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
