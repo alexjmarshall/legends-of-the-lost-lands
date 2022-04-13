@@ -72,8 +72,10 @@ export class SimpleActorSheet extends ActorSheet {
     context.showSoundBoard = context.isGM || context.hasVoice;
 
     // fatigue
-    context.fatigue = this.getFatigueData(context.data);
-
+    if(context.isCharacter) {
+      context.fatigue = this.getFatigueData(context.data);
+    }
+    
     return context;
   }
 
