@@ -382,15 +382,15 @@ export class SimpleActorSheet extends ActorSheet {
       const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
       const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
 
-      // can't wear a rigid item if any of this item's locations are already covered by a rigid item
-      const isRigid = !!item.data.data.attributes.rigid?.value;
-      if (isRigid) {
+      // can't wear a bulky item if any of this item's locations are already covered by a bulky item
+      const isBulky = !!item.data.data.attributes.bulky?.value;
+      if (isBulky) {
         const itemLocations = item.data.data.locations;
-        const wornRigidItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.rigid?.value);
-        const wornRigidLocations = wornRigidItems.map(i => i.data.data.locations).flat();
-        const duplicateLocation = wornRigidLocations.find(l => itemLocations.includes(l));
+        const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
+        const wornBulkyLocations = wornBulkyItems.map(i => i.data.data.locations).flat();
+        const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
         if (!!duplicateLocation) {
-          return ui.notifications.error(`Already wearing a rigid item over ${duplicateLocation}`);
+          return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
         }
       }
 
