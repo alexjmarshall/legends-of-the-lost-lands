@@ -59,7 +59,7 @@ export const MATERIAL_PROPS = {
   wood: {
     weight:8,
     warmth:0,
-    sp_value:30,
+    sp_value:10,
   },
   burlap: {
     weight:2,
@@ -101,14 +101,14 @@ export const MATERIAL_PROPS = {
     bulky:true,
   },
   brigandine: {
-    weight:20,
+    weight:18,
     warmth:16,
     sp_value:100,
     metal:true,
     bulky:true,
   },
   scale: {
-    weight:24,
+    weight:22,
     warmth:14,
     sp_value:80,
     metal:true,
@@ -117,7 +117,7 @@ export const MATERIAL_PROPS = {
   chain: {
     weight:12,
     warmth:2,
-    sp_value:300,
+    sp_value:150,
     metal:true,
     bulky:false,
   },
@@ -128,35 +128,35 @@ export const MATERIAL_PROPS = {
     bulky:false,
   },
   "banded mail": {
-    weight:16,
+    weight:15,
     warmth:4,
-    sp_value:350,
+    sp_value:200,
     metal:true,
     bulky:false,
   },
   lamellar: {
-    weight:22,
+    weight:20,
     warmth:12,
-    sp_value:150,
+    sp_value:120,
     metal:true,
     bulky:true,
   },
   splint: {
-    weight:18,
+    weight:16,
     warmth:14,
-    sp_value:200,
+    sp_value:160,
     metal:true,
     bulky:true,
   },
   "iron plate": {
-    weight:20,
+    weight:18,
     warmth:10,
     sp_value:400,
     metal:true,
     bulky:true,
   },
   "steel plate": {
-    weight:18,
+    weight:16,
     warmth:8,
     sp_value:1000,
     metal:true,
@@ -605,7 +605,7 @@ const BASIC_INJURIES = {
     },
     slashing: {
       light: {
-        text: ' and severs a muscle',
+        text: ' and cleaves through muscle',
       },
       serious: {
         text: ' and severs a tendon',
@@ -714,7 +714,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: BASIC_INJURIES.limb.blunt,
       piercing: BASIC_INJURIES.limb.piercing,
-      slashing: ' and cleaves through muscle and severs a tendon and chips a bone',
+      slashing: BASIC_INJURIES.limb.slashing,
     },
   },
   knee: {
@@ -812,7 +812,7 @@ export const HIT_LOCATIONS = {
           text: ' and penetrates the abdomen and lacerates the bowels',
         },
         critical: {
-          text: ' and penetrates the viscera and pierces an artery',
+          text: ' and penetrates the abdomen and pierces the viscera',
         },
       },
       slashing: {
@@ -909,7 +909,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: BASIC_INJURIES.limb.blunt,
       piercing: BASIC_INJURIES.limb.piercing,
-      slashing: ' and cleaves through muscle and severs a tendon and chips a bone',
+      slashing: BASIC_INJURIES.limb.slashing,
     },
   },
   hand: {
@@ -981,7 +981,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and severs a muscle',
+          text: ' and lacerates the larynx',
         },
         serious: {
           text: ' and cleaves through muscle and severs an artery',
@@ -1028,7 +1028,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the jaw',
         },
         critical: {
-          text: ' and splits the face and cleaves the brain',
+          text: ' and cleaves through the face and into the brain',
           fatal: true,
         },
       },
@@ -1043,7 +1043,7 @@ export const HIT_LOCATIONS = {
           text: ' and cracks the eye socket',
         },
         serious: {
-          text: ' and shatters the eye socket, knocking them out',
+          text: ' and shatters the eye socket and knocks them out',
         },
         critical: {
           text: ' and smashes the eye socket into the brain',
@@ -1055,7 +1055,7 @@ export const HIT_LOCATIONS = {
           text: ' and lacerates the eye',
         },
         serious: {
-          text: ' and dislodges the eye from its socket',
+          text: ' and gouges out the eye',
         },
         critical: {
           text: ' and penetrates the eye and pierces the brain',
@@ -1081,10 +1081,10 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the skull, knocking them out',
+          text: ' and bruises the skull and knocks them out',
         },
         serious: {
-          text: ' and cracks the skull, knocking them out',
+          text: ' and cracks the skull and knocks them out',
         },
         critical: {
           text: ' and smashes the skull into the brain',
