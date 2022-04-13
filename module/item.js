@@ -31,14 +31,14 @@ export class SimpleItem extends Item {
 
   prepareItem(itemData) {
     // populate shield values from constants
-    const isShield = itemData.attributes.shield?.value;
+    const isShield = !!itemData.attributes.shield?.value;
     if (isShield) {
       const sizes = {L: "large", M: "medium"};
       const size = sizes[itemData.attributes.size?.value];
-      if (itemData.attributes.material?.value) {
+      if (itemData.attributes.material) {
         itemData.attributes.material.value = Constant.SHIELD_TYPES[size].material;
       }
-      if (itemData.attributes.coverage?.value) {
+      if (itemData.attributes.coverage) {
         itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage;
       }
     }
