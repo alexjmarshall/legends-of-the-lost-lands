@@ -1409,7 +1409,7 @@ async function attack(attackers, targetToken, options) {
       }
       let targetParryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || 0;
       let dexMod= Math.min(+targetRollData.dex_mod, +targetRollData.ac.max_dex_mod || 0);
-      if ( targetHp <= 0 || missileAtk ) {
+      if ( targetHp <= 0 || missileAtk ) { // TODO also have to prevent this if defender is helpless/held/unconscious -- should standardize status conditions
         targetParryBonus = 0;
         dexMod = 0;
       }
@@ -1420,7 +1420,11 @@ async function attack(attackers, targetToken, options) {
       } else if (totalAtkResult < unarmoredAc - targetParryBonus - dexMod) {
         missDesc = atkForm === 'shoot' ? ` but widely misses` : ` but misses entirely`;
       } else if (totalAtkResult < unarmoredAc - targetParryBonus) {
-        missDesc = ` but ${targetActor.name} dodges the blow`;
+        missDesc = ` but ${targetActor.name} dodges`;
+        // dodging defender has a chance to counter-attack equal to follow attack chance
+        if (await Util.rollDice('d100') <= followAttackChance * -1) {
+          missDesc += ` and can counter-attack!`;
+        }
       } else if (totalAtkResult < unarmoredAc) {
         missDesc = parryDesc;
       } else {
@@ -1450,7 +1454,7 @@ async function attack(attackers, targetToken, options) {
         };
         const fumbles = [
           ` and${isParrying ? ` ${attackingActor.name}` : ''} slips and falls`, 
-          ` and${isParrying ? ` ${attackingActor.name}` : ''} stumbles, leaving them open to attack`,
+          ` and${isParrying ? ` ${attackingActor.name}` : ''} stumbles, leaving an opening for attack`,
         ];
         fragile && fumbles.push(` and ${weapName} breaks!`);
         unwieldy && fumbles.push(` and${isParrying ? ` ${attackingActor.name}` : ''} hits themselves instead!`);
@@ -1535,7 +1539,7 @@ async function attack(attackers, targetToken, options) {
 
     if ( resultText.includes('pierces the viscera') || resultText.includes('disembowels')) {
       dmgEffect = dmgEffect.replace(minorBleedDesc,'').replace(majorBleedDesc,'');
-      dmgEffect += ' and dark blood gushes from the wound';
+      dmgEffect += ' and dark blood oozes from the wound';
     }
 
     if ( resultText.includes('knocks')) {
