@@ -64,7 +64,7 @@ export class SimpleItem extends Item {
         mdr = acMod;
       }
 
-      // infer max base ac, metal and rigid property values from material
+      // infer max base ac, metal and bulky property values from material
       if (itemData.attributes.base_ac?.max !== undefined) {
         itemData.attributes.base_ac.max = baseAc;
         baseAc = itemData.attributes.base_ac.value ?? baseAc;
@@ -72,8 +72,8 @@ export class SimpleItem extends Item {
       if (materialProps.metal && itemData.attributes.metal) {
         itemData.attributes.metal.value = materialProps.metal;
       }
-      if (materialProps.rigid && itemData.attributes.rigid) {
-        itemData.attributes.rigid.value = materialProps.rigid;
+      if (materialProps.bulky && itemData.attributes.bulky) {
+        itemData.attributes.bulky.value = materialProps.bulky;
       }
 
       let acBonus = isShield ? baseAc : Constant.AC_MIN + baseAc;

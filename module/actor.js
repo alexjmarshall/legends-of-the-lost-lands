@@ -181,10 +181,10 @@ export class SimpleActor extends Actor {
           const garments =  coveringItems.filter(i => !i.data.data.attributes.shield?.value);
           const armor = garments.filter(i => Object.keys(i.data.data.ac || {}).length);
           
-          // can only wear one shield and one rigid armor
+          // can only wear one shield and one bulky armor
           const shield = coveringItems.find(i => i.data.data.attributes.shield?.value);
-          const rigidArmor = armor.find(i => i.data.data.attributes.rigid?.value);
-          const nonRigidArmor = armor.filter(i => !i.data.data.attributes.rigid?.value);
+          const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
+          const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
@@ -198,9 +198,9 @@ export class SimpleActor extends Actor {
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            let sorted_armor_ids = nonRigidArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
+            let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
               .map(i => i._id);
-            if (rigidArmor?._id) sorted_armor_ids = [rigidArmor._id, ...sorted_armor_ids];
+            if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
             if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
 
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;

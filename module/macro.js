@@ -1228,9 +1228,9 @@ async function attack(attackers, targetToken, options) {
       const critChance = Util.stringMatch(weapCategory, 'curved swords') ? Math.ceil(1.5 * (totalAtkResult - targetAc)) : totalAtkResult - targetAc
       const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
 
-      // avoids rigid armor/shield
+      // avoids bulky armor/shield
       if (isCriticalHit) {
-        sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.rigid?.value && !i.data.data.attributes.shield?.value);
+        sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.bulky?.value && !i.data.data.attributes.shield?.value);
         hitDesc = ' and strikes a weak spot';
       }
 
@@ -1240,19 +1240,18 @@ async function attack(attackers, targetToken, options) {
       if (isLuckyHit) {
         const armor = sortedWornArmors[0];
         const isSteelPlate = !!armor?.data.data.attributes.material?.value === 'steel plate';
-        const isRigid = !!armor?.data.data.attributes.rigid?.value;
+        const isBulky = !!armor?.data.data.attributes.bulky?.value;
         const isShield = !!armor?.data.data.attributes.shield?.value;
 
-        // if damage type is blunt, armor must be rigid or shield to absorb the damage
-        if ( armor && (dmgType !== 'blunt' || isRigid || isShield) ) {
+        // if damage type is blunt, armor must be bulky or shield to absorb the damage
+        if ( armor && (dmgType !== 'blunt' || isBulky || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          let verb = isSteelPlate ? 'dents' : isRigid ? 'punctures' : isShield ? 'splinters' : 'tears through';
+          let verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
-            const qty = armor.data.data.quantity;
-            Object.assign(itemUpdate, {'data.quantity': qty - 1}); // TODO test NaN?
-            console.log(qty - 1);
+            const qty = +armor.data.data.quantity || 0;
+            qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           hitDesc += ` and ${verb} ${armor.name}`;
@@ -1303,10 +1302,10 @@ async function attack(attackers, targetToken, options) {
 
           if (applyArmor(armor)) {
             let verb = 'penetrates';
-            const isRigid = !!armor.data.data.attributes.rigid?.value;
+            const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield?.value;
-            // if armor is non-rigid or shield it absorbs the impale damage
-            if (!isRigid || (isShield && !['forearm','hand'].includes(coverageArea))) {
+            // if armor is non-bulky or shield it absorbs the impale damage
+            if (!isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
               dmg = 0;
             }
             // damage armor
@@ -1315,8 +1314,8 @@ async function attack(attackers, targetToken, options) {
             const armorDestroyed = baseAc < 1;
             if (armorDestroyed) {
               verb = 'destroys';
-              const qty = armor.data.data.quantity;
-              Object.assign(itemUpdate, {'data.quantity': qty - 1});
+              const qty = +armor.data.data.quantity || 0;
+              qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
             }
             // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
             // append string
@@ -1374,12 +1373,12 @@ async function attack(attackers, targetToken, options) {
         const armor = sortedWornArmors[0];
         let doBleed = true;
         (function() {if (applyArmor(armor)) {
-          const isRigid = !!armor.data.data.attributes.rigid?.value;
+          const isBulky = !!armor.data.data.attributes.bulky?.value;
           const isShield = !!armor.data.data.attributes.shield?.value;
-          let verb = isRigid ? 'cracks' : isShield ? 'cleaves' : 'cuts through';
+          let verb = isBulky ? 'cracks' : isShield ? 'cleaves' : 'cuts through';
 
-          // if armor is rigid or shield it absorbs damage and negates bleed
-          if (isRigid || (isShield && !['forearm','hand'].includes(coverageArea))) {
+          // if armor is bulky or shield it absorbs damage and negates bleed
+          if (isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
             doBleed = false;
 
             // if weapon is a curved sword, break here and don't damage armor
@@ -1391,13 +1390,13 @@ async function attack(attackers, targetToken, options) {
           const armorDestroyed = baseAc < 1;
           if (armorDestroyed) {
             verb = 'destroys';
-            const qty = armor.data.data.quantity;
-            Object.assign(itemUpdate, {'data.quantity': qty - 1});
+            const qty = +armor.data.data.quantity || 0;
+            qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
           }
           // options.applyEffect === true && game.user.isGM && await targetActor.updateEmbeddedDocuments("Item", [itemUpdate]);
           // append string
           hitDesc += ` and ${verb} ${armor.name}`;
-        }})()
+        }})();
 
         if (doBleed) {
           dmgEffect += doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
@@ -1528,7 +1527,8 @@ async function attack(attackers, targetToken, options) {
     if (totalDmgResult < 2 && targetHp > 0) {
       resultText = resultText.replace('hits', 'grazes');
     }
-// TODO attack high and low (-2) and individual loc (penalty by size. -3 every halving), add armpit hit loc, store missing body parts, handle bleed dmg like disease
+// TODO attack high and low (-2) and individual loc (penalty by size. -3 every halving), add armpit hit loc -- swing can only aim for broader groups, e.g. arm/leg
+// handle bleed dmg like disease
 // set atk mode for weapons as a stance, like parry
 // fix disease macros, collect list of GM macros
 // add XP macro
