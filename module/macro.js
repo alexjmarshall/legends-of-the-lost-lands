@@ -1246,7 +1246,7 @@ async function attack(attackers, targetToken, options) {
         // if damage type is blunt, armor must be bulky or shield to absorb the damage
         if ( armor && (dmgType !== 'blunt' || isBulky || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          let verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+          let verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears';
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
@@ -1375,7 +1375,7 @@ async function attack(attackers, targetToken, options) {
         (function() {if (applyArmor(armor)) {
           const isBulky = !!armor.data.data.attributes.bulky?.value;
           const isShield = !!armor.data.data.attributes.shield?.value;
-          let verb = isBulky ? 'cracks' : isShield ? 'cleaves' : 'cuts through';
+          let verb = 'cleaves';
 
           // if armor is bulky or shield it absorbs damage and negates bleed
           if (isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
