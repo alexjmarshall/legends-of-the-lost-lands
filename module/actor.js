@@ -139,13 +139,6 @@ export class SimpleActor extends Actor {
 
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.hide?.value] ? attributes.hide?.value : "none";
       const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
-      const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
-        .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
-      const parryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || 0;
-      const parry = {
-        parry_item_id: parryItem?._id,
-        parry_bonus: parryBonus,
-      };
 
       // spell failure, skill check penalty and max dex mod
       const sf = Math.round(wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.spell_failure || 0), 0));
@@ -153,6 +146,14 @@ export class SimpleActor extends Actor {
       const maxDexPenalty = wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.max_dex_penalty || 0), 0);
       const max_dex_mod = Math.round(4 - maxDexPenalty);
       const dexAcBonus = Math.min(updateData.dex_mod, max_dex_mod);
+
+      const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
+        .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
+      const parryBonus = Math.min(max_dex_mod, +parryItem?.data.data.attributes.parry_bonus?.value || 0);
+      const parry = {
+        parry_item_id: parryItem?._id,
+        parry_bonus: parryBonus,
+      };
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
 
