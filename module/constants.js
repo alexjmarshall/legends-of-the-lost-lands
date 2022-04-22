@@ -47,12 +47,18 @@ export const FIGHTER_XP_PROGRESSION = [
 export const DMG_TYPES = ["blunt", "piercing", "slashing"];
 export const SHIELD_TYPES = {
   large: {
-    coverage: "chest,gut,neck,shoulder,upper arm,elbow,forearm,hand,groin,hip",
-    material: "wood",
+    coverage: {
+      high:"neck,shoulder,chest,arm pit,upper arm,elbow,forearm,hand,gut",
+      mid:"chest,arm pit,upper arm,elbow,forearm,hand,gut,groin,hip", // TODO separate macro for setting stance for held items
+      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee",
+    },
   },
   medium: {
-    coverage: "chest,gut,elbow,forearm,hand",
-    material: "wood",
+    coverage: {
+      high:"neck,arm pit,upper arm,chest,forearm,hand",
+      mid:"chest,gut,elbow,forearm,hand",
+      low:"elbow,forearm,hand,gut,groin,hip",
+    },
   },
 };
 export const MATERIAL_PROPS = {
