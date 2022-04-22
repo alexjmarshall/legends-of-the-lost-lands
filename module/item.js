@@ -35,11 +35,9 @@ export class SimpleItem extends Item {
     if (isShield) {
       const sizes = {L: "large", M: "medium"};
       const size = sizes[itemData.attributes.size?.value];
-      if (itemData.attributes.material) {
-        itemData.attributes.material.value = Constant.SHIELD_TYPES[size].material;
-      }
       if (itemData.attributes.coverage) {
-        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage;
+        const stance = itemData.stance || 'mid';
+        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage[stance];
       }
     }
 
