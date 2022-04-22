@@ -898,12 +898,12 @@ export const HIT_LOCATIONS = {
           dmgEffect: bowelBleedDesc,
         },
         critical: {
-          text: ' and penetrates the abdomen and pierces an artery',
+          text: ' and penetrates the bowels and pierces an artery',
           fatal: true,
           dmgEffect: internalBleedDesc,
         },
         gruesome: {
-          text: ' and penetrates the abdomen and severs the spine',
+          text: ' and penetrates the bowels and severs the spine',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
