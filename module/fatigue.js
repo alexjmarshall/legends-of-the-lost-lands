@@ -158,6 +158,12 @@ export const DISEASES = {
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
   },
+  "sepsis": {
+    symptoms: ["fever", "rapid breathing", "abdominal pain"],
+    virulence: "d8",
+    incubationPeriod: { day: 1 },
+    damageInterval: { day: 1 },
+  },
   "plague": {
     symptoms: ["black tissue", "headache", "fever"],
     virulence: "d8",
