@@ -156,7 +156,7 @@ export const MATERIAL_PROPS = {
     bulky:true,
   },
   "steel plate": {
-    weight:16,
+    weight:18,
     warmth:8,
     sp_value:1000,
     metal:true,
@@ -634,7 +634,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and severs the tendons on top of the foot',
+          text: ' and severs the tendons of the foot',
         },
         serious: {
           text: ' and severs a toe',
