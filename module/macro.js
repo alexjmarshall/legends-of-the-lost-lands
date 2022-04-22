@@ -1419,7 +1419,6 @@ async function attack(attackers, targetToken, options) {
       }
       const parryDesc = ` but ${targetActor.name} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
       // determine miss desc
-      console.log(targetParryBonus)
       if (isParrying && totalAtkResult < unarmoredAc + (2*targetParryBonus) + dexMod) {
         missDesc = parryDesc;
       } else if (totalAtkResult < unarmoredAc - dexMod) {
