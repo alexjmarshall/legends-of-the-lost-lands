@@ -643,7 +643,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs the tendons of the foot',
         },
         serious: {
-          text: ' and severs a toe',
+          text: ' and severs the Achilles tendon',
         },
         critical: {
           text: ' and severs the foot',
@@ -686,7 +686,7 @@ export const HIT_LOCATIONS = {
           text: ' and lacerates the calf',
         },
         serious: {
-          text: ' and severs the Achilles tendon',
+          text: ' and cuts a nerve in the calf',
         },
         critical: {
           text: ' and cleaves the calf to the bone',
