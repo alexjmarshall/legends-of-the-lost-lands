@@ -515,7 +515,7 @@ export class SimpleActorSheet extends ActorSheet {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' in both hands' : ''}.` });
+        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
       }
     }
     return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
