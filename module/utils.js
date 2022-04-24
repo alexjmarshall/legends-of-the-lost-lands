@@ -125,7 +125,6 @@ export function selectedCharacter() {
     token = actor ? getTokenFromActor(actor) : null;
   }
   if (!actor) {
-    ui.notifications.error("Select a character");
     throw new Error("Select a character");
   } 
   return {token, actor};
