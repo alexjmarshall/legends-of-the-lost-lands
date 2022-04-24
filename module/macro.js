@@ -1521,7 +1521,7 @@ async function attack(attackers, targetToken, options) {
 // finalize death & dying mechanic
 // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced
     if (sumDmg > targetHp) {
-      resultText += injury.text;
+      resultText += injury.text || '';
       
       if (targetHp > 0) while (weapons.length) weapons.shift();
   
