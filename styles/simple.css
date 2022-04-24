@@ -408,3 +408,13 @@
 .lostlands .voice-choice {
   text-align: right;
 }
+.dialog-content .stance-button {
+  background: none;
+  flex: 1;
+  max-width: 33%;
+  border: 2px groove #f0f0e0;
+}
+.dialog-content .selected-button {
+  /* background: rgba(255, 255, 240, 0.8); */
+  background: rgba(0, 0, 0, 0.1);
+}
