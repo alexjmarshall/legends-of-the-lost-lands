@@ -1161,7 +1161,6 @@ async function attack(attackers, targetToken, options) {
       dr = acObj.dr ?? dr;
 
       resultText += `${hitLoc ? ` at the ${hitLoc}` : ''}`; // of ${targetActor.name}` : ` ${targetActor.name}`}
-      coverageArea = 'knee';
       // shield mods
       // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
       const largeShieldLocs = [...new Set(Object.values(Constant.SHIELD_TYPES.large.coverage).map(v => Util.getArrFromCSL(v)).flat())];
