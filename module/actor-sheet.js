@@ -406,7 +406,7 @@ export class SimpleActorSheet extends ActorSheet {
       //    or if size of shield is bigger than character size + 1
       const isShield = !!item.data.data.attributes.shield?.value;
       const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
-      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left && i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
+      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
       const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
       if (isShield) {
         if (itemSize > charSize + 1) return ui.notifications.error(`Character is too small to wear a shield of this size`);
@@ -473,7 +473,7 @@ export class SimpleActorSheet extends ActorSheet {
     } else {
       const isShield = !!item.data.data.attributes.shield?.value;
       const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
-      if (isShield && wearingShield) return ui.notifications.error("Cannot use a shield while wearing a shield");
+      if (isShield && wearingShield) return ui.notifications.error("Cannot hold a shield while wearing a shield");
       if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
       if (thisHandFull) return ui.notifications.error("Must release a held item first");
       if (twoHanded) {
