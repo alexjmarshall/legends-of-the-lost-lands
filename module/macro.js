@@ -869,9 +869,6 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
-  // attack choice dialog
-  const formatAtkMode = (mode) => Util.upperCaseFirst(mode.replace(/\(/, ' (').replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
-
   // add parry choice if weapon has parry bonus defined
   parryBonus && atkModes.push('parry');
 
@@ -909,7 +906,7 @@ async function attack(attackers, targetToken, options) {
   let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || weapon.altDialogChoice || atkModes[0];
 
   if (Util.stringMatch(atkMode, 'parry')) {
-    weapons.shift();
+    weapons.shift(); // TODO show msg if parrying with every held weapon, and change alt dialog to be for hit location choosing
     if (!weapons.length) {
       ui.notifications.notify(`Parrying with ${weaponItem.name}`);
     }
@@ -1161,31 +1158,32 @@ async function attack(attackers, targetToken, options) {
       targetAc = acObj.ac ?? targetAc;
       sortedWornArmors = acObj.sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
 
-      // apply dr
       dr = acObj.dr ?? dr;
-      weapDmgResult = Math.max(1, weapDmgResult - dr);
 
       resultText += `${hitLoc ? ` at the ${hitLoc}` : ''}`; // of ${targetActor.name}` : ` ${targetActor.name}`}
-
+      coverageArea = 'knee';
       // shield mods
       // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
-      const largeShieldCoverage = Constant.SHIELD_TYPES.large.coverage;
-      const largeShieldLocs = Util.getArrFromCSL(largeShieldCoverage).filter(l => Object.keys(Constant.HIT_LOCATIONS).includes(l.toLowerCase()));
+      const largeShieldLocs = [...new Set(Object.values(Constant.SHIELD_TYPES.large.coverage).map(v => Util.getArrFromCSL(v)).flat())];
       if(largeShieldLocs.includes(coverageArea)) {
         const adjFriendlyTokens = adjTokens(targetToken, 1);
         const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
           i.data.data.attributes.shield?.value &&
-          Util.stringMatch(i.data.data.attributes.size?.value, 'L'))
-        ).flat();
-        const adjLargeShieldMods = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.ac + +s.data.data.ac?.mac) || 0);
+          Util.stringMatch(i.data.data.attributes.size?.value, 'L') &&
+          i.data.data.stance && Util.getArrFromCSL(Constant.SHIELD_TYPES.large.coverage[i.data.data.stance]).includes(coverageArea)
+        )).flat();
+        const adjLargeShieldAcs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.ac) || 0);
+        const adjLargeShieldDrs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.dr) || 0);
         // take best
-        const shieldWallMod = Math.max(...adjLargeShieldMods, 0);
-        targetAc += shieldWallMod;
+        const shieldWallAcMod = Math.max(...adjLargeShieldAcs, 0);
+        const shieldWallDrMod = Math.max(...adjLargeShieldDrs, 0);
+        targetAc += shieldWallAcMod;
+        dr += shieldWallDrMod;
       }
 
       // handle effects based on target shield
       shieldBonus = acObj.shield_bonus;
-      if (shieldBonus) {
+      if (shieldBonus) { // TODO min attk roll of 1?
         if (bonusToShields) {
           targetAc -= Math.min(1, shieldBonus);
         }
@@ -1195,6 +1193,9 @@ async function attack(attackers, targetToken, options) {
           targetAc -= shieldBonus;
         }
       }
+
+      // apply dr
+      weapDmgResult = Math.max(1, weapDmgResult - dr);
 
     }
 
@@ -1567,6 +1568,128 @@ async function attack(attackers, targetToken, options) {
 
   return attack(attackers, targetToken, options);
 }
+
+export function setStance(options={}) {
+  let char;
+  try {
+    char = Util.selectedCharacter();
+  } catch(e) {
+    return ui.notifications.error(e.message);
+  }
+  const actor = char.actor;
+
+  const weapons = actor.items.filter(i => i.type === 'item' &&
+    i.data.data.attributes.atk_modes &&
+    (i.data.data.held_left || i.data.data.held_right)
+  );
+  const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+
+  const addChoices = (item, type, choices) => {
+    let buttons = '';
+    const currentChoice = Util.stringMatch(type, "weapon") ? item.data.data.atk_mode : item.data.data.stance;
+    for (const choice of choices) {
+      buttons += `
+        <button id="${item._id}-${choice}" class="stance-button${choice === currentChoice ? ' selected-button' : ''}" data-atk-mode="${choice}">
+          ${formatAtkMode(choice)}
+        </button>
+      `;
+    }
+    const id = `${item._id}-atk-modes`;
+    return `
+      <div id="${item._id}" style="margin-bottom:1em;">
+        <label for="${id}">${item.name}</label>
+        <div id="${id}" style="display:flex;justify-content:center;">` + buttons + `</div>
+      </div>  
+    `;
+  };
+  
+  let content = ``;
+  for (const w of weapons) {
+    const weapAttrs = w.data.data.attributes;
+    const atkModes = weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+    if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
+      return ui.notifications.error(`Invalid attack mode(s) specified for ${w.name}`);
+    }
+    const parryBonus = +weapAttrs.parry_bonus?.value;
+    parryBonus && atkModes.push('parry');
+    content += addChoices(w, "weapon", atkModes);
+  }
+  for (const s of shields) {
+    content += addChoices(s, "shield", ['high','mid','low']);
+  }
+
+  return new Dialog({
+    title: `Set Stance`,
+    content,
+    buttons: {
+      one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: `Submit`,
+        callback: async html => {
+          const addStance = (item, type, updates, chatMsgs) => {
+            if (!["weapon","shield"].includes(type)) return;
+            const $selectedButtons = html.find(`#${item._id} .selected-button`);
+            $selectedButtons.each(function() {
+              const $button = $(this);
+              const atkMode = $button.data("atk-mode");
+              const update = {'_id': item._id};
+              let currentAtkMode = '';
+              if (Util.stringMatch(type, "weapon")) {
+                Object.assign(update, {'data.atk_mode': atkMode});
+                currentAtkMode = item.data.data.atk_mode;
+              } else {
+                Object.assign(update, {'data.stance': atkMode});
+                currentAtkMode = item.data.data.stance;
+              }
+              if (currentAtkMode !== atkMode) {
+                updates.push(update);
+                const choiceDesc = Constant.ATK_MODES[atkMode]?.ATK_FORM || atkMode;
+                chatMsgs.push(() => {
+                  Util.macroChatMessage(char.token, {
+                    content: `${actor.name} takes a ${choiceDesc}${Util.stringMatch(type,"weapon") ? 'ing' : ''} stance with ${item.name}.`,
+                    flavor: `${Util.upperCaseFirst(type)} Stance`,
+                  }, false);
+                });
+              }
+            });
+          }
+          const updates = [];
+          const chatMsgs = [];
+          weapons.forEach(w => addStance(w, 'weapon', updates, chatMsgs)); // TODO one chat msg for each dual wield/attack routine attack?
+          shields.forEach(w => addStance(w, 'shield', updates, chatMsgs));
+          actor.updateEmbeddedDocuments("Item", updates);
+          for (const chatMsg of chatMsgs) {
+            chatMsg();
+            await Util.wait(500);
+          }
+        }
+      },
+      two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "Cancel"
+      }
+    },
+    render: html => {
+      const items = weapons.concat(shields);
+      for (const w of items) {
+        const $buttons = html.find(`#${w._id} .stance-button`);
+        $buttons.click(function() {
+          const $button = $(this);
+          if (!$button.hasClass("selected-button")) {
+            $buttons.removeClass("selected-button");
+            $button.addClass("selected-button");
+          } else {
+            $button.removeClass("selected-button");
+          }
+        });
+      }
+    },
+  }).render(true);
+}
+
+function formatAtkMode(mode) {
+  return Util.upperCaseFirst(mode.replace(/\(/, ' (').replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
+} 
 
 function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
@@ -1986,15 +2109,15 @@ export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime, restD
   }
 }
 
-export async function addRemovedBodyPart(part=null, options={}) {
-  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
+// export async function addRemovedBodyPart(part=null, options={}) {
+//   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
-  const char = Util.selectedCharacter();
-  const actor = char.actor;
+//   const char = Util.selectedCharacter();
+//   const actor = char.actor;
 
-  const removedParts = actor.getFlag("lostlands", "removedParts") || [];
+//   const removedParts = actor.getFlag("lostlands", "removedParts") || [];
 
-}
+// }
 
 export async function addDisease(disease=null, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
