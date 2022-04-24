@@ -49,7 +49,7 @@ export const SHIELD_TYPES = {
   large: {
     coverage: {
       high:"neck,shoulder,chest,arm pit,upper arm,elbow,forearm,hand,gut",
-      mid:"chest,arm pit,upper arm,elbow,forearm,hand,gut,groin,hip", // TODO separate macro for setting stance for held items
+      mid:"chest,arm pit,upper arm,elbow,forearm,hand,gut,groin,hip",
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee",
     },
   },
@@ -677,7 +677,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the calf',
         },
         critical: {
-          text: ' and splits the calf and pierces an artery',
+          text: ' and splits the calf and nicks an artery',
           dmgEffect: minorBleedDesc,
         },
       },
@@ -718,7 +718,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the knee and tears the ligaments',
         },
         critical: {
-          text: ' and pierces an artery',
+          text: ' and nicks an artery',
           dmgEffect: minorBleedDesc,
         },
       },
@@ -761,7 +761,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the thigh',
         },
         critical: {
-          text: ' and penetrates the thigh and pierces an artery',
+          text: ' and penetrates the thigh and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -811,7 +811,7 @@ export const HIT_LOCATIONS = {
           text: ' and tears the hip ligaments',
         },
         gruesome: {
-          text: ' and splits the hip and pierces an artery',
+          text: ' and splits the hip and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -856,7 +856,7 @@ export const HIT_LOCATIONS = {
           text: ' and tears the groin ligament',
         },
         critical: {
-          text: ' and penetrates the inner thigh and pierces an artery',
+          text: ' and penetrates the inner thigh and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -904,7 +904,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: bowelBleedDesc,
         },
         critical: {
-          text: ' and penetrates the bowels and pierces an artery',
+          text: ' and penetrates the bowels and nicks an artery',
           fatal: true,
           dmgEffect: internalBleedDesc,
         },
@@ -1043,7 +1043,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the shoulder and tears the ligaments',
         },
         critical: {
-          text: ' and pierces an artery',
+          text: ' and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -1085,7 +1085,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the biceps',
         },
         critical: {
-          text: ' pierces an artery',
+          text: ' nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -1126,7 +1126,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the elbow and tears the ligaments',
         },
         critical: {
-          text: ' and pierces an artery',
+          text: ' and nicks an artery',
           dmgEffect: minorBleedDesc,
         },
       },
@@ -1169,7 +1169,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the forearm',
         },
         critical: {
-          text: ' and splits the forearm and pierces an artery',
+          text: ' and splits the forearm and nicks an artery',
           dmgEffect: minorBleedDesc,
         },
       },
@@ -1253,7 +1253,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the neck',
         },
         critical: {
-          text: ' and pierces the jugular vein',
+          text: ' and nicks the jugular vein',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -1304,7 +1304,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the brain and pierces the back of the skull',
+          text: ' and penetrates the brain and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1360,7 +1360,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the brain and pierces the back of the skull',
+          text: ' and penetrates the brain and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1416,7 +1416,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the brain and pierces the back of the skull',
+          text: ' and penetrates the brain and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
