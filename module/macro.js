@@ -279,7 +279,7 @@ export async function useChargedItem(itemId, options={}) {
   if (!charges) return ui.notifications.error(`${item.name} has no charges remaining`);
 
   if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
-    const field = {label: 'Charges used?', key: 'numChargesUsed'};
+    const field = {label: 'Charges used', key: 'numChargesUsed'};
     return modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
   }
 
@@ -470,7 +470,7 @@ async function save(tokens, damage, options={}) {
   }
   const modDialogFlavor = options.flavor || 'Saving Throw';
   if (options.showModDialog && !options.shownModDialog) {
-    const field = {label: 'Save modifiers?', key: 'dialogMod'};
+    const field = {label: 'Save modifiers', key: 'dialogMod'};
     return modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
   }
   const actorSaveMod = +actor.data.data.sv_mod || 0;
@@ -954,9 +954,9 @@ async function attack(attackers, targetToken, options) {
   // mod dialog
   if ( options.showModDialog && !options.shownModDialog ) {
     const fields = [
-      {label: 'Attack modifiers?', key: 'dialogAtkMod'}
+      {label: 'To-hit modifiers', key: 'dialogAtkMod'}
     ];
-    if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers?', key: 'dialogDmgMod'});
+    if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers', key: 'dialogDmgMod', placeholder: 'e.g. x2, +3d6'});
     return modDialog(options, 'Attack', fields, () => attack(attackers, targetToken, options));
   }
   let dialogAtkMod = {}, dialogDmgMod = {};
@@ -1645,8 +1645,8 @@ export function setStance(options={}) {
                 const choiceDesc = Constant.ATK_MODES[atkMode]?.ATK_FORM || atkMode;
                 chatMsgs.push(() => {
                   Util.macroChatMessage(char.token, {
-                    content: `${actor.name} takes a ${choiceDesc}${Util.stringMatch(type,"weapon") ? 'ing' : ''} stance with ${item.name}.`,
-                    flavor: `${Util.upperCaseFirst(type)} Stance`,
+                    content: `${actor.name} takes a ${choiceDesc}${Util.stringMatch(type,"weapon") ? 'ing stance' : ' guard'} with ${item.name}.`,
+                    flavor: `Set Stance`,
                   }, false);
                 });
               }
@@ -1721,17 +1721,17 @@ function altDialog(options, title, buttons) {
   }
 }
 
-function modDialog(options, title, fields=[{label:'', key:''}], callback) {
+function modDialog(options, title, fields=[{label:'', key:'', placeholder:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {
     formFields += `<div class="form-group">
                     <label>${field.label}</label>
-                    <input type="text" id="${field.key}" placeholder="e.g. -4, 2d6">
+                    <input type="text" id="${field.key}" placeholder="${field.placeholder || 'e.g. +2, -4'}">
                   </div>`;
   });
   const content = `<form>${formFields}</form>`;
   new Dialog({
-    title,
+    title: title + ' Modifiers',
     content,
     buttons: {
       '1': {
@@ -1782,7 +1782,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
   if ( options.override === true || !attitude || targetLevel > attitudeObj.lvl ) {
     if ( options.showModDialog && !options.shownModDialog ) {
       const fields = [
-        {label: `${flavor} modifiers?`, key: 'dialogMod'}
+        {label: `${flavor} modifiers`, key: 'dialogMod'}
       ];
       return modDialog(options, flavor, fields, () => reactionRoll(reactingActor, targetActor, options));
     }
