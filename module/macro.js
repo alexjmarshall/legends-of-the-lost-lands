@@ -1088,7 +1088,7 @@ async function attack(attackers, targetToken, options) {
     dialogAtk = `${!dialogAtkMod.includesSign ? `+` : ''}${dialogAtkMod.formula}`;
     totalAtk = /^[\*|\/]/.test(dialogAtk) ? `(${totalAtk})${dialogAtk}` : `${totalAtk}${dialogAtk}`;
   }
-  let totalAtkResult = await Util.rollDice(totalAtk);
+  let totalAtkResult = Math.max(1, await Util.rollDice(totalAtk));
   const hitSound = weapon.hitSound || weapAttrs.hit_sound?.value || Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = weapon.missSound || weapAttrs.miss_sound?.value || Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let hitDesc = '';
@@ -1270,7 +1270,7 @@ async function attack(attackers, targetToken, options) {
 
       // impale
       // steel plate cannot be impaled
-      const isImpale = !immuneImpale && Util.stringMatch(dmgType, 'piercing') && rolledWeapDmg === maxWeapDmg && weapDmgResult > 1;
+      const isImpale = !immuneImpale && Util.stringMatch(dmgType, 'piercing') && rolledWeapDmg === maxWeapDmg;
       if (isImpale) {
         let stuck = false;
         const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
@@ -1481,7 +1481,7 @@ async function attack(attackers, targetToken, options) {
     dialogDmg = `${!dialogDmgMod.includesSign ? `+` : ''}${dialogDmgMod.formula}`;
     totalDmg = /^[\*|\/]/.test(dialogDmg) ? `(${totalDmg})${dialogDmg}` : `${totalDmg}${dialogDmg}`;
   }
-  let totalDmgResult = await Util.rollDice(totalDmg);
+  let totalDmgResult = Math.max(1, await Util.rollDice(totalDmg));
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage`;
     
   const injury = (Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"blunt") ? injuryObj['light'] :
