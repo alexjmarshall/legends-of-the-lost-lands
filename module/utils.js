@@ -88,10 +88,11 @@ export function chatBubble(token, text, emote=true) {
 export async function macroChatMessage(tokenOrActor, {content, type, flavor, sound}, chatBubble=true) {
   if (!content) return;
   const token = getTokenFromActor(tokenOrActor) || tokenOrActor;
-  const speaker = token ? {
-    alias: token.name,
-  } :
-    ChatMessage.getSpeaker();
+  let speaker = ChatMessage.getSpeaker();
+  if (speaker.alias !== token.name) {
+    speaker = {alias: token.name};
+  }
+    
   type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
   content = content.trim();
