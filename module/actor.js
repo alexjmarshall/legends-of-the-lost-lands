@@ -165,7 +165,7 @@ export class SimpleActor extends Actor {
         }
       }
 
-      // ac and dr for every body location
+      // ac and dr by body location for characters and humanoids
       if ( type === 'character' || attributes.type?.value === 'humanoid' ) {
         for (const dmgType of Constant.DMG_TYPES) {
           ac.total[dmgType] = {
@@ -213,9 +213,8 @@ export class SimpleActor extends Actor {
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
             const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus;
-            // max armor dr is 2
-            const armorDr = Math.min(2, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus);
-            const locDr = armorDr + unarmoredDr;
+            // max dr is 2
+            const locDr = Math.min(2, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus + unarmoredDr);
 
             ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
