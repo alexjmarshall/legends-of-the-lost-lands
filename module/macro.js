@@ -1160,7 +1160,6 @@ async function attack(attackers, targetToken, options) {
 
       dr = acObj.dr ?? dr;
 
-      resultText += `${hitLoc ? ` at the ${hitLoc}` : ''}`; // of ${targetActor.name}` : ` ${targetActor.name}`}
       // shield mods
       // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
       const largeShieldLocs = [...new Set(Object.values(Constant.SHIELD_TYPES.large.coverage).map(v => Util.getArrFromCSL(v)).flat())];
@@ -1198,7 +1197,8 @@ async function attack(attackers, targetToken, options) {
 
     }
 
-    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc}/DR ${dr})`;
+    resultText += ` at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``}`;
+    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
       totalAtkResult = targetAc;
@@ -1218,7 +1218,7 @@ async function attack(attackers, targetToken, options) {
       // avoids bulky armor/shield
       if (isCriticalHit) {
         sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.bulky?.value && !i.data.data.attributes.shield?.value);
-        hitDesc = ' and strikes a weak spot';
+        hitDesc += ` and hits a vulnerable spot`;
       }
 
       // lucky hits
@@ -1226,7 +1226,7 @@ async function attack(attackers, targetToken, options) {
 
       if (isLuckyHit) {
         const armor = sortedWornArmors[0];
-        const isSteelPlate = Util.stringMatch(!!armor?.data.data.attributes.material?.value, 'steel plate');
+        const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
         const isBulky = !!armor?.data.data.attributes.bulky?.value;
         const isShield = !!armor?.data.data.attributes.shield?.value;
 
@@ -1245,7 +1245,7 @@ async function attack(attackers, targetToken, options) {
         } else {
           rolledWeapDmg = maxWeapDmg;
           weapDmgResult = Math.max(1, maxWeapDmg - dr);
-          hitDesc += isCriticalHit ? ' brutally hard' : ' and hits brutally hard';
+          hitDesc = isCriticalHit ? hitDesc + ' brutally hard' : hitDesc + ' and hits brutally hard';
         }
 
         // steel plate can't be fully bypassed by lucky hits
@@ -1262,7 +1262,7 @@ async function attack(attackers, targetToken, options) {
       const knockdownChance = knockDownMulti * 2 * (knockdownDamage + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !immuneKnockdown && !invalidKnockdownAreas.includes(coverageArea) && !isProne && Util.stringMatch(atkForm, 'swing') && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
-        dmgEffect += knockdownDamage > 9 ? knockbackDesc : knockdownDesc;
+        dmgEffect += knockdownDamage > 9 && Util.stringMatch(dmgType,"blunt") ? knockbackDesc : knockdownDesc;
         // remove any other weapons
         while (weapons.length) weapons.shift();
         // add prone condition manually
@@ -1388,9 +1388,9 @@ async function attack(attackers, targetToken, options) {
       const plateArmor = sortedWornArmors.find(i => i.data.data.attributes.material?.value.includes('plate'));
       if ( applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') || applyArmor(plateArmor) && Util.stringMatch(dmgType, 'piercing') ) {
         dmgType = 'blunt';
-        if (/hits$/.test(hitDesc)) {
-          const bluntingArmor = plateArmor || metalArmor;
-          hitDesc += ` but fails to penetrate ${bluntingArmor.name}`;
+        const bluntingArmor = plateArmor || metalArmor;
+        if (bluntingArmor.name && !resultText.includes(`${bluntingArmor.name}`)) {
+          hitDesc +=` but fails to penetrate ${bluntingArmor.name}`;
         }
       }
 
@@ -1421,6 +1421,9 @@ async function attack(attackers, targetToken, options) {
       // determine miss desc
       if (isParrying && totalAtkResult < unarmoredAc + (2*targetParryBonus) + dexMod) {
         missDesc = parryDesc;
+        if (parryItem && parryItem.data.data.attributes.fragile?.value && await Util.rollDice('d100') <= 5) {
+          missDesc += ` and ${parryItem.name} breaks!`;
+        }
       } else if (totalAtkResult < unarmoredAc - dexMod) {
         missDesc = ` but misses entirely`;
       } else if (totalAtkResult < unarmoredAc) {
@@ -1431,23 +1434,31 @@ async function attack(attackers, targetToken, options) {
         }
       } else if (totalAtkResult < unarmoredAc + targetParryBonus) {
         missDesc = parryDesc;
+        if (parryItem && fragile && await Util.rollDice('d100') <= 5) {
+          missDesc += ` and ${weapon.name} breaks!`;
+        }
       } else {
         const hide = targetActor.data.data.attributes.hide?.value;
         let deflectingArmorName = deflectingArmor?.name;
         let hideBonus = 0;
         if (Constant.ARMOR_VS_DMG_TYPE[hide] && !deflectingArmorName && coverageArea !== 'eye') {
-          const hideDesc = Util.stringMatch(hide,'leather') || Util.stringMatch(hide, 'scale') ? `${hide}y` : `${hide}`;
-          deflectingArmorName = ` its ${hideDesc} hide`;
+          const hideDesc = Util.stringMatch(hide,'leather') ? `${hide}y` : Util.stringMatch(hide, 'scale') ? `${hide.replace('e','')}y` : `${hide}`;
+          deflectingArmorName = ` the ${hideDesc} hide`;
           hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
         }
         missDesc = ` ${deflectingArmorName ? 
          ` but the ${isShooting ? 'missile' : 'blow'} is deflected by ${deflectingArmorName}` : 
          ' but misses'}`;
+        if ( (deflectingArmor?.data.data.attributes.metal?.value || Util.stringMatch(deflectingArmor?.data.data.attributes.material?.value, "wood")) &&
+          fragile && await Util.rollDice('d100') <= 5) {
+          missDesc += ` and ${weapon.name} breaks!`;
+        }
       }
 
       // fumbles
       const fumbleChance = unwieldy ? Math.ceil(1.5 * (targetAc - totalAtkResult)) : targetAc - totalAtkResult;
       if (!immuneFumbles && await Util.rollDice('d100') <= fumbleChance) {
+        attacker.followAttack = false;
         const heldItems = attackingActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
         const adjTargets = adjTokens(token);
         const selectRandom = (arr) => {
@@ -1458,7 +1469,6 @@ async function attack(attackers, targetToken, options) {
           ` and${isParrying ? ` ${attackingActor.name}` : ''} slips and falls`, 
           ` and${isParrying ? ` ${attackingActor.name}` : ''} stumbles, leaving them open to attack`,
         ];
-        fragile && fumbles.push(` and ${weapName} breaks!`);
         unwieldy && fumbles.push(` and${isParrying ? ` ${attackingActor.name}` : ''} hits themselves instead!`);
         heldItems.length && fumbles.push(` and${isParrying ? ` ${attackingActor.name}` : ''} drops ${selectRandom(heldItems)?.name}`)
         Util.stringMatch(atkType,'melee') && adjTargets.length && fumbles.push(` and${isParrying ? ` ${attackingActor.name}` : ''} strikes ${selectRandom(adjTargets)?.name} instead!`);
@@ -1482,7 +1492,7 @@ async function attack(attackers, targetToken, options) {
     totalDmg = /^[\*|\/]/.test(dialogDmg) ? `(${totalDmg})${dialogDmg}` : `${totalDmg}${dialogDmg}`;
   }
   let totalDmgResult = Math.max(1, await Util.rollDice(totalDmg));
-  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage`;
+  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage${dr ? ` (DR ${dr})`:''}`;
     
   const injury = (Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"blunt") ? injuryObj['light'] :
     totalDmgResult > 9 && !!injuryObj['gruesome'] ? injuryObj['gruesome'] :
@@ -1509,9 +1519,9 @@ async function attack(attackers, targetToken, options) {
   if (isHit) {
     resultText += dmgText;
 
-    if (totalDmgResult < 2 && targetHp > 0) {
-      resultText = resultText.replace('hits', 'grazes');
-    }
+    // if (totalDmgResult < 2 && targetHp > 0) {
+    //   resultText = resultText.replace('hits', 'grazes');
+    // }
 // TODO aim for individual loc with penalty by size. -3 every halving -- size based on appropriate table for attack mode
 // use swing high/low tables, but only when prone or mounted?
 // touch attack macro for grapples/hooks etc.
@@ -1522,6 +1532,8 @@ async function attack(attackers, targetToken, options) {
 // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced
     if (sumDmg > targetHp) {
       resultText += injury.text || '';
+
+      if (/!$/.test(resultText)) dmgEffect = '';
       
       if (targetHp > 0) while (weapons.length) weapons.shift();
   
@@ -1534,6 +1546,9 @@ async function attack(attackers, targetToken, options) {
       }
 
       dmgEffect = dmgEffect.replace(injury.dmgEffect,'') + (injury.dmgEffect || '');
+      // if (injury.removal && /wound!$/.test(dmgEffect)) {
+      //   dmgEffect = dmgEffect.replace(/wound!$/, 'stump!');
+      // }
     }
 
     // remove bleed effects if target is dead TODO mortal wounds require save v. death after battle
@@ -1546,7 +1561,9 @@ async function attack(attackers, targetToken, options) {
       knockDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
     }
 
-    resultText += dmgEffect?.replace('them', targetActor?.name) || '';
+    if (dmgEffect) {
+      resultText += dmgEffect;//?.replace('them', targetActor?.name) || '';
+    }
 
   }
 
@@ -1561,7 +1578,7 @@ async function attack(attackers, targetToken, options) {
   
   chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName} ${formatAtkMode(atkMode) || atkForm}${rangeText}, `; //, ${Constant.ATK_MODES[atkMode]?.DMG_TYPE || dmgType}
   chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackingActor.name} ${pluralizeWeapName(weapName)}${targetActor ? ` ${targetActor.name}` : ''}<br>` :
-    `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}<br>`;
+    `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}.<br>`;
 
   weapons.shift();
 
