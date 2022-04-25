@@ -42,7 +42,7 @@ export class SimpleItem extends Item {
     }
 
     // AC mods
-    // TODO how to handle non-armor magic AC items?
+    // TODO how to handle non-armor magic AC items? e.g. cloak of protection
     const material = String(itemData.attributes.material?.value).toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material];
     const materialProps = Constant.MATERIAL_PROPS[material];
@@ -102,9 +102,15 @@ export class SimpleItem extends Item {
 
     // armor/clothing warmth, weight and max Dex mod
     if (materialProps && locations.length) {
-      // weight -- use swing weightings (index 0) if worn, otherwise thrust weightings (index 1)
+      // use swing weightings (index 0) if item is worn, otherwise thrust weightings (index 1)
+      //  unless shield, in which case use the opposite
       const isWorn = !!itemData.worn;
-      const weightingsIndex = isWorn ? 0 : 1;
+      let weightingsIndex = 1; 
+      if (isShield) {
+        weightingsIndex = isWorn ? 1 : 0;
+      } else {
+        weightingsIndex = isWorn ? 0 : 1;
+      }
       const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);
       let weight = Math.round(materialProps.weight * totalLocationWeight) / 100;
       // if magic item, halve weight
