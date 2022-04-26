@@ -88,9 +88,14 @@ export class SimpleActorSheet extends ActorSheet {
     const armors = {};
     const hitLocations = Object.keys(Constant.HIT_LOCATIONS).reverse();
     for (const hitLoc of hitLocations) {   
-      const sortedArmorsArr = ac[hitLoc]?.sorted_armor_ids?.map(id => data.items?.find(i => i._id === id)?.name) || [];
+      const sortedArmors = Object.fromEntries(ac[hitLoc]?.sorted_armor_ids?.map((id,ind) => [ind, data.items?.find(i => i._id === id)?.name]) || []);
+      if (!Object.entries(sortedArmors).length) {
+        Object.assign(sortedArmors, {0: '(none)'});
+      }
+      const sortedArmorsLastInd = Object.entries(sortedArmors).length - 1;
       armors[hitLoc] = {
-        sortedArmors: sortedArmorsArr.join(" > ") || '(none)',
+        sortedArmors,
+        sortedArmorsLastInd,
         acDr: {
           b:`${ac[hitLoc]?.["blunt"].ac} / ${ac[hitLoc]?.["blunt"].dr}`,
           p:`${ac[hitLoc]?.["piercing"].ac} / ${ac[hitLoc]?.["piercing"].dr}`,
