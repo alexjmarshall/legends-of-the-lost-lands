@@ -42,6 +42,10 @@ export class SimpleActorSheet extends ActorSheet {
     context.equipment = this.sortEquipmentByType(items);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
+    // sort armors
+    context.armors = this.getArmorsByLocation(context.data);
+    context.hasArmors = Object.values(context.armors).flat().length > 0;
+
     // sort spells
     const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
     context.spells = this.sortSpellsByType(spells, context.data.data.attributes);
@@ -77,6 +81,25 @@ export class SimpleActorSheet extends ActorSheet {
     }
     
     return context;
+  }
+
+  getArmorsByLocation(data) {
+    const ac = data.data.ac || {};
+    const armors = {};
+    const hitLocations = Object.keys(Constant.HIT_LOCATIONS).reverse();
+    for (const hitLoc of hitLocations) {   
+      const sortedArmorsArr = ac[hitLoc]?.sorted_armor_ids?.map(id => data.items?.find(i => i._id === id)?.name) || [];
+      armors[hitLoc] = {
+        sortedArmors: sortedArmorsArr.join(" > ") || '(none)',
+        acDr: {
+          b:`${ac[hitLoc]?.["blunt"].ac} / ${ac[hitLoc]?.["blunt"].dr}`,
+          p:`${ac[hitLoc]?.["piercing"].ac} / ${ac[hitLoc]?.["piercing"].dr}`,
+          s:`${ac[hitLoc]?.["slashing"].ac} / ${ac[hitLoc]?.["slashing"].dr}`,
+        },
+      }
+    }
+
+    return armors;
   }
 
   getFatigueData(data) {
@@ -372,7 +395,7 @@ export class SimpleActorSheet extends ActorSheet {
       return ui.notifications.error("Cannot prepare any more spells of this level");
     }
     if (!isPrepared) {
-      Util.macroChatMessage(this, { content: `${this.actor.name} prepares ${item.name}.` });
+      Util.macroChatMessage(this.actor, { flavor: 'Spell Preparation', content: `${this.actor.name} prepares ${item.name}.` });
     }
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.prepared": !isPrepared}]);
   }
@@ -432,7 +455,7 @@ export class SimpleActorSheet extends ActorSheet {
     }
     
     let verb = isWorn ? 'doffs' : 'dons';
-    Util.macroChatMessage(this, { content: `${this.actor.name} ${verb} ${item.name}.` });
+    Util.macroChatMessage(this.actor, { flavor: 'Wear Item', content: `${this.actor.name} ${verb} ${item.name}.` });
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.worn": !isWorn}]);
   }
 
@@ -515,7 +538,7 @@ export class SimpleActorSheet extends ActorSheet {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        Util.macroChatMessage(this, { content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
+        Util.macroChatMessage(this.actor, { flavor: 'Hold Item', content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
       }
     }
     return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);

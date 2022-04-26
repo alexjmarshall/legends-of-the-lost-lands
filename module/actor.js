@@ -197,13 +197,16 @@ export class SimpleActor extends Actor {
           const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
           ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
 
+          
+          // piercing is the basis for sorted armor Ids
+          let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac["piercing"]?.ac || 0) - (+a.data.data.ac["piercing"]?.ac || 0))
+            .map(i => i._id);
+          if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
+          if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
+          ac[k].sorted_armor_ids = sorted_armor_ids;
+          
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac[dmgType]?.ac || 0) - (+a.data.data.ac[dmgType]?.ac || 0))
-              .map(i => i._id);
-            if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
-            if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
-
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
             // no shield dr vs. piercing on forearm or hand
             const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
@@ -216,7 +219,7 @@ export class SimpleActor extends Actor {
             // max dr is 2
             const locDr = Math.min(2, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus + unarmoredDr);
 
-            ac[k][dmgType] = { ac: locAc, dr: locDr, sorted_armor_ids, shield_bonus: shieldAcBonus };
+            ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
             ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
           }

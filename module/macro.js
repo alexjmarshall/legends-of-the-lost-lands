@@ -1156,7 +1156,7 @@ async function attack(attackers, targetToken, options) {
       coverageArea = hitLoc.replace('right ', '').replace('left ', '');
       const acObj = targetRollData.ac[coverageArea][dmgType] || {};
       targetAc = acObj.ac ?? targetAc;
-      sortedWornArmors = acObj.sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
+      sortedWornArmors = targetRollData.ac[coverageArea].sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
 
       dr = acObj.dr ?? dr;
 
@@ -1262,7 +1262,7 @@ async function attack(attackers, targetToken, options) {
       const knockdownChance = knockDownMulti * 2 * (knockdownDamage + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !immuneKnockdown && !invalidKnockdownAreas.includes(coverageArea) && !isProne && Util.stringMatch(atkForm, 'swing') && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
-        dmgEffect += knockdownDamage > 9 && Util.stringMatch(dmgType,"blunt") ? knockbackDesc : knockdownDesc;
+        dmgEffect += knockdownDamage > 9 ? knockbackDesc : knockdownDesc;
         // remove any other weapons
         while (weapons.length) weapons.shift();
         // add prone condition manually
@@ -1389,9 +1389,7 @@ async function attack(attackers, targetToken, options) {
       if ( applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') || applyArmor(plateArmor) && Util.stringMatch(dmgType, 'piercing') ) {
         dmgType = 'blunt';
         const bluntingArmor = plateArmor || metalArmor;
-        if (bluntingArmor.name && !resultText.includes(`${bluntingArmor.name}`)) {
-          hitDesc +=` but fails to penetrate ${bluntingArmor.name}`;
-        }
+        hitDesc = hitDesc.replace(`${bluntingArmor.name}`,'') + ` but fails to penetrate ${bluntingArmor.name}`;
       }
 
       dmgType = Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"slashing") ? "piercing" : dmgType;
@@ -1447,7 +1445,7 @@ async function attack(attackers, targetToken, options) {
           hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
         }
         missDesc = ` ${deflectingArmorName ? 
-         ` but the ${isShooting ? 'missile' : 'blow'} is deflected by ${deflectingArmorName}` : 
+         ` but the ${isShooting ? 'missile' : 'blow'} glances off ${deflectingArmorName}` : 
          ' but misses'}`;
         if ( (deflectingArmor?.data.data.attributes.metal?.value || Util.stringMatch(deflectingArmor?.data.data.attributes.material?.value, "wood")) &&
           fragile && await Util.rollDice('d100') <= 5) {
@@ -1561,8 +1559,13 @@ async function attack(attackers, targetToken, options) {
       knockDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
     }
 
+    // no bleeding effects if weapon is stuck
+    if (dmgEffect.includes(weaponStuckDesc)) {
+        Constant.bleedDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
+      }
+
     if (dmgEffect) {
-      resultText += dmgEffect;//?.replace('them', targetActor?.name) || '';
+      resultText += dmgEffect.replace('them', targetActor?.name) || '';
     }
 
   }
