@@ -71,7 +71,7 @@
 .lostlands .properties {
   display: flex;
   width: 100%;
-  justify-content: space-around;
+  justify-content: center;
 }
 .lostlands .property {
   text-align: center;
@@ -91,7 +91,7 @@
   padding: 2px 5px;
 }
 .lostlands .property-field-ac {
-  margin-right: 6px;
+  margin-right: 5px;
 }
 .lostlands .container-resource,
 .lostlands .merchant-resource {
@@ -152,10 +152,11 @@
 .lostlands .items .item-price-column {
   flex: 0 0 125px;
 }
+.lostlands .item-list li {
+  padding: 6px 0;
+}
 .lostlands .item-list .item {
   min-height: 30px;
-  line-height: 24px;
-  padding: 3px 0;
   border-bottom: 1px solid #BBB;
   align-items: stretch;
 }
@@ -259,7 +260,8 @@
 }
 .lostlands .items-header,
 .lostlands .spells-header,
-.lostlands .features-header {
+.lostlands .features-header,
+.lostlands .armors-header {
   z-index: 99999;
   top: 0;
   left: 0;
@@ -417,4 +419,25 @@
 .dialog-content .selected-button {
   /* background: rgba(255, 255, 240, 0.8); */
   background: rgba(0, 0, 0, 0.1);
+}
+.lostlands .armors .armors-list {
+  list-style: none;
+  margin: 5px 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.lostlands .armors-list h4 {
+  margin-bottom: 0;
+}
+.lostlands .armors-list li {
+  padding: 6px 0;
+  margin: 0 3px;
+  min-height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #AAA;
+}
+.text-center {
+  text-align: center;
 }

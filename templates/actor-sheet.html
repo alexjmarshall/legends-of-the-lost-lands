@@ -25,7 +25,7 @@
             </div>
             <div class="properties">
                 <div class="property">
-                    <label class="property-label">Summary AC / DR</label>
+                    <label class="property-label">Summary  AC / DR</label>
                     <label class="left-label">B</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
                     <label class="left-label">P</label>
@@ -33,6 +33,12 @@
                     <label class="left-label">S</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
                 </div>
+                {{#if systemData.ac.touch_ac}}
+                <div class="property">
+                    <label class="property-label">TAC</label>
+                    <span class="property-field">{{systemData.ac.touch_ac}}</span>
+                </div>
+                {{/if}}
                 {{#if systemData.ac.mr}}
                 <div class="property">
                     <label class="property-label">MR</label>
@@ -60,13 +66,16 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Description</a>
-        <a class="item" data-tab="items">Items</a>
+        <a class="item" data-tab="description">{{#if isCharacter}}Biography{{else}}Description{{/if}}</a>
+        <a class="item" data-tab="items">{{#if isCharacter}}Equipment{{else}}Items{{/if}}</a>
+        {{#if hasArmors}}
+        <a class="item" data-tab="armors">Armor</a>
+        {{/if}}
         {{#if hasSpells}}
         <a class="item" data-tab="spells">Spells</a>
         {{/if}}
         {{#if hasFeatures}}
-        <a class="item" data-tab="features">Features</a>
+        <a class="item" data-tab="features">{{#if isCharacter}}Skills{{else}}Features{{/if}}</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
         {{#if isCharacter}}
@@ -156,6 +165,28 @@
                 <div class="item-column"><label class="label">Total:</label><span>{{systemData.enc}}</span></div>
                 <span style="max-width:82px;"></span> 
             </div>
+        </div>
+
+        {{!-- Armors Tab --}}
+        <div class="tab armors" data-group="primary" data-tab="armors">
+            <header class="armors-header sticky flexrow">
+                <span class="flex1">Hit Location</span>
+                <span class="flex3">Armor Layers</span>
+                <span class="flex2 text-center">AC / DR</span>
+            </header>
+            <ol class="armors-list">
+                {{#each armors as |loc key|}}
+                <li class="flexrow">
+                    <h4 class="flex1">{{key}}</h4>
+                    <span class="flex3">{{loc.sortedArmors}}</span>
+                    <span class="flex2 text-center">
+                        B<span class="property-field property-field-ac">{{loc.acDr.b}}</span> 
+                        P<span class="property-field property-field-ac">{{loc.acDr.p}}</span> 
+                        S<span class="property-field property-field-ac">{{loc.acDr.s}}</span>
+                    </span>
+                </li>
+                {{/each}}
+            </ol>
         </div>
 
         {{!-- Owned Spells Tab --}}
