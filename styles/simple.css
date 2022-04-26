@@ -71,7 +71,7 @@
 .lostlands .properties {
   display: flex;
   width: 100%;
-  justify-content: center;
+  justify-content: space-evenly;
 }
 .lostlands .property {
   text-align: center;
