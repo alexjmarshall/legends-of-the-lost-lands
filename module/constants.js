@@ -48,14 +48,14 @@ export const DMG_TYPES = ["blunt", "piercing", "slashing"];
 export const SHIELD_TYPES = {
   large: {
     coverage: {
-      high:"neck,shoulder,chest,arm pit,upper arm,elbow,forearm,hand,gut",
-      mid:"chest,arm pit,upper arm,elbow,forearm,hand,gut,groin,hip",
+      high:"neck,shoulder,chest,armpit,upper arm,elbow,forearm,hand,gut",
+      mid:"chest,armpit,upper arm,elbow,forearm,hand,gut,groin,hip",
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee",
     },
   },
   medium: {
     coverage: {
-      high:"neck,arm pit,upper arm,chest,forearm,hand",
+      high:"neck,armpit,upper arm,chest,forearm,hand",
       mid:"chest,gut,elbow,forearm,hand",
       low:"elbow,forearm,hand,gut,groin,hip",
     },
@@ -682,7 +682,7 @@ export const HIT_LOCATIONS = {
         },
         gruesome: {
           text: ' and shatters the tibia',
-          dmgEffect: majorBleedDesc,
+          dmgEffect: weaponStuckDesc,
         },
       },
       slashing: {
@@ -764,17 +764,17 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the thigh',
+          text: ' and splits the thigh muscle',
         },
         serious: {
           text: ' and cuts a nerve in the thigh muscle',
         },
         critical: {
-          text: ' and splits the thigh and nicks an artery',
+          text: ' and penetrates the thigh muscle and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
         gruesome: {
-          text: ' and splits the thigh muscle and shatters the femur',
+          text: ' and penetrates the thigh muscle and shatters the femur',
           dmgEffect: internalBleedDesc,
         },
       },
@@ -874,7 +874,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the inner thigh and tears a ligament',
         },
         critical: {
-          text: ' and splits the inner thigh and nicks an artery',
+          text: ' and penetrates the inner thigh and nicks an artery',
           dmgEffect: majorBleedDesc,
         },
       },
@@ -915,7 +915,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the abdomen',
+          text: ' and penetrates the abdomen',
         },
         serious: {
           text: ' and lacerates the bowels',
