@@ -24,8 +24,8 @@
                 {{/if}}
             </div>
             <div class="properties">
-                <div class="property">
-                    <label class="property-label">Summary  AC / DR</label>
+                <div class="property" style="max-width:200px;">
+                    <label class="property-label">Summary AC / DR</label>
                     <label class="left-label">B</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
                     <label class="left-label">P</label>
@@ -178,7 +178,15 @@
                 {{#each armors as |loc key|}}
                 <li class="flexrow">
                     <h4 class="flex1">{{key}}</h4>
-                    <span class="flex3">{{loc.sortedArmors}}</span>
+                    <span class="flex3">
+                        {{#each loc.sortedArmors as |armor ind|}}
+                        <span> {{armor}} </span>
+                        {{#ifeq ind loc.sortedArmorsLastInd}}
+                        {{else}}
+                        <i class="fas fa-angle-right"></i>
+                        {{/ifeq}}
+                        {{/each}}
+                    </span>
                     <span class="flex2 text-center">
                         B<span class="property-field property-field-ac">{{loc.acDr.b}}</span> 
                         P<span class="property-field property-field-ac">{{loc.acDr.p}}</span> 
