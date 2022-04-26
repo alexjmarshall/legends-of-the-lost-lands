@@ -1401,14 +1401,18 @@ async function attack(attackers, targetToken, options) {
       if (armorUpdates.length) await targetActor.updateEmbeddedDocuments("Item", armorUpdates);
 
     } else {
-      const deflectingArmor = totalAtkResult >= unarmoredAc + shieldBonus ? sortedWornArmors.find(i => !i.data.data.attributes.shield?.value) : sortedWornArmors[0];
-      
+      const deflectingArmor = sortedWornArmors[0];
       const targetHeldItems = targetActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
       let parryItem = targetActor.items.get(parry?.parry_item_id);
       if (!parryItem && targetHeldItems.length) {
         parryItem = targetHeldItems.reduce((a,b) => (+b.data.data.attributes.parry_bonus?.value || 0) > (+a.data.data.attributes.parry_bonus?.value || 0) ? b : a);
+        // use shield if higher parry bonus
+        if (!!deflectingArmor?.data.data.attributes.shield?.value && 
+          +deflectingArmor.data.data.attributes.base_ac?.value > +parryItem?.data.data.attributes.parry_bonus?.value) {
+            parryItem = deflectingArmor;
+        }
       }
-      let targetParryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || 0;
+      let targetParryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || +parryItem?.data.data.attributes.base_ac?.value || 0;
       let dexMod= Math.min(+targetRollData.dex_mod, +targetRollData.ac.max_dex_mod || 0);
       const isShooting = Util.stringMatch(atkForm,"shoot");
       if ( targetHp <= 0 || isShooting ) { // TODO also have to prevent this if defender is helpless/held/unconscious -- should standardize status conditions
