@@ -244,20 +244,7 @@
   background: transparent;
   border: none;
 }
-.lostlands .attributes-header {
-  position: sticky;
-  z-index: 99999;
-  top: 0;
-  left: 0;
-  align-items: center;
-  padding: 2px 5px;
-  background: #cfcdc2;
-  border: 1px solid #AAA;
-  border-radius: 2px;
-  text-align: left;
-  font-weight: bold;
-  line-height: 28px;
-}
+.lostlands .attributes-header,
 .lostlands .items-header,
 .lostlands .spells-header,
 .lostlands .features-header,
@@ -272,7 +259,7 @@
   border-radius: 2px;
   text-align: left;
   font-weight: bold;
-  line-height: 28px;
+  min-height: 35px;
 }
 .lostlands .sticky {
   position: sticky;
@@ -438,6 +425,18 @@
   border-radius: 0;
   border-bottom: 1px solid #AAA;
 }
-.text-center {
+.lostlands .text-center {
   text-align: center;
+}
+.lostlands .flex4 {
+  flex: 4;
+}
+.lostlands .flex5 {
+  flex: 5;
+}
+.lostlands .flex6 {
+  flex: 6;
+}
+.lostlands .flex7 {
+  flex: 7;
 }
