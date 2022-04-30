@@ -105,6 +105,10 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
   return ChatMessage.create({speaker, content, type, flavor, sound}, {chatBubble});
 }
 
+export function replacePunc(str) {
+  return str.replace(/!\s*$|\.\s*$/, '');
+}
+
 export function getTokenFromActor(actor) {
   const token = actor?.isToken ? actor.token.data :
     canvas.tokens?.objects?.children.find(t => t.actor._id === actor?._id && t.name == actor?.name);
@@ -117,6 +121,10 @@ export function getArrFromCSL(list) {
   } else {
     throw new Error("Input list not a string.");
   }
+}
+
+export function clamp(num, min, max) {
+  return Math.min(Math.max(num, min), max);
 }
 
 export function selectedCharacter() {
