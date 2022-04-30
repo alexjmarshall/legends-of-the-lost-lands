@@ -318,7 +318,7 @@ export async function heldWeaponAttackMacro(options={}) {
     const actor = token.actor;
 
     let weapons = actor.items.filter(i => i.type === 'item' &&
-      i.data.data.attributes.atk_modes &&
+      (!!i.data.data.attributes.atk_modes?.value || !!i.data.data.attributes.bow?.value) &&
       i.data.data.attributes.size &&
       (i.data.data.held_left || i.data.data.held_right)
     );
@@ -331,7 +331,7 @@ export async function heldWeaponAttackMacro(options={}) {
     if (sweeping) {
       options.skipSweep = true;
       options.atkMod = -4;
-      options.atkMode = 'swing(s)';
+      options.atkMode = 'swi(s)';
       for (const t of targets) {
         options.targetToken = t;
         heldWeaponAttackMacro(options);
@@ -401,7 +401,7 @@ export function quickSlashAttackMacro(itemId, options={}) {
   const flavor = `${weapon.name} (quick slash)`;
   attackers.push({
     token: token,
-    weapons: [{_id: itemId, atkMode: 'swing(s)'}],
+    weapons: [{_id: itemId, atkMode: 'swi(s)'}],
     chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
     flavor,
     ranTarget,
@@ -674,6 +674,7 @@ async function attack(attackers, targetToken, options) {
   }
   const targetActor = targetToken?.actor;
   const targetRollData = targetActor?.getRollData();
+  const removedLocs = targetActor?.data.data.removedLocs;
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
@@ -692,7 +693,7 @@ async function attack(attackers, targetToken, options) {
     chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor ? ` vs. ${targetActor.name}` : ''}`;
     // add follow up attack to content
     const followAttackText = ` and ${attackingActor.name} is fast enough to attack again!`
-    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText;
+    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText; //TODO remove br
     Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);    
@@ -744,7 +745,7 @@ async function attack(attackers, targetToken, options) {
           attributes: {
             atk_mod: { value: 0 },
             dmg: { value: '1d2/1d2' },
-            atk_modes: { value: 'Swing (B), Thrust (B)' },
+            atk_modes: { value: 'Swi (B), Thr (B)' },
             double_weapon: { value: true },
             reach: { value: '0,1'},
           },
@@ -781,14 +782,12 @@ async function attack(attackers, targetToken, options) {
   const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value];
   const weapCategory = weapAttrs.category?.value;
-  const parryBonus = +weapAttrs.parry_bonus?.value;
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
   let sitDmgMod = 0;
-
 
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
@@ -814,20 +813,25 @@ async function attack(attackers, targetToken, options) {
     }
   }
 
-  // atk modes
-  const atkModes = weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+  // atk modes TODO weight base adds to weight calculation, use for containers quivers etc. allows user to use setStance to choose between different ammo quivers worn
+  const isBow = !!weapAttrs.bow?.value;
+  const quiver = attackingActor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
+  const ammoName = Constant.AMMO_TYPES.find(t => quiver?.name.toLowerCase().includes(t));
+  const atkModes = isBow ? quiver.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || []
+    : weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+ 
   if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
     ui.notifications.error("Invalid attack mode(s) specified");
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const defaultThrowAtkMode = atkModes.find(a => a.includes('throw'));
-  let throwable = attacker.throwable ?? (weapAttrs.range?.value && defaultThrowAtkMode);
+  const defaultThrowAtkMode = atkModes.find(a => a.includes('thrw'));
+  let throwable = attacker.throwable ?? !!(weapAttrs.range?.value && defaultThrowAtkMode);
 
   // reach values
   const reachValues = weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => !isNaN(t)) || [];
 
-  // subtract 1 from max reach if not holding the weapon with both hands
+  // subtract 1 from max reach if not holding the weapon with both hands -- TODO add back in with appropriate error msg
   // const hasMaxReach = reachValues.length > 1;
   // if (!weaponHeldTwoHands && hasMaxReach) {
   //   reachValues[reachValues.length - 1] = Math.min(reachValues[reachValues.length - 1] - 1, reachValues[0]);
@@ -843,7 +847,7 @@ async function attack(attackers, targetToken, options) {
   const energyDrain = !!weapAttrs.energy_drain?.value;
   
   // reload item if needed
-  const loaded =  weaponItem.data.data.loaded;
+  const loaded =  !!weaponItem.data.data.loaded;
   if ( reload && !loaded ) {
     await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
     chatMsgData.content += `${attackingActor.name} reloads ${weapName}<br>`;
@@ -852,7 +856,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // automatic throw if target beyond max reach in feet
-  const defaultReach = Math.floor(attackerSize / 2) || -1;
+  const defaultReach = Math.floor(attackerSize / 2) * 5 || -1;
   const maxReach = reachValues.length ? reachValues[reachValues.length - 1] * 5 : defaultReach * 5;
   if ( range > maxReach && throwable && weapon.atkMode == null ) {
     weapon.atkMode = defaultThrowAtkMode;
@@ -869,41 +873,42 @@ async function attack(attackers, targetToken, options) {
     return attack(attackers, targetToken, options);
   }
 
+  // TODO replace atkMode dialog with dialog for options.coverageArea -- for choices use Constants minus removedLocs
   // add parry choice if weapon has parry bonus defined
-  parryBonus && atkModes.push('parry');
+  // parryBonus && atkModes.push('parry');
 
-  const choices = atkModes.map(mode => {
-    return {
-      label: formatAtkMode(mode), 
-      value: mode,
-      callback: () => attack(attackers, targetToken, options)
-    }
-  });
+  // const choices = atkModes.map(mode => { // TODO coverage Areas minus removedLocs
+  //   return {
+  //     label: formatAtkMode(mode), 
+  //     value: mode,
+  //     callback: () => attack(attackers, targetToken, options)
+  //   }
+  // });
 
-  if ( choices.length && options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
-    return altDialog(
-      weapon, 
-      `${weapon.name} Stance`, 
-      choices
-    );
-  }
+  // if ( options.showAltDialog && attacker.showAltDialog !== false && !weapon.shownAltDialog ) {
+  //   return altDialog(
+  //     weapon, 
+  //     `${weapon.name} Stance`, 
+  //     choices
+  //   );
+  // }
 
-  if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
-    try {
-      await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
-      const choiceDesc = Constant.ATK_MODES[weapon.altDialogChoice]?.ATK_FORM || weapon.altDialogChoice;
-      Util.macroChatMessage(token, {
-        content: `${attackingActor.name} takes a ${choiceDesc}ing stance with ${weaponItem.name}.`,
-        flavor: `Weapon Stance`
-      }, false);
-      weapons.shift();
-      return attack(attackers, targetToken, options);
-    } catch (error) {
-      ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
-    }
-  }
+  // if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
+  //   try {
+  //     await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
+  //     const choiceDesc = Constant.ATK_MODES[weapon.altDialogChoice]?.ATK_FORM || weapon.altDialogChoice;
+  //     Util.macroChatMessage(token, {
+  //       content: `${attackingActor.name} takes a ${choiceDesc}ing stance with ${weaponItem.name}.`,
+  //       flavor: `Weapon Stance`
+  //     }, false);
+  //     weapons.shift();
+  //     return attack(attackers, targetToken, options);
+  //   } catch (error) {
+  //     ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
+  //   }
+  // }
 
-  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || weapon.altDialogChoice || atkModes[0];
+  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
 
   if (Util.stringMatch(atkMode, 'parry')) {
     weapons.shift(); // TODO show msg if parrying with every held weapon, and change alt dialog to be for hit location choosing
@@ -912,8 +917,7 @@ async function attack(attackers, targetToken, options) {
     }
     return attack(attackers, targetToken, options);
   }
-
-  const atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
+  let atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
   let dmgType = Constant.DMG_TYPES.includes(weapAttrs.dmg_type?.value) ? weapAttrs.dmg_type?.value : Constant.ATK_MODES[atkMode]?.DMG_TYPE || 'blunt';
   let atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM || 'attack';
 
@@ -948,7 +952,7 @@ async function attack(attackers, targetToken, options) {
     weapDmg = '1d3';
     dmgType = 'blunt';
     atkForm = 'thrust';
-    atkMode = 'thrust(b)';
+    atkMode = 'thr(b)';
   }
 
   // mod dialog
@@ -988,9 +992,13 @@ async function attack(attackers, targetToken, options) {
   const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
     Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
 
+  let isBrutalHit = Util.stringMatch(weaponItem.data.data.atk_stance, 'brutal');
+  const brutalMod = weapSize + 1;
+  if (isBrutalHit) sitAtkMod -= brutalMod;
+
   // get target's properties
   // can be immune to lucky hits, critical hits, bleed, knockdown and impale
-  const immuneLuckyHits = !!targetRollData?.immune_lucky_hits;
+  const immuneBrutalHits = !!targetRollData?.immune_brutal_hits;
   const immuneCriticalHits = !!targetRollData?.immune_critical_hits; /// || attackingActor._id === targetActor?._id;
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
@@ -999,7 +1007,7 @@ async function attack(attackers, targetToken, options) {
   // situational mods
   // +1 if holding a weapon of same size in both hands
   if (weapSize === attackerSize && weaponHeldTwoHands && !missileAtk) sitAtkMod++;
-    // -2 if holding a weapon one size larger in one hand
+  // -2 if holding a weapon one size larger in one hand
   if (weapSize > attackerSize && !weaponHeldTwoHands) sitAtkMod = sitAtkMod - 2;
   // -3 if target is size S and attacker is bigger than medium
   if (targetSize === 1 && attackerSize > 2) sitAtkMod = sitAtkMod - 3;
@@ -1022,8 +1030,6 @@ async function attack(attackers, targetToken, options) {
   if (targetSize > 2) {
     sitDmgMod += weapDmgVsLrg;
   }
-
-
 
   // determine range penalty, handle missile situational mods, and reduce qty of thrown weapon/missile
   let rangePenalty = 0;
@@ -1056,12 +1062,6 @@ async function attack(attackers, targetToken, options) {
       }
       const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
       const quiverQty = quiver?.data.data.quantity;
-      // override dmg type with ammunition dmg type
-      const quiverDmgType = quiver.data.data.attributes.dmg_type?.value || '';
-      if (quiverDmgType.length) {
-        dmgType = quiverDmgType;
-        atkMode = atkMode.replace(/(\([a-z]\))/, ` (${quiverDmgType.trim()[0]})`);
-      }
       
       try {
         if (!quiver || !quiverQty) {
@@ -1081,8 +1081,9 @@ async function attack(attackers, targetToken, options) {
 
   // attack
   const d20Result = await Util.rollDice("d20");
-  let totalAtk = `${d20Result}+${bab}+${attrAtkMod}+${twoWeaponFightingPenalty}+${attackerAttrAtkMod}+${attackerAtkMod}+${weapAtkMod}+${rangePenalty}+${sitAtkMod}`;
-  // have to add dialog mod afterwards, in case it multiples/divides
+  const atkFactors = [d20Result, bab, attrAtkMod, twoWeaponFightingPenalty, attackerAttrAtkMod, attackerAtkMod, weapAtkMod, rangePenalty, sitAtkMod];
+  let totalAtk = atkFactors.reduce((prev, curr) => curr ? prev + `+${curr}` : prev);
+  // have to add dialog mod afterwards, in case it multiplies/divides
   let dialogAtk = '';
   if (dialogAtkMod.formula) {
     dialogAtk = `${!dialogAtkMod.includesSign ? `+` : ''}${dialogAtkMod.formula}`;
@@ -1104,8 +1105,8 @@ async function attack(attackers, targetToken, options) {
   let isHit = true;
   let injuryObj = {};
   const targetHp = +targetActor?.data.data.hp?.value;
-  const minorBleedDesc = Constant.minorBleedDesc;
-  const majorBleedDesc = Constant.majorBleedDesc;
+  const minorBleedDesc = Constant.minorBleedDesc('wound');
+  const majorBleedDesc = Constant.majorBleedDesc('wound');
   const weaponStuckDesc = Constant.weaponStuckDesc;
   const knockdownDesc = Constant.knockdownDesc;
   const knockbackDesc = Constant.knockbackDesc;
@@ -1146,14 +1147,21 @@ async function attack(attackers, targetToken, options) {
 
     // roll for hit location if character or humanoid
     if ( Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid') ) {
-      const removedLocs = targetActor.data.data.removedLocs;
-      do {
-        const hitLocRoll = await Util.rollDice("d100");
-        let hitLocTable = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
-        hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
-      } while ( removedLocs.some(l => Util.stringMatch(hitLoc, l)) )
-      
-      coverageArea = hitLoc.replace('right ', '').replace('left ', '');
+
+      if (options.coverageArea) {
+        coverageArea = options.coverageArea;
+        hitLoc = !Constant.HIT_LOCATIONS[coverageArea].bilateral ? coverageArea
+          : await Util.rollDice("d2") > 1 ? `right ${coverageArea}`
+          : `left ${coverageArea}`;
+      } else {
+        do {
+          const hitLocRoll = await Util.rollDice("d100");
+          let hitLocTable = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
+          hitLoc = Constant.HIT_LOC_ARRS[hitLocTable][hitLocRoll - 1];
+        } while ( removedLocs.some(l => Util.stringMatch(hitLoc, l)) )
+        coverageArea = hitLoc.replace('right ', '').replace('left ', '');
+      }
+
       const acObj = targetRollData.ac[coverageArea][dmgType] || {};
       targetAc = acObj.ac ?? targetAc;
       sortedWornArmors = targetRollData.ac[coverageArea].sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
@@ -1168,7 +1176,7 @@ async function attack(attackers, targetToken, options) {
         const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
           i.data.data.attributes.shield?.value &&
           Util.stringMatch(i.data.data.attributes.size?.value, 'L') &&
-          i.data.data.stance && Util.getArrFromCSL(Constant.SHIELD_TYPES.large.coverage[i.data.data.stance]).includes(coverageArea)
+          i.data.data.shield_stance && Util.getArrFromCSL(Constant.SHIELD_TYPES.large.coverage[i.data.data.shield_stance]).includes(coverageArea)
         )).flat();
         const adjLargeShieldAcs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.ac) || 0);
         const adjLargeShieldDrs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.dr) || 0);
@@ -1197,34 +1205,34 @@ async function attack(attackers, targetToken, options) {
 
     }
 
-    resultText += ` at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``}`;
-    resultText += ` (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
+    // brutal hits
+    isBrutalHit = isBrutalHit || (d20Result === 20 && !immuneBrutalHits && !missileAtk);
+    if (isBrutalHit) {
+      weapDmgResult += brutalMod;
+    }
+
+    resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
       totalAtkResult = targetAc;
     }
-    isHit = totalAtkResult >= targetAc || d20Result === 20;
+    isHit = totalAtkResult >= targetAc;
+
+    // TODO move brutal hard hits to before AC brackets, and player chooses to take penalty of double weapon size (add to target unarmored AC) for bonus to dmg of weap size
+    // criticals/vulnerable hit damage can be absorbed by armor
 
 
-    // TODO remove bleed bonus for overall curved swords explanation: -1 min bleed, 1.5x crit, 1/2 knockdown damage
+    // TODO remove bleed bonus for overall curved swords explanation: -1 min bleed, 1.5x crit, 1/2 knockdown damage, -2 to-hit thrusting
     // TODO show dmg modifications for dr, critical hit and lucky hit in chat, use brackets as necessary like dialogMod multiplier - can wait until after lucky/crit to roll dmg
     if (isHit) {
+      resultSound = hitSound;
       const armorUpdates = [];
 
       // critical hits
       const critChance = Util.stringMatch(weapCategory, 'curved swords') ? Math.ceil(1.5 * (totalAtkResult - targetAc)) : totalAtkResult - targetAc
-      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
+      let isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
 
-      // avoids bulky armor/shield
       if (isCriticalHit) {
-        sortedWornArmors = sortedWornArmors.filter( i => !i.data.data.attributes.bulky?.value && !i.data.data.attributes.shield?.value);
-        hitDesc += ` and hits a vulnerable spot`;
-      }
-
-      // lucky hits
-      const isLuckyHit = d20Result >= 20 && !immuneLuckyHits && !missileAtk;
-
-      if (isLuckyHit) {
         const armor = sortedWornArmors[0];
         const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
         const isBulky = !!armor?.data.data.attributes.bulky?.value;
@@ -1242,18 +1250,15 @@ async function attack(attackers, targetToken, options) {
           }
           options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
           hitDesc += ` and ${verb} ${armor.name}`;
+
+          isCriticalHit = false;
         } else {
-          rolledWeapDmg = maxWeapDmg;
-          weapDmgResult = Math.max(1, maxWeapDmg - dr);
-          hitDesc = isCriticalHit ? hitDesc + ' brutally hard' : hitDesc + ' and hits brutally hard';
+          weapDmgResult = weapDmgResult + weapDmgResult;
         }
 
-        // steel plate can't be fully bypassed by lucky hits
+        // steel plate can't be fully bypassed by critical hits
         if (!isSteelPlate) sortedWornArmors.shift();
       }
-
-      // handle crit multiplier after lucky hit damage modification
-      if (isCriticalHit) weapDmgResult = weapDmgResult + weapDmgResult;
 
       // knockdown
       const knockdownDamage = Util.stringMatch(weapCategory, 'curved swords') ? Math.ceil(weapDmgResult / 2) : weapDmgResult;
@@ -1261,8 +1266,9 @@ async function attack(attackers, targetToken, options) {
       const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * 2 * (knockdownDamage + strMod + 10 - weapSpeed) - 10 * (targetSize - attackerSize);
       const isKnockdown = !immuneKnockdown && !invalidKnockdownAreas.includes(coverageArea) && !isProne && Util.stringMatch(atkForm, 'swing') && await Util.rollDice('d100') <= knockdownChance;
+      
       if (isKnockdown) {
-        dmgEffect += knockdownDamage > 9 ? knockbackDesc : knockdownDesc;
+        dmgEffect = Util.replacePunc(dmgEffect) + (knockdownDamage > 9 && attackerSize >= targetSize ? knockbackDesc : knockdownDesc);
         // remove any other weapons
         while (weapons.length) weapons.shift();
         // add prone condition manually
@@ -1270,7 +1276,7 @@ async function attack(attackers, targetToken, options) {
 
       // impale
       // steel plate cannot be impaled
-      const isImpale = !immuneImpale && Util.stringMatch(dmgType, 'piercing') && rolledWeapDmg === maxWeapDmg;
+      const isImpale = !immuneImpale && Util.stringMatch(dmgType, 'piercing') && weapDmgResult >= maxWeapDmg;
       if (isImpale) {
         let stuck = false;
         const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
@@ -1287,9 +1293,9 @@ async function attack(attackers, targetToken, options) {
           let dmg = rolledDmg;
 
           if (applyArmor(armor)) {
-            let verb = 'penetrates';
             const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield?.value;
+            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
             // if armor is non-bulky or shield it absorbs the impale damage
             if (!isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
               dmg = 0;
@@ -1331,9 +1337,10 @@ async function attack(attackers, targetToken, options) {
         // apply damage and append results string to hitDesc
         weapDmgResult += impaleDmg;
         const impaleDesc = armorPenString + (impaleDmg > 0 ? ` and impales` : '');
-        dmgEffect += stuck ? weaponStuckDesc : '';
+        dmgEffect = Util.replacePunc(dmgEffect) + (stuck ? weaponStuckDesc : '');
         hitDesc += impaleDesc;
       }
+
 
       // metal armor cannot be cut
       const metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
@@ -1341,7 +1348,7 @@ async function attack(attackers, targetToken, options) {
       let bleedChance = 25;
       if (Util.stringMatch(weapCategory, 'curved swords')) minBleedDmg--;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
-      const isBleed = !immuneBleed && !applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') && rolledWeapDmg >= minBleedDmg && weapDmgResult > 1 && await Util.rollDice('d100') <= bleedChance;
+      const isBleed = !immuneBleed && !applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') && weapDmgResult >= minBleedDmg && weapDmgResult > 1 && await Util.rollDice('d100') <= bleedChance;
       
       if (isBleed) {
         const armor = sortedWornArmors[0];
@@ -1374,15 +1381,12 @@ async function attack(attackers, targetToken, options) {
         }})();
 
         if (doBleed) {
-          dmgEffect += doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
+          dmgEffect = Util.replacePunc(dmgEffect) + (doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc);
         }
         // add bleed/heavy bleed condition manually
 
         sortedWornArmors.shift();
       }
-      
-      resultSound = hitSound;
-      hitDesc = hitDesc || ' and hits';
 
       // switch dmgType to blunt if metal armor/plate remains
       const plateArmor = sortedWornArmors.find(i => i.data.data.attributes.material?.value.includes('plate'));
@@ -1392,8 +1396,11 @@ async function attack(attackers, targetToken, options) {
         hitDesc = hitDesc.replace(`${bluntingArmor.name}`,'') + ` but fails to penetrate ${bluntingArmor.name}`;
       }
 
-      dmgType = Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"slashing") ? "piercing" : dmgType;
-      injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[dmgType] || {};
+      hitDesc = /and impales$/.test(hitDesc) ? hitDesc : hitDesc + ' and hits';
+      hitDesc = isCriticalHit ? hitDesc + ` a vulnerable spot` : hitDesc;
+
+      const injuryDmgType = Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"slashing") ? "piercing" : dmgType;
+      injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[injuryDmgType] || {};
 
       resultText += hitDesc;
 
@@ -1487,7 +1494,9 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}+${attrDmgMod}+${attackerAttrDmgMod}+${attackerDmgMod}+${sitDmgMod}`;
+  const dmgMods = [attrDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
+  const dmgModText = dmgMods.reduce((prev, curr, ind) => curr && ind === 0 ? prev + `${curr}` : prev + `+${curr}`, '');
+  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText ? `+${dmgModText}` : ''}`;
   let dialogDmg = '';
   if (dialogDmgMod.formula) {
     dialogDmg = `${!dialogDmgMod.includesSign ? `+` : ''}${dialogDmgMod.formula}`;
@@ -1534,51 +1543,48 @@ async function attack(attackers, targetToken, options) {
 // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced
     if (sumDmg > targetHp) {
       resultText += injury.text || '';
-
-      if (/!$/.test(resultText)) dmgEffect = '';
       
       if (targetHp > 0) while (weapons.length) weapons.shift();
   
-      if (Constant.bleedDescs.some(d => injury.dmgEffect?.includes(d))) {
-        Constant.bleedDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
+      if (injury.dmgEffect?.includes('bleed') || injury.dmgEffect?.includes('blood')) {
+        dmgEffect = dmgEffect.replace(minorBleedDesc,'').replace(majorBleedDesc,'');
       }
 
       if (Constant.knockDescs.some(d => injury.dmgEffect?.includes(d))) {
         Constant.knockDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
       }
 
-      dmgEffect = dmgEffect.replace(injury.dmgEffect,'') + (injury.dmgEffect || '');
-      // if (injury.removal && /wound!$/.test(dmgEffect)) {
-      //   dmgEffect = dmgEffect.replace(/wound!$/, 'stump!');
-      // }
+      dmgEffect = Util.replacePunc(dmgEffect.replace(injury.dmgEffect,'')) + (injury.dmgEffect || '');
     }
 
-    // remove bleed effects if target is dead TODO mortal wounds require save v. death after battle
-    if (targetHp <= -10) {
-      Constant.bleedDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
+    if (dmgEffect) {
+      resultText = Util.replacePunc(resultText) + dmgEffect.replace('them', targetActor?.name);
     }
-    const isProne = targetActor?.data.effects.some(e => Util.stringMatch(e.data.label, 'Prone'));
-    if (isProne) {
-      const knockDescs = Constant.knockDescs.filter(d => !Util.stringMatch(d, Constant.knockoutDesc));
-      knockDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
+
+    // remove bleed effects if target is dead TODO 
+    if (targetHp <= -10) {
+      resultText = resultText
+        .replace(minorBleedDesc,'')
+        .replace(Constant.minorBleedDesc('stump'),'')
+        .replace(Constant.minorBleedDesc('socket'),'')
+        .replace(majorBleedDesc,'')
+        .replace(Constant.majorBleedDesc('stump'),'')
+        .replace(Constant.internalBleedDesc(coverageArea),'')
+        .replace(Constant.bowelBleedDesc('wound'),'')
+        .replace(Constant.knockoutDesc.replace('them', targetActor?.name),'');
     }
 
     // no bleeding effects if weapon is stuck
-    if (dmgEffect.includes(weaponStuckDesc)) {
-        Constant.bleedDescs.forEach(d => dmgEffect = dmgEffect.replace(d,''));
-      }
-
-    if (dmgEffect) {
-      resultText += dmgEffect.replace('them', targetActor?.name) || '';
+    if (resultText.includes(Util.replacePunc(weaponStuckDesc))) {
+      resultText = resultText.replace(minorBleedDesc,'').replace(majorBleedDesc,'').replace(Constant.bowelBleedDesc('gut'),'');
     }
-
   }
 
   const rangeText = missileAtk && range ? ` ${range}'` : '';
   const pluralizeWeapName = name => /h$/.test(name) ? `${Util.lowerCaseFirst(name)}es` : `${Util.lowerCaseFirst(name)}s`;
 
   chatMsgData.content += Util.stringMatch(atkForm, 'attack') ? `${attackingActor.name} ${pluralizeWeapName(weapName)}`:
-    `${attackingActor.name} ${atkForm}s ${weapName}`;
+    `${attackingActor.name} ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
   chatMsgData.content += `${resultText}`;
   const lastChar = resultText.charAt(resultText.length - 1);
   chatMsgData.content += lastChar === '!' || lastChar === '.' ? '<br>' : `.<br>`;
@@ -1607,22 +1613,42 @@ export function setStance(options={}) {
   );
   const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
 
+  if (!weapons.length && !shields.length) {
+    return ui.notifications.info("Not holding any items with defined stances");
+  }
+
   const addChoices = (item, type, choices) => {
     let buttons = '';
-    const currentChoice = Util.stringMatch(type, "weapon") ? item.data.data.atk_mode : item.data.data.stance;
+    const isWeapon = Util.stringMatch(type, "weapon");
+    const currentChoice = (isWeapon ? item.data.data.atk_mode : item.data.data.shield_stance) || choices[0];
+    const currentAtkStance = item.data.data.atk_stance || 'normal';
     for (const choice of choices) {
       buttons += `
-        <button id="${item._id}-${choice}" class="stance-button${choice === currentChoice ? ' selected-button' : ''}" data-atk-mode="${choice}">
+        <button id="${item._id}-${choice}" class="stance-button${choice === currentChoice ? ' selected-button' : ''}" data-${isWeapon ? 'atk-mode' : 'shield-stance'}="${choice}">
           ${formatAtkMode(choice)}
         </button>
       `;
     }
-    const id = `${item._id}-atk-modes`;
+    let brutalAtkButtons = '';
+    if (isWeapon) {
+      const brutMod = Constant.SIZE_VALUES[item.data.data.attributes.size?.value] + 1;
+      const brutTitle = !brutMod ? '' : `-${brutMod} to-hit, +${brutMod} damage`;
+      brutalAtkButtons = `
+        <button id="${item._id}-normal-atk" class="stance-button${currentAtkStance === 'normal' ? ' selected-button' : ''}" data-atk-stance="normal">
+          Normal
+        </button>
+        <button title="${brutTitle}" id="${item._id}-brutal-atk" class="stance-button${currentAtkStance === 'brutal' ? ' selected-button' : ''}" data-atk-stance="brutal">
+          Brutal
+        </button>
+      `;
+    }
+
     return `
       <div id="${item._id}" style="margin-bottom:1em;">
-        <label for="${id}">${item.name}</label>
-        <div id="${id}" style="display:flex;justify-content:center;">` + buttons + `</div>
-      </div>  
+        <label>${item.name}</label>
+        <div id="${item._id}-atk-stances" style="display:flex;justify-content:center;">${brutalAtkButtons}</div>
+        <div id="${item._id}-atk-modes" style="display:flex;justify-content:center;">${buttons}</div>
+      </div>
     `;
   };
   
@@ -1651,35 +1677,44 @@ export function setStance(options={}) {
         callback: async html => {
           const addStance = (item, type, updates, chatMsgs) => {
             if (!["weapon","shield"].includes(type)) return;
+            const update = {'_id': item._id};
+            const selections = {};
+            let chatMsgFunc;
             const $selectedButtons = html.find(`#${item._id} .selected-button`);
             $selectedButtons.each(function() {
               const $button = $(this);
-              const atkMode = $button.data("atk-mode");
-              const update = {'_id': item._id};
-              let currentAtkMode = '';
-              if (Util.stringMatch(type, "weapon")) {
-                Object.assign(update, {'data.atk_mode': atkMode});
-                currentAtkMode = item.data.data.atk_mode;
-              } else {
-                Object.assign(update, {'data.stance': atkMode});
-                currentAtkMode = item.data.data.stance;
-              }
-              if (currentAtkMode !== atkMode) {
-                updates.push(update);
-                const choiceDesc = Constant.ATK_MODES[atkMode]?.ATK_FORM || atkMode;
-                chatMsgs.push(() => {
-                  Util.macroChatMessage(char.token, {
-                    content: `${actor.name} takes a ${choiceDesc}${Util.stringMatch(type,"weapon") ? 'ing stance' : ' guard'} with ${item.name}.`,
-                    flavor: `Set Stance`,
-                  }, false);
-                });
+              for (const field of ["atk_mode", "atk_stance", "shield_stance"]) {
+                const newVal = $button.data(field.replace('_','-'));
+                if (!newVal) continue;
+                const oldVal = item.data.data[field];
+                selections[field] = newVal;
+                if (newVal !== oldVal) {
+                  const key = `data.${field}`;
+                  Object.assign(update, {[key]: newVal});
+                }
               }
             });
+            const atkMode = selections['atk_mode'];
+            const atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM;
+            const choice = atkForm || atkMode || selections['shield_stance'];
+            const atkStance = selections['atk_stance'];
+            const atkStanceDesc = atkStance && atkStance !== 'normal' ? `${atkStance} ` : '';
+            const doChatMsg = update['data.atk_mode'] || update['data.atk_stance'] || update['data.shield_stance'];
+            if (doChatMsg) {
+              const content = `${actor.name} takes a ${atkStanceDesc}${choice}${Util.stringMatch(type,"weapon") ? 'ing stance' : ' guard'} with ${item.name}.`;
+              chatMsgs.push(() => {
+                Util.macroChatMessage(char.token, {
+                  content,
+                  flavor: `Set Stance`,
+                }, true);
+              });
+            }
+            updates.push(update);
           }
           const updates = [];
           const chatMsgs = [];
           weapons.forEach(w => addStance(w, 'weapon', updates, chatMsgs)); // TODO one chat msg for each dual wield/attack routine attack?
-          shields.forEach(w => addStance(w, 'shield', updates, chatMsgs));
+          shields.forEach(w => addStance(w, 'shield', updates, chatMsgs)); // TODO check calculation of max dex mod, going above 4
           actor.updateEmbeddedDocuments("Item", updates);
           for (const chatMsg of chatMsgs) {
             chatMsg();
@@ -1694,17 +1729,33 @@ export function setStance(options={}) {
     },
     render: html => {
       const items = weapons.concat(shields);
-      for (const w of items) {
-        const $buttons = html.find(`#${w._id} .stance-button`);
-        $buttons.click(function() {
-          const $button = $(this);
-          if (!$button.hasClass("selected-button")) {
-            $buttons.removeClass("selected-button");
-            $button.addClass("selected-button");
+      for (const item of items) {
+        const $atkModeButtons = html.find(`#${item._id}-atk-modes .stance-button`);
+        const $atkStanceButtons = html.find(`#${item._id}-atk-stances .stance-button`);
+        const resetAtkStanceButtons = () => {
+          const atkMode = $atkModeButtons.filter(`.selected-button`).data('atk-mode');
+          const atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM;
+          const $brutStanceButton = html.find(`#${item._id}-brutal-atk`);
+          if (atkMode === 'parry' || atkForm === 'shoot') {
+            $atkStanceButtons.removeClass("selected-button");
+            const $normStanceButton = html.find(`#${item._id}-normal-atk`);
+            $normStanceButton.addClass("selected-button");
+            $brutStanceButton.prop("disabled", true);
           } else {
-            $button.removeClass("selected-button");
+            $brutStanceButton.prop("disabled", false);
           }
-        });
+        }
+        resetAtkStanceButtons();
+        for (const $buttons of [$atkModeButtons, $atkStanceButtons]) {
+          $buttons.click(function() {
+            const $button = $(this);
+            if (!$button.hasClass("selected-button")) {
+              $buttons.removeClass("selected-button");
+              $button.addClass("selected-button");
+            }
+            resetAtkStanceButtons();
+          });
+        }
       }
     },
   }).render(true);
@@ -1755,7 +1806,7 @@ function modDialog(options, title, fields=[{label:'', key:'', placeholder:''}], 
   });
   const content = `<form>${formFields}</form>`;
   new Dialog({
-    title: title + ' Modifiers',
+    title: 'Modify ' + title,
     content,
     buttons: {
       '1': {
@@ -1806,7 +1857,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
   if ( options.override === true || !attitude || targetLevel > attitudeObj.lvl ) {
     if ( options.showModDialog && !options.shownModDialog ) {
       const fields = [
-        {label: `${flavor} modifiers`, key: 'dialogMod'}
+        {label: `${Util.upperCaseFirst(flavor.toLowerCase())} modifiers`, key: 'dialogMod'}
       ];
       return modDialog(options, flavor, fields, () => reactionRoll(reactingActor, targetActor, options));
     }
