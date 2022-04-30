@@ -170,15 +170,19 @@
         {{!-- Armors Tab --}}
         <div class="tab armors" data-group="primary" data-tab="armors">
             <header class="armors-header sticky flexrow">
-                <span class="flex1">Hit Location</span>
-                <span class="flex3">Armor Layers</span>
-                <span class="flex2 text-center">AC / DR</span>
+                <span style="flex:1.5">Hit Location</span>
+                <span class="flex1 text-center">Swi (%)</span>
+                <span class="flex1 text-center">Thr (%)</span>
+                <span class="flex6 text-center">Armor Layers</span>
+                <span class="flex4 text-center">AC / DR</span>
             </header>
             <ol class="armors-list">
                 {{#each armors as |loc key|}}
                 <li class="flexrow">
-                    <h4 class="flex1">{{key}}</h4>
-                    <span class="flex3">
+                    <h4 style="flex:1.5">{{key}}</h4>
+                    <span class="flex1 text-center">{{loc.swi}}</span>
+                    <span class="flex1 text-center">{{loc.thr}}</span>
+                    <span class="flex6 text-center">
                         {{#each loc.sortedArmors as |armor ind|}}
                         <span> {{armor}} </span>
                         {{#ifeq ind loc.sortedArmorsLastInd}}
@@ -187,7 +191,7 @@
                         {{/ifeq}}
                         {{/each}}
                     </span>
-                    <span class="flex2 text-center">
+                    <span class="flex4 text-center" style="min-width:fit-content;">
                         B<span class="property-field property-field-ac">{{loc.acDr.b}}</span> 
                         P<span class="property-field property-field-ac">{{loc.acDr.p}}</span> 
                         S<span class="property-field property-field-ac">{{loc.acDr.s}}</span>
@@ -294,7 +298,7 @@
         {{!-- Attributes Tab --}}
         <div class="tab attributes" data-group="primary" data-tab="attributes">
             {{#if isGM}}
-            <header class="attributes-header flexrow">
+            <header class="attributes-header flexrow sticky">
                 <span class="attribute-key attribute-key-wrapper">{{localize "SIMPLE.AttributeKey"}}</span>
                 <span class="attribute-label attribute-key-wrapper">{{localize "SIMPLE.AttributeLabel"}}</span>
                 <span class="attribute-value">{{localize "SIMPLE.AttributeValue"}}</span>
