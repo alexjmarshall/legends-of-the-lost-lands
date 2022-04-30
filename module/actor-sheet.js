@@ -86,14 +86,16 @@ export class SimpleActorSheet extends ActorSheet {
   getArmorsByLocation(data) {
     const ac = data.data.ac || {};
     const armors = {};
-    const hitLocations = Object.keys(Constant.HIT_LOCATIONS).reverse();
-    for (const hitLoc of hitLocations) {   
+    const hitLocations = Object.entries(Constant.HIT_LOCATIONS).reverse();
+    for (const [hitLoc, val] of hitLocations) {
       const sortedArmors = Object.fromEntries(ac[hitLoc]?.sorted_armor_ids?.map((id,ind) => [ind, data.items?.find(i => i._id === id)?.name]) || []);
       if (!Object.entries(sortedArmors).length) {
         Object.assign(sortedArmors, {0: '(none)'});
       }
       const sortedArmorsLastInd = Object.entries(sortedArmors).length - 1;
       armors[hitLoc] = {
+        swi: val.weights[0],
+        thr: val.weights[1],
         sortedArmors,
         sortedArmorsLastInd,
         acDr: {
@@ -538,7 +540,7 @@ export class SimpleActorSheet extends ActorSheet {
 
       // handle quick slash attack
       const atkModes = item.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
-      const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swing(s)');
+      const canQuickSlash = !!item.data.data.attributes.quick_slash?.value && atkModes.includes('swi(s)');
       if (canQuickSlash && event.altKey) {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
