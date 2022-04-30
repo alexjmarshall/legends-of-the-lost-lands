@@ -149,10 +149,10 @@ export class SimpleActor extends Actor {
 
       const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
         .reduce((a,b) => +b?.data.data.attributes.parry_bonus?.value || 0 > +a?.data.data.attributes.parry_bonus?.value || 0 ? b : a, undefined);
-      const parryBonus = Math.min(max_dex_mod, +parryItem?.data.data.attributes.parry_bonus?.value || 0);
+      const parryBonus = Math.max( Math.min(+parryItem?.data.data.attributes.parry_bonus?.value || 0, max_dex_mod), 0);
       const parry = {
         parry_item_id: parryItem?._id,
-        parry_bonus: parryBonus,
+        parry_bonus: parryBonus, //TODO make reach value a number and just set max reach. infer min reach by weapon size
       };
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
@@ -204,7 +204,7 @@ export class SimpleActor extends Actor {
           if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
           if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
           ac[k].sorted_armor_ids = sorted_armor_ids;
-          
+
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
             const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
