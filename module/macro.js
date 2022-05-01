@@ -1752,7 +1752,7 @@ export function setStance(options={}) {
       <div id="${item._id}" style="margin-bottom:1em;">
         <div style="padding-left:5px;">
           <label>${item.name}</label>
-          <div id="${item._id}-shield-heights" style="${buttonsStyle}"><label style="${labelStyle}">Stance</label> ${buttons}</div>
+          <div id="${item._id}-shield-heights" style="${buttonsStyle}"><label style="${labelStyle}">Height</label> ${buttons}</div>
         </div>
       </div>
     `;
@@ -1796,7 +1796,7 @@ export function setStance(options={}) {
       <div id="${item._id}" style="margin-bottom:1em;">
         <label>${item.name}</label>
         <div style="padding-left:5px;">
-          <div id="${item._id}-atk-stances" style="${buttonsStyle}"><label style="${labelStyle}">Stance</label> ${stanceButtons}</div>
+          <div id="${item._id}-atk-stances" style="${buttonsStyle}"><label style="${labelStyle}">Power</label> ${stanceButtons}</div>
           <div id="${item._id}-atk-heights" style="${buttonsStyle}"><label style="${labelStyle}">Height</label> ${heightButtons}</div>
           <div id="${item._id}-atk-modes" style="${buttonsStyle}"><label style="${labelStyle}">Mode</label> ${modeButtons}</div>
         </div>
