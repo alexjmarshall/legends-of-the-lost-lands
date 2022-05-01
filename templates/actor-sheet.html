@@ -66,8 +66,8 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">{{#if isCharacter}}Biography{{else}}Description{{/if}}</a>
-        <a class="item" data-tab="items">{{#if isCharacter}}Equipment{{else}}Items{{/if}}</a>
+        <a class="item" data-tab="description">Description</a>
+        <a class="item" data-tab="items">Items</a>
         {{#if hasArmors}}
         <a class="item" data-tab="armors">Armor</a>
         {{/if}}
@@ -75,7 +75,7 @@
         <a class="item" data-tab="spells">Spells</a>
         {{/if}}
         {{#if hasFeatures}}
-        <a class="item" data-tab="features">{{#if isCharacter}}Skills{{else}}Features{{/if}}</a>
+        <a class="item" data-tab="features">Skills</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
         {{#if isCharacter}}
@@ -96,7 +96,7 @@
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
                 <span>Max Dex Bonus: {{systemData.ac.max_dex_mod}}</span>
-                <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}</span>
+                <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}{{#if stancePenalty}} Stance Penalty: {{systemData.ac.stance_penalty}} {{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
@@ -170,19 +170,15 @@
         {{!-- Armors Tab --}}
         <div class="tab armors" data-group="primary" data-tab="armors">
             <header class="armors-header sticky flexrow">
-                <span style="flex:1.5">Hit Location</span>
-                <span class="flex1 text-center">Swi (%)</span>
-                <span class="flex1 text-center">Thr (%)</span>
-                <span class="flex6 text-center">Armor Layers</span>
-                <span class="flex4 text-center">AC / DR</span>
+                <span style="flex:1">Hit Location</span>
+                <span class="flex3">Armor Layers</span>
+                <span class="flex2 text-center">AC / DR</span>
             </header>
             <ol class="armors-list">
                 {{#each armors as |loc key|}}
                 <li class="flexrow">
-                    <h4 style="flex:1.5">{{key}}</h4>
-                    <span class="flex1 text-center">{{loc.swi}}</span>
-                    <span class="flex1 text-center">{{loc.thr}}</span>
-                    <span class="flex6 text-center">
+                    <h4 style="flex:1">{{key}}</h4>
+                    <span class="flex3">
                         {{#each loc.sortedArmors as |armor ind|}}
                         <span> {{armor}} </span>
                         {{#ifeq ind loc.sortedArmorsLastInd}}
@@ -191,7 +187,7 @@
                         {{/ifeq}}
                         {{/each}}
                     </span>
-                    <span class="flex4 text-center" style="min-width:fit-content;">
+                    <span class="flex2 text-center" style="min-width:fit-content;">
                         B<span class="property-field property-field-ac">{{loc.acDr.b}}</span> 
                         P<span class="property-field property-field-ac">{{loc.acDr.p}}</span> 
                         S<span class="property-field property-field-ac">{{loc.acDr.s}}</span>

@@ -36,7 +36,7 @@ export class SimpleItem extends Item {
       const sizes = {L: "large", M: "medium"};
       const size = sizes[itemData.attributes.size?.value];
       if (itemData.attributes.coverage) {
-        const stance = itemData.stance || 'mid';
+        const stance = itemData.shield_height || 'mid';
         itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage[stance];
       }
     }
@@ -67,10 +67,10 @@ export class SimpleItem extends Item {
         itemData.attributes.base_ac.max = baseAc;
         baseAc = itemData.attributes.base_ac.value ?? baseAc;
       }
-      if (materialProps.metal && itemData.attributes.metal) {
+      if (itemData.attributes.metal) {
         itemData.attributes.metal.value = materialProps.metal;
       }
-      if (materialProps.bulky && itemData.attributes.bulky) {
+      if (itemData.attributes.bulky) {
         itemData.attributes.bulky.value = materialProps.bulky;
       }
 
@@ -130,14 +130,15 @@ export class SimpleItem extends Item {
       // spell failure, skill check penalty and max dex mod penalty
       const isArmor = Constant.ARMOR_VS_DMG_TYPE[material];
       if (isArmor) {
+        const materialWeight = isMagic ? Math.round(materialProps.weight / 2 * 10) / 10 : materialProps.weight;
         const paddedOrShield = material === 'padded' || material === 'wood';
-        const spellFailure = paddedOrShield ? materialProps.weight * 5 : materialProps.weight * 5 / 2;
+        const spellFailure = paddedOrShield ? materialWeight * 5 : materialWeight * 5 / 2;
         itemData.ac.spell_failure = Math.round(spellFailure * totalLocationWeight) / 100;
 
         const skillPenalty = spellFailure / 5 - 2;
         itemData.ac.skill_penalty = Math.round(skillPenalty * totalLocationWeight) / 100;
 
-        const maxDexWeight = paddedOrShield ? materialProps.weight * 2 : materialProps.weight;
+        const maxDexWeight = paddedOrShield ? materialWeight * 2 : materialWeight;
         itemData.ac.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * totalLocationWeight) / 100;
       }
 
