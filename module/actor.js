@@ -122,13 +122,13 @@ export class SimpleActor extends Actor {
         .map(loc => {
           if (!loc.includes('severed')) return null;
           loc = loc.replace('severed', '');
-          if (game.lostlands.Constant.HIT_LOC_ARRS.THRUST.includes(loc)) return loc;
+          if (Constant.HIT_LOC_ARRS.THRUST.includes(loc)) return loc;
           const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
           loc = loc.replace(side,'').trim();
           if (side) {
-            return game.lostlands.Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
+            return Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
           } 
-        }).flat().filter(l => game.lostlands.Constant.HIT_LOC_ARRS.THRUST.includes(l));
+        }).flat().filter(l => Constant.HIT_LOC_ARRS.THRUST.includes(l));
       actorData.removedLocs = removedLocations;
 
       const naturalAc = +attributes.ac?.value || Constant.AC_MIN;
@@ -154,13 +154,16 @@ export class SimpleActor extends Actor {
         parry_item_id: parryItem?._id,
         parry_bonus: parryBonus, //TODO make reach value a number and just set max reach. infer min reach by weapon size
       };
+      const powerWeap = wornOrHeldItems.find(i => Util.stringMatch(i.data.data.atk_stance,'power')) || {};
+      const powerWeapSize = Constant.SIZE_VALUES[powerWeap.data?.data.attributes.size.value] || 0;
+      const powerStancePenalty = 0 - Math.floor((powerWeapSize + 1) / 2);
 
-      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod;
+      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + powerStancePenalty;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {} };
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: powerStancePenalty };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
-          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod + parryBonus,
+          ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod + parryBonus + powerStancePenalty,
           dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
         }
       }
@@ -215,7 +218,7 @@ export class SimpleActor extends Actor {
             const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
-            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus;
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + parryBonus + powerStancePenalty;
             // max dr is 2
             const locDr = Math.min(2, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus + unarmoredDr);
 
@@ -238,7 +241,7 @@ export class SimpleActor extends Actor {
 
       // weap profs
       updateData.weap_profs = Util.getArrFromCSL(attributes.weap_profs?.value || '').map(p => p.toLowerCase());
-      if (updateData.weap_profs.some(p => !Constant.WEAPON_PROFICIENCY_CATEGORIES.includes(p))) {
+      if (updateData.weap_profs.some(p => !Constant.WEAPON_CATEGORIES.includes(p))) {
         ui.notifications.error(`Invalid weapon proficiency specified for ${this.name}`);
       }
 

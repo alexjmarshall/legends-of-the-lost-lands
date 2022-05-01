@@ -606,10 +606,19 @@ export const weaponStuckDesc = ' and the weapon is stuck!';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
 export const knockbackDesc = ' and knocks them flying!';
+export const staggerDesc = ' and staggers them';
 export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc,bowelBleedDesc];
-export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc];
+export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc, staggerDesc];
 
 // weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
+export const HIT_LOC_WEIGHT_INDEXES = {
+  SWING: 0,
+  THRUST: 1,
+  SWING_HIGH: 2,
+  THRUST_HIGH: 3,
+  SWING_LOW: 4,
+  THRUST_LOW: 5,
+};
 export const HIT_LOCATIONS = {
   foot: {
     weights: [2,2,0,0,8,8],
@@ -1531,14 +1540,20 @@ export const AMMO_TYPES = [
   "quarrel",
 ];
 
+export const AIM_AREAS = {
+  head: ['skull','left eye','right eye','face','neck'],
+  left_arm: ['left upper arm','left elbow','left forearm','left hand'],
+  upper_torso: ['left shoulder','left armpit','chest','right armpit','right shoulder'],
+  right_arm: ['right upper arm','right elbow','right forearm','right hand'],
+  lower_torso: ['gut','groin','left hip','right hip'],
+  left_leg: ['left thigh','left knee','left shin','left foot'],
+  right_leg: ['right thigh','right knee','right shin','right foot'],
+}
+
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {
   SWING: [],
   THRUST: [],
-  SWING_HIGH: [],
-  THRUST_HIGH: [],
-  SWING_LOW: [],
-  THRUST_LOW: []
 };
 (async function() {
   const fillLocArr = function (loc, weight, bi) {
@@ -1549,12 +1564,22 @@ export const HIT_LOC_ARRS = {
     }
     return arr;
   };
-  for (const [k, v] of Object.entries(HIT_LOCATIONS)) {
 
-    ["SWING", "THRUST", "SWING_HIGH", "THRUST_HIGH", "SWING_LOW", "THRUST_LOW"].forEach((arr, i) => {
-      HIT_LOC_ARRS[arr] = HIT_LOC_ARRS[arr].concat(fillLocArr(k, v.weights[i], v.bilateral));
+  // add more hit location tables for high/low
+  Object.keys(HIT_LOC_ARRS).forEach(a => ["HIGH","LOW"].forEach(l => Object.assign(HIT_LOC_ARRS, {[`${a}_${l}`]: []})));
+  for (const [k, v] of Object.entries(HIT_LOCATIONS)) {
+    Object.keys(HIT_LOC_ARRS).forEach(arr => {
+      const i = HIT_LOC_WEIGHT_INDEXES[arr];
+      HIT_LOC_ARRS[arr].push(...fillLocArr(k, v.weights[i], v.bilateral));
     });
   }
+  // add more hit location tables for the aim areas
+  Object.keys(HIT_LOC_ARRS).forEach(a => Object.keys(AIM_AREAS).forEach(l => {
+    const key = `${a}_${l.toUpperCase()}`;
+    const values = AIM_AREAS[l].map(loc => HIT_LOC_ARRS[a].filter(hitLoc => hitLoc === loc)).flat();
+    Object.assign(HIT_LOC_ARRS, {[key]: values});
+  }));
+
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();
 
@@ -1567,7 +1592,13 @@ export const SIZE_VALUES = {
   G: 5, // gargantuan
 };
 
-export const WEAPON_PROFICIENCY_CATEGORIES = [
+export const HEIGHT_AREAS = {
+  low: ['foot','shin','knee','thigh','hip','groin'],
+  mid: ['gut','chest','hand','forearm','elbow','upper arm'],
+  high: ['armpit','shoulder','neck','face','eye','skull'],
+}
+
+export const WEAPON_CATEGORIES = [
   "axes",
   "bludgeons",
   "bows",

@@ -35,6 +35,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
     context.parryBonus = context.systemData.ac?.parry?.parry_bonus;
+    context.stancePenalty = context.systemData.ac?.stance_penalty;
 
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
@@ -94,8 +95,6 @@ export class SimpleActorSheet extends ActorSheet {
       }
       const sortedArmorsLastInd = Object.entries(sortedArmors).length - 1;
       armors[hitLoc] = {
-        swi: val.weights[0],
-        thr: val.weights[1],
         sortedArmors,
         sortedArmorsLastInd,
         acDr: {
@@ -505,7 +504,7 @@ export class SimpleActorSheet extends ActorSheet {
       const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
       if (isShield && wearingShield) return ui.notifications.error("Cannot hold a shield while wearing a shield");
       if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
-      if (thisHandFull) return ui.notifications.error("Must release a held item first");
+      if (thisHandFull) return ui.notifications.error("Must release a held item first"); // TODO auto release held items getting in the way
       if (twoHanded) {
         if (!!itemHeldInOtherHand) return ui.notifications.error("Must release a held item first");
         Object.assign(itemUpdate.data, {held_left: true, held_right: true});
@@ -545,7 +544,8 @@ export class SimpleActorSheet extends ActorSheet {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        Util.macroChatMessage(this.actor, { flavor: 'Hold Item', content: `${this.actor.name} wields ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
+        const verb = item.data.data.attributes.weap_category?.value.includes('sword') && !isHeldOtherHand ? 'draws' : 'wields';
+        Util.macroChatMessage(this.actor, { flavor: 'Hold Item', content: `${this.actor.name} ${verb} ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
       }
     }
     return this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
