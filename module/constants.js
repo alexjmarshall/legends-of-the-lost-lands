@@ -683,13 +683,13 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the calf',
+          text: ' and pierces the calf',
         },
         serious: {
           text: ' and cuts a nerve in the calf',
         },
         critical: {
-          text: ' and splits the calf and nicks an artery',
+          text: ' and pierces the calf and nicks an artery',
           dmgEffect: minorBleedDesc('wound'),
         },
         // gruesome: {
@@ -707,7 +707,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and splits the calf to the bone',
+          text: ' and cleaves the calf to the bone',
           dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
@@ -744,13 +744,17 @@ export const HIT_LOCATIONS = {
           text: ' and splits the knee and nicks an artery',
           dmgEffect: minorBleedDesc('wound'),
         },
+        gruesome: {
+          text: ' and shatters the kneecap and tears a ligament and nicks an artery',
+          dmgEffect: minorBleedDesc('wound'),
+        },
       },
       slashing: {
         light: {
           text: ' and severs the tendon below the knee',
         },
         serious: {
-          text: ' and splits the knee and tears a ligament',
+          text: ' and gashes the knee and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
@@ -783,13 +787,13 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the thigh',
+          text: ' and pierces the muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the thigh',
+          text: ' and cuts a nerve in the muscle',
         },
         critical: {
-          text: ' and penetrates the thigh and nicks an artery',
+          text: ' and penetrates the muscle and nicks an artery',
           dmgEffect: majorBleedDesc('wound'),
         },
         // gruesome: {
@@ -799,7 +803,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the thigh',
+          text: ' and gashes the muscle',
           dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
@@ -807,7 +811,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and splits the thigh to the bone',
+          text: ' and cleaves the thigh to the bone',
           dmgEffect: majorBleedDesc('wound'),
         },
         gruesome: {
@@ -846,10 +850,10 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the buttock',
         },
         critical: {
-          text: ' and splits the hip joint and tears a ligament',
+          text: ' and splits the hip and tears a ligament',
         },
         gruesome: {
-          text: ' and splits the hip joint and nicks an artery',
+          text: ' and splits the hip and nicks an artery',
           dmgEffect: majorBleedDesc('wound'),
         },
       },
@@ -863,7 +867,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and splits the hip joint and tears a ligament',
+          text: ' and gashes the hip and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
@@ -885,7 +889,7 @@ export const HIT_LOCATIONS = {
           text: ' and cracks the pubic bone',
         },
         critical: {
-          text: ' and gashes the genitals and cracks the pubic bone',
+          text: ' and lacerates the genitals and cracks the pubic bone',
         },
         gruesome: {
           text: ' and shatters the pubic bone',
@@ -898,7 +902,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and splits the inner thigh and tears a ligament',
+          text: ' and penetrates the inner thigh and tears a ligament',
         },
         critical: {
           text: ' and penetrates the inner thigh and nicks an artery',
@@ -915,7 +919,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and severs the genitals and splits the inner thigh to the bone',
+          text: ' and severs the genitals and cleaves the inner thigh to the bone',
           dmgEffect: majorBleedDesc('wound'),
         },
       },
@@ -1104,7 +1108,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs the biceps tendon',
         },
         serious: {
-          text: ' and splits the elbow and tears a ligament',
+          text: ' and gashes the elbow and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
@@ -1137,7 +1141,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the biceps',
+          text: ' and pierces the biceps',
         },
         serious: {
           text: ' and cuts a nerve in the biceps',
@@ -1259,7 +1263,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and splits the shoulder and tears a ligament',
+          text: ' and gashes the armpit and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
       }
@@ -1542,9 +1546,9 @@ export const AMMO_TYPES = [
 
 export const AIM_AREAS = {
   head: ['skull','left eye','right eye','face','neck'],
-  left_arm: ['left upper arm','left elbow','left forearm','left hand'],
-  upper_torso: ['left shoulder','left armpit','chest','right armpit','right shoulder'],
-  right_arm: ['right upper arm','right elbow','right forearm','right hand'],
+  left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
+  upper_torso: ['left armpit','chest','right armpit'],
+  right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
   lower_torso: ['gut','groin','left hip','right hip'],
   left_leg: ['left thigh','left knee','left shin','left foot'],
   right_leg: ['right thigh','right knee','right shin','right foot'],
