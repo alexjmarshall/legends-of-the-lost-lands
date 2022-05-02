@@ -909,7 +909,7 @@ async function attack(attackers, targetToken, options) {
       hitLocTableName += `_${atkHeight.toUpperCase()}`;
     }
 
-    const getPenalty = chance => 0 - Math.round(Math.log(100 / chance) / Math.log(2) * 2);
+    const getPenalty = chance => 0 - Math.round(Math.log(100 / chance) / Math.log(2));
 
     const aimAreaPenalties = Object.fromEntries(validAreas.map( a => {
       const tableName = hitLocTableName + `_${a.toUpperCase()}`;
@@ -1223,6 +1223,7 @@ async function attack(attackers, targetToken, options) {
 
     }
 
+    isBrutalHit = isBrutalHit || (d20Result === 20 && !immuneBrutalHits && !missileAtk);
     resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
@@ -1241,7 +1242,6 @@ async function attack(attackers, targetToken, options) {
       const armorUpdates = [];
 
       // brutal hits
-      isBrutalHit = isBrutalHit || (d20Result === 20 && !immuneBrutalHits && !missileAtk);
       let dent = false;
       if (isBrutalHit) {
         const armor = sortedWornArmors[0];
@@ -1253,7 +1253,7 @@ async function attack(attackers, targetToken, options) {
         // if damage type is blunt, armor must be bulky or shield to absorb the damage
         if ( applyArmor(armor) && (dmgType !== 'blunt' || isBulky || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+          verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1256, verb)
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
@@ -1287,7 +1287,7 @@ async function attack(attackers, targetToken, options) {
         // if damage type is blunt, armor must be bulky or shield to absorb the damage
         if ( applyArmor(armor) && (dmgType !== 'blunt' || isBulky || isShield) ) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          verb = isSteelPlate && !dent ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+          verb = isSteelPlate && !dent ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1290, verb)
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
@@ -1326,7 +1326,7 @@ async function attack(attackers, targetToken, options) {
             armor = sortedWornArmors[0];
             if (applyArmor(armor)) {
               let verb = isShield ? 'splinters' : 'punctures';
-
+              console.log(1329, verb)
               knockdownDamage = Math.round(knockdownDamage / 2);
 
               // damage armor
@@ -1391,7 +1391,7 @@ async function attack(attackers, targetToken, options) {
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield?.value;
-            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1394, verb)
             // if armor is non-bulky or shield it absorbs the impale damage
             if (!isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
               dmg = 0;
@@ -1452,7 +1452,7 @@ async function attack(attackers, targetToken, options) {
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield?.value;
-            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1455, verb)
 
             // if armor is bulky or shield it absorbs damage and negates bleed
             if (isBulky || isShield) {
@@ -1478,7 +1478,7 @@ async function attack(attackers, targetToken, options) {
         })();
 
         if (doBleed) {
-          dmgEffect = Util.replacePunc(dmgEffect) + (doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc);
+          dmgEffect = Util.replacePunc(dmgEffect) + ((doubleBleedAreas.includes(coverageArea) && (2 * Math.random() > 1)) ? majorBleedDesc : minorBleedDesc);
         }
         // add bleed/heavy bleed condition manually
 
@@ -1528,7 +1528,6 @@ async function attack(attackers, targetToken, options) {
       const parryMulti = atkZone === parryItemHeight ? 2
         : (parryItemHeight === 'mid' || parryItemHeight === 'low' && atkZone === 'mid' || parryItemHeight === 'high' && atkZone === 'mid') ? 1
         : 0;
-      console.log(parryMulti)
       let dexMod= Math.max(Math.min(+targetRollData.dex_mod, +targetRollData.ac.max_dex_mod || 0), 0);
       const isShooting = Util.stringMatch(atkForm,"shoot");
       if ( targetHp <= 0 || isShooting ) { // TODO also have to prevent this if defender is helpless/held/unconscious -- should standardize status conditions
@@ -1545,10 +1544,10 @@ async function attack(attackers, targetToken, options) {
       } else if (totalAtkResult < unarmoredAc - dexMod) {
         missDesc = ` but misses entirely`;
       } else if (totalAtkResult < unarmoredAc) {
-        const verb = Constant.HEIGHT_AREAS.low.includes(coverageArea) ? 'jumps back from' :
+        const verb = Constant.HEIGHT_AREAS.low.includes(coverageArea) ? 'jumps back' :
         Constant.HEIGHT_AREAS.mid.includes(coverageArea) ? 'sidesteps' :
           Constant.HEIGHT_AREAS.high.includes(coverageArea) ? 'ducks' : 'dodges';
-        missDesc = ` but ${targetActor.name} ${verb} the blow`;
+        missDesc = ` but ${targetActor.name} ${verb}`;
         // dodging defender has a chance to counter-attack equal to follow attack chance
         if ( !missileAtk && await Util.rollDice('d100') <= followAttackChance * -1) {
           missDesc += ` and can counter-attack!`;
@@ -1618,7 +1617,7 @@ async function attack(attackers, targetToken, options) {
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage${dr ? ` (DR ${dr})`:''}`;
     
   const injury = (Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"blunt") ? injuryObj['light'] :
-    totalDmgResult > 9 && (2 * Math.random() > 1) && !!injuryObj['gruesome'] ? injuryObj['gruesome'] :
+    totalDmgResult > 9 && !!injuryObj['gruesome'] && (2 * Math.random() > 1) ? injuryObj['gruesome'] :
     totalDmgResult > 5 && (2 * Math.random() > 1) ? injuryObj['critical'] :
     totalDmgResult > 2 && (2 * Math.random() > 1) ? injuryObj['serious'] :
     injuryObj['light']) || {};
