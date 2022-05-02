@@ -155,8 +155,8 @@ export class SimpleActor extends Actor {
         parry_bonus: parryBonus, //TODO make reach value a number and just set max reach. infer min reach by weapon size
       };
       const powerWeap = wornOrHeldItems.find(i => Util.stringMatch(i.data.data.atk_stance,'power')) || {};
-      const powerWeapSize = Constant.SIZE_VALUES[powerWeap.data?.data.attributes.size.value] || 0;
-      const powerStancePenalty = 0 - Math.floor((powerWeapSize + 1) / 2);
+      const powerWeapSize = Constant.SIZE_VALUES[powerWeap.data?.data.attributes.size.value];
+      const powerStancePenalty = powerWeapSize ? (0 - Math.ceil((powerWeapSize + 1) / 2)) : 0;
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + powerStancePenalty;
 
