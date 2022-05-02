@@ -66,7 +66,7 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Description</a>
+        <a class="item" data-tab="description">Notes</a>
         <a class="item" data-tab="items">Items</a>
         {{#if hasArmors}}
         <a class="item" data-tab="armors">Armor</a>
@@ -119,11 +119,6 @@
                 {{#each type as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
-                        {{#if item.data.macro}}
-                        <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
-                        {{/if}}
-                    </div>
-                    <div class="item-toggle">
                         {{#if item.data.attributes.holdable.value}}
                         <a class="item-control {{#if item.data.held_left}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_left">
                             <img style="transform: scaleX(-1);" src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
@@ -140,6 +135,9 @@
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-breastplate.png"/>
                         </a>
                         {{/if}}
+                        {{#if item.data.macro}}
+                        <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
+                        {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
@@ -154,7 +152,7 @@
             </ol>
             {{/each}}
             <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:69px;">
+                <span style="max-width:46px;">
                 </span>
                 <span>
                     {{#if isGM}}
