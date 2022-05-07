@@ -397,22 +397,6 @@
 .lostlands .voice-choice {
   text-align: right;
 }
-.dialog-content .stance-button {
-  background: none;
-  flex: 1;
-  /* max-width: 33%; */
-  border: 2px groove #f0f0e0;
-}
-.dialog-content .selected-button {
-  background: rgba(0, 0, 0, 0.1);
-}
-.dialog-content .choice-button {
-  background: none;
-  flex: 1;
-  max-width: 33%;
-  border: 2px groove #f0f0e0;
-  background: rgba(0, 0, 0, 0.1);
-}
 .lostlands .armors .armors-list {
   list-style: none;
   margin: 5px 0;
@@ -434,15 +418,51 @@
 .lostlands .text-center {
   text-align: center;
 }
-.lostlands .flex4 {
+.dialog-content .stance-button {
+  background: none;
+  flex: 1;
+  min-width: 30%;
+  border: 2px groove #f0f0e0;
+}
+.dialog-content .selected-button {
+  background: rgba(0, 0, 0, 0.1);
+}
+.dialog-content .choice-button {
+  background: none;
+  flex: 1;
+  max-width: 33%;
+  border: 2px groove #f0f0e0;
+  background: rgba(0, 0, 0, 0.1);
+}
+.dialog-content .stance-buttons {
+  justify-content: center;
+  margin-top:2px;
+}
+.dialog-content .aim-buttons {
+  justify-content: center;
+  margin-top:2px;
+}
+.dialog-content .stance-label {
+  align-self: center;
+}
+.flex1 {
+  flex: 1;
+}
+.flex2 {
+  flex: 2;
+}
+.flex3 {
+  flex: 3;
+}
+.flex4 {
   flex: 4;
 }
-.lostlands .flex5 {
+.flex5 {
   flex: 5;
 }
-.lostlands .flex6 {
+.flex6 {
   flex: 6;
 }
-.lostlands .flex7 {
+.flex7 {
   flex: 7;
 }
