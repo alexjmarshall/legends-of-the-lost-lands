@@ -34,8 +34,8 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
-    context.parryBonus = context.systemData.ac?.parry?.parry_bonus;
-    context.stancePenalty = context.systemData.ac?.stance_penalty;
+    context.parryBonus = context.systemData.ac?.parry?.parry;
+    context.stancePenalty = context.systemData.ac?.stance_mod;
 
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
@@ -433,9 +433,9 @@ export class SimpleActorSheet extends ActorSheet {
       // can't wear a shield if already wearing a shield,
       //    while holding a small shield or 2 handed weapon
       //    or if size of shield is bigger than character size + 1
-      const isShield = !!item.data.data.attributes.shield?.value;
-      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
-      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield?.value);
+      const isShield = !!item.data.data.attributes.shield_type?.value;
+      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_type?.value);
+      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield_type?.value);
       const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
       if (isShield) {
         if (itemSize > charSize + 1) return ui.notifications.error(`Character is too small to wear a shield of this size`);
@@ -500,8 +500,8 @@ export class SimpleActorSheet extends ActorSheet {
         itemUpdate.data[`held_${hand}`] = false;
       }
     } else {
-      const isShield = !!item.data.data.attributes.shield?.value;
-      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+      const isShield = !!item.data.data.attributes.shield_type?.value;
+      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_type?.value);
       if (isShield && wearingShield) return ui.notifications.error("Cannot hold a shield while wearing a shield");
       if (itemSize > maxSize) return ui.notifications.error("Item too big to hold");
       if (thisHandFull) return ui.notifications.error("Must release a held item first"); // TODO auto release held items getting in the way
