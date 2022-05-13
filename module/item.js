@@ -31,13 +31,12 @@ export class SimpleItem extends Item {
 
   prepareItem(itemData) {
     // populate shield values from constants
-    const isShield = !!itemData.attributes.shield?.value;
+    const isShield = !!itemData.attributes.shield_type?.value;
     if (isShield) {
-      const sizes = {L: "large", M: "medium"};
-      const size = sizes[itemData.attributes.size?.value];
+      const type = itemData.attributes.shield_type?.value;
       if (itemData.attributes.coverage) {
         const stance = itemData.shield_height || 'mid';
-        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[size].coverage[stance];
+        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[type].coverage[stance];
       }
     }
 
@@ -117,7 +116,7 @@ export class SimpleItem extends Item {
       if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
       // adjust garment weight by owner size
       const ownerData = this.actor?.data?.data;
-      const isGarment = !itemData.attributes.shield?.value;
+      const isGarment = !itemData.attributes.shield_type?.value;
       if (ownerData && isGarment) {
         const charSize = Constant.SIZE_VALUES[ownerData.attributes?.size?.value] ?? 2;
         weight = Math.round( Util.sizeMulti(weight, charSize) * 10 ) / 10;
