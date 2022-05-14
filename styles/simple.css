@@ -466,3 +466,10 @@
 .flex7 {
   flex: 7;
 }
+.chat-message.emote {
+  background: #ede3ca;
+}
+.chat-message.ic {
+  background: #f3edde;
+  /* background: #887c5d; #ede7d8; */
+}
