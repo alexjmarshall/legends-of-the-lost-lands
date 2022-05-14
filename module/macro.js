@@ -326,14 +326,15 @@ export async function heldWeaponAttackMacro(options={}) {
       return ui.notifications.error("Invalid weapon size specified");
     }
 
-    const hasSweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value);
-    const sweeping = hasSweepWeap && ranTarget && targets.length <= 4 && selectedTokens.length === 1 && !options.skipSweep;
+    const sweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value); // TODO select sweep with maneuver
+    const weapSize = Constant.SIZE_VALUES[sweepWeap.data.data.attributes.size?.value];
+    const sweeping = !!sweepWeap && ranTarget && targets.length <= weapSize && selectedTokens.length === 1 && !options.skipSweep;
     if (sweeping) {
       options.skipSweep = true;
-      options.atkMod = -4;
       options.atkMode = 'swi(s)';
-      for (const t of targets) {
+      for (const [i,t] of targets.entries()) {
         options.targetToken = t;
+        options.atkMod = 0 - (i + 1) || 0;
         heldWeaponAttackMacro(options);
         await Util.wait(500);
       }
@@ -354,7 +355,7 @@ export async function heldWeaponAttackMacro(options={}) {
     // if wearing a shield and holding multiple weapons, can only use biggest one
     if (weapons.length > 1) {
       const wearingShield = token.actor.data.items.some(i => i.type === 'item' &&
-                            i.data.data.worn && !!i.data.data.attributes.shield?.value);
+                            i.data.data.worn && !!i.data.data.attributes.shield_type?.value);
       if (wearingShield) weapons = [weapons[weapons.length - 1]];
     }
 
@@ -781,6 +782,11 @@ async function attack(attackers, targetToken, options) {
   const targetWeapSpeeds = targetActor?.items.filter(i => i.data.data.held_left || i.data.data.held_right).map(i => +i.data.data.attributes.speed?.value).filter(i => i) || [];
   const targetWeapSpeed = targetWeapSpeeds.length ? Math.min(...targetWeapSpeeds) : 10 - targetSize;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value];
+  if (weapSize == null) {
+    ui.notifications.error("Invalid weapon size specified");
+    weapons.shift();
+    return attack(attackers, targetToken, options); 
+  }
   const weapCategory = weapAttrs.weap_category?.value;
   const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
@@ -788,7 +794,6 @@ async function attack(attackers, targetToken, options) {
   const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
-  let brutalAtkMod = 0;
   let sitDmgMod = 0;
   let aimPenalty = 0;
   let aimArea;
@@ -872,7 +877,7 @@ async function attack(attackers, targetToken, options) {
   const offhand = weapon.offhand && options.twoWeaponFighting !== false;
   
   // can't use offhand weapon when wearing a shield
-  const wearingShield = actorItems.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+  const wearingShield = actorItems.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_type?.value);
   if ( offhand === true && wearingShield ) {
     weapons.shift();
     return attack(attackers, targetToken, options);
@@ -909,7 +914,7 @@ async function attack(attackers, targetToken, options) {
       hitLocTableName += `_${atkHeight.toUpperCase()}`;
     }
 
-    const getPenalty = chance => 0 - Math.round(Math.log(100 / chance) / Math.log(2));
+    const getPenalty = chance => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(2)));
 
     const aimAreaPenalties = Object.fromEntries(validAreas.map( a => {
       const tableName = hitLocTableName + `_${a.toUpperCase()}`;
@@ -927,22 +932,6 @@ async function attack(attackers, targetToken, options) {
       hitLocTableName += `_${aimArea.toUpperCase()}`;
     }
   }
-  
-
-  // if ( weaponItem._id && weapon.altDialogChoice && weapon.altDialogChoice !== weaponItem.data.data.atk_mode ) {
-  //   try {
-  //     await attackingActor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.atk_mode': weapon.altDialogChoice}]);
-  //     const choiceDesc = Constant.ATK_MODES[weapon.altDialogChoice]?.ATK_FORM || weapon.altDialogChoice;
-  //     Util.macroChatMessage(token, {
-  //       content: `${attackingActor.name} takes a ${choiceDesc}ing stance with ${weaponItem.name}.`,
-  //       flavor: `Weapon Stance`
-  //     }, false);
-  //     weapons.shift();
-  //     return attack(attackers, targetToken, options);
-  //   } catch (error) {
-  //     ui.notifications.error(`error updating stored atk_mode for ${weaponItem.name}, ${error}`);
-  //   }
-  // }
 
   const thrown = Util.stringMatch(atkForm,'throw');
   // throwing offhand weapon is not allowed
@@ -1007,7 +996,7 @@ async function attack(attackers, targetToken, options) {
   const atkAttr = Constant.ATK_MODES[atkMode]?.ATK_ATTR;
   const dmgAttr = Constant.ATK_MODES[atkMode]?.DMG_ATTR;
   const attrAtkMod = attackerRollData[`${atkAttr}_mod`] || 0;
-  const attrDmgMod = attackerRollData[`${dmgAttr}_mod`] || 0;
+  let attrDmgMod = (offhand && attackerRollData[`${dmgAttr}_mod`] > 0 ? Math.floor(attackerRollData[`${dmgAttr}_mod`] / 2) : attackerRollData[`${dmgAttr}_mod`]) || 0;
   const attackerAttrAtkMod = attackerRollData.atk_mod || 0;
   const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
   const attackerAtkMod = attacker.atkMod || 0;
@@ -1015,19 +1004,25 @@ async function attack(attackers, targetToken, options) {
   const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
     Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
 
-  let isBrutalHit = Util.stringMatch(weaponItem.data.data.atk_stance, 'power');
-  const brutalMod = weapSize + 1;
-  if (isBrutalHit) brutalAtkMod -= Math.ceil(brutalMod / 2);
+  const isPowerStance = Util.stringMatch(weaponItem.data.data.atk_style, 'power');
+  if (isPowerStance) attrDmgMod = Math.floor(attrDmgMod * 1.5);
+  const isCautiousStance = Util.stringMatch(weaponItem.data.data.atk_style, 'cautious');
+  if (isCautiousStance) attrDmgMod = Math.floor(attrDmgMod * 0.5);
+  let stanceDmgMod = isCautiousStance ? Constant.CAUTIOUS_STANCE_DMG_PENALTY(weapSize) : 0;
+  let stanceAtkMod = isPowerStance ? Constant.POWER_STANCE_ATK_PENALTY : isCautiousStance ? Constant.CAUTIOUS_STANCE_ATK_BONUS : 0;
+
 
   // get target's properties
   // can be immune to lucky hits, critical hits, bleed, knockdown and impale
   const immuneBrutalHits = !!targetRollData?.immune_brutal_hits;
-  const immuneCriticalHits = !!targetRollData?.immune_critical_hits; /// || attackingActor._id === targetActor?._id;
+  const immuneCriticalHits = !!targetRollData?.immune_critical_hits;
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
 
   // situational mods
+  // 1.5x attrDmgMod if holding weapon with both hands
+  if (weaponHeldTwoHands && !missileAtk) attrDmgMod = Math.floor(attrDmgMod * 1.5);
   // +1 if holding a weapon of same size in both hands
   if (weapSize === attackerSize && weaponHeldTwoHands && !missileAtk) sitAtkMod++;
   // -2 if holding a weapon one size larger in one hand
@@ -1106,7 +1101,7 @@ async function attack(attackers, targetToken, options) {
 
   // attack
   const d20Result = await Util.rollDice("d20");
-  const atkFactors = [d20Result, bab, attrAtkMod, twoWeaponFightingPenalty, attackerAttrAtkMod, attackerAtkMod, weapAtkMod, rangePenalty, brutalAtkMod, sitAtkMod, aimPenalty];
+  const atkFactors = [d20Result, bab, attrAtkMod, twoWeaponFightingPenalty, attackerAttrAtkMod, attackerAtkMod, weapAtkMod, rangePenalty, stanceAtkMod, sitAtkMod, aimPenalty];
   let totalAtk = atkFactors.reduce((prev, curr) => curr ? prev + `+${curr}` : prev);
   // have to add dialog mod afterwards, in case it multiplies/divides
   let dialogAtk = '';
@@ -1137,6 +1132,7 @@ async function attack(attackers, targetToken, options) {
   const knockbackDesc = Constant.knockbackDesc;
   const staggerDesc = Constant.staggerDesc;
   let coverageArea = '';
+  let endHeight = '';
 
   
   let rolledWeapDmg = await Util.rollDice(weapDmg);
@@ -1162,7 +1158,7 @@ async function attack(attackers, targetToken, options) {
     const dropKnockdownAreas = ['hand','forearm'];
     let sortedWornArmors = [];
     const parry = targetRollData.ac.parry;
-    const isParrying = parry?.parry_item_id && parry?.parry_bonus > 0 && targetHp > 0 && !missileAtk;
+    const isParrying = parry?.parry_item_id && parry?.parry > 0 && targetHp > 0 && !missileAtk;
 
     const applyArmor = (armor) => {
       const currentAC = +armor?.data.data.attributes.base_ac?.value;
@@ -1179,6 +1175,13 @@ async function attack(attackers, targetToken, options) {
       const hitLocRoll = await Util.rollDice(`d${hitLocTable.length}`);
       hitLoc = hitLocTable[hitLocRoll - 1];
       coverageArea = hitLoc.replace('right ', '').replace('left ', '');
+      for (const [k,v] of Object.entries(Constant.HEIGHT_AREAS)) {
+        if (v.includes(coverageArea)) {
+          endHeight = k;
+          break;
+        }
+      }
+      endHeight = endHeight || atkHeight;
 
       const acObj = targetRollData.ac[coverageArea][dmgType] || {};
       targetAc = acObj.ac ?? targetAc;
@@ -1187,14 +1190,13 @@ async function attack(attackers, targetToken, options) {
       dr = acObj.dr ?? dr;
 
       // shield mods
-      // check for friendly adjacent tokens wearing a Large Shield, i.e. shield wall
-      const largeShieldLocs = [...new Set(Object.values(Constant.SHIELD_TYPES.large.coverage).map(v => Util.getArrFromCSL(v)).flat())];
+      // check for friendly adjacent tokens wearing a Large Round Shield, i.e. shield wall
+      const largeShieldLocs = [...new Set(Object.values(Constant.SHIELD_TYPES["large round"].coverage).map(v => Util.getArrFromCSL(v)).flat())];
       if(largeShieldLocs.includes(coverageArea)) {
         const adjFriendlyTokens = adjTokens(targetToken, 1);
         const adjLargeShields = adjFriendlyTokens.map(t => t.actor.items.filter(i => i.data.data.worn &&
-          i.data.data.attributes.shield?.value &&
-          Util.stringMatch(i.data.data.attributes.size?.value, 'L') &&
-          i.data.data.shield_height && Util.getArrFromCSL(Constant.SHIELD_TYPES.large.coverage[i.data.data.shield_height]).includes(coverageArea)
+          Util.stringMatch(i.data.data.attributes.shield_type?.value, 'large round') &&
+          i.data.data.shield_height && Util.getArrFromCSL(Constant.SHIELD_TYPES["large round"].coverage[i.data.data.shield_height]).includes(coverageArea)
         )).flat();
         const adjLargeShieldAcs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.ac) || 0);
         const adjLargeShieldDrs = adjLargeShields.map(s => (+s.data.data.ac?.[dmgType]?.dr) || 0);
@@ -1212,8 +1214,8 @@ async function attack(attackers, targetToken, options) {
           targetAc -= Math.min(1, shieldBonus);
         }
         if (chainWeapon) {
-          // disregard all shield mods if weapon is unwieldy, e.g. flail
-          sortedWornArmors = sortedWornArmors.filter(i => !i.data.data.attributes.shield?.value);
+          // disregard all shield mods if weapon is unwieldy, e.g. flail TODO AND parry bonus!
+          sortedWornArmors = sortedWornArmors.filter(i => !i.data.data.attributes.shield_type?.value);
           targetAc -= shieldBonus;
         }
       }
@@ -1223,7 +1225,7 @@ async function attack(attackers, targetToken, options) {
 
     }
 
-    isBrutalHit = isBrutalHit || (d20Result === 20 && !immuneBrutalHits && !missileAtk);
+    const isBrutalHit = isPowerStance; //|| (!isCautiousStance && d20Result === 20 && !immuneBrutalHits && !missileAtk);
     resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
@@ -1246,14 +1248,22 @@ async function attack(attackers, targetToken, options) {
       if (isBrutalHit) {
         const armor = sortedWornArmors[0];
         const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
+        const isIronPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'iron plate');
         const isBulky = !!armor?.data.data.attributes.bulky?.value;
-        const isShield = !!armor?.data.data.attributes.shield?.value;
-        let verb = '';
-
+        const isShield = !!armor?.data.data.attributes.shield_type?.value;
+        const armorApplies = applyArmor(armor);
         // if damage type is blunt, armor must be bulky or shield to absorb the damage
-        if ( applyArmor(armor) && (dmgType !== 'blunt' || isBulky || isShield) ) {
+        const absorbDmg = armorApplies && (dmgType !== 'blunt' || isBulky || isShield);
+        const armorDented = absorbDmg && (isSteelPlate || isIronPlate && (2 * Math.random() > 1));
+        const dmgBonus = Constant.POWER_STANCE_DMG_BONUS(weapSize);
+        // apply penalty of 1 + the absorbing armor's DR again to the bonus damage
+        const dr = (Number(armor?.data.data.ac?.[dmgType]?.dr) || 0) + 1;
+        stanceDmgMod += absorbDmg ? dmgBonus - dr : dmgBonus;
+        const skipArmor = !armorApplies || absorbDmg && !armorDented;
+        
+        if (absorbDmg) {
           const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          verb = isSteelPlate ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1256, verb)
+          let verb = armorDented ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1256, verb)
           const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
           if (baseAc < 1) {
             verb = 'destroys';
@@ -1262,26 +1272,20 @@ async function attack(attackers, targetToken, options) {
           }
           options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
           hitDesc += ` and ${verb} ${armor.name}`;
-        } else {
-          weapDmgResult += brutalMod;
         }
 
-        if (verb === 'dents') {
-          dent = true;
-        } else {
-          sortedWornArmors.shift();
-        }
+        skipArmor && sortedWornArmors.shift();
       }
 
       // critical hits
       const critChance = isCurvedSword ? Math.ceil(1.5 * (totalAtkResult - targetAc)) : totalAtkResult - targetAc
-      let isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
+      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
 
       if (isCriticalHit) {
         const armor = sortedWornArmors[0];
         const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
         const isBulky = !!armor?.data.data.attributes.bulky?.value;
-        const isShield = !!armor?.data.data.attributes.shield?.value;
+        const isShield = !!armor?.data.data.attributes.shield_type?.value;
         let verb = '';
 
         // if damage type is blunt, armor must be bulky or shield to absorb the damage
@@ -1297,7 +1301,6 @@ async function attack(attackers, targetToken, options) {
           options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
           hitDesc = hitDesc.replace(` and dents ${armor.name}`, ` and ${verb} ${armor.name}`);
 
-          isCriticalHit = false;
         } else {
           weapDmgResult = weapDmgResult + weapDmgResult;
         }
@@ -1317,7 +1320,7 @@ async function attack(attackers, targetToken, options) {
         (() => {
           let armor = sortedWornArmors[0];
           const isBulky = !!armor?.data.data.attributes.bulky?.value;
-          const isShield = !!armor?.data.data.attributes.shield?.value;
+          const isShield = !!armor?.data.data.attributes.shield_type?.value;
           const bulkyNonMetal = (isBulky || isShield) && !armor?.data.data.attributes.metal?.value;
           const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
           
@@ -1390,7 +1393,7 @@ async function attack(attackers, targetToken, options) {
 
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
-            const isShield = !!armor.data.data.attributes.shield?.value;
+            const isShield = !!armor.data.data.attributes.shield_type?.value;
             let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1394, verb)
             // if armor is non-bulky or shield it absorbs the impale damage
             if (!isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
@@ -1438,7 +1441,7 @@ async function attack(attackers, targetToken, options) {
 
 
       // metal armor cannot be cut
-      const metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
+      let metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
       let minBleedDmg = 6;
       let bleedChance = 25;
       if (isCurvedSword) minBleedDmg--;
@@ -1451,7 +1454,7 @@ async function attack(attackers, targetToken, options) {
         (function() {
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
-            const isShield = !!armor.data.data.attributes.shield?.value;
+            const isShield = !!armor.data.data.attributes.shield_type?.value;
             let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1455, verb)
 
             // if armor is bulky or shield it absorbs damage and negates bleed
@@ -1485,9 +1488,10 @@ async function attack(attackers, targetToken, options) {
         sortedWornArmors.shift();
       }
 
-      // switch dmgType to blunt if metal armor/plate remains
+      // switch dmgType to blunt if metal armor remains
+      metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
       const plateArmor = sortedWornArmors.find(i => i.data.data.attributes.material?.value.includes('plate'));
-      if ( applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') || applyArmor(plateArmor) && Util.stringMatch(dmgType, 'piercing') ) {
+      if ( applyArmor(metalArmor) && (Util.stringMatch(dmgType, 'slashing') || Util.stringMatch(dmgType, 'piercing') )) {
         dmgType = 'blunt';
         const bluntingArmor = plateArmor || metalArmor;
         hitDesc += !hitDesc.includes(bluntingArmor.name) ? ` and fails to penetrate ${bluntingArmor.name} but` : '';
@@ -1509,16 +1513,16 @@ async function attack(attackers, targetToken, options) {
       const targetHeldItems = targetActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
       let parryItem = targetActor.items.get(parry?.parry_item_id);
       if (!parryItem && targetHeldItems.length) {
-        parryItem = targetHeldItems.reduce((a,b) => (+b.data.data.attributes.parry_bonus?.value || 0) > (+a.data.data.attributes.parry_bonus?.value || 0) ? b : a);
+        parryItem = targetHeldItems.reduce((a,b) => (+b.data.data.attributes.parry?.value || 0) > (+a.data.data.attributes.parry?.value || 0) ? b : a);
         // use shield if higher parry bonus
-        if (!!deflectingArmor?.data.data.attributes.shield?.value && 
-          +deflectingArmor.data.data.attributes.base_ac?.value > +parryItem?.data.data.attributes.parry_bonus?.value) {
+        if (!!deflectingArmor?.data.data.attributes.shield_type?.value && 
+          +deflectingArmor.data.data.attributes.base_ac?.value > +parryItem?.data.data.attributes.parry?.value) {
             parryItem = deflectingArmor;
         }
       }
-      let targetParryBonus = +parryItem?.data.data.attributes.parry_bonus?.value || +parryItem?.data.data.attributes.base_ac?.value || 0;
+      let targetParryBonus = +parryItem?.data.data.attributes.parry?.value || +parryItem?.data.data.attributes.base_ac?.value || 0;
       const parryItemHeight = parryItem?.data.data.atk_height;
-      if (parryItem?.data.data.atk_stance === 'power' ||
+      if (parryItem?.data.data.atk_style === 'power' ||
         !isParrying && parryItemHeight && !Constant.HEIGHT_AREAS[parryItemHeight].includes(coverageArea)) {
           targetParryBonus = 0;
       }
@@ -1567,7 +1571,7 @@ async function attack(attackers, targetToken, options) {
           hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
         }
         missDesc = ` ${deflectingArmorName ? 
-         ` but the ${isShooting ? 'missile' : 'blow'} glances off ${deflectingArmorName}` : 
+         ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && deflectingArmor.data.data.attributes.shield_type?.value ? ` thunks into ` : ` glances off`} ${deflectingArmorName}` : 
          ' but misses'}`;
         if ( (deflectingArmor?.data.data.attributes.metal?.value || Util.stringMatch(deflectingArmor?.data.data.attributes.material?.value, "wood")) &&
           fragile && await Util.rollDice('d100') <= 5) {
@@ -1605,7 +1609,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  const dmgMods = [attrDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
+  const dmgMods = [attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
   const dmgModText = dmgMods.reduce((prev, curr, ind) => curr && ind === 0 ? prev + `${curr}` : prev + `+${curr}`, '');
   let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText ? `+${dmgModText}` : ''}`;
   let dialogDmg = '';
@@ -1613,7 +1617,7 @@ async function attack(attackers, targetToken, options) {
     dialogDmg = `${!dialogDmgMod.includesSign ? `+` : ''}${dialogDmgMod.formula}`;
     totalDmg = /^[\*|\/]/.test(dialogDmg) ? `(${totalDmg})${dialogDmg}` : `${totalDmg}${dialogDmg}`;
   }
-  let totalDmgResult = Math.max(1, await Util.rollDice(totalDmg));
+  let totalDmgResult = Math.max(1, await Util.rollDice(totalDmg)); // TODO need to also update totalDmg text if set to min 1
   let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage${dr ? ` (DR ${dr})`:''}`;
     
   const injury = (Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"blunt") ? injuryObj['light'] :
@@ -1706,7 +1710,7 @@ async function attack(attackers, targetToken, options) {
   const lastChar = resultText.charAt(resultText.length - 1);
   chatMsgData.content += lastChar === '!' || lastChar === '.' ? '<br>' : `.<br>`;
   
-  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName} ${formatAtkMode(atkMode).toLowerCase() || atkForm}${rangeText}${atkHeight === 'high' || atkHeight === 'low' ? ` from ${atkHeight}` : ''}, `; //, ${Constant.ATK_MODES[atkMode]?.DMG_TYPE || dmgType}
+  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName} ${formatAtkMode(atkMode).toLowerCase() || atkForm}${rangeText}${atkHeight && endHeight ? ` ${atkHeight}-to-${endHeight}` : ''}, `;
   chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackingActor.name} ${pluralizeWeapName(weapName)}${targetActor ? ` ${targetActor.name}` : ''}<br>` :
     `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}.<br>`;
 
@@ -1719,85 +1723,80 @@ export function setStance(options={}) {
   let char;
   try {
     char = Util.selectedCharacter();
-  } catch(e) {
+  } catch (e) {
     return ui.notifications.error(e.message);
   }
   const actor = char.actor;
-
   const weapons = actor.items.filter(i => i.type === 'item' &&
     i.data.data.attributes.atk_modes &&
     (i.data.data.held_left || i.data.data.held_right)
   );
-  const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield?.value);
+  const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_type?.value);
 
   if (!weapons.length && !shields.length) {
     return ui.notifications.info("Not holding any items with defined stances");
   }
+  if (weapons.some(w => Constant.SIZE_VALUES[w.data.data.attributes.size?.value] == null)) {
+    return ui.notifications.error("Invalid weapon size specified");
+  }
 
   const heights = ['high','mid','low'];
-  const getShieldChoices = (item) => {
-    let buttons = '';
-    const currentChoice = item.data.data.shield_height || 'mid';
-    for (const choice of heights) {
-      buttons += `
-        <button id="${item._id}-${choice}" class="stance-button${choice === currentChoice ? ' selected-button' : ''}" data-shield-height="${choice}">
-          ${Util.upperCaseFirst(choice)}
-        </button>
-      `;
-    }
-    const buttonsStyle = 'display:flex;justify-content:center;margin-top:2px;';
-    const labelStyle = 'align-self:center;width:3.2em;';
-    return `
-      <div id="${item._id}" style="margin-bottom:1em;">
-        <div style="padding-left:5px;">
-          <label>${item.name}</label>
-          <div id="${item._id}-shield-heights" style="${buttonsStyle}"><label style="${labelStyle}">Height</label> ${buttons}</div>
-        </div>
-      </div>
-    `;
-  };
-
-  const getWeaponChoices = (item, atkModes) => {
-    const currentAtkStance = item.data.data.atk_stance || 'normal';
-    const currentAtkHeight = item.data.data.atk_height || 'mid';
-    const currentAtkMode = item.data.data.atk_mode || atkModes[0];
-    let heightButtons = '', modeButtons = '';
-    const powerMod = Constant.SIZE_VALUES[item.data.data.attributes.size?.value] + 1;
-    const powerAtkMod = Math.ceil(powerMod / 2);
-    const powerTitle = !powerMod ? '' : `-${powerAtkMod} to-hit, +${powerMod} damage`;
-    const stanceButtons = `
-      <button id="${item._id}-normal-atk" class="stance-button${currentAtkStance === 'normal' ? ' selected-button' : ''}" data-atk-stance="normal">
-        Normal
-      </button>
-      <button title="${powerTitle}" id="${item._id}-power-atk" class="stance-button${currentAtkStance === 'power' ? ' selected-button' : ''}" data-atk-stance="power">
-        Power
-      </button>
-    `;
-    for (const height of heights) {
-      heightButtons += `
-        <button id="${item._id}-${height}" class="stance-button${height === currentAtkHeight ? ' selected-button' : ''}" data-atk-height="${height}">
-          ${Util.upperCaseFirst(height)}
-        </button>
-      `;
-    }
-    for (const mode of atkModes) {
-      modeButtons += `
-        <button id="${item._id}-${mode}" class="stance-button${mode === currentAtkMode ? ' selected-button' : ''}" data-atk-mode="${mode}">
-          ${formatAtkMode(mode)}
-        </button>
-      `;
-    }
-
-    const buttonsStyle = 'display:flex;justify-content:center;margin-top:2px;';
-    const labelStyle = 'align-self:center;width:3.2em;';
+  
+  const getButton = (item, type, key, val, currVal) => `
+    <button id="${item._id}-${type}-${val}" class="stance-button${currVal === val ? ' selected-button' : ''}" data-${type}-${key}="${val}">
+      ${key === 'mode' ? formatAtkMode(val) : Util.upperCaseFirst(val)}
+    </button>
+  `;
+  const getRows = (item, type, rows) => rows.map(r => `
+    <div id="${item._id}-${type}-${r.id}" class="flexrow stance-buttons">
+      <label class="flex1 stance-label">${r.label}</label>
+      <div class="flexrow flex4">${r.buttons}</div>
+    </div>
+  `).join('');
+  
+  const getShieldChoices = item => {
+    const styles = ['fluid','stable'];
+    const currHeight = item.data.data.shield_height || 'mid';
+    const currStyle = item.data.data.shield_style || 'stable';
+    const heightButtons = { id: 'heights', label: 'Height',  buttons: heights.map(h => getButton(item, 'shield', 'height', h, currHeight)).join('') };
+    const styleButtons = { id: 'styles', label: 'Style', buttons: styles.map(s => getButton(item, 'shield', 'style', s, currStyle)).join('') };
+    const rows = [styleButtons,heightButtons];
 
     return `
       <div id="${item._id}" style="margin-bottom:1em;">
         <label>${item.name}</label>
         <div style="padding-left:5px;">
-          <div id="${item._id}-atk-stances" style="${buttonsStyle}"><label style="${labelStyle}">Power</label> ${stanceButtons}</div>
-          <div id="${item._id}-atk-heights" style="${buttonsStyle}"><label style="${labelStyle}">Height</label> ${heightButtons}</div>
-          <div id="${item._id}-atk-modes" style="${buttonsStyle}"><label style="${labelStyle}">Mode</label> ${modeButtons}</div>
+          ${getRows(item, 'shield', rows)}
+        </div>
+      </div>
+    `;
+  };
+
+  // style (fluid, stable, power), height (low, mid, high), mode (atk modes), grip (normal, thumb), timing (riposte, offense, counter)
+  const getWeaponChoices = (item, atkModes) => {
+    const styles = ['fluid','stable','power'];
+    const itemData = item.data.data;
+    const currStyle = itemData.atk_style || 'stable';
+    const currHeight = itemData.atk_height || 'mid';
+    const currMode = itemData.atk_mode || atkModes[0];
+    const currGrip = itemData.atk_grip || 'normal';
+    const currInit = itemData.atk_init || 'offense';
+    const grips = ['thumb','normal','reverse'];
+    const inits = ['counter','offense','riposte'];
+
+    const styleButtons = { id: 'styles', label: 'Style', buttons: styles.map(s => getButton(item, 'atk', 'style', s, currStyle)).join('') };
+    const heightButtons = { id: 'heights', label: 'Height',  buttons: heights.map(h => getButton(item, 'atk', 'height', h, currHeight)).join('') };
+    const modeButtons = { id: 'modes', label: 'Mode',  buttons: atkModes.map(m => getButton(item, 'atk', 'mode', m, currMode)).join('') };
+    const gripButtons = { id: 'grips', label: 'Grip',  buttons: grips.map(g => getButton(item, 'atk', 'grip', g, currGrip)).join('') };
+    const initButtons = { id: 'inits', label: 'Timing',  buttons: inits.map(i => getButton(item, 'atk', 'init', i, currInit)).join('') };
+
+    const rows = [styleButtons,heightButtons,modeButtons,gripButtons,initButtons];
+
+    return `
+      <div id="${item._id}" style="margin-bottom:1em;">
+        <label>${item.name}</label>
+        <div style="padding-left:5px;">
+          ${getRows(item, 'atk', rows)}
         </div>
       </div>
     `;
@@ -1810,7 +1809,7 @@ export function setStance(options={}) {
     if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
       return ui.notifications.error(`Invalid attack mode(s) specified for ${w.name}`);
     }
-    const parryBonus = +weapAttrs.parry_bonus?.value;
+    const parryBonus = +weapAttrs.parry?.value;
     parryBonus && atkModes.push('parry');
     content += getWeaponChoices(w, atkModes);
   }
@@ -1819,20 +1818,21 @@ export function setStance(options={}) {
   }
 
   return new Dialog({
-    title: `Set Stance`,
+    title: `Change Stance`,
     content,
     buttons: {
       one: {
         icon: '<i class="fas fa-check"></i>',
         label: `Submit`,
         callback: async html => {
-          const addStance = (item, updates, chatMsgs) => {
+          const addStance = (item, updates, content) => {
+            const rows = ["atk_mode","atk_style","atk_height","atk_init","atk_grip","shield_style","shield_height"];
             const update = {'_id': item._id};
             const selections = {};
-            const $selectedButtons = html.find(`#${item._id} .selected-button`);
-            $selectedButtons.each(function() {
+            const selectedButtons = html.find(`#${item._id} .selected-button`);
+            selectedButtons.each(function() {
               const $button = $(this);
-              for (const field of ["atk_mode", "atk_stance", "atk_height", "shield_height"]) {
+              for (const field of rows) {
                 const newVal = $button.data(field.replace('_','-'));
                 if (!newVal) continue;
                 const oldVal = item.data.data[field];
@@ -1843,34 +1843,34 @@ export function setStance(options={}) {
                 }
               }
             });
-            const stance = selections['atk_stance'] === 'power' ? ' powerful' : '';
+
             const shield = !!selections['shield_height'];
+            const atkStyle = selections['atk_style'] == 'power' ? ` powerful` : ` ${selections['atk_style']}`;
+            const style = shield ? ` ${selections['shield_style']}` : atkStyle;
             const height = shield ? ` ${selections['shield_height']}` : ` ${selections['atk_height']}`;
-            const atkMode = selections['atk_mode'];
-            const atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM;
-            const mode = atkForm ? ` ${atkForm}ing` : atkMode ? ` ${atkMode}ing` : '';
+            const atkForm = Constant.ATK_MODES[selections['atk_mode']]?.ATK_FORM;
+            const mode = atkForm ? ` ${atkForm}ing` : '';
+            const grip = (selections['atk_grip'] == null || selections['atk_grip'] === 'normal') ? '' :  ` in a ${selections['atk_grip']} grip`;
+            const init = (selections['atk_init'] === 'riposte' || selections['atk_init'] === 'counter') ? ' and cedes the initiative' : '';
             const doChatMsg = Object.keys(update).length > 1;
             if (doChatMsg) {
-              let choiceDesc = `${stance}${height}${mode}`;
-              const content = `${actor.name} takes a${choiceDesc} ${shield ? 'guard' : 'stance'} with ${item.name}.`;
-              chatMsgs.push(() => {
-                Util.macroChatMessage(char.token, {
-                  content,
-                  flavor: `Set Stance`,
-                }, true);
-              });
+              updates.push(update);
+              const choiceDesc = `${style}${height}${mode}`;
+              const contentDesc = `a${choiceDesc} ${shield ? 'guard' : 'stance'} with ${item.name}${grip}${init}.`
+              content = !content ? `${actor.name} takes ${contentDesc}`
+                : content.replace(/.$/,'') + ` and ${contentDesc}`;
             }
-            updates.push(update);
+            return content;
           }
           const updates = [];
-          const chatMsgs = [];
-          weapons.forEach(w => addStance(w, updates, chatMsgs)); // TODO one chat msg for each dual wield/attack routine attack?
-          shields.forEach(s => addStance(s, updates, chatMsgs));
-          actor.updateEmbeddedDocuments("Item", updates);
-          for (const chatMsg of chatMsgs) {
-            chatMsg();
-            await Util.wait(500);
-          }
+          let content = '';
+          shields.forEach(s => content = addStance(s, updates, content));
+          weapons.forEach(w => content = addStance(w, updates, content)); // TODO one chat msg for each dual wield/attack routine attack?
+          actor.updateEmbeddedDocuments("Item", updates);console.log(updates);
+          Util.macroChatMessage(char.token, {
+            content,
+            flavor: `Change Stance`,
+          }, true);
         }
       },
       two: {
@@ -1879,42 +1879,13 @@ export function setStance(options={}) {
       }
     },
     render: html => {
-      for (const item of weapons) {
-        const $atkModeButtons = html.find(`#${item._id}-atk-modes .stance-button`);
-        const $atkStanceButtons = html.find(`#${item._id}-atk-stances .stance-button`);
-        const $atkHeightButtons = html.find(`#${item._id}-atk-heights .stance-button`);
-        const resetAtkButtons = () => {
-          const atkMode = $atkModeButtons.filter(`.selected-button`).data('atk-mode');
-          if (atkMode === 'parry') {
-            for (const buttons of [$atkStanceButtons]) {
-              buttons.removeClass("selected-button");
-              buttons.prop("disabled", true);
-            }
-            const $normStanceButton = html.find(`#${item._id}-normal-atk`);
-            $normStanceButton.addClass("selected-button").prop("disabled", false);
-          } else {
-            $atkStanceButtons.prop("disabled", false);
-            $atkHeightButtons.prop("disabled", false);
-          }
-        }
-        resetAtkButtons();
-        for (const $buttons of [$atkModeButtons, $atkStanceButtons, $atkHeightButtons]) {
-          $buttons.click(function() {
-            const $button = $(this);
-            if (!$button.hasClass("selected-button")) {
-              $buttons.removeClass("selected-button");
-              $button.addClass("selected-button");
-            }
-            resetAtkButtons();
-          });
-        }
-      }
-      for (const item of shields) {
-        const $buttons = html.find(`#${item._id}-shield-heights .stance-button`);
-        $buttons.click(function() {
+      const stanceButtons = html.find(`.stance-button`);
+      for (const button of stanceButtons) {
+        const $button = $(button);
+        $button.click(function() {
           const $button = $(this);
           if (!$button.hasClass("selected-button")) {
-            $buttons.removeClass("selected-button");
+            $button.siblings().removeClass("selected-button");
             $button.addClass("selected-button");
           }
         });
@@ -1941,20 +1912,19 @@ function measureRange(token1, token2) {
 }
 
 function aimDialog(options, title, choices, callback) {
-  const buttonsStyle = 'display:flex;justify-content:center;';
   const content = `
-    <div style="${buttonsStyle}">
+    <div class="flexrow aim-buttons">
       ${Object.keys(choices).includes('head') ? `<button class="choice-button" value="head">Head (${choices.head})</button>` : ''}
     </div>
-    <div style="${buttonsStyle}">
+    <div class="flexrow aim-buttons">
       ${Object.keys(choices).includes('right_arm') ? `<button class="choice-button" value="right_arm">Right Arm (${choices.right_arm})</button>` : ''}
       ${Object.keys(choices).includes('upper_torso') ? `<button class="choice-button" value="upper_torso">Upper Torso (${choices.upper_torso})</button>` : ''}
       ${Object.keys(choices).includes('left_arm') ? `<button class="choice-button" value="left_arm">Left Arm (${choices.left_arm})</button>` : ''}
     </div>
-    <div style="${buttonsStyle}">
+    <div class="flexrow aim-buttons">
       ${Object.keys(choices).includes('lower_torso') ? `<button class="choice-button" value="lower_torso">Lower Torso (${choices.lower_torso})</button>` : ''}
     </div>
-    <div style="${buttonsStyle}">
+    <div class="flexrow aim-buttons">
       ${Object.keys(choices).includes('right_leg') ? `<button class="choice-button" value="right_leg">Right Leg (${choices.right_leg})</button>` : ''}
       ${Object.keys(choices).includes('left_leg') ? `<button class="choice-button" value="left_leg">Left Leg (${choices.left_leg})</button>` : ''}
     </div>
