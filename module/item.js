@@ -31,12 +31,13 @@ export class SimpleItem extends Item {
 
   prepareItem(itemData) {
     // populate shield values from constants
-    const isShield = !!itemData.attributes.shield_type?.value;
+    const isShield = !!itemData.attributes.shield_shape?.value;
     if (isShield) {
-      const type = itemData.attributes.shield_type?.value;
+      const shape = (itemData.attributes.shield_shape?.value || '').toLowerCase();
+      const size = (itemData.attributes.size?.value || '').toUpperCase();
       if (itemData.attributes.coverage) {
         const stance = itemData.shield_height || 'mid';
-        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[type].coverage[stance];
+        itemData.attributes.coverage.value = Constant.SHIELD_TYPES[shape]?.[size]?.[stance] || '';
       }
     }
 
@@ -101,22 +102,17 @@ export class SimpleItem extends Item {
 
     // armor/clothing warmth, weight and max Dex mod
     if (materialProps && locations.length) {
-      // use swing weightings (index 0) if item is worn, otherwise thrust weightings (index 1)
-      //  unless shield, in which case use the opposite
       const isWorn = !!itemData.worn;
-      let weightingsIndex = 1; 
-      if (isShield) {
-        weightingsIndex = isWorn ? 1 : 0;
-      } else {
-        weightingsIndex = isWorn ? 0 : 1;
-      }
+      const weightingsIndex = isWorn ? Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN : Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN; 
+
       const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);
       let weight = Math.round(materialProps.weight * totalLocationWeight) / 100;
+      if (isWorn && isShield) weight = Math.round(weight * Constant.SHIELD_WEIGHT_MULTI * 10) / 10;
       // if magic item, halve weight
       if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
       // adjust garment weight by owner size
       const ownerData = this.actor?.data?.data;
-      const isGarment = !itemData.attributes.shield_type?.value;
+      const isGarment = !itemData.attributes.shield_shape?.value;
       if (ownerData && isGarment) {
         const charSize = Constant.SIZE_VALUES[ownerData.attributes?.size?.value] ?? 2;
         weight = Math.round( Util.sizeMulti(weight, charSize) * 10 ) / 10;

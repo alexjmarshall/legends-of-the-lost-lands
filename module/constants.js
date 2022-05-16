@@ -46,15 +46,13 @@ export const FIGHTER_XP_PROGRESSION = [
 ];
 export const DMG_TYPES = ["blunt", "piercing", "slashing"];
 export const SHIELD_TYPES = {
-  "large round": {
-    coverage: {
+  round: {
+    L: {
       high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
       mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // also add a kite shield
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
     },
-  },
-  "medium round": {
-    coverage: {
+    M: {
       high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand,chest",
       mid:"neck,upper arm,elbow,forearm,hand,chest,gut",
       low:"elbow,forearm,hand,gut,groin,hip",
@@ -63,7 +61,7 @@ export const SHIELD_TYPES = {
 };
 export const MATERIAL_PROPS = {
   wood: {
-    weight:8,
+    weight:6,
     warmth:0,
     sp_value:10,
   },
@@ -88,7 +86,7 @@ export const MATERIAL_PROPS = {
     sp_value:90,
   },
   fur: {
-    weight:3,
+    weight:5,
     warmth:36,
     sp_value:50,
   },
@@ -107,14 +105,14 @@ export const MATERIAL_PROPS = {
     bulky:true,
   },
   brigandine: {
-    weight:22,
+    weight:20,
     warmth:16,
     sp_value:100,
     metal:true,
     bulky:true,
   },
   scale: {
-    weight:24,
+    weight:22,
     warmth:14,
     sp_value:80,
     metal:true,
@@ -201,7 +199,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   padded: {
-    base_AC: 1,
+    base_AC: 2,
     blunt: {
       ac:0,
       dr:1,
@@ -216,13 +214,13 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   leather: {
-    base_AC: 1,
+    base_AC: 2,
     blunt: {
-      ac:0,
-      dr:2,
+      ac:1,
+      dr:1,
     },
     piercing: {
-      ac:1,
+      ac:0,
       dr:1,
     },
     slashing: {
@@ -231,13 +229,13 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   wood: {
-    base_AC: 1,
+    base_AC: 2,
     blunt: {
-      ac:0,
-      dr:2,
+      ac:1,
+      dr:1,
     },
     piercing: {
-      ac:1,
+      ac:0,
       dr:1,
     },
     slashing: {
@@ -246,10 +244,10 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   brigandine: {
-    base_AC: 2,
+    base_AC: 3,
     blunt: {
-      ac:0,
-      dr:2,
+      ac:1,
+      dr:1,
     },
     piercing: {
       ac:1,
@@ -261,14 +259,14 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   scale: {
-    base_AC: 2,
+    base_AC: 3,
     blunt: {
       ac:0,
       dr:1,
     },
     piercing: {
-      ac:1,
-      dr:0,
+      ac:0,
+      dr:1,
     },
     slashing: {
       ac:1,
@@ -276,7 +274,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   chain: {
-    base_AC: 2,
+    base_AC: 3,
     blunt: {
       ac:0,
       dr:0,
@@ -291,7 +289,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   "elven chain": {
-    base_AC: 2,
+    base_AC: 3,
     blunt: {
       ac:0,
       dr:0,
@@ -306,7 +304,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   "banded mail": {
-    base_AC: 3,
+    base_AC: 4,
     blunt: {
       ac:0,
       dr:1,
@@ -321,7 +319,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   lamellar: {
-    base_AC: 3,
+    base_AC: 4,
     blunt: {
       ac:-1,
       dr:2,
@@ -336,13 +334,13 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   splint: {
-    base_AC: 3,
+    base_AC: 4,
     blunt: {
-      ac:0,
+      ac:-1,
       dr:2,
     },
     piercing: {
-      ac:2,
+      ac:1,
       dr:1,
     },
     slashing: {
@@ -351,7 +349,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
   "iron plate": {
-    base_AC: 4,
+    base_AC: 5,
     blunt: {
       ac: -1,
       dr: 2,
@@ -362,11 +360,11 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     slashing: {
       ac: 1,
-      dr: 2,
+      dr: 3,
     },
   },
   "steel plate": {
-    base_AC: 5,
+    base_AC: 6,
     blunt: {
       ac: -1,
       dr: 2,
@@ -377,7 +375,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     slashing: {
       ac: 1,
-      dr: 2,
+      dr: 3,
     },
   },
 }
@@ -619,10 +617,12 @@ export const HIT_LOC_WEIGHT_INDEXES = {
   THRUST_HIGH: 3,
   SWING_LOW: 4,
   THRUST_LOW: 5,
+  WEIGHT_WORN: 6,
+  WEIGHT_UNWORN: 7,
 };
 export const HIT_LOCATIONS = {
   foot: {
-    weights: [2,2,0,0,8,8],
+    weights: [2,2,0,0,8,8,10,4],
     bilateral: true,
     injury: {
       blunt: {
@@ -668,7 +668,7 @@ export const HIT_LOCATIONS = {
     },
   },
   shin: {
-    weights: [6,4,0,0,16,12],
+    weights: [6,4,0,0,16,12,20,10],
     bilateral: true,
     injury: {
       blunt: {
@@ -719,7 +719,7 @@ export const HIT_LOCATIONS = {
     },
   },
   knee: {
-    weights: [8,4,0,0,16,12],
+    weights: [8,4,0,0,16,12,8,4],
     bilateral: true,
     injury: {
       blunt: {
@@ -765,7 +765,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,14,4,6,16,20],
+    weights: [10,14,4,6,16,20,14,14],
     bilateral: true,
     injury: {
       blunt: {
@@ -820,7 +820,7 @@ export const HIT_LOCATIONS = {
     },
   },
   hip: {
-    weights: [6,4,2,0,10,6],
+    weights: [6,4,2,0,10,6,4,6],
     bilateral: true,
     injury: {
       blunt: {
@@ -875,7 +875,7 @@ export const HIT_LOCATIONS = {
     },
   },
   groin: {
-    weights: [2,6,0,0,3,8],
+    weights: [2,6,0,0,3,8,2,2],
     injury: {
       blunt: {
         light: {
@@ -922,7 +922,7 @@ export const HIT_LOCATIONS = {
     },
   },
   gut: {
-    weights: [8,16,4,8,12,17],
+    weights: [8,16,4,8,12,17,9,14],
     injury: {
       blunt: {
         light: {
@@ -981,8 +981,62 @@ export const HIT_LOCATIONS = {
       },
     },
   },
+  chest: {
+    weights: [4,10,6,15,2,4,5,8],
+    injury: {
+      blunt: {
+        light: {
+          text: ' and cracks a rib',
+        },
+        serious: {
+          text: ' and snaps the collarbone',
+        },
+        critical: {
+          text: ' and shatters the collarbone',
+          dmgEffect: internalBleedDesc('chest'),
+        },
+        gruesome: {
+          text: ' and caves in the sternum and crushes the heart',
+          fatal: true,
+          dmgEffect: internalBleedDesc('chest'),
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and chips the sternum',
+        },
+        serious: {
+          text: ' and punctures a lung',
+          dmgEffect: internalBleedDesc('chest'),
+        },
+        critical: {
+          text: ' and pierces the heart',
+          fatal: true,
+          dmgEffect: internalBleedDesc('chest'),
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and gashes the chest',
+        },
+        serious: {
+          text: ' and severs the collarbone',
+          dmgEffect: minorBleedDesc('wound'),
+        },
+        critical: {
+          text: ' and cleaves into the ribs and gashes a lung',
+          dmgEffect: internalBleedDesc('chest'),
+        },
+        gruesome: {
+          text: ' and cleaves through the torso from collarbone to navel!',
+          fatal: true,
+          dmgEffect: majorBleedDesc('wound'),
+        },
+      },
+    },
+  },
   hand: {
-    weights: [6,4,6,4,4,2],
+    weights: [6,4,6,4,4,2,6,4],
     bilateral: true,
     injury: {
       blunt: {
@@ -1025,7 +1079,7 @@ export const HIT_LOCATIONS = {
     },
   },
   forearm: {
-    weights: [8,4,8,4,4,2],
+    weights: [8,4,8,4,4,2,6,4],
     bilateral: true,
     injury: {
       blunt: {
@@ -1072,7 +1126,7 @@ export const HIT_LOCATIONS = {
     },
   },
   elbow: {
-    weights: [8,4,10,6,2,2],
+    weights: [8,4,10,6,2,2,4,2],
     bilateral: true,
     injury: {
       blunt: {
@@ -1115,7 +1169,7 @@ export const HIT_LOCATIONS = {
     },
   },
   "upper arm": {
-    weights: [6,4,10,8,2,2],
+    weights: [6,4,10,8,2,2,6,6],
     bilateral: true,
     injury: {
       blunt: {
@@ -1169,62 +1223,8 @@ export const HIT_LOCATIONS = {
       }
     },
   },
-  chest: {
-    weights: [4,10,6,15,2,4],
-    injury: {
-      blunt: {
-        light: {
-          text: ' and cracks a rib',
-        },
-        serious: {
-          text: ' and snaps the collarbone',
-        },
-        critical: {
-          text: ' and shatters the collarbone',
-          dmgEffect: internalBleedDesc('chest'),
-        },
-        gruesome: {
-          text: ' and caves in the sternum and crushes the heart',
-          fatal: true,
-          dmgEffect: internalBleedDesc('chest'),
-        },
-      },
-      piercing: {
-        light: {
-          text: ' and chips the sternum',
-        },
-        serious: {
-          text: ' and punctures a lung',
-          dmgEffect: internalBleedDesc('chest'),
-        },
-        critical: {
-          text: ' and pierces the heart',
-          fatal: true,
-          dmgEffect: internalBleedDesc('chest'),
-        },
-      },
-      slashing: {
-        light: {
-          text: ' and gashes the chest',
-        },
-        serious: {
-          text: ' and severs the collarbone',
-          dmgEffect: minorBleedDesc('wound'),
-        },
-        critical: {
-          text: ' and cleaves into the ribs and gashes a lung',
-          dmgEffect: internalBleedDesc('chest'),
-        },
-        gruesome: {
-          text: ' and cleaves through the body from collarbone to navel!',
-          fatal: true,
-          dmgEffect: majorBleedDesc('wound'),
-        },
-      },
-    },
-  },
   armpit: {
-    weights: [2,6,4,12,2,2],
+    weights: [2,6,4,12,2,2,2,2],
     bilateral: true,
     injury: {
       blunt: {
@@ -1266,7 +1266,7 @@ export const HIT_LOCATIONS = {
     },
   },
   shoulder: {
-    weights: [8,6,12,12,2,2],
+    weights: [8,6,12,12,2,2,6,6],
     bilateral: true,
     injury: {
       blunt: {
@@ -1310,7 +1310,7 @@ export const HIT_LOCATIONS = {
     },
   },
   neck: {
-    weights: [3,2,6,5,0,0],
+    weights: [3,2,6,5,0,0,3,3],
     injury: {
       blunt: {
         light: {
@@ -1354,7 +1354,7 @@ export const HIT_LOCATIONS = {
     },
   },
   jaw: {
-    weights: [3,2,6,4,1,1],
+    weights: [3,2,6,4,1,1,2,2],
     injury: {
       blunt: {
         light: {
@@ -1412,7 +1412,7 @@ export const HIT_LOCATIONS = {
     },
   },
   nose: {
-    weights: [1,2,2,4,0,0],
+    weights: [1,2,2,4,0,0,2,1],
     injury: {
       blunt: {
         light: {
@@ -1471,7 +1471,7 @@ export const HIT_LOCATIONS = {
     },
   },
   eye: {
-    weights: [2,2,4,4,0,0],
+    weights: [2,2,4,4,0,0,2,2],
     bilateral: true,
     injury: {
       blunt: {
@@ -1532,7 +1532,7 @@ export const HIT_LOCATIONS = {
     },
   },
   skull: {
-    weights: [7,4,16,8,0,0],
+    weights: [7,4,16,8,0,0,9,6],
     injury: {
       blunt: {
         light: {
@@ -1594,7 +1594,7 @@ export const HIT_LOCATIONS = {
   },
 };
 
-export const POWER_STANCE_DMG_BONUS = weap => weapSize + 1;
+export const POWER_STANCE_DMG_BONUS = weapSize => weapSize + 1;
 export const POWER_STANCE_AC_PENALTY = -4;
 export const POWER_STANCE_ATK_PENALTY = -2;
 export const CAUTIOUS_STANCE_ATK_BONUS = 4;
@@ -1616,6 +1616,8 @@ export const AIM_AREAS = {
   left_leg: ['left hip','left thigh','left knee','left shin','left foot'],
   right_leg: ['right hip','right thigh','right knee','right shin','right foot'],
 }
+
+export const SHIELD_WEIGHT_MULTI = 1.2;
 
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {

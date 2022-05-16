@@ -184,16 +184,17 @@ export class SimpleActor extends Actor {
         for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
           ac[k] = {};
           const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
-          const garments =  coveringItems.filter(i => !i.data.data.attributes.shield_type?.value);
+          const garments =  coveringItems.filter(i => !i.data.data.attributes.shield_shape?.value);
           const armor = garments.filter(i => Object.keys(i.data.data.ac || {}).length);
           
           // can only wear one shield and one bulky armor
-          const shield = coveringItems.find(i => i.data.data.attributes.shield_type?.value);
+          const shield = coveringItems.find(i => i.data.data.attributes.shield_shape?.value);
           const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
           const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
-          const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[1]); // index 1 for centre thrust
+          const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+          const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[unwornIndex]);
           wornWarmthVals.sort((a,b) => b - a);
           const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
           updateData.clo += locWarmth;
