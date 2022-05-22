@@ -473,3 +473,8 @@
   background: #f3edde;
   /* background: #887c5d; #ede7d8; */
 }
+.dialog .dialog-button {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border: 2px groove #f0f0e0 !important;
+  margin: 0 5px 0 0 !important;
+}
