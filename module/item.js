@@ -105,9 +105,14 @@ export class SimpleItem extends Item {
       const isWorn = !!itemData.worn;
       const weightingsIndex = isWorn ? Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN : Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN; 
 
-      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);
+      const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);// TODO fix sp_value changing with worn weight...do totalLocWeight Transformation last
       let weight = Math.round(materialProps.weight * totalLocationWeight) / 100;
-      if (isWorn && isShield) weight = Math.round(weight * Constant.SHIELD_WEIGHT_MULTI * 10) / 10;
+      if (isShield) {
+        weight = Math.round(weight / 2 * 10) / 10;
+        if (size >= Constant.SIZE_VALUES.L) weight = Math.round(weight * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
+        if (isWorn) weight = Math.round(weight * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
+      } 
+      
       // if magic item, halve weight
       if (isMagic) weight = Math.round(weight / 2 * 10) / 10;
       // adjust garment weight by owner size
