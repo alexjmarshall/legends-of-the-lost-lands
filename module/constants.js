@@ -48,12 +48,12 @@ export const DMG_TYPES = ["blunt", "piercing", "slashing"];
 export const SHIELD_TYPES = {
   round: {
     L: {
-      high:"skull,eye,mid-face,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
+      high:"skull,eye,face,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
       mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // also add a kite shield
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
     },
     M: {
-      high:"skull,eye,mid-face,jaw,neck,shoulder,forearm,hand,chest",
+      high:"skull,eye,face,jaw,neck,shoulder,forearm,hand,chest",
       mid:"neck,upper arm,elbow,forearm,hand,chest,gut",
       low:"elbow,forearm,hand,gut,groin,hip",
     },
@@ -609,7 +609,15 @@ export const staggerDesc = ' and staggers them';
 export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc,bowelBleedDesc];
 export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc, staggerDesc];
 
-// weights listed in order: swing, thrust, swing_high, thrust_high, swing_low, thrust_low
+const ranChoice = (choices) => {
+  const ranInd = Math.floor(Math.random() * choices.length);
+  return choices[ranInd];
+}
+const ranToe = () => ranChoice(['big','long','middle','ring','little']);
+const ranFinger = () => ranChoice(['thumb','index','middle','ring','pinky']);
+const ranShinBone = () => ranChoice(['fibula','fibula','tibia']);
+const ranForearmBone = () => ranChoice(['ulnar','ulnar','radial']);
+
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
   THRUST: 1,
@@ -622,12 +630,12 @@ export const HIT_LOC_WEIGHT_INDEXES = {
 };
 export const HIT_LOCATIONS = {
   foot: {
-    weights: [2,2,0,0,8,8,10,4],
+    weights: [2,2,0,0,8,6,10,4],
     bilateral: true,
     injury: {
       blunt: {
         light: {
-          text: ' and breaks a toe',
+          text: ` and breaks the ${ranToe()} toe`,
         },
         serious: {
           text: ' and dislocates the ankle',
@@ -668,15 +676,15 @@ export const HIT_LOCATIONS = {
     },
   },
   shin: {
-    weights: [6,4,0,0,16,12,20,10],
+    weights: [6,4,0,0,14,10,20,10],
     bilateral: true,
     injury: {
       blunt: {
         light: {
-          text: ' and cracks the tibia',
+          text: ` and cracks the ${ranShinBone()}`,
         },
         serious: {
-          text: ' and snaps the fibula',
+          text: ` and snaps the ${ranShinBone()}`,
         },
         critical: {
           text: ' and shatters the lower leg',
@@ -719,7 +727,7 @@ export const HIT_LOCATIONS = {
     },
   },
   knee: {
-    weights: [8,4,0,0,16,12,8,4],
+    weights: [8,4,0,0,16,10,8,4],
     bilateral: true,
     injury: {
       blunt: {
@@ -765,7 +773,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,14,4,6,16,20,14,14],
+    weights: [10,10,4,4,16,20,14,14],
     bilateral: true,
     injury: {
       blunt: {
@@ -875,7 +883,7 @@ export const HIT_LOCATIONS = {
     },
   },
   groin: {
-    weights: [2,6,0,0,3,8,2,2],
+    weights: [2,6,0,2,3,10,2,2],
     injury: {
       blunt: {
         light: {
@@ -922,7 +930,7 @@ export const HIT_LOCATIONS = {
     },
   },
   gut: {
-    weights: [8,16,4,8,12,17,9,14],
+    weights: [8,18,4,10,12,18,9,14],
     injury: {
       blunt: {
         light: {
@@ -943,7 +951,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and penetrates the abdomen',
+          text: ' and penetrates the abdominal muscle',
         },
         serious: {
           text: ' and gashes the bowels',
@@ -962,7 +970,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the abdomen',
+          text: ' and gashes the abdominal muscle',
         },
         serious: {
           text: ' and gashes the bowels',
@@ -982,7 +990,7 @@ export const HIT_LOCATIONS = {
     },
   },
   chest: {
-    weights: [4,10,6,15,2,4,5,8],
+    weights: [4,12,6,16,2,5,5,8],
     injury: {
       blunt: {
         light: {
@@ -1041,7 +1049,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and breaks a finger',
+          text: ` and breaks the ${ranFinger()} finger`,
         },
         serious: {
           text: ' and breaks the wrist',
@@ -1068,7 +1076,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs the tendons on top of the hand',
         },
         serious: {
-          text: ' and severs a finger',
+          text: ` and severs the ${ranFinger()} finger`,
         },
         critical: {
           text: ' and severs the hand',
@@ -1079,15 +1087,15 @@ export const HIT_LOCATIONS = {
     },
   },
   forearm: {
-    weights: [8,4,8,4,4,2,6,4],
+    weights: [8,4,8,4,6,2,6,4],
     bilateral: true,
     injury: {
       blunt: {
         light: {
-          text: ' and cracks the radial bone',
+          text: ` and cracks the ${ranForearmBone()} bone`,
         },
         serious: {
-          text: ' and snaps the ulnar bone',
+          text: ` and snaps the ${ranForearmBone()} bone`,
         },
         critical: {
           text: ' and shatters the forearm',
@@ -1114,7 +1122,7 @@ export const HIT_LOCATIONS = {
           text: ' and cuts a nerve in the forearm muscle',
         },
         critical: {
-          text: ' and severs the ulnar bone',
+          text: ` and severs the ${ranForearmBone()} bone`,
           dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
@@ -1224,7 +1232,7 @@ export const HIT_LOCATIONS = {
     },
   },
   armpit: {
-    weights: [2,6,4,12,2,2,2,2],
+    weights: [2,6,4,12,2,4,2,2],
     bilateral: true,
     injury: {
       blunt: {
@@ -1245,6 +1253,7 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and splits the shoulder and tears a ligament',
+          dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
           text: ' and nicks an artery in the armpit',
@@ -1283,10 +1292,10 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the shoulder',
+          text: ' and pierces the shoulder muscle'
         },
         serious: {
-          text: ' and cuts a nerve in the shoulder',
+          text: ' and cuts a nerve in the shoulder muscle',
         },
         critical: {
           text: ' and splits the shoulder and tears a ligament',
@@ -1310,7 +1319,7 @@ export const HIT_LOCATIONS = {
     },
   },
   neck: {
-    weights: [3,2,6,5,0,0,3,3],
+    weights: [3,2,6,4,0,0,3,3],
     injury: {
       blunt: {
         light: {
@@ -1354,7 +1363,7 @@ export const HIT_LOCATIONS = {
     },
   },
   jaw: {
-    weights: [3,2,6,4,1,1,2,2],
+    weights: [3,2,6,3,1,1,2,2],
     injury: {
       blunt: {
         light: {
@@ -1376,6 +1385,7 @@ export const HIT_LOCATIONS = {
       piercing: {
         light: {
           text: ' and gouges the cheek',
+          dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
           text: ' and breaks the teeth',
@@ -1396,12 +1406,12 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and splits the jaw',
+          text: ' and severs the jaw',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and severs the jaw',
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' and cleaves through the jaw and into the brain',
+          fatal: true,
         },
         gruesome: {
           text: ' and cleaves the head in two spattering chunks of gore!',
@@ -1411,8 +1421,8 @@ export const HIT_LOCATIONS = {
       },
     },
   },
-  "mid-face": {
-    weights: [1,2,2,4,0,0,2,1],
+  "face": {
+    weights: [1,2,2,3,0,0,2,1],
     injury: {
       blunt: {
         light: {
@@ -1433,10 +1443,11 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and gouges the nostrils',
+          text: ' and gouges the nose',
+          dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and gashes the nose',
+          text: ' and splits the nose',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
@@ -1451,11 +1462,11 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and splits the nose',
+          text: ' and gashes the nose',
           dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and maims the nose',
+          text: ' and severs the nose',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
@@ -1495,6 +1506,7 @@ export const HIT_LOCATIONS = {
       piercing: {
         light: {
           text: ' and gashes the brow',
+          dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
           text: ' and gouges out the eye',
@@ -1599,6 +1611,7 @@ export const POWER_STANCE_AC_PENALTY = -4;
 export const POWER_STANCE_ATK_PENALTY = -2;
 export const CAUTIOUS_STANCE_ATK_BONUS = 4;
 export const CAUTIOUS_STANCE_DMG_PENALTY = weapSize => 0 - (weapSize + 1);
+export const WEAP_BREAK_CHANCE = 5;
 
 export const AMMO_TYPES = [
   "bodkin arrow",
@@ -1608,7 +1621,7 @@ export const AMMO_TYPES = [
 ];
 
 export const AIM_AREAS = {
-  head: ['skull','left eye','right eye','mid-face','jaw','neck'],
+  head: ['skull','left eye','right eye','face','jaw','neck'],
   left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
   upper_torso: ['left armpit','chest','right armpit'],
   right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
@@ -1667,7 +1680,7 @@ export const SIZE_VALUES = {
 export const HEIGHT_AREAS = {
   low: ['foot','shin','knee','thigh','hip','groin'],
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
-  high: ['armpit','shoulder','neck','jaw','mid-face','eye','skull'],
+  high: ['armpit','shoulder','neck','jaw','face','eye','skull'],
 }
 
 export const WEAPON_CATEGORIES = [
