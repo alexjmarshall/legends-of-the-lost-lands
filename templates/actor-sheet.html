@@ -95,14 +95,15 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>Max Dex Bonus: {{systemData.ac.max_dex_mod}}</span>
-                <span>{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry_bonus}} {{/if}}{{#if stancePenalty}} Stance Penalty: {{systemData.ac.stance_penalty}} {{/if}}</span>
+                <span></span>
+                 <span><!--{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry}} {{/if}}{{#if stancePenalty}} Stance Mod: {{systemData.ac.stance_mod}} {{/if}}--></span> 
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
             </header>
             {{#each equipment as |type key|}}
             <header class="items-header flexrow">
+                <span>{{#ifeq key "wearable"}}Max Dex Mod: {{../systemData.ac.max_dex_mod}}{{/ifeq}}</span>
                 <span style="text-align: center;">
                     {{#ifeq key "holdable"}}Held{{else}}
                     {{#ifeq key "wearable"}}Worn{{else}}
@@ -114,6 +115,7 @@
                     {{/ifeq}}
                     {{/ifeq}}
                 </span>
+                <span></span>
             </header>
             <ol class="item-list">
                 {{#each type as |item id|}}
