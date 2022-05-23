@@ -386,16 +386,16 @@ Hooks.on("preUpdateItem", (item, change) => {
   if (change.data?.attributes?.wearable?.value != null || invalidWear) {
     change.data.worn = false;
   }
-  // reset atk mode, atk height and atk stance if changing held status
+  // reset atk mode, atk height and atk style if changing held status
   if (change.data?.held_left != null || change.data?.held_right != null) {
     const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
     if (atkModes.length) {
       change.data.atk_mode = atkModes[0];
       change.data.atk_height = 'mid';
-      change.data.atk_stance = 'normal';
+      change.data.atk_style = 'stable';
     }
   }
-  if (change.data?.worn != null && item.data?.data?.attributes?.shield?.value) {
+  if (change.data?.worn != null && !!item.data?.data?.attributes?.shield_shape) {
     change.data.shield_height = 'mid';
   }
 });
