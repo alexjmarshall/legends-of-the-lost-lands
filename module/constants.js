@@ -599,7 +599,7 @@ export const LIMB_GROUPS = {
 export const minorBleedDesc = site => ` and blood streams from the ${site}`;
 export const majorBleedDesc = site => `  and blood spurts from the ${site}!`;
 export const internalBleedDesc = site => ` and the ${site} bleeds internally`;
-export const bowelBleedDesc = site => ` and foul tarry blood oozes from the ${site}`;
+export const bowelBleedDesc = site => ` and blood oozes from the ${site}`;
 export const compoundFractureDesc = ' and the broken bones poke through the skin!';
 export const weaponStuckDesc = ' and the weapon is stuck!';
 export const knockdownDesc = ' and knocks them down';
@@ -617,6 +617,7 @@ const ranToe = () => ranChoice(['big','long','middle','ring','little']);
 const ranFinger = () => ranChoice(['thumb','index','middle','ring','pinky']);
 const ranShinBone = () => ranChoice(['fibula','fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar','ulnar','radial']);
+const ranArmMuscle = () => ranChoice(['triceps','biceps']);
 
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
@@ -1198,10 +1199,10 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and pierces the triceps',
+          text: ` and pierces the ${ranArmMuscle()}`,
         },
         serious: {
-          text: ' and cuts a nerve in the biceps',
+          text: ` and cuts a nerve in the ${ranArmMuscle()}`,
         },
         critical: {
           text: ' nicks an artery in the inner arm',
@@ -1214,10 +1215,10 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the biceps',
+          text: ` and gashes the ${ranArmMuscle()}`,
         },
         serious: {
-          text: ' and cuts a nerve in the triceps',
+          text: ` and cuts a nerve in the ${ranArmMuscle()}`,
         },
         critical: {
           text: ' and severs the biceps',
@@ -1606,6 +1607,22 @@ export const HIT_LOCATIONS = {
   },
 };
 
+const halfAttr = (weap, attr) => Math.max(1, Math.floor(weap.data.data.attributes[attr]?.value / 2));
+export const STANCE_MODS = {
+  power: {
+    ac_mod: -3,
+    atk_mod: -2,
+    dmg_mod: weap => halfAttr(weap, 'impact'),
+    impact_mod: weap =>  halfAttr(weap, 'impact'),
+    counter_mod: weap => 0 - halfAttr(weap, 'counter'),
+  },
+  fluid: {
+    atk_mod: 3,
+    dmg_mod: weap => 0 - halfAttr(weap, 'impact'),
+    impact_mod: weap => 0 - halfAttr(weap, 'impact'),
+    counter_mod: weap => halfAttr(weap, 'counter'),
+  }
+}
 export const POWER_STANCE_DMG_BONUS = weapSize => weapSize + 1;
 export const POWER_STANCE_AC_PENALTY = -4;
 export const POWER_STANCE_ATK_PENALTY = -2;
