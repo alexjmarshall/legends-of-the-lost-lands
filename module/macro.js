@@ -751,7 +751,7 @@ async function attack(attackers, targetToken, options) {
             dmg: { value: '1d2/1d2' },
             atk_modes: { value: 'Swi (B), Thr (B)' },
             double_weapon: { value: true },
-            reach: { value: '0,1'},
+            reach: { value: '0'},
           },
           quantity: 2
         }
@@ -846,10 +846,10 @@ async function attack(attackers, targetToken, options) {
   const reachValues = weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => !isNaN(t)) || [];
 
   // subtract 1 from max reach if not holding the weapon with both hands -- TODO add back in with appropriate error msg
-  // const hasMaxReach = reachValues.length > 1;
-  // if (!weaponHeldTwoHands && hasMaxReach) {
-  //   reachValues[reachValues.length - 1] = Math.min(reachValues[reachValues.length - 1] - 1, reachValues[0]);
-  // }
+  const hasMaxReach = reachValues.length > 1;
+  if (!weaponHeldTwoHands && hasMaxReach) {
+    reachValues[reachValues.length - 1] = Math.min(reachValues[reachValues.length - 1] - 1, reachValues[0]);
+  }
 
   // weapon tags
   const bonusToGroups = !!weapAttrs.bonus_to_groups?.value;
@@ -872,8 +872,8 @@ async function attack(attackers, targetToken, options) {
   }
 
   // automatic throw if target beyond max reach in feet
-  const defaultReach = Math.floor(attackerSize / 2) * 5 || -1;
-  const maxReach = reachValues.length ? reachValues[reachValues.length - 1] * 5 : defaultReach * 5;
+  const defaultReach = Math.floor(attackerSize / 2) * Constant.SQUARE_SIZE || -1;
+  const maxReach = reachValues.length ? reachValues[reachValues.length - 1] * Constant.SQUARE_SIZE : defaultReach;
   if ( range > maxReach && throwable && weapon.atkMode == null ) {
     weapon.atkMode = defaultThrowAtkMode;
     attacker.showAltDialog = false;
@@ -968,7 +968,7 @@ async function attack(attackers, targetToken, options) {
     weapons.shift();
     return attack(attackers, targetToken, options);
   }
-  const minReach = reachValues[0] * 5 || -1;
+  const minReach = reachValues[0] * Constant.SQUARE_SIZE || -1;
   if (range < +minReach) {
     weapDmg = '1d3';
     dmgType = 'blunt';
@@ -1027,7 +1027,7 @@ async function attack(attackers, targetToken, options) {
     stanceDmgMod += Constant.STANCE_MODS.fluid.dmg_mod(weaponItem) || 0;
     weapImp += Constant.STANCE_MODS.fluid.impact_mod(weaponItem) || 0;
     weapCounter += Constant.STANCE_MODS.fluid.counter_mod(weaponItem) || 0;
-  }console.log(weapImp, weapCounter)
+  }
 
 
   // get target's properties
@@ -1176,15 +1176,7 @@ async function attack(attackers, targetToken, options) {
     const dropKnockdownAreas = ['hand','forearm'];
     let sortedWornArmors = [];
     const parry = targetRollData.ac.parry;
-    const isParrying = parry?.parry_item_id && parry?.parry > 0 && targetHp > 0 && !missileAtk;
-
-    const applyArmor = (armor) => {
-      const currentAC = +armor?.data.data.attributes.base_ac?.value;
-      const maxAc = +armor?.data.data.attributes.base_ac?.max;
-
-      return Math.random() <= currentAC / maxAc; 
-      // return Math.ceil(Math.random() * maxAc) <= currentAC;
-    }
+    const isParrying = parry?.parry_item_id && parry?.parry > 0 && targetHp > 0 && !missileAtk; // TODO fix this
 
     // roll for hit location if character or humanoid
     if ( Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid') ) {
@@ -1240,7 +1232,7 @@ async function attack(attackers, targetToken, options) {
 
     }
 
-    const isBrutalHit = (Util.stringMatch(atkStyle, 'power') || (!Util.stringMatch(atkStyle, 'fluid') && d20Result === 20)) && !immuneBrutalHits && !missileAtk;
+    const isBrutalHit = Util.stringMatch(atkStyle, 'power') && !immuneBrutalHits && !missileAtk;
     resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${targetActor.name}${hitLoc ? `'s ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
     // 20 always hits
     if( d20Result === 20 && totalAtkResult < targetAc) {
@@ -1248,82 +1240,34 @@ async function attack(attackers, targetToken, options) {
     }
     isHit = totalAtkResult >= targetAc;
 
-    // TODO move brutal hard hits to before AC brackets, and player chooses to take penalty of double weapon size (add to target unarmored AC) for bonus to dmg of weap size
-    // criticals/vulnerable hit damage can be absorbed by armor
-
-
-    // TODO remove bleed bonus for overall curved swords explanation: -1 min bleed, 1.5x crit, 1/2 knockdown damage, -2 to-hit thrusting
-    // TODO show dmg modifications for dr, critical hit and lucky hit in chat, use brackets as necessary like dialogMod multiplier - can wait until after lucky/crit to roll dmg
     if (isHit) {
       resultSound = hitSound;
-      const armorUpdates = [];
+      const armorUpdates = []; // TODO declare at very beginning, all attacker/defender item updates, and attacker/defender updates
 
       // brutal hits
       let dent = false;
       if (isBrutalHit) {
-        const armor = sortedWornArmors[0];
-        const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
-        const isIronPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'iron plate');
-        const isBulky = !!armor?.data.data.attributes.bulky?.value;
-        const isShield = !!armor?.data.data.attributes.shield_shape?.value;
-        const armorApplies = applyArmor(armor);
-        // if damage type is blunt, armor must be bulky or shield to absorb the damage
-        const absorbDmg = armorApplies && (dmgType !== 'blunt' || isBulky || isShield);
-        const armorDented = absorbDmg && (isSteelPlate || isIronPlate && weapCategory.includes("sword"));
-        // apply the absorbing armor's DR again to the bonus damage
-        const dr = Number(armor?.data.data.ac?.[dmgType]?.dr) || 0;
-        stanceDmgMod = Math.max(0, stanceDmgMod - dr);
-        const skipArmor = !armorApplies || absorbDmg && !armorDented;
-        
-        if (absorbDmg) {
-          const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          let verb = armorDented ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1256, verb)
-          const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
-          if (baseAc < 1) {
-            verb = 'destroys';
-            const qty = +armor.data.data.quantity || 0;
-            qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
-          }
-          options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
-          hitDesc += ` and ${verb} ${armor.name}`;
-        }
-
-        skipArmor && sortedWornArmors.shift();
+        const armorAbsorb = armorAbsorption(sortedWornArmors, dent, dmgType, weapImp, armorUpdates);
+        // options.applyEffect === true && game.user.isGM && TODO make this check before apply updates at end
+        const absorbDr = Math.min(armorAbsorb.absorbDr, stanceDmgMod);
+        stanceDmgMod -= absorbDr;
+        hitDesc += armorAbsorb.hitDesc;
+        dent = armorAbsorb.armorDented;
       }
 
       // critical hits
-      const critChance = isCurvedSword ? Math.ceil(1.5 * (totalAtkResult - targetAc)) : totalAtkResult - targetAc
+      const critChance = totalAtkResult - targetAc; // TODO curved swords have lower min reach
       const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
-
       if (isCriticalHit) {
-        const armor = sortedWornArmors[0];
-        const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
-        const isBulky = !!armor?.data.data.attributes.bulky?.value;
-        const isShield = !!armor?.data.data.attributes.shield_shape?.value;
-        let verb = '';
-
-        // if damage type is blunt, armor must be bulky or shield to absorb the damage
-        if ( applyArmor(armor) && (dmgType !== 'blunt' || isBulky || isShield) ) {
-          const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-          verb = isSteelPlate && !dent ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1290, verb)
-          const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
-          if (baseAc < 1) {
-            verb = 'destroys';
-            const qty = +armor.data.data.quantity || 0;
-            qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
-          }
-          options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
-          hitDesc = hitDesc.replace(` and dents ${armor.name}`, ` and ${verb} ${armor.name}`);
-
-        } else {
-          weapDmgResult = weapDmgResult + weapDmgResult;
-        }
-
-        if (verb !== 'dents') sortedWornArmors.shift();
+        const armorName = sortedWornArmors[0]?.name;
+        const armorAbsorb = armorAbsorption(sortedWornArmors, dent, dmgType, weapImp, armorUpdates);
+        weapDmgResult = Math.max(1, weapDmgResult + weapDmgResult - armorAbsorb.absorbDr);
+        hitDesc = armorAbsorb.hitDesc.includes(armorName) ? armorAbsorb.hitDesc :  hitDesc + armorAbsorb.hitDesc;
+        dent = armorAbsorb.armorDented;
       }
 
       // knockdown
-      let knockdownDamage = isCurvedSword ? Math.ceil(weapDmgResult / 2) : weapDmgResult;
+      let knockdownDamage = weapDmgResult;
       const isProne = targetActor.data.effects.some(e => Util.stringMatch(e.data.label, 'Prone'));
       const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * 2 * (knockdownDamage + strMod + weapImp) - 10 * (targetSize - attackerSize);
@@ -1343,7 +1287,6 @@ async function attack(attackers, targetToken, options) {
             armor = sortedWornArmors[0];
             if (applyArmor(armor)) {
               let verb = isShield ? 'splinters' : 'punctures';
-              console.log(1329, verb)
               knockdownDamage = Math.round(knockdownDamage / 2);
 
               // damage armor
@@ -1408,7 +1351,7 @@ async function attack(attackers, targetToken, options) {
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield_shape?.value;
-            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1394, verb)
+            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
             // if armor is non-bulky or shield it absorbs the impale damage
             if (!isBulky || (isShield && !['forearm','hand'].includes(coverageArea))) {
               dmg = 0;
@@ -1469,7 +1412,7 @@ async function attack(attackers, targetToken, options) {
           if (applyArmor(armor)) {
             const isBulky = !!armor.data.data.attributes.bulky?.value;
             const isShield = !!armor.data.data.attributes.shield_shape?.value;
-            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';console.log(1455, verb)
+            let verb = isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
 
             // if armor is bulky or shield it absorbs damage and negates bleed
             if (isBulky || isShield) {
@@ -1520,7 +1463,7 @@ async function attack(attackers, targetToken, options) {
       resultText += hitDesc;
 
       // apply armor damage updates
-      if (armorUpdates.length) await targetActor.updateEmbeddedDocuments("Item", armorUpdates);
+      // if (armorUpdates.length) await targetActor.updateEmbeddedDocuments("Item", armorUpdates);
 
     } else {
       const deflectingArmor = sortedWornArmors[0];
@@ -1734,6 +1677,49 @@ async function attack(attackers, targetToken, options) {
   return attack(attackers, targetToken, options);
 }
 
+function applyArmor (armor) {
+  const currentAC = +armor?.data.data.attributes.base_ac?.value;
+  const maxAc = +armor?.data.data.attributes.base_ac?.max;
+
+  return Math.random() <= currentAC / maxAc; 
+}
+
+function armorAbsorption(sortedWornArmors, armorDented, dmgType, weapImp, armorUpdates) {
+  const armor = sortedWornArmors[0];
+  const isSteelPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel plate');
+  const isIronPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'iron plate');
+  const isBulky = !!armor?.data.data.attributes.bulky?.value;
+  const isShield = !!armor?.data.data.attributes.shield_shape?.value;
+  const armorApplies = applyArmor(armor);
+
+  // if damage type is blunt, armor must be bulky or shield to absorb the extra damage
+  const absorbDmg = armorApplies && (dmgType !== 'blunt' || isBulky || isShield);
+  // armor is broken if it's already dented
+  armorDented = !armorDented && absorbDmg && (isSteelPlate || isIronPlate && weapImp < 6);
+
+  // apply the absorbing armor's DR again to the bonus damage
+  const absorbDr = absorbDmg ? Number(armor?.data.data.ac?.[dmgType]?.dr) || 0 : 0;
+
+  const skipArmor = !armorApplies || absorbDmg && !armorDented;
+  skipArmor && sortedWornArmors.shift();
+  let hitDesc = '';
+
+  if (absorbDmg) {
+    const baseAc = Number(armor.data.data.attributes.base_ac?.value);
+    let verb = armorDented ? 'dents' : isBulky ? 'punctures' : isShield ? 'splinters' : 'tears through';
+    const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
+    if (baseAc < 1) {
+      verb = 'destroys';
+      const qty = +armor.data.data.quantity || 0;
+      qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
+    }
+    armorUpdates.push(itemUpdate);
+    hitDesc = ` and ${verb} ${armor.name}`;
+  }
+
+  return { absorbDr, armorDented, hitDesc };
+}
+
 export function setStance(options={}) {
   let char;
   try {
@@ -1749,7 +1735,7 @@ export function setStance(options={}) {
   const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_shape?.value);
 
   if (!weapons.length && !shields.length) {
-    return ui.notifications.info("Not holding any items with defined stances");
+    return ui.notifications.info("Not holding any applicable items");
   }
   if (weapons.some(w => Constant.SIZE_VALUES[w.data.data.attributes.size?.value] == null)) {
     return ui.notifications.error("Invalid weapon size specified");
@@ -1787,7 +1773,7 @@ export function setStance(options={}) {
     `;
   };
 
-  // style (fluid, stable, power), height (low, mid, high), mode (atk modes), timing (riposte, offense, counter)
+  // style (fluid, stable, power), height (low, mid, high), timing (riposte, immediate, counter)
   const getWeaponChoices = (item, atkModes) => {
     const styles = ['stable','fluid','power'];
     const itemData = item.data.data;
@@ -1860,7 +1846,7 @@ export function setStance(options={}) {
             });
 
             const shield = !!selections['shield_height'];
-            const atkStyle = selections['atk_style'] == 'power' ? ` powerful` : ` ${selections['atk_style']}`;
+            const atkStyle = ` ${selections['atk_style']}`;
             const style = shield ? ` ${selections['shield_style']}` : atkStyle;
             const height = shield ? ` ${selections['shield_height']}` : ` ${selections['atk_height']}`;
             const atkForm = Constant.ATK_MODES[selections['atk_mode']]?.ATK_FORM;
@@ -1871,7 +1857,7 @@ export function setStance(options={}) {
             if (doChatMsg) {
               updates.push(update);
               const choiceDesc = `${style}${height}${mode}`;
-              const contentDesc = `a${choiceDesc} ${shield ? 'guard' : 'stance'} with ${item.name}${init}.`
+              const contentDesc = `a${choiceDesc} guard with ${item.name}${init}.`
               content = !content ? `${actor.name} takes ${contentDesc}`
                 : content.replace(/.$/,'') + ` and ${contentDesc}`;
             }
@@ -1924,7 +1910,7 @@ function measureRange(token1, token2) {
   canvas.grid.measureDistanceGrid(token1.position, token2.position) :
   canvas.grid.measureDistance(token1.position, token2.position)) : undefined;
   // return range rounded to 5'
-  return Math.floor(+canvasDistance / 5) * 5;
+  return Math.floor(+canvasDistance / Constant.SQUARE_SIZE) * Constant.SQUARE_SIZE;
 }
 
 function attackOptionsDialog(attackingActor, options, stanceDesc, title, choices, callback) {
