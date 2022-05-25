@@ -54,7 +54,7 @@ export const SHIELD_TYPES = {
     },
     M: {
       high:"skull,eye,face,jaw,neck,shoulder,forearm,hand,chest",
-      mid:"neck,upper arm,elbow,forearm,hand,chest,gut",
+      mid:"armpit,upper arm,elbow,forearm,hand,chest,gut",
       low:"elbow,forearm,hand,gut,groin,hip",
     },
   },
@@ -284,8 +284,8 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     slashing: {
-      ac:0,
-      dr:2,
+      ac:2,
+      dr:1,
     },
   },
   "elven chain": {
@@ -299,8 +299,8 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     slashing: {
-      ac:0,
-      dr:2,
+      ac:2,
+      dr:1,
     },
   },
   "banded mail": {
@@ -1621,6 +1621,9 @@ export const STANCE_MODS = {
     dmg_mod: weap => 0 - halfAttr(weap, 'impact'),
     impact_mod: weap => 0 - halfAttr(weap, 'impact'),
     counter_mod: weap => halfAttr(weap, 'counter'),
+  },
+  counter: {
+    ac_mod: -1,
   }
 }
 export const POWER_STANCE_DMG_BONUS = weapSize => weapSize + 1;
