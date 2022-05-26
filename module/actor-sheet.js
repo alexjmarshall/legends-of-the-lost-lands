@@ -35,7 +35,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
     context.parryBonus = context.systemData.ac?.parry?.parry;
-    context.stancePenalty = context.systemData.ac?.stance_mod;
+    context.stancePenalty = context.systemData.ac?.stance_penalty;
 
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
@@ -87,21 +87,25 @@ export class SimpleActorSheet extends ActorSheet {
   getArmorsByLocation(data) {
     const ac = data.data.ac || {};
     const armors = {};
-    const hitLocations = Object.entries(Constant.HIT_LOCATIONS).reverse();
-    for (const [hitLoc, val] of hitLocations) {
-      const sortedArmors = Object.fromEntries(ac[hitLoc]?.sorted_armor_ids?.map((id,ind) => [ind, data.items?.find(i => i._id === id)?.name]) || []);
-      if (!Object.entries(sortedArmors).length) {
-        Object.assign(sortedArmors, {0: '(none)'});
-      }
-      const sortedArmorsLastInd = Object.entries(sortedArmors).length - 1;
-      armors[hitLoc] = {
-        sortedArmors,
-        sortedArmorsLastInd,
-        acDr: {
-          b:`${ac[hitLoc]?.["blunt"].ac} / ${ac[hitLoc]?.["blunt"].dr}`,
-          p:`${ac[hitLoc]?.["piercing"].ac} / ${ac[hitLoc]?.["piercing"].dr}`,
-          s:`${ac[hitLoc]?.["slashing"].ac} / ${ac[hitLoc]?.["slashing"].dr}`,
-        },
+    // const hitLocations = Object.keys(Constant.HIT_LOCATIONS).reverse();
+    for (let [area, hitLocations] of Object.entries(Constant.AIM_AREAS_UNILATERAL)) {
+      area = area.replace('_',' ');
+      armors[area] = {};
+      for (const hitLoc of hitLocations) {
+        const sortedArmors = Object.fromEntries(ac[hitLoc]?.sorted_armor_ids?.map((id,ind) => [ind, data.items?.find(i => i._id === id)?.name]) || []);
+        if (!Object.entries(sortedArmors).length) {
+          Object.assign(sortedArmors, {0: '(none)'});
+        }
+        const sortedArmorsLastInd = Object.entries(sortedArmors).length - 1;
+        armors[area][hitLoc] = {
+          sortedArmors,
+          sortedArmorsLastInd,
+          acDr: {
+            b:`${ac[hitLoc]?.["blunt"].ac} / ${ac[hitLoc]?.["blunt"].dr}`,
+            p:`${ac[hitLoc]?.["piercing"].ac} / ${ac[hitLoc]?.["piercing"].dr}`,
+            s:`${ac[hitLoc]?.["slashing"].ac} / ${ac[hitLoc]?.["slashing"].dr}`,
+          },
+        }
       }
     }
 

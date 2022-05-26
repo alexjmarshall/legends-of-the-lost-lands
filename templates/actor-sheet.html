@@ -96,7 +96,7 @@
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
                 <span></span>
-                 <span><!--{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry}} {{/if}}{{#if stancePenalty}} Stance Mod: {{systemData.ac.stance_mod}} {{/if}}--></span> 
+                 <span><!--{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry}} {{/if}}{{#if stancePenalty}} Stance Mod: {{systemData.ac.stance_penalty}} {{/if}}--></span> 
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
@@ -170,31 +170,36 @@
         {{!-- Armors Tab --}}
         <div class="tab armors" data-group="primary" data-tab="armors">
             <header class="armors-header sticky flexrow">
-                <span style="flex:1">Hit Location</span>
+                <span>Hit Location</span>
                 <span class="flex3">Armor Layers</span>
                 <span class="flex2 text-center">AC / DR</span>
             </header>
+            {{#each armors as |loc area|}}
+            <header class="armors-header flexrow">
+                <span>{{area}}</span>
+            </header>
             <ol class="armors-list">
-                {{#each armors as |loc key|}}
+                {{#each loc as |armors key|}}
                 <li class="flexrow">
                     <h4 style="flex:1">{{key}}</h4>
                     <span class="flex3">
-                        {{#each loc.sortedArmors as |armor ind|}}
+                        {{#each armors.sortedArmors as |armor ind|}}
                         <span> {{armor}} </span>
-                        {{#ifeq ind loc.sortedArmorsLastInd}}
+                        {{#ifeq ind armors.sortedArmorsLastInd}}
                         {{else}}
                         <i class="fas fa-angle-right"></i>
                         {{/ifeq}}
                         {{/each}}
                     </span>
                     <span class="flex2 text-center" style="min-width:fit-content;">
-                        B<span class="property-field property-field-ac">{{loc.acDr.b}}</span> 
-                        P<span class="property-field property-field-ac">{{loc.acDr.p}}</span> 
-                        S<span class="property-field property-field-ac">{{loc.acDr.s}}</span>
+                        B<span class="property-field property-field-ac">{{armors.acDr.b}}</span> 
+                        P<span class="property-field property-field-ac">{{armors.acDr.p}}</span> 
+                        S<span class="property-field property-field-ac">{{armors.acDr.s}}</span>
                     </span>
                 </li>
                 {{/each}}
             </ol>
+            {{/each}}
         </div>
 
         {{!-- Owned Spells Tab --}}
