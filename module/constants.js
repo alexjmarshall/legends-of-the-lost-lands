@@ -90,6 +90,13 @@ export const MATERIAL_PROPS = {
     warmth:36,
     sp_value:50,
   },
+  leather: {
+    weight:5,
+    warmth:10,
+    sp_value:18,
+    metal:false,
+    bulky:false,
+  },
   padded: {
     weight:4,
     warmth:20,
@@ -97,7 +104,7 @@ export const MATERIAL_PROPS = {
     metal:false,
     bulky:false,
   },
-  leather: {
+  "cuir bouilli": {
     weight:6,
     warmth:10,
     sp_value:20,
@@ -198,6 +205,21 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:0,
     },
   },
+  leather: {
+    base_AC: 2,
+    blunt: {
+      ac:0,
+      dr:0,
+    },
+    piercing: {
+      ac:0,
+      dr:1,
+    },
+    slashing: {
+      ac:-1,
+      dr:1,
+    },
+  },
   padded: {
     base_AC: 2,
     blunt: {
@@ -209,11 +231,11 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     slashing: {
-      ac:1,
+      ac:-1,
       dr:0,
     },
   },
-  leather: {
+  "cuir bouilli": {
     base_AC: 2,
     blunt: {
       ac:1,
@@ -380,6 +402,9 @@ export const ARMOR_VS_DMG_TYPE = {
   },
 }
 export const MAX_ARMOR_DR = 3;
+export const MAX_IMPALES = 5;
+export const MIN_BLEED_DMG = 6;
+export const BLEED_CHANCE = 17;
 export const ATK_MODES = {
   "swi(b)": {
     ATK_ATTR: "str",
@@ -618,6 +643,7 @@ const ranFinger = () => ranChoice(['thumb','index','middle','ring','pinky']);
 const ranShinBone = () => ranChoice(['fibula','fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar','ulnar','radial']);
 const ranArmMuscle = () => ranChoice(['triceps','biceps']);
+const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
 
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
@@ -633,20 +659,22 @@ export const HIT_LOCATIONS = {
   foot: {
     weights: [2,2,0,0,8,6,10,4],
     bilateral: true,
+    max_impale: 1,
     injury: {
-      blunt: {
+      blunt: { // TODO chance of internal bleeding with blunt injuries
         light: {
-          text: ` and breaks the ${ranToe()} toe`,
+          text: ` and crushes the ${ranToe()} toe`,
         },
         serious: {
           text: ' and dislocates the ankle',
         },
         critical: {
-          text: ' and shatters and dislocates the ankle',
+          text: ' and shatters the ankle',
         },
         gruesome: {
           text: ' and crushes the foot into red pulp',
           removal: true,
+          dmgEffect: minorBleedDesc('wound'),
         },
       },
       piercing: {
@@ -654,11 +682,10 @@ export const HIT_LOCATIONS = {
           text: ' and splits the foot',
         },
         serious: {
-          text: ' and cuts a nerve near the ankle',
+          text: ' and cuts a nerve in the foot',
         },
         critical: {
           text: ' and splits the ankle and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
         },
       },
       slashing: {
@@ -666,7 +693,8 @@ export const HIT_LOCATIONS = {
           text: ' and severs the tendons on top of the foot',
         },
         serious: {
-          text: ' and severs the Achilles tendon',
+          text: ' and splits open the ankle and tears a ligament',
+          dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
           text: ' and severs the foot',
@@ -679,6 +707,7 @@ export const HIT_LOCATIONS = {
   shin: {
     weights: [6,4,0,0,14,10,20,10],
     bilateral: true,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -697,23 +726,19 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the calf muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the calf muscle',
+          text: ' and pierces the calf muscle and cuts a nerve',
         },
         critical: {
-          text: ' and pierces the calf and nicks an artery',
+          text: ' and penetrates the calf and nicks an artery',
           dmgEffect: minorBleedDesc('wound'),
         },
-        // gruesome: {
-        //   text: ' and splits the calf and shatters the fibula',
-        //   dmgEffect: internalBleedDesc('shin'),
-        // },
       },
       slashing: {
         light: {
           text: ' and gashes the calf muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the calf muscle',
+          text: ' and severs the tendon below the calf',
         },
         critical: {
           text: ' and cleaves the calf to the bone',
@@ -730,6 +755,9 @@ export const HIT_LOCATIONS = {
   knee: {
     weights: [8,4,0,0,16,10,8,4],
     bilateral: true,
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -739,7 +767,7 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the knee',
         },
         critical: {
-          text: ' and shatters the kneecap and dislocates the joint',
+          text: ' and shatters the knee',
         },
       },
       piercing: {
@@ -750,20 +778,17 @@ export const HIT_LOCATIONS = {
           text: ' and splits the knee and tears a ligament',
         },
         critical: {
-          text: ' and splits the knee and nicks an artery',
-          dmgEffect: minorBleedDesc('wound'),
-        },
-        gruesome: {
-          text: ' and shatters the kneecap and nicks an artery',
+          text: ' and splits the knee and nicks an artery', // TODO level of injury in brackets of chat msg
           dmgEffect: minorBleedDesc('wound'),
         },
       },
       slashing: {
         light: {
-          text: ' and severs the tendon below the knee',
+          text: ' and gashes the knee',
         },
         serious: {
-          text: ' and gashes the knee and tears a ligament',
+          text: ' and splits the knee open and tears a ligament',
+          dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
           text: ` and lops off the lower leg`,
@@ -776,16 +801,19 @@ export const HIT_LOCATIONS = {
   thigh: {
     weights: [10,10,4,4,16,20,14,14],
     bilateral: true,
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 3,
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the femur',
-        },
-        serious: {
           text: ' and cracks the femur',
         },
+        serious: {
+          text: ' and snaps the femur',
+        },
         critical: {
-          text: ' and snaps the femur', // TODO no hard-coded injuries? add more gruesome results leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
+          text: ' and snaps the femur', // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
           dmgEffect: compoundFractureDesc,
         },
         gruesome: {
@@ -798,27 +826,23 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the thigh muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the thigh muscle',
+          text: ' and pierces the thigh muscle and cuts a nerve',
         },
         critical: {
-          text: ' and penetrates the thigh muscle and nicks an artery',
+          text: ' and penetrates the thigh and nicks an artery',
           dmgEffect: majorBleedDesc('wound'),
         },
-        // gruesome: {
-        //   text: ' and penetrates the thigh and shatters the femur',
-        //   dmgEffect: internalBleedDesc('thigh'),
-        // },
       },
       slashing: {
         light: {
           text: ' and gashes the thigh muscle',
         },
         serious: {
-          text: ' and severs the tendon above the knee',
+          text: ' and severs the hamstring tendons',
         },
         critical: {
           text: ' and cleaves the thigh to the bone',
-          dmgEffect: majorBleedDesc('wound'),
+          dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
           text: ' and severs the leg mid-thigh',
@@ -831,21 +855,19 @@ export const HIT_LOCATIONS = {
   hip: {
     weights: [6,4,2,0,10,6,4,6],
     bilateral: true,
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
           text: ' and cracks the pelvis',
         },
         serious: {
-          text: ' and breaks the hip',
+          text: ' and dislocates the hip',
         },
         critical: {
           text: ' and shatters the hip',
-          dmgEffect: compoundFractureDesc,
-        },
-        gruesome: {
-          text: ' and shatters the pelvis',
-          dmgEffect: internalBleedDesc('hip'),
         },
       },
       piercing: {
@@ -853,15 +875,10 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the buttock',
         },
         serious: {
-          text: ' and cuts a nerve in the buttock',
+          text: ' and pierces the buttock and cuts a nerve',
         },
         critical: {
           text: ' and splits the hip and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
-        },
-        gruesome: {
-          text: ' and splits the hip and nicks an artery',
-          dmgEffect: majorBleedDesc('wound'),
         },
       },
       slashing: {
@@ -869,62 +886,59 @@ export const HIT_LOCATIONS = {
           text: ' and gashes the buttock',
         },
         serious: {
-          text: ' and cuts a nerve below the hip',
-        },
-        critical: {
-          text: ' and gashes the hip and tears a ligament',
+          text: ' and splits the hip open and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
-        gruesome: {
-          text: ' and lops off the leg',
+        critical: {
+          text: ' and splits the hip open and severs an artery',
           dmgEffect: majorBleedDesc('wound'),
-          removal: true,
         },
       },
     },
   },
   groin: {
     weights: [2,6,0,2,3,10,2,2],
+    crit_chance: 2,
+    crit_dmg: 1,
+    max_impale: 3,
     injury: {
       blunt: {
         light: {
           text: ' and bruises the genitals',
         },
         serious: {
-          text: ' and cracks the pubic bone',
+          text: ' and lacerates the genitals',
         },
         critical: {
-          text: ' and lacerates the genitals and cracks the pubic bone',
+          text: ' and fractures the pelvis',
         },
         gruesome: {
-          text: ' and shatters the pubic bone',
+          text: ' and shatters the pelvis',
           dmgEffect: internalBleedDesc('groin'),
         },
       },
       piercing: {
         light: {
-          text: ' and gashes the genitals',
+          text: ' and gouges the genitals',
         },
         serious: {
-          text: ' and penetrates the inner thigh and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' tears a ligament in the groin',
         },
         critical: {
-          text: ' and penetrates the inner thigh and nicks an artery',
+          text: ' and penetrates the groin and nicks an artery',
           dmgEffect: majorBleedDesc('wound'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the genitals',
-          dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
           text: ' and severs the genitals',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and severs the genitals and cleaves the inner thigh to the bone',
+          text: ' and cleaves the inner thigh to the bone',
           dmgEffect: majorBleedDesc('wound'),
         },
       },
@@ -932,20 +946,23 @@ export const HIT_LOCATIONS = {
   },
   gut: {
     weights: [8,18,4,10,12,18,9,14],
+    crit_chance: 2,
+    crit_dmg: 1,
+    max_impale: 5,
     injury: {
       blunt: {
         light: {
-          text: ' and bruises the spine',
+          text: ` and bruises ${ranOrgan()}`,
         },
         serious: {
           text: ' and breaks a rib',
         },
         critical: {
-          text: ' and crushes the ribs into the liver',
-          dmgEffect: internalBleedDesc('gut'),
+          text: ` and crushes the ribs into ${ranOrgan()}`,
+          dmgEffect: internalBleedDesc('gut'), // TODO chance of bleed
         },
         gruesome: {
-          text: ' and shatters the ribs and snaps the spine',
+          text: ' and snaps the spine',
           fatal: true,
           dmgEffect: knockbackDesc,
         },
@@ -985,13 +1002,15 @@ export const HIT_LOCATIONS = {
         gruesome: {
           text: ' and cleaves the body in two at the waist!',
           fatal: true,
-          removal: true,
         },
       },
     },
   },
   chest: {
     weights: [4,12,6,16,2,5,5,8],
+    crit_chance: 2,
+    crit_dmg: 2,
+    max_impale: 5,
     injury: {
       blunt: {
         light: {
@@ -1030,11 +1049,11 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and severs the collarbone',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: minorBleedDesc('wound'), // TODO must pass saving throw to stop severe bleeding
         },
         critical: {
-          text: ' and cleaves into the ribs and gashes a lung',
-          dmgEffect: internalBleedDesc('chest'),
+          text: ' and cleaves through the ribs and gashes a lung',
+          dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
           text: ' and cleaves through the torso from collarbone to navel!',
@@ -1047,13 +1066,14 @@ export const HIT_LOCATIONS = {
   hand: {
     weights: [6,4,6,4,4,2,6,4],
     bilateral: true,
+    max_impale: 1,
     injury: {
       blunt: {
         light: {
-          text: ` and breaks the ${ranFinger()} finger`,
+          text: ` and crushes the ${ranFinger()} finger`,
         },
         serious: {
-          text: ' and breaks the wrist',
+          text: ' and fractures the wrist',
         },
         critical: {
           text: ' and crushes the hand into red pulp',
@@ -1065,7 +1085,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the hand',
         },
         serious: {
-          text: ' and cuts a nerve near the wrist',
+          text: ' and cuts a nerve in the hand',
         },
         critical: {
           text: ' and splits the wrist and tears a ligament',
@@ -1090,6 +1110,7 @@ export const HIT_LOCATIONS = {
   forearm: {
     weights: [8,4,8,4,6,2,6,4],
     bilateral: true,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1108,7 +1129,7 @@ export const HIT_LOCATIONS = {
           text: ' and splits the forearm muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the forearm muscle',
+          text: ' and splits the forearm muscle and cuts a nerve',
         },
         critical: {
           text: ' and splits the forearm and nicks an artery',
@@ -1120,7 +1141,7 @@ export const HIT_LOCATIONS = {
           text: ' and gashes the forearm muscle',
         },
         serious: {
-          text: ' and cuts a nerve in the forearm muscle',
+          text: ' and gashes the forearm muscle and cuts a nerve',
         },
         critical: {
           text: ` and severs the ${ranForearmBone()} bone`,
@@ -1136,6 +1157,9 @@ export const HIT_LOCATIONS = {
   },
   elbow: {
     weights: [8,4,10,6,2,2,4,2],
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 2,
     bilateral: true,
     injury: {
       blunt: {
@@ -1143,10 +1167,10 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the elbow',
         },
         serious: {
-          text: ' and breaks the elbow',
+          text: ' and fractures the elbow',
         },
         critical: {
-          text: ' and shatters and dislocates the elbow',
+          text: ' and shatters the elbow',
         },
       },
       piercing: {
@@ -1157,8 +1181,8 @@ export const HIT_LOCATIONS = {
           text: ' and splits the elbow and tears a ligament',
         },
         critical: {
-          text: ' and nicks an artery in the elbow',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and splits the elbow and nicks an artery',
+          dmgEffect: majorBleedDesc('wound'),
         },
       },
       slashing: {
@@ -1166,7 +1190,7 @@ export const HIT_LOCATIONS = {
           text: ' and severs the biceps tendon',
         },
         serious: {
-          text: ' and gashes the elbow and tears a ligament',
+          text: ' and splits the elbow and tears a ligament',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
@@ -1179,6 +1203,9 @@ export const HIT_LOCATIONS = {
   },
   "upper arm": {
     weights: [6,4,10,8,2,2,6,6],
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 2,
     bilateral: true,
     injury: {
       blunt: {
@@ -1205,7 +1232,7 @@ export const HIT_LOCATIONS = {
           text: ` and cuts a nerve in the ${ranArmMuscle()}`,
         },
         critical: {
-          text: ' nicks an artery in the inner arm',
+          text: ' nicks an artery in the upper arm',
           dmgEffect: majorBleedDesc('wound'),
         },
         // gruesome: {
@@ -1234,6 +1261,9 @@ export const HIT_LOCATIONS = {
   },
   armpit: {
     weights: [2,6,4,12,2,4,2,2],
+    crit_chance: 2,
+    crit_dmg: 1,
+    max_impale: 3,
     bilateral: true,
     injury: {
       blunt: {
@@ -1277,6 +1307,9 @@ export const HIT_LOCATIONS = {
   },
   shoulder: {
     weights: [8,6,12,12,2,2,6,6],
+    crit_chance: 1,
+    crit_dmg: 1,
+    max_impale: 3,
     bilateral: true,
     injury: {
       blunt: {
@@ -1321,6 +1354,9 @@ export const HIT_LOCATIONS = {
   },
   neck: {
     weights: [3,2,6,4,0,0,3,3],
+    crit_chance: 3,
+    crit_dmg: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1365,6 +1401,9 @@ export const HIT_LOCATIONS = {
   },
   jaw: {
     weights: [3,2,6,3,1,1,2,2],
+    crit_chance: 3,
+    crit_dmg: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1424,6 +1463,9 @@ export const HIT_LOCATIONS = {
   },
   "face": {
     weights: [1,2,2,3,0,0,2,1],
+    crit_chance: 3,
+    crit_dmg: 2,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1484,6 +1526,9 @@ export const HIT_LOCATIONS = {
   },
   eye: {
     weights: [2,2,4,4,0,0,2,2],
+    crit_chance: 5,
+    crit_dmg: 2,
+    max_impale: 3,
     bilateral: true,
     injury: {
       blunt: {
@@ -1546,6 +1591,9 @@ export const HIT_LOCATIONS = {
   },
   skull: {
     weights: [7,4,16,8,0,0,9,6],
+    crit_chance: 2,
+    crit_dmg: 3,
+    max_impale: 3,
     injury: {
       blunt: {
         light: {
@@ -1626,12 +1674,9 @@ export const STANCE_MODS = {
     ac_mod: -1,
   }
 }
-export const POWER_STANCE_DMG_BONUS = weapSize => weapSize + 1;
-export const POWER_STANCE_AC_PENALTY = -4;
-export const POWER_STANCE_ATK_PENALTY = -2;
-export const CAUTIOUS_STANCE_ATK_BONUS = 4;
-export const CAUTIOUS_STANCE_DMG_PENALTY = weapSize => 0 - (weapSize + 1);
+
 export const WEAP_BREAK_CHANCE = 5;
+export const SQUARE_SIZE = 5;
 
 export const AMMO_TYPES = [
   "bodkin arrow",
@@ -1648,7 +1693,15 @@ export const AIM_AREAS = {
   lower_torso: ['gut','groin',],
   left_leg: ['left hip','left thigh','left knee','left shin','left foot'],
   right_leg: ['right hip','right thigh','right knee','right shin','right foot'],
-}
+};
+
+export const AIM_AREAS_UNILATERAL = {
+  head: ['skull','eye','face','jaw','neck'],
+  arm: ['shoulder','upper arm','elbow','forearm','hand'],
+  upper_torso: ['armpit','chest','armpit'],
+  lower_torso: ['gut','groin',],
+  leg: ['hip','thigh','knee','shin','foot'],
+};
 
 export const SHIELD_WEIGHT_MULTI = {
   worn: 1.2,
