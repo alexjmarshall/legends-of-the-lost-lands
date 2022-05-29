@@ -320,20 +320,18 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const maxHp = actor.data.data.hp?.max;
   const token = Util.getTokenFromActor(actor);
 
-  // if (hpUpdate <= -10  && targetHp > 0 ) {
-  //   Util.macroChatMessage(actor, {
-  //     flavor: 'Instant Death', 
-  //     content: `${actor.name} dies instantly.`,
-  //     type: CONST.CHAT_MESSAGE_TYPES.IC,
-  //   }, false);
-  //   return;
-  // }
+  if (hpUpdate <= -10  && targetHp > 0 ) {
+    Util.macroChatMessage(actor, {
+      flavor: 'Instant Death', 
+      content: `${actor.name} dies instantly.`,
+    }, false);
+    return;
+  }
 
   if (hpUpdate <= -10  && targetHp > -10 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Death', 
       content: `${actor.name} dies.`,
-      type: CONST.CHAT_MESSAGE_TYPES.IC,
     }, false);
     return;
   }
@@ -342,7 +340,6 @@ Hooks.on("preUpdateActor", (actor, change) => {
     Util.macroChatMessage(actor, {
       flavor: 'Incapacitated', 
       content: `${actor.name} collapses.`,
-      type: CONST.CHAT_MESSAGE_TYPES.IC,
     }, false);
   }
 
@@ -386,7 +383,6 @@ Hooks.on("preUpdateItem", (item, change) => {
   if (change.data?.attributes?.wearable?.value != null || invalidWear) {
     change.data.worn = false;
   }
-  // TODO reset atk mode, atk height and atk style if changing held status
   if (change.data?.held_left != null || change.data?.held_right != null) {
     const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
     if (atkModes.length) {
