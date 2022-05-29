@@ -134,13 +134,7 @@ export async function castSpell(spellId, options={}) {
   }
 }
 
-async function useItem(itemId, data={
-  sound: '', 
-  flavor: '', 
-  verb: '', 
-  chatMsgContent: '',
-  chatMsgType: CONST.CHAT_MESSAGE_TYPES.EMOTE
-}, consumable=false) {
+async function useItem(itemId, data={ sound, flavor, verb, chatMsgContent, chatMsgType }, consumable=false) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   const token = char.token;
@@ -150,7 +144,7 @@ async function useItem(itemId, data={
   const desc = item.data.data.description
   const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}.`;
   const content = data.chatMsgContent || desc || chatBubbleText;
-  const type = data.chatMsgType || (desc ? CONST.CHAT_MESSAGE_TYPES.IC : CONST.CHAT_MESSAGE_TYPES.EMOTE);
+  const type = data.chatMsgType || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   const holdable = item.data.data.attributes.holdable?.value;
 
   if ( holdable && !item.data.data.held_left && !item.data.data.held_right ) {
@@ -1150,6 +1144,7 @@ async function attack(attackers, targetToken, options) {
   const staggerDesc = Constant.staggerDesc;
   let coverageArea = '';
   let endHeight = '';
+  let pierceToBlunt = false;
 
   
   let rolledWeapDmg = await Util.rollDice(weapDmg);
@@ -1166,8 +1161,7 @@ async function attack(attackers, targetToken, options) {
   
   if (!isNaN(targetAc)) {
     let hitLoc = '';
-    const deepImpaleAreas = ['chest','gut','thigh'];
-    const maxImpaleAreas = ['chest','skull','eye','face'];
+    const maxImpaleAreas = ['chest','skull','eye'];
     const doubleBleedAreas = ['neck','shoulder','armpit'];
     const easyBleedAreas = ['neck','face','skull','eye','forearm','hand','foot','groin'];
     const doubleKnockdownAreas = ['skull','face','eye','knee','shin'];
@@ -1195,7 +1189,7 @@ async function attack(attackers, targetToken, options) {
 
       acObj = targetRollData.ac[coverageArea][dmgType] || acObj;
       // zero dr as location specific dr will be used later instead
-      dr = 0;
+      dr = acObj.dr ?? dr;
       targetAc = acObj.ac ?? targetAc;
       sortedWornArmors = targetRollData.ac[coverageArea].sorted_armor_ids?.map(id => targetActor.items.get(id)) || [];
 
@@ -1252,19 +1246,25 @@ async function attack(attackers, targetToken, options) {
       }
 
       // critical hits
-      const critChance = totalAtkResult - targetAc; // TODO curved swords have lower min reach
+      const critMulti = Constant.HIT_LOCATIONS[coverageArea].crit_chance ?? 1;
+      const critChance = critMulti * (totalAtkResult - targetAc); // TODO curved swords have lower min reach
       const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
       if (isCriticalHit) {
         const armorName = sortedWornArmors[0]?.name;
         const armorAbsorb = armorAbsorption(sortedWornArmors, dent, dmgType, weapImp, armorUpdates);
-        weapDmgResult = Math.max(1, weapDmgResult + weapDmgResult - armorAbsorb.absorbDr);
+        const critDmgMulti = Constant.HIT_LOCATIONS[coverageArea].crit_dmg ?? 1;
+        let critDmg = maxWeapDmg - rolledWeapDmg;
+        for (let i = 1; i < critDmgMulti; i++) {
+          critDmg += await Util.rollDice(weapDmg);
+        }
+        weapDmgResult = Math.max(1, weapDmgResult + critDmg - armorAbsorb.absorbDr);
         // if absorbing armor has already been mentioned in hitDesc, overwrite
         hitDesc = hitDesc.includes(armorName) ? armorAbsorb.hitDesc :  hitDesc + armorAbsorb.hitDesc;
         dent = armorAbsorb.armorDented;
       }
 
       // knockdown
-      let knockdownDamage = weapDmgResult + strMod + stanceDmgMod;
+      let knockdownDamage = weapDmgResult + attrDmgMod + stanceDmgMod - dr;
       const isProne = targetActor.data.effects.some(e => Util.stringMatch(e.data.label, 'Prone'));
       const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
       const knockdownChance = knockDownMulti * knockdownDamage * weapImp - 15 * (targetSize - attackerSize);
@@ -1275,7 +1275,7 @@ async function attack(attackers, targetToken, options) {
         const isShield = !!armor?.data.data.attributes.shield_shape?.value;
         // knockdown can disarm weapon, knock off helmet, or disarm shield if held in fluid stance
         (() => {
-          if ( !!armor && helmetAreas.includes(coverageArea)) {
+          if ( !!armor && !isShield && helmetAreas.includes(coverageArea)) {
             const attachedHelm = armor?.data.data.attributes.coverage?.value.includes('neck') && !!armor?.data.data.attributes.material?.value.includes('plate');
             if (!attachedHelm && (2 * Math.random() > 1)) {
               dmgEffect += ` and knocks ${armor.name} off ${targetActor.name}'s head`;
@@ -1299,8 +1299,8 @@ async function attack(attackers, targetToken, options) {
           }
 
           const sizeDiff = attackerSize - targetSize;
-          dmgEffect += sizeDiff >= 0 && (knockdownDamage * sizeDiff > 9) && (2 * Math.random() > 1) ? knockbackDesc
-            : (knockdownDamage > 2 && (2 * Math.random() > 1)) ? knockdownDesc
+          dmgEffect += sizeDiff >= 0 && (knockdownDamage * sizeDiff > 9) ? knockbackDesc
+            : knockdownDamage > 2 ? knockdownDesc
             : staggerDesc;
         })();
         // remove any other weapons
@@ -1311,46 +1311,45 @@ async function attack(attackers, targetToken, options) {
       // impale
       // steel plate cannot be impaled
       let steelPlate = sortedWornArmors.find(a => Util.stringMatch(a.data.data.attributes.material?.value, 'steel plate'));
-      const impaleDmg = weapDmgResult + stanceDmgMod;
+      const impaleDmg = weapDmgResult + attrDmgMod + stanceDmgMod;
       const isImpale = !applyArmor(steelPlate) && !immuneImpale && Util.stringMatch(dmgType, 'piercing') && impaleDmg >= maxWeapDmg;
       if (isImpale) {
         let stuck = false;
-        const canDeepImpale = coverageArea ? deepImpaleAreas.includes(coverageArea) : true;
-        const maxImpales = 2 + weapSize;
-        let impaleDmg = 0;
+        const maxImpales = Util.stringMatch(weapCategory, 'spiked bludgeon') ? 1 : Constant.MAX_IMPALES;
+        const maxImpalesForDmg = Constant.HIT_LOCATIONS[coverageArea].max_impale ?? maxImpales;
+        let totalImpaleDmg = 0;
         let armorPenString = '';
 
         for (let i = 0; i < maxImpales; i++) {
           let rolledDmg = await Util.rollDice(weapDmg);
-          let dmg = maxImpaleAreas.includes(coverageArea) ? maxWeapDmg : rolledDmg;
+          if (maxImpaleAreas.includes(coverageArea)) {
+            const secondRolledDmg = await Util.rollDice(weapDmg);
+            rolledDmg = Math.max(rolledDmg, secondRolledDmg);
+          }
+          let dmg = rolledDmg;
 
           const armorName = sortedWornArmors[0]?.name;
           const armorAbsorb = armorAbsorption(sortedWornArmors, dent, dmgType, weapImp, armorUpdates);
-          dmg = Math.max(1, dmg - armorAbsorb.absorbDr - i);
+          dmg = Math.max(0, dmg - armorAbsorb.absorbDr - i);
           // if absorbing armor has already been mentioned in hitDesc, overwrite
-          armorPenString = armorPenString.includes(armorName) ? armorAbsorb.hitDesc :  armorPenString + armorAbsorb.hitDesc;
+          armorPenString = armorPenString.includes(armorName) ? armorAbsorb.hitDesc : armorPenString + armorAbsorb.hitDesc;
           dent = armorAbsorb.armorDented;
 
-          // beyond first impale level, no more damage done if target area is shallow or spiked bludgeon
-          // weapon gets stuck if not a shot missile
-          if (i > 0) {
-            if (!canDeepImpale || Util.stringMatch(weapAttrs.category?.value, 'spiked bludgeon')) {
-              dmg = 0;
-            }
-            stuck = atkForm !== 'shoot';
-          }
+          // beyond first impale level, weapon gets stuck if not a shot missile
+          if (i > 0) stuck = atkForm !== 'shoot';
+          if (i > maxImpalesForDmg) dmg = 0;
 
-          impaleDmg += dmg;
+          totalImpaleDmg += dmg;
 
-          // ~25% chance of rolling damage again and weapon getting stuck if not shoot
-          if (!isHit || dmg < Math.round(maxWeapDmg * 3 / 4)) {
+          // ~25% chance of impaling deeper
+          if (Math.ceil(Math.random() * 100) <= 25) { // TODO instead of just 25, use a new weapon stat for armor penetration -- max pens, and * 10 % chance of deeper
             break;
           }
         }
 
         // apply damage and append results string to hitDesc
-        weapDmgResult += impaleDmg;
-        const impaleDesc = armorPenString + (impaleDmg > 0 ? ` and impales` : '');
+        weapDmgResult += totalImpaleDmg;
+        const impaleDesc = armorPenString + (totalImpaleDmg > 0 ? ` and impales` : '');
         dmgEffect = !stuck ? dmgEffect : Util.replacePunc(dmgEffect) + weaponStuckDesc;
         hitDesc += impaleDesc;
       }
@@ -1359,10 +1358,11 @@ async function attack(attackers, targetToken, options) {
       // metal armor cannot be cut
       let metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value);
       let minBleedDmg = 6;
+      const bleedDmg = rolledWeapDmg;
       let bleedChance = 25;
       if (isCurvedSword) minBleedDmg--;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
-      const isBleed = !immuneBleed && !applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') && weapDmgResult >= minBleedDmg && weapDmgResult > 1 && await Util.rollDice('d100') <= bleedChance;
+      const isBleed = !immuneBleed && !applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing') && bleedDmg >= minBleedDmg && await Util.rollDice('d100') <= bleedChance;
       
       if (isBleed) {
         const armor = sortedWornArmors[0];
@@ -1376,7 +1376,6 @@ async function attack(attackers, targetToken, options) {
             // if armor is bulky or shield it absorbs damage and negates bleed
             if (isBulky || isShield) {
               doBleed = false;
-
               // if weapon is a curved sword, break here and don't damage armor
               if (isCurvedSword) return;
             }
@@ -1390,7 +1389,6 @@ async function attack(attackers, targetToken, options) {
               qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
             }
             options.applyEffect === true && game.user.isGM && armorUpdates.push(itemUpdate);
-
             // append string
             hitDesc += ` and ${verb} ${armor.name}`;
           }
@@ -1404,22 +1402,24 @@ async function attack(attackers, targetToken, options) {
         sortedWornArmors.shift();
       }
 
+      
+      // apply dr
+      // weapDmgResult = Math.max(1, weapDmgResult - dr);
+
+
       // switch dmgType to blunt if metal armor remains
       metalArmor = sortedWornArmors.find(i => i.data.data.attributes.metal?.value === true);
-      if (applyArmor(metalArmor) && Util.stringMatch(dmgType, 'slashing')) {
+      if ( applyArmor(metalArmor) && (Util.stringMatch(dmgType, 'slashing') || (Util.stringMatch(dmgType, 'piercing'))) ) {
         dmgType = 'blunt';
         const bluntingArmor = metalArmor;
         hitDesc += !hitDesc.includes(bluntingArmor.name) ? ` and fails to penetrate ${bluntingArmor.name} but` : '';
+        if (Util.stringMatch(dmgType, 'piercing')) pierceToBlunt = true;
       }
-
-      // apply dr
-      acObj = targetRollData.ac[coverageArea][dmgType] || acObj;
-      dr += acObj.dr ?? dr;
-      weapDmgResult = Math.max(1, weapDmgResult - dr);
 
       hitDesc = /and impales$/.test(hitDesc) ? hitDesc : /but$/.test(hitDesc) ? hitDesc + ' hits' : hitDesc + ' and hits';
       hitDesc = isCriticalHit ? hitDesc + ` a vulnerable spot` : hitDesc;
 
+      // change slashing arrows dmg type to piercing for the purpose of injury determination
       const injuryDmgType = Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"slashing") ? "piercing" : dmgType;
       injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[injuryDmgType] || {};
 
@@ -1485,11 +1485,11 @@ async function attack(attackers, targetToken, options) {
       } else {
         const hide = targetActor.data.data.attributes.hide?.value;
         let deflectingArmorName = deflectingArmor?.name;
-        let hideBonus = 0;
+        //let hideBonus = 0;
         if (Constant.ARMOR_VS_DMG_TYPE[hide] && !deflectingArmorName && coverageArea !== 'eye') {
           const hideDesc = Util.stringMatch(hide,'leather') ? `${hide}y` : Util.stringMatch(hide, 'scale') ? `${hide.replace('e','')}y` : `${hide}`;
           deflectingArmorName = ` the ${hideDesc} hide`;
-          hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
+          //hideBonus = Math.floor((+Constant.ARMOR_VS_DMG_TYPE[hide].base_AC + +Constant.ARMOR_VS_DMG_TYPE[hide][dmgType]?.ac) / 2);
         }
         missDesc = ` ${deflectingArmorName ? 
          ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && deflectingArmor.data.data.attributes.shield_shape?.value ? ` thunks into ` : ` glances off`} ${deflectingArmorName}` : 
@@ -1530,21 +1530,28 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  const dmgMods = [attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
-  const dmgModText = dmgMods.reduce((prev, curr, ind) => curr && ind === 0 ? prev + `${curr}` : prev + `+${curr}`, '');
-  let totalDmg = `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText ? `+${dmgModText}` : ''}`;
+  const drMod = 0 - dr;
+  const dmgMods = [drMod, attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
+  const dmgModText = dmgMods.reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
+  let totalDmgText= `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText}`;
   let dialogDmg = '';
   if (dialogDmgMod.formula) {
     dialogDmg = `${!dialogDmgMod.includesSign ? `+` : ''}${dialogDmgMod.formula}`;
-    totalDmg = /^[\*|\/]/.test(dialogDmg) ? `(${totalDmg})${dialogDmg}` : `${totalDmg}${dialogDmg}`;
+    totalDmgText= /^[\*|\/]/.test(dialogDmg) ? `(${totalDmgText})${dialogDmg}` : `${totalDmgText}${dialogDmg}`;
   }
-  let totalDmgResult = Math.max(1, await Util.rollDice(totalDmg)); // TODO need to also update totalDmg text if set to min 1
-  let dmgText = ` for ${Util.chatInlineRoll(totalDmg)}${dmgType ? ` ${dmgType}` : ''} damage${dr ? ` (DR ${dr})`:''}`;
+  let totalDmgResult = await Util.rollDice(totalDmgText);
+  // min 1 damage, update both text and totalDmgResult
+  if (totalDmgResult < 1) totalDmgText += `+${1 - totalDmgResult}`;
+  totalDmgResult = Math.max(1, totalDmgResult);
+  let dmgText = ` for ${Util.chatInlineRoll(totalDmgText)}${dmgType ? ` ${dmgType}` : ''} damage`; //${dr ? ` (DR ${dr})`:''}
+
+  const injuryDmg = totalDmgResult > targetHp ? totalDmgResult - targetHp : 0;
+  const injuryWeapDmg = weapDmgResult - dr + attrDmgMod + stanceDmgMod;
     
-  const injury = (Util.stringMatch(atkForm,"shoot") && Util.stringMatch(dmgType,"blunt") ? injuryObj['light'] :
-    totalDmgResult > 9 && !!injuryObj['gruesome'] && (2 * Math.random() > 1) ? injuryObj['gruesome'] :
-    totalDmgResult > 5 && (2 * Math.random() > 1) ? injuryObj['critical'] :
-    totalDmgResult > 2 && (2 * Math.random() > 1) ? injuryObj['serious'] :
+  const injury = (pierceToBlunt ? injuryObj['light'] :
+    injuryWeapDmg > 9 && injuryDmg > 9 && !!injuryObj['gruesome'] ? injuryObj['gruesome'] :
+    injuryWeapDmg > 5 && injuryDmg > 5 ? injuryObj['critical'] :
+    injuryWeapDmg > 2 && injuryDmg > 2 ? injuryObj['serious'] :
     injuryObj['light']) || {};
 
   attacks.push({
@@ -1653,17 +1660,16 @@ function armorAbsorption(sortedWornArmors, armorDented, dmgType, weapImp, armorU
   const isIronPlate = Util.stringMatch(armor?.data.data.attributes.material?.value, 'iron plate');
   const isBulky = !!armor?.data.data.attributes.bulky?.value;
   const isShield = !!armor?.data.data.attributes.shield_shape?.value;
-  const armorApplies = applyArmor(armor);
+  const absorbDmg = applyArmor(armor);
 
-  // if damage type is blunt, armor must be bulky or shield to absorb the extra damage
-  const absorbDmg = armorApplies && (dmgType !== 'blunt' || isBulky || isShield);
+  //const absorbDmg = armorApplies; //&& (dmgType !== 'blunt' || isBulky || isShield);
   // armor is broken if it's already dented
   armorDented = !armorDented && absorbDmg && (isSteelPlate || isIronPlate && weapImp < 6);
 
   // apply the absorbing armor's DR again to the bonus damage
   const absorbDr = absorbDmg ? Number(armor?.data.data.ac?.[dmgType]?.dr) || 0 : 0;
 
-  const skipArmor = !armorApplies || absorbDmg && !armorDented;
+  const skipArmor = !absorbDmg || absorbDmg && !armorDented;
   skipArmor && sortedWornArmors.shift();
   let hitDesc = '';
 
@@ -2410,7 +2416,6 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     await Fatigue.deleteDisease(actor, disease);
     confirmed && await Util.macroChatMessage(actor, {
       content: `${actor.name}'s ${disease} has resolved.`,
-      type: CONST.CHAT_MESSAGE_TYPES.IC,
       flavor
     }, false);
     // return false to prevent reschedule
