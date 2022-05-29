@@ -48,7 +48,7 @@ export class SimpleActor extends Actor {
       mv = maxMv ? Math.round(mv * maxMv / 12) : mv;
       mv = attributes.mv?.value ?? mv;
       updateData.mv = mv;
-      updateData.speed = mv * 5 || 0;
+      updateData.speed = mv * Constant.SQUARE_SIZE || 0;
     }
 
     // encumbrance for containers
@@ -147,22 +147,28 @@ export class SimpleActor extends Actor {
       const max_dex_mod = Math.round(4 - maxDexPenalty);
       const dexAcBonus = Math.min(updateData.dex_mod, max_dex_mod);
 
-      const parryItem =  wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_mode,'parry'))
+      const riposteItem = wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_init,'riposte'))
         .reduce((a,b) => +b?.data.data.attributes.parry?.value || 0 > +a?.data.data.attributes.parry?.value || 0 ? b : a, undefined);
-      const parryBonus = Math.max( Math.min(+parryItem?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
-      const parryHeight = parryItem?.data.data.atk_height;
-      const parry = {
-        parry_item_id: parryItem?._id,
-        parry: parryBonus, //TODO make reach value a number and just set max reach. infer min reach by weapon size
+      const fluidWeap = wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_style,'fluid'))
+        .reduce((a,b) => +b?.data.data.attributes.parry?.value || 0 > +a?.data.data.attributes.parry?.value || 0 ? b : a, undefined);
+      const parryBonus = Math.max( Math.min(+riposteItem?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
+      const fluidParryBonus = Math.max( Math.min(+fluidWeap?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
+      const parryHeight = fluidWeap?.data.data.atk_height;
+      const parry = { // TODO fix to include riposte vs. fluid parry items/values
+        parry_item_id: riposteItem?._id,
+        parry: parryBonus,
         parry_height: parryHeight,
       };
-      const powerWeap = wornOrHeldItems.find(i => Util.stringMatch(i.data.data.atk_style,'power'));
-      // const powerWeapSize = Constant.SIZE_VALUES[powerWeap.data?.data.attributes.size.value];
-      const powerStylePenalty = powerWeap ? -4 : 0;
+      const powerWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_style,'power'));
+      const counterWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_init,'counter'));
 
-      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + powerStylePenalty;
+      let stancePenalty = 0;
+      if (powerWeap) stancePenalty += Constant.STANCE_MODS.power.ac_mod;
+      if (counterWeap) stancePenalty += Constant.STANCE_MODS.counter.ac_mod;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_mod: powerStylePenalty }; // TODO can also be bonus for feinting
+      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + stancePenalty;
+
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty }; // TODO can also be bonus for feinting
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
@@ -189,6 +195,7 @@ export class SimpleActor extends Actor {
           
           // can only wear one shield and one bulky armor
           const shield = coveringItems.find(i => i.data.data.attributes.shield_shape?.value);
+          const shieldStyle = shield?.data.data.shield_style;
           const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
           const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
 
@@ -212,20 +219,23 @@ export class SimpleActor extends Actor {
           ac[k].sorted_armor_ids = sorted_armor_ids;
 
           // determine if parry bonus applies to this area
-          const appliedParryBonus = Constant.HEIGHT_AREAS[parryHeight]?.includes(k) ? parryBonus : 0;
+          let appliedParryBonus = !!riposteItem ? parryBonus : 0;
+          if (Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) appliedParryBonus = Math.max(parryBonus, fluidParryBonus);
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
+            let shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
+            if (Util.stringMatch(shieldStyle, 'fluid')) shieldAcBonus += 1;
             // no shield dr vs. piercing on forearm or hand
-            const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
+            let shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
+            if (Util.stringMatch(shieldStyle, 'fluid')) shieldDrBonus += 1;
 
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
-            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + appliedParryBonus + powerStylePenalty;
-            const locDr = Math.min(Constant.MAX_ARMOR_DR, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus + unarmoredDr);
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + appliedParryBonus + stancePenalty;
+            const locDr = Math.min(Constant.MAX_ARMOR_DR, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0)) + shieldDrBonus + unarmoredDr;
 
             ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
