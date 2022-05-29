@@ -87,9 +87,8 @@ export class SimpleActorSheet extends ActorSheet {
   getArmorsByLocation(data) {
     const ac = data.data.ac || {};
     const armors = {};
-    // const hitLocations = Object.keys(Constant.HIT_LOCATIONS).reverse();
     for (let [area, hitLocations] of Object.entries(Constant.AIM_AREAS_UNILATERAL)) {
-      area = area.replace('_',' ');
+      area = Util.upperCaseFirst(area.replace('_',' '));
       armors[area] = {};
       for (const hitLoc of hitLocations) {
         const sortedArmors = Object.fromEntries(ac[hitLoc]?.sorted_armor_ids?.map((id,ind) => [ind, data.items?.find(i => i._id === id)?.name]) || []);
@@ -108,7 +107,7 @@ export class SimpleActorSheet extends ActorSheet {
         }
       }
     }
-
+    
     return armors;
   }
 
