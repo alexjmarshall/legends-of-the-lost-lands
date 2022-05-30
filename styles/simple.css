@@ -478,3 +478,6 @@
   border: 2px groove #f0f0e0 !important;
   margin: 0 5px 0 0 !important;
 }
+.chat-message .message-content * {
+  user-select: text;
+}
