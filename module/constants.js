@@ -1,3 +1,5 @@
+import * as Util from "./utils.js";
+
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
@@ -93,21 +95,21 @@ export const MATERIAL_PROPS = {
   leather: {
     weight:5,
     warmth:10,
-    sp_value:18,
+    sp_value:25,
     metal:false,
     bulky:false,
   },
   padded: {
     weight:4,
     warmth:20,
-    sp_value:16,
+    sp_value:20,
     metal:false,
     bulky:false,
   },
   "cuir bouilli": {
     weight:6,
     warmth:10,
-    sp_value:20,
+    sp_value:30,
     metal:false,
     bulky:true,
   },
@@ -135,6 +137,7 @@ export const MATERIAL_PROPS = {
   "elven chain": {
     weight:6,
     warmth:1,
+    sp_value: 1500,
     metal:true,
     bulky:false,
   },
@@ -242,12 +245,12 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     piercing: {
-      ac:0,
-      dr:1,
+      ac:1,
+      dr:0,
     },
     slashing: {
       ac:0,
-      dr:1,
+      dr:0,
     },
   },
   wood: {
@@ -257,12 +260,27 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     piercing: {
-      ac:0,
-      dr:1,
+      ac:1,
+      dr:0,
     },
     slashing: {
       ac:0,
-      dr:1,
+      dr:0,
+    },
+  },
+  scale: {
+    base_AC: 2,
+    blunt: {
+      ac:2,
+      dr:0,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:3,
+      dr:0,
     },
   },
   brigandine: {
@@ -272,27 +290,12 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:1,
     },
     piercing: {
-      ac:1,
-      dr:1,
-    },
-    slashing: {
-      ac:0,
-      dr:1,
-    },
-  },
-  scale: {
-    base_AC: 3,
-    blunt: {
-      ac:0,
-      dr:1,
-    },
-    piercing: {
       ac:0,
       dr:1,
     },
     slashing: {
       ac:1,
-      dr:1,
+      dr:0,
     },
   },
   chain: {
@@ -303,7 +306,7 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac:1,
-      dr:1,
+      dr:0,
     },
     slashing: {
       ac:2,
@@ -318,10 +321,25 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac:1,
-      dr:1,
+      dr:0,
     },
     slashing: {
       ac:2,
+      dr:1,
+    },
+  },
+  lamellar: {
+    base_AC: 3,
+    blunt: {
+      ac:0,
+      dr:1,
+    },
+    piercing: {
+      ac:2,
+      dr:1,
+    },
+    slashing: {
+      ac:1,
       dr:1,
     },
   },
@@ -329,60 +347,45 @@ export const ARMOR_VS_DMG_TYPE = {
     base_AC: 4,
     blunt: {
       ac:0,
-      dr:1,
+      dr:0,
     },
     piercing: {
       ac:2,
-      dr:1,
+      dr:0,
     },
     slashing: {
       ac:1,
-      dr:2,
-    },
-  },
-  lamellar: {
-    base_AC: 4,
-    blunt: {
-      ac:-1,
-      dr:2,
-    },
-    piercing: {
-      ac:1,
       dr:1,
-    },
-    slashing: {
-      ac:0,
-      dr:2,
     },
   },
   splint: {
     base_AC: 4,
     blunt: {
       ac:-1,
-      dr:2,
+      dr:1,
     },
     piercing: {
       ac:1,
-      dr:1,
+      dr:0,
     },
     slashing: {
       ac:1,
-      dr:2,
+      dr:1,
     },
   },
   "iron plate": {
     base_AC: 5,
     blunt: {
       ac: -1,
-      dr: 2,
+      dr: 1,
     },
     piercing: {
       ac: 2,
-      dr: 1,
+      dr: 0,
     },
     slashing: {
       ac: 1,
-      dr: 3,
+      dr: 2,
     },
   },
   "steel plate": {
@@ -393,11 +396,11 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     piercing: {
       ac: 3,
-      dr: 1,
+      dr: 0,
     },
     slashing: {
       ac: 1,
-      dr: 3,
+      dr: 2,
     },
   },
 }
@@ -621,17 +624,16 @@ export const LIMB_GROUPS = {
   "arm": ["hand","forearm","elbow","upper arm"],
 };
 
-export const minorBleedDesc = site => ` and blood streams from the ${site}`;
-export const majorBleedDesc = site => `  and blood spurts from the ${site}!`;
-export const internalBleedDesc = site => ` and the ${site} bleeds internally`;
-export const bowelBleedDesc = site => ` and blood oozes from the ${site}`;
-export const compoundFractureDesc = ' and the broken bones poke through the skin!';
+export const minorBleedDesc = ` and blood streams from the wound`;
+export const majorBleedDesc = ` and blood spurts from the wound!`;
+export const internalBleedDesc = area => ` and the ${area} bleeds internally`;
+export const compoundFractureDesc = ' and the broken bones tear through the skin';
 export const weaponStuckDesc = ' and the weapon is stuck!';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
 export const knockbackDesc = ' and knocks them flying!';
 export const staggerDesc = ' and staggers them';
-export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc,bowelBleedDesc];
+export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc];
 export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc, staggerDesc];
 
 const ranChoice = (choices) => {
@@ -644,6 +646,14 @@ const ranShinBone = () => ranChoice(['fibula','fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar','ulnar','radial']);
 const ranArmMuscle = () => ranChoice(['triceps','biceps']);
 const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
+const highCompFract = () => (Math.random() < 0.75) ? compoundFractureDesc : '';
+const lowCompFract = () => (Math.random() < 0.25) ? compoundFractureDesc : '';
+const highMinBleed = () => (Math.random() < 0.75) ? minorBleedDesc : '';
+const lowMinBleed = () => (Math.random() < 0.25) ? minorBleedDesc : '';
+const highMajBleed = () => (Math.random() < 0.75) ? majorBleedDesc : '';
+const lowMajBleed = () => (Math.random() < 0.25) ? majorBleedDesc : '';
+const highintBleed = area => (Math.random() < 0.75) ? internalBleedDesc(area) : '';
+const lowintBleed = area => (Math.random() < 0.25) ? internalBleedDesc(area) : '';
 
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
@@ -661,15 +671,17 @@ export const HIT_LOCATIONS = {
     bilateral: true,
     max_impale: 1,
     injury: {
-      blunt: { // TODO chance of internal bleeding with blunt injuries
+      blunt: {
         light: {
           text: ` and crushes the ${ranToe()} toe`,
         },
         serious: {
-          text: ' and dislocates the ankle',
+          text: ' and breaks the ankle',
+          dmgEffect: (Math.random() < 0.25) ? compoundFractureDesc : '',
         },
         critical: {
           text: ' and shatters the ankle',
+          dmgEffect: (Math.random() < 0.75) ? compoundFractureDesc : '',
         },
         gruesome: {
           text: ' and crushes the foot into red pulp',
@@ -679,26 +691,42 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and splits the foot',
-        },
-        serious: {
           text: ' and cuts a nerve in the foot',
         },
+        serious: {
+          text: ' and tears a ligament in the ankle',
+        },
         critical: {
-          text: ' and splits the ankle and tears a ligament',
+          text: ' and impales the ankle severing a tendon',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
+        },
+        gruesome: {
+          text: ' and impales the foot severing a bone',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
         },
       },
       slashing: {
         light: {
           text: ' and severs the tendons on top of the foot',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         serious: {
-          text: ' and splits open the ankle and tears a ligament',
+          text: ' and splits the ankle tearing a ligament',
+          open: true,
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and severs the foot',
+          text: ' severs the tendon behind the ankle',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ' and cleaves through the ankle lopping off the foot',
           removal: true,
+          open: true,
           dmgEffect: minorBleedDesc('stump'),
         },
       }
@@ -717,8 +745,14 @@ export const HIT_LOCATIONS = {
           text: ` and snaps the ${ranShinBone()}`,
         },
         critical: {
-          text: ' and shatters the lower leg',
+          text: ' and snaps the tibia',
           dmgEffect: compoundFractureDesc,
+          open: true,
+        },
+        gruesome: {
+          text: ' and mangles the lower leg',
+          dmgEffect: Util.replacePunc(compoundFractureDesc) + minorBleedDesc('wound'),
+          open: true,
         },
       },
       piercing: {
@@ -726,28 +760,40 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the calf muscle',
         },
         serious: {
-          text: ' and pierces the calf muscle and cuts a nerve',
+          text: ' and cuts a nerve in the calf',
         },
         critical: {
-          text: ' and penetrates the calf and nicks an artery',
+          text: ' and impales the calf nicking an artery',
           dmgEffect: minorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ` and impales the calf shattering the ${ranShinBone()}`,
+          open: true,
+          dmgEffect: weaponStuckDesc,
         },
       },
       slashing: {
         light: {
           text: ' and gashes the calf muscle',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         serious: {
-          text: ' and severs the tendon below the calf',
+          text: ' and tears the tendon below the calf',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
           text: ' and cleaves the calf to the bone',
           dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         gruesome: {
           text: ' and severs the leg mid-shin',
           dmgEffect: majorBleedDesc('stump'),
           removal: true,
+          open: true,
         },
       }
     },
@@ -767,7 +813,12 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the knee',
         },
         critical: {
-          text: ' and shatters the knee',
+          text: ' and shatters the kneecap',
+          dmgEffect: compoundFractureDesc,
+        },
+        gruesome: {
+          text: ' and mangles the knee tearing the ligaments',
+          dmgEffect: Util.replacePunc(compoundFractureDesc) + minorBleedDesc('wound'),
         },
       },
       piercing: {
@@ -775,23 +826,38 @@ export const HIT_LOCATIONS = {
           text: ' and chips the kneecap',
         },
         serious: {
-          text: ' and splits the knee and tears a ligament',
+          text: ' and tears a ligament in the knee',
         },
         critical: {
-          text: ' and splits the knee and nicks an artery', // TODO level of injury in brackets of chat msg
+          text: ' and impales the knee nicking an artery', // TODO level of injury in brackets of chat msg
           dmgEffect: minorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ' and shatters the kneecap impaling the knee',
+          open: true,
+          dmgEffect: weaponStuckDesc, // TODO pulling out an impaled injury always causes bleeding
         },
       },
       slashing: {
         light: {
           text: ' and gashes the knee',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         serious: {
-          text: ' and splits the knee open and tears a ligament',
+          text: ` and splits the knee tearing a ligament`,
+          open: true,
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ` and lops off the lower leg`,
+          text: ' and severs the tendon below the knee',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
+        },
+        gruesome: {
+          text: ` and cleaves through the knee lopping off the lower leg`,
+          open: true,
           removal: true,
           dmgEffect: majorBleedDesc('stump'),
         },
@@ -813,8 +879,10 @@ export const HIT_LOCATIONS = {
           text: ' and snaps the femur',
         },
         critical: {
-          text: ' and snaps the femur', // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
-          dmgEffect: compoundFractureDesc,
+          text: ' and snaps the femur',
+          open: true, // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
+          dmgEffect: compoundFractureDesc, // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
+          // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
         gruesome: {
           text: ' and shatters the femur',
@@ -826,28 +894,39 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the thigh muscle',
         },
         serious: {
-          text: ' and pierces the thigh muscle and cuts a nerve',
+          text: ' and cuts a nerve in the thigh',
         },
         critical: {
-          text: ' and penetrates the thigh and nicks an artery',
+          text: ' and impales the thigh and nicks an artery',
+          open: true,
           dmgEffect: majorBleedDesc('wound'),
+        },
+        gruesome: {
+          text: ' and impales the thigh shattering the femur',
+          open: true,
+          dmgEffect: weaponStuckDesc,
         },
       },
       slashing: {
         light: {
           text: ' and gashes the thigh muscle',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and severs the hamstring tendons',
+          text: ' and cuts a nerve in the thigh',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
-          text: ' and cleaves the thigh to the bone',
+          text: ' and severs the hamstring tendons',
+          open: true,
           dmgEffect: minorBleedDesc('wound'),
         },
         gruesome: {
-          text: ' and severs the leg mid-thigh',
-          dmgEffect: majorBleedDesc('stump'),
-          removal: true,
+          text: ' and cleaves the thigh to the bone',
+          dmgEffect: majorBleedDesc('wound'),
+          open: true,
         },
       }
     },
@@ -867,7 +946,11 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the hip',
         },
         critical: {
-          text: ' and shatters the hip',
+          text: ' and breaks the hip',
+        },
+        gruesome: {
+          text: ' and shatters the pelvis',
+          dmgEffect: internalBleedDesc('hip'),
         },
       },
       piercing: {
@@ -875,29 +958,46 @@ export const HIT_LOCATIONS = {
           text: ' and pierces the buttock',
         },
         serious: {
-          text: ' and pierces the buttock and cuts a nerve',
+          text: ' and cuts a nerve in the buttock',
         },
         critical: {
-          text: ' and splits the hip and tears a ligament',
+          text: ' and impales the hip tearing a ligament',
+          open: true,
+          dmgEffect: minorBleedDesc('wound'),
+        },
+        gruesome: {
+          text: ' and impales the hip nicking an artery',
+          open: true,
+          dmgEffect: majorBleedDesc('wound'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the buttock',
-        },
-        serious: {
-          text: ' and splits the hip open and tears a ligament',
+          open: true,
           dmgEffect: minorBleedDesc('wound'),
         },
+        serious: {
+          text: ' and splits the hip tearing a ligament',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
+        },
         critical: {
-          text: ' and splits the hip open and severs an artery',
+          text: ' and splits the hip severing an artery',
           dmgEffect: majorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ' and cleaves through the hip lopping off the leg',
+          open: true,
+          removal: true,
+          dmgEffect: majorBleedDesc('stump'),
         },
       },
     },
   },
   groin: {
-    weights: [2,6,0,2,3,10,2,2],
+    weights: [2,8,0,3,3,12,3,4],
     crit_chance: 2,
     crit_dmg: 1,
     max_impale: 3,
@@ -925,27 +1025,42 @@ export const HIT_LOCATIONS = {
           text: ' tears a ligament in the groin',
         },
         critical: {
-          text: ' and penetrates the groin and nicks an artery',
+          text: ' and impales the groin nicking an artery',
           dmgEffect: majorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ' and impales the groin shattering the pelvis',
+          dmgEffect: internalBleedDesc('groin'),
+          open: true,
         },
       },
       slashing: {
         light: {
           text: ' and gashes the genitals',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         serious: {
-          text: ' and severs the genitals',
+          text: ' and splits the inner thigh tearing a tendon',
           dmgEffect: minorBleedDesc('wound'),
+          open: true,
         },
         critical: {
-          text: ' and cleaves the inner thigh to the bone',
+          text: ' and severs the genitals',
+          dmgEffect: minorBleedDesc('wound'),
+          open: true,
+        },
+        gruesome: {
+          text: ' and cleaves through the genitals and into the inner thigh',
           dmgEffect: majorBleedDesc('wound'),
+          open: true,
         },
       },
     },
   },
   gut: {
-    weights: [8,18,4,10,12,18,9,14],
+    weights: [8,16,4,9,12,16,8,12],
     crit_chance: 2,
     crit_dmg: 1,
     max_impale: 5,
@@ -1446,7 +1561,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: minorBleedDesc('wound'),
         },
         serious: {
-          text: ' and severs the jaw',
+          text: ' and splits open the jaw',
           dmgEffect: minorBleedDesc('wound'),
         },
         critical: {
