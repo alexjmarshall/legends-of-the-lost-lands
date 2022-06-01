@@ -646,14 +646,19 @@ const ranShinBone = () => ranChoice(['fibula','fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar','ulnar','radial']);
 const ranArmMuscle = () => ranChoice(['triceps','biceps']);
 const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
-const highCompFract = () => (Math.random() < 0.75) ? compoundFractureDesc : '';
-const lowCompFract = () => (Math.random() < 0.25) ? compoundFractureDesc : '';
 const highMinBleed = () => (Math.random() < 0.75) ? minorBleedDesc : '';
 const lowMinBleed = () => (Math.random() < 0.25) ? minorBleedDesc : '';
 const highMajBleed = () => (Math.random() < 0.75) ? majorBleedDesc : '';
 const lowMajBleed = () => (Math.random() < 0.25) ? majorBleedDesc : '';
-const highintBleed = area => (Math.random() < 0.75) ? internalBleedDesc(area) : '';
-const lowintBleed = area => (Math.random() < 0.25) ? internalBleedDesc(area) : '';
+const highIntBleed = area => (Math.random() < 0.75) ? internalBleedDesc(area) : '';
+const lowIntBleed = area => (Math.random() < 0.25) ? internalBleedDesc(area) : '';
+const compFract = (chance, intBleed=false, area=null) => {
+  if (Math.random() < (1 - chance)) return '';
+  intBleed = intBleed && Math.random() < 0.5;
+  return compoundFractureDesc + (intBleed ? lowIntBleed(area) : lowMinBleed());
+};
+const highCompFract = (intBleed=false, area=null) => compFract(0.75, intBleed, area);
+const lowCompFract = (intBleed=false, area=null) => compFract(0.25, intBleed, area);
 
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
@@ -677,57 +682,52 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and breaks the ankle',
-          dmgEffect: (Math.random() < 0.25) ? compoundFractureDesc : '',
+          dmgEffect: lowCompFract(),
         },
         critical: {
-          text: ' and shatters the ankle',
-          dmgEffect: (Math.random() < 0.75) ? compoundFractureDesc : '',
+          text: ' and mangles the ankle tearing the ligaments',
+          dmgEffect: highCompFract(),
         },
         gruesome: {
           text: ' and crushes the foot into red pulp',
-          removal: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
       },
       piercing: {
         light: {
           text: ' and cuts a nerve in the foot',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and tears a ligament in the ankle',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the ankle severing a tendon',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the ankle and severs a tendon',
+          dmgEffect: lowMinBleed(),
         },
         gruesome: {
-          text: ' and impales the foot severing a bone',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the foot and severs a bone',
+          dmgEffect: lowMinBleed(),
         },
       },
       slashing: {
         light: {
           text: ' and severs the tendons on top of the foot',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits the ankle tearing a ligament',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and splits the ankle and tears a ligament',
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' severs the tendon behind the ankle',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and cleaves through the ankle lopping off the foot',
+          text: ' and cleaves through the ankle and severs the foot',
+          dmgEffect: highMinBleed(),
           removal: true,
-          open: true,
-          dmgEffect: minorBleedDesc('stump'),
         },
       }
     },
@@ -743,57 +743,52 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ` and snaps the ${ranShinBone()}`,
+          dmgEffect: lowCompFract(),
         },
         critical: {
           text: ' and snaps the tibia',
-          dmgEffect: compoundFractureDesc,
-          open: true,
+          dmgEffect: highCompFract(),
         },
         gruesome: {
-          text: ' and mangles the lower leg',
-          dmgEffect: Util.replacePunc(compoundFractureDesc) + minorBleedDesc('wound'),
-          open: true,
+          text: ' and shatters both shin bones',
+          dmgEffect: highCompFract(true, 'shin'),
         },
       },
       piercing: {
         light: {
           text: ' and pierces the calf muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and cuts a nerve in the calf',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the calf nicking an artery',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          text: ' and impales the calf and nicks an artery',
+          dmgEffect: minorBleedDesc,
         },
         gruesome: {
-          text: ` and impales the calf shattering the ${ranShinBone()}`,
-          open: true,
-          dmgEffect: weaponStuckDesc,
+          text: ` and impales the calf and splits the ${ranShinBone()}`,
+          dmgEffect: lowCompFract(),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the calf muscle',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and tears the tendon below the calf',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and cuts a nerve in the calf',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and cleaves the calf to the bone',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          text: ` and cleaves into the calf and severs the ${ranShinBone()}`,
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the leg mid-shin',
-          dmgEffect: majorBleedDesc('stump'),
+          text: ' and cleaves through both bones and severs the lower leg',
+          dmgEffect: highMajBleed(),
           removal: true,
-          open: true,
         },
       }
     },
@@ -814,11 +809,11 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and shatters the kneecap',
-          dmgEffect: compoundFractureDesc,
+          dmgEffect: lowCompFract(true,'knee'),
         },
         gruesome: {
-          text: ' and mangles the knee tearing the ligaments',
-          dmgEffect: Util.replacePunc(compoundFractureDesc) + minorBleedDesc('wound'),
+          text: ' mangles the knee tearing the ligaments',
+          dmgEffect: highCompFract(true,'knee'),
         },
       },
       piercing: {
@@ -827,39 +822,34 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and tears a ligament in the knee',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the knee nicking an artery', // TODO level of injury in brackets of chat msg
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          text: ' and impales the knee and nicks an artery', // TODO level of injury in brackets of chat msg
+          dmgEffect: minorBleedDesc,
         },
         gruesome: {
-          text: ' and shatters the kneecap impaling the knee',
-          open: true,
-          dmgEffect: weaponStuckDesc, // TODO pulling out an impaled injury always causes bleeding
+          text: ' and splits the kneecap and impales the knee',
+          dmgEffect: lowCompFract(true,'knee'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the knee',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and splits the knee tearing a ligament`,
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ` and splits the knee and tears a ligament`,
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and severs the tendon below the knee',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: lowMinBleed(),
         },
         gruesome: {
-          text: ` and cleaves through the knee lopping off the lower leg`,
-          open: true,
+          text: ` and cleaves through the knee and severs the lower leg`,
           removal: true,
-          dmgEffect: majorBleedDesc('stump'),
+          dmgEffect: highMajBleed(),
         },
       },
     },
@@ -873,60 +863,56 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and cracks the femur',
+          text: ' and bruises the femur',
         },
         serious: {
-          text: ' and snaps the femur',
+          text: ' and cracks the femur',
         },
         critical: {
           text: ' and snaps the femur',
-          open: true, // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
-          dmgEffect: compoundFractureDesc, // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
+          // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
+          dmgEffect: lowCompFract(true,'thigh'), // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
           // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
         gruesome: {
           text: ' and shatters the femur',
-          dmgEffect: internalBleedDesc('thigh'),
+          dmgEffect: highCompFract(true,'thigh'),
         },
       },
       piercing: {
         light: {
           text: ' and pierces the thigh muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and cuts a nerve in the thigh',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
           text: ' and impales the thigh and nicks an artery',
-          open: true,
-          dmgEffect: majorBleedDesc('wound'),
+          dmgEffect: majorBleedDesc,
         },
         gruesome: {
-          text: ' and impales the thigh shattering the femur',
-          open: true,
-          dmgEffect: weaponStuckDesc,
+          text: ' and impales the thigh and splits the femur',
+          dmgEffect: lowCompFract(true,'thigh'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the thigh muscle',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and cuts a nerve in the thigh',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and severs the hamstring tendons',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
           text: ' and cleaves the thigh to the bone',
-          dmgEffect: majorBleedDesc('wound'),
-          open: true,
+          dmgEffect: lowMajBleed() || highMinBleed(),
         },
       }
     },
@@ -947,51 +933,48 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and breaks the hip',
+          dmgEffect: lowCompFract(true,'hip'),
         },
         gruesome: {
           text: ' and shatters the pelvis',
-          dmgEffect: internalBleedDesc('hip'),
+          dmgEffect: highCompFract(true,'hip'),
         },
       },
       piercing: {
         light: {
           text: ' and pierces the buttock',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and cuts a nerve in the buttock',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the hip tearing a ligament',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the hip and tears a ligament',
+          dmgEffect: lowMinBleed(),
         },
         gruesome: {
-          text: ' and impales the hip nicking an artery',
-          open: true,
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' and impales the hip and nicks an artery',
+          dmgEffect: majorBleedDesc,
         },
       },
       slashing: {
         light: {
           text: ' and gashes the buttock',
-          open: true,
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits the hip tearing a ligament',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          text: ' and splits the hip and tears a ligament',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and splits the hip severing an artery',
-          dmgEffect: majorBleedDesc('wound'),
-          open: true,
+          text: ' and splits the hip and severs an artery',
+          dmgEffect: majorBleedDesc,
         },
         gruesome: {
-          text: ' and cleaves through the hip lopping off the leg',
-          open: true,
+          text: ' and cleaves through the hip and severs the leg',
           removal: true,
-          dmgEffect: majorBleedDesc('stump'),
+          dmgEffect: highMajBleed(),
         },
       },
     },
@@ -1010,51 +993,48 @@ export const HIT_LOCATIONS = {
           text: ' and lacerates the genitals',
         },
         critical: {
-          text: ' and fractures the pelvis',
+          text: ' and fractures the pubic bone',
+          dmgEffect: lowCompFract(true,'groin'),
         },
         gruesome: {
           text: ' and shatters the pelvis',
-          dmgEffect: internalBleedDesc('groin'),
+          dmgEffect: highCompFract(true,'groin'),
         },
       },
       piercing: {
         light: {
           text: ' and gouges the genitals',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' tears a ligament in the groin',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the groin nicking an artery',
-          dmgEffect: majorBleedDesc('wound'),
-          open: true,
+          text: ' and impales the groin and nicks an artery',
+          dmgEffect: majorBleedDesc,
         },
         gruesome: {
-          text: ' and impales the groin shattering the pelvis',
-          dmgEffect: internalBleedDesc('groin'),
-          open: true,
+          text: ' and impales the groin and splits the pubic bone',
+          dmgEffect: lowCompFract(true,'groin'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the genitals',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits the inner thigh tearing a tendon',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          text: ' and splits the inner thigh and tears a tendon',
+          dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
           text: ' and severs the genitals',
-          dmgEffect: minorBleedDesc('wound'),
-          open: true,
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
           text: ' and cleaves through the genitals and into the inner thigh',
-          dmgEffect: majorBleedDesc('wound'),
-          open: true,
+          dmgEffect: lowMajBleed() || highMinBleed(),
         },
       },
     },
@@ -1068,55 +1048,59 @@ export const HIT_LOCATIONS = {
       blunt: {
         light: {
           text: ` and bruises ${ranOrgan()}`,
+          dmgEffect: lowIntBleed('gut'),
         },
         serious: {
           text: ' and breaks a rib',
+          dmgEffect: lowIntBleed('gut'),
         },
         critical: {
           text: ` and crushes the ribs into ${ranOrgan()}`,
-          dmgEffect: internalBleedDesc('gut'), // TODO chance of bleed
+          dmgEffect: highIntBleed('gut'),
         },
         gruesome: {
-          text: ' and snaps the spine',
+          text: ' and breaks the back severing the spine',
           fatal: true,
-          dmgEffect: knockbackDesc,
         },
       },
       piercing: {
         light: {
-          text: ' and penetrates the abdominal muscle',
+          text: ' and gouges the abdominal muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and gashes the bowels',
-          dmgEffect: bowelBleedDesc('wound'),
+          text: ` and impales the abdomen and gouges the bowels`,
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and penetrates the bowels and nicks an artery',
-          fatal: true,
-          dmgEffect: internalBleedDesc('gut'),
-        },
-        gruesome: {
-          text: ' and penetrates the bowels and severs the spine',
+          text: ` and impales the abdomen and pierces the ${ranOrgan()}`,
           fatal: true,
           dmgEffect: weaponStuckDesc,
+        },
+        gruesome: {
+          text: ' and impales the abdomen and nicks an artery',
+          fatal: true,
+          dmgEffect: internalBleedDesc('gut'),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the abdominal muscle',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and gashes the bowels',
-          dmgEffect: bowelBleedDesc('wound'),
+          text: ' and tears through the abdominal muscle and gashes the bowels',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and disembowels them',
+          text: ` and cleaves into the abdomen and eviscerates the ${ranOrgan()}`,
           fatal: true,
-          dmgEffect: bowelBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
           text: ' and cleaves the body in two at the waist!',
           fatal: true,
+          dmgEffect: highMajBleed(),
         },
       },
     },
@@ -1132,16 +1116,17 @@ export const HIT_LOCATIONS = {
           text: ' and cracks a rib',
         },
         serious: {
-          text: ' and snaps the collarbone',
+          text: ' and breaks a rib',
+          dmgEffect: lowIntBleed('chest'),
         },
         critical: {
-          text: ' and shatters the collarbone',
-          dmgEffect: internalBleedDesc('chest'),
+          text: ' and snaps the collarbone',
+          dmgEffect: lowCompFract(true,'chest'),
         },
         gruesome: {
-          text: ' and caves in the sternum and crushes the heart',
+          text: ' and caves the sternum into the heart',
           fatal: true,
-          dmgEffect: internalBleedDesc('chest'),
+          dmgEffect: highIntBleed('chest'),
         },
       },
       piercing: {
@@ -1150,30 +1135,35 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and punctures a lung',
-          dmgEffect: internalBleedDesc('chest'),
+          dmgEffect: highIntBleed('chest'),
         },
         critical: {
           text: ' and pierces the heart',
+          fatal: true,
+        },
+        gruesome: {
+          text: ' and impales the chest and nicks an artery',
           fatal: true,
           dmgEffect: internalBleedDesc('chest'),
         },
       },
       slashing: {
         light: {
-          text: ' and gashes the chest',
+          text: ' and gashes the chest muscle',
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and severs the collarbone',
-          dmgEffect: minorBleedDesc('wound'), // TODO must pass saving throw to stop severe bleeding
+          dmgEffect: lowMajBleed(),
         },
         critical: {
           text: ' and cleaves through the ribs and gashes a lung',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: lowMajBleed(),
         },
         gruesome: {
           text: ' and cleaves through the torso from collarbone to navel!',
           fatal: true,
-          dmgEffect: majorBleedDesc('wound'),
+          dmgEffect: highMajBleed(),
         },
       },
     },
@@ -1188,36 +1178,53 @@ export const HIT_LOCATIONS = {
           text: ` and crushes the ${ranFinger()} finger`,
         },
         serious: {
-          text: ' and fractures the wrist',
+          text: ' and breaks the wrist',
+          dmgEffect: lowCompFract(),
         },
         critical: {
+          text: ' and mangles the wrist tearing the ligaments',
+          dmgEffect: highCompFract(),
+        },
+        gruesome: {
           text: ' and crushes the hand into red pulp',
-          removal: true,
+          dmgEffect: highMinBleed(),
         },
       },
       piercing: {
         light: {
-          text: ' and splits the hand',
+          text: ' and cuts a nerve in the hand',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the hand',
+          text: ' and tears a ligament in the wrist',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the wrist and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the wrist and severs a tendon',
+          dmgEffect: lowMinBleed(),
+        },
+        gruesome: {
+          text: ' and impales the hand and severs a bone',
+          dmgEffect: lowMinBleed(),
         },
       },
       slashing: {
         light: {
-          text: ' and severs the tendons on top of the hand',
+          text: ' and severs the tendons on the back of the hand',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ` and severs the ${ranFinger()} finger`,
+          text: ' and splits the wrist and tears a ligament',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and severs the hand',
+          text: ` severs the ${ranFinger()} finger`,
+          dmgEffect: highMinBleed(),
+        },
+        gruesome: {
+          text: ' and cleaves through the wrist and severs the hand',
+          dmgEffect: highMinBleed(),
           removal: true,
-          dmgEffect: minorBleedDesc('stump'),
         },
       }
     },
@@ -1233,41 +1240,54 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ` and snaps the ${ranForearmBone()} bone`,
+          dmgEffect: lowCompFract(),
         },
         critical: {
+          text: ` and snaps the ${ranForearmBone()} bone`,
+          dmgEffect: highCompFract(),
+        },
+        gruesome: {
           text: ' and shatters the forearm',
-          dmgEffect: compoundFractureDesc,
+          dmgEffect: highCompFract(),
         },
       },
       piercing: {
         light: {
-          text: ' and splits the forearm muscle',
+          text: ' and pierces the forearm muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and splits the forearm muscle and cuts a nerve',
+          text: ' and cuts a nerve in the forearm',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the forearm and nicks an artery',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the forearm and nicks an artery',
+          dmgEffect: minorBleedDesc,
+        },
+        gruesome: {
+          text: ` and impales the forearm and splits the ${ranForearmBone()}`,
+          dmgEffect: lowCompFract(),
         },
       },
       slashing: {
         light: {
           text: ' and gashes the forearm muscle',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and gashes the forearm muscle and cuts a nerve',
+          text: ' and cuts a nerve in the forearm',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ` and severs the ${ranForearmBone()} bone`,
-          dmgEffect: minorBleedDesc('wound'),
+          text: ` and cleaves into the forearm and severs the ${ranForearmBone()}`,
+          dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the forearm',
-          dmgEffect: majorBleedDesc('stump'),
+          text: ' and cleaves through both bones and severs the forearm',
+          dmgEffect: highMajBleed(),
           removal: true,
         },
-      },
+      }
     },
   },
   elbow: {
@@ -1282,36 +1302,52 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the elbow',
         },
         serious: {
-          text: ' and fractures the elbow',
+          text: ' and breaks the elbow',
+          dmgEffect: lowCompFract(true,'elbow'),
         },
         critical: {
           text: ' and shatters the elbow',
+          dmgEffect: lowCompFract(true,'elbow'),
+        },
+        gruesome: {
+          text: ' mangles the elbow tearing the ligaments',
+          dmgEffect: highCompFract(true,'elbow'),
         },
       },
       piercing: {
         light: {
-          text: ' and chips a bone',
+          text: ' and chips the ulnar bone',
         },
         serious: {
-          text: ' and splits the elbow and tears a ligament',
+          text: ' and tears a ligament in the elbow',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the elbow and nicks an artery',
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' and impales the elbow and nicks an artery',
+          dmgEffect: minorBleedDesc,
+        },
+        gruesome: {
+          text: ' and impales the elbow and shatters the bones',
+          dmgEffect: lowCompFract(true,'elbow'),
         },
       },
       slashing: {
         light: {
-          text: ' and severs the biceps tendon',
+          text: ' and gashes the elbow',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits the elbow and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ` and splits the elbow and tears a ligament`,
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ` and lops off the forearm`,
+          text: ' and severs the biceps tendon',
+          dmgEffect: lowMinBleed(),
+        },
+        gruesome: {
+          text: ` and cleaves through the elbow and severs the forearm`,
           removal: true,
-          dmgEffect: majorBleedDesc('stump'),
+          dmgEffect: highMajBleed(),
         },
       },
     },
@@ -1332,43 +1368,47 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and snaps the humerus',
-          dmgEffect: compoundFractureDesc,
+          dmgEffect: lowCompFract(true,'upper arm'),
         },
-        critical: {
+        gruesome: {
           text: ' and shatters the humerus',
-          dmgEffect: internalBleedDesc('upper arm'),
+          dmgEffect: highCompFract(true,'upper arm'),
         },
       },
       piercing: {
         light: {
           text: ` and pierces the ${ranArmMuscle()}`,
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ` and cuts a nerve in the ${ranArmMuscle()}`,
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' nicks an artery in the upper arm',
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' impales the upper arm and nicks an artery',
+          dmgEffect: majorBleedDesc,
         },
-        // gruesome: {
-        //   text: ' and splits the biceps and shatters the humerus',
-        //   dmgEffect: internalBleedDesc('upper arm'),
-        // },
+        gruesome: {
+          text: ' and impales the upper arm and splits the humerus',
+          dmgEffect: lowCompFract(true,'upper arm'),
+        },
       },
       slashing: {
         light: {
           text: ` and gashes the ${ranArmMuscle()}`,
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ` and cuts a nerve in the ${ranArmMuscle()}`,
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and severs the biceps',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ` and severs the ${ranArmMuscle()}`,
+          dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the upper arm',
-          dmgEffect: majorBleedDesc('stump'),
+          text: ' and cleaves through the humerus and severs the arm',
+          dmgEffect: highMajBleed(),
           removal: true,
         },
       }
@@ -1386,36 +1426,52 @@ export const HIT_LOCATIONS = {
           text: ' and dislocates the shoulder',
         },
         serious: {
-          text: ' and snaps the humerus',
+          text: ' and separates the shoulder',
         },
         critical: {
+          text: ' and snaps the humerus',
+          dmgEffect: lowCompFract(true,'upper arm'),
+        },
+        gruesome: {
           text: ' and shatters the humerus',
-          dmgEffect: compoundFractureDesc,
+          dmgEffect: highCompFract(true,'upper arm'),
         },
       },
       piercing: {
         light: {
-          text: ' and splits the shoulder',
+          text: ' and pierces the upper back muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and splits the shoulder and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and tears a tendon in the armpit',
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and nicks an artery in the armpit',
-          dmgEffect: majorBleedDesc('wound'),
+          dmgEffect: majorBleedDesc,
+        },
+        gruesome: {
+          text: ' and impales the shoulder',
+          dmgEffect: weaponStuckDesc + majorBleedDesc,
         },
       },
       slashing: {
         light: {
-          text: ' and gashes the armpit',
+          text: ' and gashes the upper back muscle',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the armpit',
+          text: ' and cuts a nerve in the upper back muscle',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and gashes the armpit and severs an artery',
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' and cleaves into the armpit and severs an artery',
+          dmgEffect: majorBleedDesc,
+        },
+        gruesome: {
+          text: ' and cleaves through the shoulder and severs the arm',
+          dmgEffect: highMajBleed(),
+          removal: true,
         },
       }
     },
@@ -1435,33 +1491,48 @@ export const HIT_LOCATIONS = {
           text: ' and separates the shoulder',
         },
         critical: {
-          text: ' and shatters and separates the shoulder',
-          dmgEffect: internalBleedDesc('shoulder'),
+          text: ' and snaps the collarbone',
+          dmgEffect: lowCompFract(true,'shoulder'),
+        },
+        gruesome: {
+          text: ' and shatters the collarbone',
+          dmgEffect: highCompFract(true,'shoulder'),
         },
       },
       piercing: {
         light: {
-          text: ' and pierces the shoulder muscle'
+          text: ' and pierces the shoulder muscle',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the shoulder muscle',
+          text: ' and impales the shoulder and tears a ligament',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the shoulder and tears a ligament',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and impales the shoulder and tears a tendon',
+          dmgEffect: lowMinBleed(),
+        },
+        gruesome: {
+          text: ' and impales the shoulder and severs a bone',
+          dmgEffect: highMinBleed(),
         },
       },
       slashing: {
         light: {
-          text: ' and gashes the shoulder',
+          text: ' and gashes the shoulder muscle',
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and gashes and separates the shoulder',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and cuts a nerve in the shoulder muscle',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and lops off the arm',
-          dmgEffect: majorBleedDesc('wound'),
+          text: ' and severs the collarbone',
+          dmgEffect: lowMajBleed(),
+        },
+        gruesome: {
+          text: ' and cleaves through the shoulder and severs the arm',
+          dmgEffect: highMajBleed(),
           removal: true,
         },
       },
@@ -1479,39 +1550,58 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and fractures a vertebra',
+          dmgEffect: lowCompFract(true,'neck'),
         },
         critical: {
-          text: ' and snaps the neck',
+          text: ' and snaps the neck severing the spine',
           fatal: true,
         },
+        gruesome: {
+          text: ' and mangles the neck tearing the ligaments',
+          dmgEffect: highCompFract(true,'neck'),
+          fatal: true,
+        }
       },
       piercing: {
         light: {
           text: ' and pierces the larynx',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and cuts a nerve in the neck',
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and nicks the jugular vein',
-          dmgEffect: majorBleedDesc('wound'),
+          dmgEffect: minorBleedDesc,
         },
+        gruesome: {
+          text: ' and impales the neck and nicks an artery',
+          dmgEffect: majorBleedDesc,
+          fatal: true,
+        }
       },
       slashing: {
         light: {
-          text: ' and gashes the larynx',
+          text: ' and gashes the neck muscle',
+          dmgEffect: lowMajBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the neck',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and nicks the jugular vein',
+          dmgEffect: minorBleedDesc,
         },
         critical: {
-          text: ' and lops off the head',
+          text: ' and cleaves into the neck and severs an artery',
+          dmgEffect: majorBleedDesc,
           fatal: true,
-          dmgEffect: majorBleedDesc('stump'),
-          removal: true,
         },
-      }
+        gruesome: {
+          text: ' and cleaves through the neck and severs the head!',
+          dmgEffect: majorBleedDesc,
+          fatal: true,
+          removal: true,
+        }
+      },
     },
   },
   jaw: {
@@ -1522,13 +1612,16 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and dislocates the jaw',
+          text: ' and lacerates the jaw',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and breaks the jaw',
+          dmgEffect: highCompFract(),
         },
         critical: {
-          text: ' and shatters the jaw and pulps the brain',
+          text: ' and smashes the jaw into the brain',
+          dmgEffect: lowCompFract(),
           fatal: true,
         },
         gruesome: {
@@ -1540,17 +1633,18 @@ export const HIT_LOCATIONS = {
       piercing: {
         light: {
           text: ' and gouges the cheek',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and breaks the teeth',
         },
         critical: {
-          text: ' and penetrates the jaw and pierces the brainstem',
+          text: ' and impales the jaw and pierces the brainstem',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the jaw and penetrates the brainstem and punctures the back of the skull',
+          text: ' and impales the jaw and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1558,18 +1652,20 @@ export const HIT_LOCATIONS = {
       slashing: {
         light: {
           text: ' and gashes the mouth',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits open the jaw',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and splits the jaw',
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and cleaves through the jaw and into the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and cleaves the head in two spattering chunks of gore!',
+          text: ' and cleaves the head in two spattering blood in an arc!', // TODO add ear location?
+          dmgEffect: lowMajBleed(),
           fatal: true,
           removal: true,
         },
@@ -1585,12 +1681,14 @@ export const HIT_LOCATIONS = {
       blunt: {
         light: {
           text: ' and lacerates the nose',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and breaks the nose',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and caves in the face and pulps the brain',
+          text: ' and caves the face into the brain',
           fatal: true,
         },
         gruesome: {
@@ -1602,18 +1700,19 @@ export const HIT_LOCATIONS = {
       piercing: {
         light: {
           text: ' and gouges the nose',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and splits the nose',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and penetrates the nose and pierces the brain',
+          text: ' and impales the face and pierces the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the nose and penetrates the brain and punctures the back of the skull',
+          text: ' and impales the face and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1621,18 +1720,20 @@ export const HIT_LOCATIONS = {
       slashing: {
         light: {
           text: ' and gashes the nose',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and severs the nose',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and cleaves through the face and into the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and cleaves the head in two spattering chunks of gore!',
+          text: ' and cleaves the head in two spattering blood in an arc!',
+          dmgEffect: lowMajBleed(),
           fatal: true,
           removal: true,
         },
@@ -1649,6 +1750,7 @@ export const HIT_LOCATIONS = {
       blunt: {
         light: {
           text: ' and cracks the eye socket',
+          dmgEffect: knockoutDesc,
         },
         serious: {
           text: ' and shatters the eye socket',
@@ -1656,6 +1758,7 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and smashes the brow into the brain',
+          dmgEffect: lowCompFract(),
           fatal: true,
         },
         gruesome: {
@@ -1666,19 +1769,20 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and gashes the brow',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and gouges the brow',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and gouges out the eye',
-          dmgEffect: minorBleedDesc('socket'),
+          text: ' and gouges the eye out of the socket',
+          dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and penetrates the eye and pierces the brain',
+          text: ' and impales the eye and pierces the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and penetrates the eye and penetrates the brain and punctures the back of the skull',
+          text: ' and impales the eye and penetrates the back of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1686,22 +1790,24 @@ export const HIT_LOCATIONS = {
       slashing: {
         light: {
           text: ' and gashes the brow',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and eviscerates the eye',
-          dmgEffect: minorBleedDesc('socket'),
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and cleaves through the brow and into the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and cleaves the head in two spattering chunks of gore!',
+          text: ' and cleaves the head in two spattering blood in an arc!',
+          dmgEffect: lowMinBleed(),
           fatal: true,
           removal: true,
         },
-      }
+      },
     },
   },
   skull: {
@@ -1720,7 +1826,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: knockoutDesc,
         },
         critical: {
-          text: ' and crushes the skull into the brain',
+          text: ' and smashes the skull and pulps the brain',
           fatal: true,
         },
         gruesome: {
@@ -1731,18 +1837,20 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and gashes the scalp',
-          dmgEffect: minorBleedDesc('wound'),
+          text: ' and gouges the scalp',
+          dmgEffect: lowMinBleed(),
         },
         serious: {
           text: ' and cracks the skull',
+          dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and punctures the skull and pierces the brain',
+          text: ' and penetrates the skull and pierces the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and punctures the skull and penetrates the brain and punctures the back of the skull',
+          text: ' and impales the ear and penetrates the other side of the skull',
           fatal: true,
           dmgEffect: weaponStuckDesc,
         },
@@ -1750,18 +1858,20 @@ export const HIT_LOCATIONS = {
       slashing: {
         light: {
           text: ' and gashes the scalp',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         serious: {
           text: ' and severs an ear',
-          dmgEffect: minorBleedDesc('wound'),
+          dmgEffect: highMinBleed(),
         },
         critical: {
           text: ' and cleaves through the skull and into the brain',
+          dmgEffect: lowMinBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and cleaves the head in two spattering chunks of gore!',
+          text: ' and cleaves the head in two spattering blood in an arc!',
+          dmgEffect: lowMinBleed(),
           fatal: true,
           removal: true,
         },
