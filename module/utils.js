@@ -106,7 +106,7 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
 }
 
 export function replacePunc(str) {
-  return str.replace(/!\s*$|\.\s*$/, '');
+  return str.replace(/!+\s*$|\.+\s*$/, '');
 }
 
 export function getTokenFromActor(actor) {
