@@ -403,9 +403,9 @@ export const ARMOR_VS_DMG_TYPE = {
   },
 }
 export const MAX_ARMOR_DR = 3;
-export const MAX_IMPALES = 5;
 export const MIN_BLEED_DMG = 6;
 export const BLEED_CHANCE = 17;
+export const IMPALE_CHANCE = 25;
 export const ATK_MODES = {
   "swi(b)": {
     ATK_ATTR: "str",
