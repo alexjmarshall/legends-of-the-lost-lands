@@ -622,14 +622,14 @@ export const LIMB_GROUPS = {
   "arm": ["hand","forearm","elbow","upper arm"],
 };
 
-export const minorBleedDesc = ` and blood streams from the wound`;
+export const minorBleedDesc = ` and the wound bleeds heavily`;
 export const majorBleedDesc = ` and blood spurts from the wound!`;
 export const internalBleedDesc = area => ` and the ${area} bleeds internally...`;
 export const compoundFractureDesc = ' and the broken bones poke through the skin';
 export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
-export const knockbackDesc = ' and knocks them flying!';
+export const knockbackDesc = ' and sends them flying!';
 export const staggerDesc = ' and staggers them';
 export const bloodWellDesc = ' and blood wells around the weapon...';
 const gruesBluntHeadDesc = ' and shatters the skull spattering chunks of gore!';
@@ -803,8 +803,7 @@ export const HIT_LOCATIONS = {
   knee: {
     weights: [8,4,0,0,16,10,8,4],
     bilateral: true,
-    crit_chance: 1,
-    crit_dmg: 1,
+    crit_chance_multi: 2,
     max_impale: 2,
     injury: {
       blunt: {
@@ -864,9 +863,7 @@ export const HIT_LOCATIONS = {
   thigh: {
     weights: [10,10,4,4,16,20,14,14],
     bilateral: true,
-    crit_chance: 1,
-    crit_dmg: 1,
-    max_impale: 3,
+    max_impale: 4,
     injury: {
       blunt: {
         light: {
@@ -927,9 +924,9 @@ export const HIT_LOCATIONS = {
   hip: {
     weights: [6,4,2,0,10,6,4,6],
     bilateral: true,
-    crit_chance: 1,
-    crit_dmg: 1,
-    max_impale: 2,
+    crit_chance_multi: 2,
+    crit_dmg_multi: 2,
+    max_impale: 3,
     injury: {
       blunt: {
         light: {
@@ -988,9 +985,9 @@ export const HIT_LOCATIONS = {
   },
   groin: {
     weights: [2,8,0,3,3,12,3,4],
-    crit_chance: 2,
-    crit_dmg: 1,
-    max_impale: 3,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 2,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1048,8 +1045,8 @@ export const HIT_LOCATIONS = {
   },
   gut: {
     weights: [8,16,4,9,12,16,8,12],
-    crit_chance: 2,
-    crit_dmg: 1,
+    crit_chance_multi: 2,
+    crit_dmg_multi: 3,
     max_impale: 5,
     injury: {
       blunt: {
@@ -1112,8 +1109,8 @@ export const HIT_LOCATIONS = {
   },
   chest: {
     weights: [4,12,6,16,2,5,5,8],
-    crit_chance: 2,
-    crit_dmg: 2,
+    crit_chance_multi: 2,
+    crit_dmg_multi: 4,
     max_impale: 5,
     injury: {
       blunt: {
@@ -1424,7 +1421,7 @@ export const HIT_LOCATIONS = {
   armpit: {
     weights: [2,6,4,12,2,4,2,2],
     crit_chance: 2,
-    crit_dmg: 1,
+    crit_dmg: 2,
     max_impale: 3,
     bilateral: true,
     injury: {
@@ -1548,7 +1545,7 @@ export const HIT_LOCATIONS = {
   neck: {
     weights: [3,2,6,4,0,0,3,3],
     crit_chance: 3,
-    crit_dmg: 1,
+    crit_dmg: 2,
     max_impale: 2,
     injury: {
       blunt: {
@@ -1819,7 +1816,7 @@ export const HIT_LOCATIONS = {
   },
   skull: {
     weights: [7,4,16,8,0,0,9,6],
-    crit_chance: 2,
+    crit_chance: 3,
     crit_dmg: 3,
     max_impale: 3,
     injury: {
@@ -1894,13 +1891,13 @@ export const STANCE_MODS = {
     atk_mod: -2,
     dmg_mod: weap => halfAttr(weap, 'impact'),
     impact_mod: weap =>  halfAttr(weap, 'impact'),
-    counter_mod: weap => 0 - halfAttr(weap, 'counter'),
+    speed_mod: weap => 0 - halfAttr(weap, 'speed'),
   },
   fluid: {
     atk_mod: 3,
     dmg_mod: weap => 0 - halfAttr(weap, 'impact'),
     impact_mod: weap => 0 - halfAttr(weap, 'impact'),
-    counter_mod: weap => halfAttr(weap, 'counter'),
+    speed_mod: weap => halfAttr(weap, 'speed'),
   },
   counter: {
     ac_mod: -1,
@@ -1909,6 +1906,34 @@ export const STANCE_MODS = {
 
 export const WEAP_BREAK_CHANCE = 5;
 export const SQUARE_SIZE = 5;
+
+export const WEAPONS = {
+  fist: {
+    name: 'Fist',
+    data:{
+      data: {
+        held_left: true,
+        held_right: true,
+        atk_style: 'stable',
+        atk_height: 'high',
+        atk_timing: 'immediate',
+        atk_mode: 'swi(b)',
+        attributes: {
+          dmg: { value: '1d2/1d2' },
+          atk_modes: { value: 'Swi (B)' },
+          double_weapon: { value: true },
+          reach: { value: '0'},
+          size: { value: 'T'},
+          speed: { value: 5},
+          parry: { value: 0},
+          impact: { value: 1},
+          weap_category: { value: 'boxing' },
+        },
+        quantity: 2
+      }
+    }
+  }
+}
 
 export const AMMO_TYPES = [
   "bodkin arrow",
