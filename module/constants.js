@@ -1046,7 +1046,7 @@ export const HIT_LOCATIONS = {
   gut: {
     weights: [8,16,4,9,12,16,8,12],
     crit_chance_multi: 2,
-    crit_dmg_multi: 3,
+    crit_dmg_multi: 2,
     max_impale: 5,
     injury: {
       blunt: {
@@ -1110,7 +1110,7 @@ export const HIT_LOCATIONS = {
   chest: {
     weights: [4,12,6,16,2,5,5,8],
     crit_chance_multi: 2,
-    crit_dmg_multi: 4,
+    crit_dmg_multi: 3,
     max_impale: 5,
     injury: {
       blunt: {
@@ -1295,8 +1295,7 @@ export const HIT_LOCATIONS = {
   },
   elbow: {
     weights: [8,4,10,6,2,2,4,2],
-    crit_chance: 1,
-    crit_dmg: 1,
+    crit_chance_multi: 2,
     max_impale: 2,
     bilateral: true,
     injury: {
@@ -1357,8 +1356,6 @@ export const HIT_LOCATIONS = {
   },
   "upper arm": {
     weights: [6,4,10,8,2,2,6,6],
-    crit_chance: 1,
-    crit_dmg: 1,
     max_impale: 2,
     bilateral: true,
     injury: {
@@ -1420,8 +1417,8 @@ export const HIT_LOCATIONS = {
   },
   armpit: {
     weights: [2,6,4,12,2,4,2,2],
-    crit_chance: 2,
-    crit_dmg: 2,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 2,
     max_impale: 3,
     bilateral: true,
     injury: {
@@ -1482,8 +1479,8 @@ export const HIT_LOCATIONS = {
   },
   shoulder: {
     weights: [8,6,12,12,2,2,6,6],
-    crit_chance: 1,
-    crit_dmg: 1,
+    crit_chance_multi: 2,
+    crit_dmg_multi: 2,
     max_impale: 3,
     bilateral: true,
     injury: {
@@ -1544,8 +1541,8 @@ export const HIT_LOCATIONS = {
   },
   neck: {
     weights: [3,2,6,4,0,0,3,3],
-    crit_chance: 3,
-    crit_dmg: 2,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 2,
     max_impale: 2,
     injury: {
       blunt: {
@@ -1608,8 +1605,8 @@ export const HIT_LOCATIONS = {
   },
   jaw: {
     weights: [3,2,6,3,1,1,2,2],
-    crit_chance: 3,
-    crit_dmg: 1,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 1,
     max_impale: 2,
     injury: {
       blunt: {
@@ -1677,8 +1674,8 @@ export const HIT_LOCATIONS = {
   },
   "face": {
     weights: [1,2,2,3,0,0,2,1],
-    crit_chance: 3,
-    crit_dmg: 2,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 2,
     max_impale: 2,
     injury: {
       blunt: {
@@ -1746,8 +1743,8 @@ export const HIT_LOCATIONS = {
   },
   eye: {
     weights: [2,2,4,4,0,0,2,2],
-    crit_chance: 5,
-    crit_dmg: 2,
+    crit_chance_multi: 5,
+    crit_dmg_multi: 2,
     max_impale: 3,
     bilateral: true,
     injury: {
@@ -1816,8 +1813,8 @@ export const HIT_LOCATIONS = {
   },
   skull: {
     weights: [7,4,16,8,0,0,9,6],
-    crit_chance: 3,
-    crit_dmg: 3,
+    crit_chance_multi: 3,
+    crit_dmg_multi: 3,
     max_impale: 3,
     injury: {
       blunt: {
