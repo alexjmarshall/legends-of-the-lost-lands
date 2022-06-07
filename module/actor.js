@@ -224,18 +224,19 @@ export class SimpleActor extends Actor {
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
-            let shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
-            if (Util.stringMatch(shieldStyle, 'fluid')) shieldAcBonus += 1;
+            const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
+            const fluidShieldAcMod = Util.stringMatch(shieldStyle, 'fluid') ? Constant.STANCE_MODS.fluid.shield_ac_mod : 0;
             // no shield dr vs. piercing on forearm or hand
-            let shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
-            if (Util.stringMatch(shieldStyle, 'fluid')) shieldDrBonus += 1;
+            const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
+            const fluidShieldDrBonus = (Util.stringMatch(shieldStyle, 'fluid')) ? Constant.STANCE_MODS.fluid.shield_dr_mod : 0;
 
             const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
             const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
 
             const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
-            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + dexAcBonus + ac_mod + appliedParryBonus + stancePenalty;
-            const locDr = Math.min(Constant.MAX_ARMOR_DR, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0)) + shieldDrBonus + unarmoredDr;
+            const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + + fluidShieldAcMod + dexAcBonus + ac_mod + appliedParryBonus + stancePenalty;
+            const locDr = Math.min(Constant.MAX_ARMOR_DR, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus)
+              + fluidShieldDrBonus + unarmoredDr;
 
             ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
             ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;

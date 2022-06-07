@@ -697,6 +697,7 @@ export const HIT_LOCATIONS = {
         gruesome: {
           text: ' and crushes the foot into red pulp',
           dmgEffect: highMinBleed(),
+          removal: true,
         },
       },
       piercing: {
@@ -709,11 +710,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the foot and severs a bone',
+          text: ' and severs a bone in the foot',
           dmgEffect: lowWeapStuck() + lowMinBleed(),
         },
         gruesome: {
-          text: ' and impales the ankle and tears a ligament',
+          text: ' and tears a ligament in the ankle',
           dmgEffect: highWeapStuck() + highMinBleed(),
         },
       },
@@ -727,12 +728,12 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and cleaves through the bones of the foot',//' and splits the ankle tearing a ligament',
+          text: ' and cleaves through the bones of the foot',
           dmgEffect: highMinBleed(),
           removal: true,
         },
         gruesome: {
-          text: ' and cleaves through the ankle and severs the foot',
+          text: ' and severs the foot at the ankle',
           dmgEffect: highMinBleed() + lowMinBleed(),
           removal: true,
         },
@@ -753,11 +754,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(),
         },
         critical: {
-          text: ' and snaps the tibia',
+          text: ` and snaps ${ranShinBone()}`,
           dmgEffect: highCompFract(),
         },
         gruesome: {
-          text: ' and shatters both shin bones',
+          text: ' and shatters the lower leg',
           dmgEffect: highCompFract(true, 'shin'),
         },
       },
@@ -767,7 +768,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the calf muscle',
+          text: ' and cuts a nerve in the calf muscle', // TODO get injury text down to single clause
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -793,7 +794,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and cleaves through both bones and severs the lower leg',
+          text: ' and cleaves through the shin bones and severs the lower leg',
           dmgEffect: lowMajBleed() || highMinBleed(),
           removal: true,
         },
@@ -874,7 +875,7 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and snaps the femur',
-          // TODO injuries affect leg STR, arms DEX, torso CON, head/eyes INT, face/neck CHA
+          // TODO injuries affect leg STR and max MV, arms DEX, torso CON, head/eyes INT, face/neck CHA
           dmgEffect: lowCompFract(true,'thigh'), // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
           // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
@@ -1286,7 +1287,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and cleaves through both bones and severs the forearm',
+          text: ' and cleaves through bone and severs the forearm',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1774,7 +1775,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and gouges the eye out of the socket',
+          text: ' and gouges the eye from the socket',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1895,6 +1896,8 @@ export const STANCE_MODS = {
     dmg_mod: weap => 0 - halfAttr(weap, 'impact'),
     impact_mod: weap => 0 - halfAttr(weap, 'impact'),
     speed_mod: weap => halfAttr(weap, 'speed'),
+    shield_dr_mod: 1,
+    shield_ac_mod: 1,
   },
   counter: {
     ac_mod: -1,
