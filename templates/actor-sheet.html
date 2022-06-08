@@ -96,7 +96,7 @@
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
                 <span></span>
-                 <span><!--{{#if parryBonus}} Parry Bonus: {{systemData.ac.parry.parry}} {{/if}}{{#if stancePenalty}} Stance Mod: {{systemData.ac.stance_penalty}} {{/if}}--></span> 
+                 <span></span> 
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
@@ -171,7 +171,9 @@
         <div class="tab armors" data-group="primary" data-tab="armors">
             <header class="armors-header sticky flexrow">
                 <span>Hit Location</span>
-                <span class="flex3">Armor Layers</span>
+                <span>Armor Layers</span>
+                <span class="text-center">{{#if stanceBonusText}}{{stanceBonusText}}{{/if}}</span>
+                <span class="text-center">{{#if stancePenaltyText}}{{stancePenaltyText}}{{/if}}</span>
                 <span class="flex2 text-center">AC / DR</span>
             </header>
             {{#each armors as |loc area|}}

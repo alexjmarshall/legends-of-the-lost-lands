@@ -34,9 +34,15 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
-    context.parryBonus = context.systemData.ac?.parry?.parry;
-    context.stancePenalty = context.systemData.ac?.stance_penalty;
-
+    const parryBonus = context.systemData.ac?.parry?.parry_bonus;
+    const fluidParryBonus = context.systemData.ac?.parry?.fluid_parry_bonus;
+    const isFluidParrying = fluidParryBonus > parryBonus;
+    const parryHeight = Util.upperCaseFirst(context.systemData.ac?.parry?.parry_height || 'mid');
+    const stancePenalty = context.systemData.ac?.stance_penalty;
+    context.stanceBonusText = !parryBonus && !fluidParryBonus ? ''
+      : `Parry: ${isFluidParrying ? `${fluidParryBonus} (${parryHeight})`: `${parryBonus}`}`;
+    context.stancePenaltyText = !stancePenalty ? '' : `Stance: ${stancePenalty}`;
+    
     // sort equipment
     const items = context.data.items.filter(i => i.type === 'item');
     items.forEach(item => item.data.totalWeight = Math.round(item.data.quantity * item.data.weight * 10) / 10 || 0);
