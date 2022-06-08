@@ -154,9 +154,10 @@ export class SimpleActor extends Actor {
       const parryBonus = Math.max( Math.min(+riposteItem?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
       const fluidParryBonus = Math.max( Math.min(+fluidWeap?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
       const parryHeight = fluidWeap?.data.data.atk_height;
-      const parry = { // TODO fix to include riposte vs. fluid parry items/values
+      const parry = { 
         parry_item_id: riposteItem?._id,
-        parry: parryBonus,
+        parry_bonus: parryBonus,
+        fluid_parry_bonus: fluidParryBonus,
         parry_height: parryHeight,
       };
       const powerWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_style,'power'));
@@ -164,7 +165,7 @@ export class SimpleActor extends Actor {
 
       let stancePenalty = 0;
       if (powerWeap) stancePenalty += Constant.STANCE_MODS.power.ac_mod;
-      if (counterWeap) stancePenalty += Constant.STANCE_MODS.counter.ac_mod;
+      if (counterWeap) stancePenalty += Constant.STANCE_MODS.counter.ac_mod;console.log(powerWeap,counterWeap,stancePenalty)
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + stancePenalty;
 
