@@ -261,6 +261,9 @@
   font-weight: bold;
   min-height: 35px;
 }
+.lostlands .armors-header > * {
+  min-width: fit-content;
+}
 .lostlands .sticky {
   position: sticky;
 }
