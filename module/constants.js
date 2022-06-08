@@ -303,8 +303,8 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:0,
     },
     piercing: {
-      ac:1,
-      dr:0,
+      ac:-1,
+      dr:1,
     },
     slashing: {
       ac:2,
@@ -318,8 +318,8 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:0,
     },
     piercing: {
-      ac:1,
-      dr:0,
+      ac:-1,
+      dr:1,
     },
     slashing: {
       ac:2,
@@ -404,8 +404,7 @@ export const ARMOR_VS_DMG_TYPE = {
 }
 export const MAX_ARMOR_DR = 3;
 export const MIN_BLEED_DMG = 6;
-export const BLEED_CHANCE = 17;
-export const IMPALE_CHANCE = 25;
+export const BASE_IMPALE_CHANCE = 25;
 export const ATK_MODES = {
   "swi(b)": {
     ATK_ATTR: "str",
@@ -724,7 +723,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' severs the tendon behind the ankle',
+          text: ' and severs the tendon behind the ankle',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1882,20 +1881,21 @@ export const HIT_LOCATIONS = {
   },
 };
 
-const halfAttr = (weap, attr) => Math.max(1, Math.floor(weap.data.data.attributes[attr]?.value / 2));
 export const STANCE_MODS = {
   power: {
     ac_mod: -3,
     atk_mod: -2,
-    dmg_mod: weap => halfAttr(weap, 'impact'),
-    impact_mod: weap =>  halfAttr(weap, 'impact'),
-    speed_mod: weap => 0 - halfAttr(weap, 'speed'),
+    dmg_mod: weap => Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
+    str_dmg_mod: char => Math.floor(Math.max(0, char.data.data.str_mod) / 2) || 0,
+    impact_mod: weap =>  Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
+    speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
   fluid: {
     atk_mod: 3,
-    dmg_mod: weap => 0 - halfAttr(weap, 'impact'),
-    impact_mod: weap => 0 - halfAttr(weap, 'impact'),
-    speed_mod: weap => halfAttr(weap, 'speed'),
+    dmg_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+    str_dmg_mod: char => 0 - Math.ceil(Math.max(0, char.data.data.str_mod) / 2) || 0,
+    impact_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+    speed_mod: weap => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
     shield_dr_mod: 1,
     shield_ac_mod: 1,
   },
