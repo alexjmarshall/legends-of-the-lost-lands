@@ -1179,6 +1179,7 @@ async function attack(attackers, targetToken, options) {
     let parryItemHeight = parryItem?.data.data.atk_height;
     let targetParryBonus = parry.parry_bonus || 0;
     const isRiposteParrying = parryItem && targetParryBonus > 0;
+    let isFluidParrying = false;
 
     // roll for hit location if character or humanoid
     if ( Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid') ) {
@@ -1197,7 +1198,7 @@ async function attack(attackers, targetToken, options) {
       endHeight = endHeight || atkHeight;
 
       // fluid parrying
-      const isFluidParrying = parryItem && parry.fluid_parry_bonus >= targetParryBonus && Util.stringMatch(parryItemHeight, endHeight);
+      isFluidParrying = parryItem && parry.fluid_parry_bonus >= targetParryBonus && Util.stringMatch(parryItemHeight, endHeight);
       if (isFluidParrying) targetParryBonus = parry.fluid_parry_bonus;
       //TODO make status effects like unconscious reset parry/fluid automatically
 
@@ -1258,7 +1259,7 @@ async function attack(attackers, targetToken, options) {
       const baseCritChance = totalAtkResult - targetAc;
       const skillfulHitChance = baseCritChance + weapSpeed;
       const critMulti = Constant.HIT_LOCATIONS[coverageArea].crit_chance_multi ?? 0;
-      const painCritChance = critMulti * baseCritChance; console.log('skill',skillfulHitChance,'pain',painCritChance)// TODO curved swords have lower min reach
+      const painCritChance = critMulti * baseCritChance; // TODO curved swords have lower min reach
       const isSkillfulHit = !immuneCriticalHits && await Util.rollDice('d100') <= skillfulHitChance;
       const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= painCritChance;
       if (isSkillfulHit) {
@@ -1367,12 +1368,12 @@ async function attack(attackers, targetToken, options) {
         weapDmgResult = maxWeapDmg;
         const critDmgMulti = (Constant.HIT_LOCATIONS[coverageArea].crit_dmg_multi ?? 1) - 1;
         critDmg += (weapDmgResult - dr + attrDmgMod + stanceDmgMod) * critDmgMulti;
-        hitDesc += ` a vulnerable area`;
+        hitDesc += ` a vulnerable point`;
       }
 
       // knockdowns
       const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 3 * weapImp - 20 * (targetSize - 2);
+      const knockdownChance = knockDownMulti * 5 * weapImp - 20 * (targetSize - 2);
       const canKnockdown = Util.stringMatch(atkForm, 'swing') || Util.stringMatch(dmgType, 'blunt');
       const isKnockdown = !immuneKnockdown && !targetProne && canKnockdown && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
@@ -1456,42 +1457,45 @@ async function attack(attackers, targetToken, options) {
     // handle misses
     } else {
       const deflectingArmor = sortedWornArmors[0];
-      if (!parryItem && targetHeldItems.length) {
-        parryItem = targetHeldItems.reduce((a,b) => (+b.data.data.attributes.parry?.value || 0) > (+a.data.data.attributes.parry?.value || 0) ? b : a);
-        targetParryBonus = +parryItem?.data.data.attributes.parry?.value || 0;
-        parryItemHeight = parryItem?.data.data.atk_height;
-        // use shield if higher parry bonus
-        if (!!deflectingArmor?.data.data.attributes.shield_shape?.value && +deflectingArmor.data.data.attributes.base_ac?.value > targetParryBonus) {
+      const isShield = !!deflectingArmor?.data.data.attributes.shield_shape?.value;
+      if (!isRiposteParrying && !isFluidParrying) {
+        // use shield if worn in fluid style
+        const isFluid = Util.stringMatch(deflectingArmor?.data.data.shield_style, 'fluid');
+        const shieldHeight = deflectingArmor?.data.data.shield_height || '';
+        if (isShield && isFluid && Util.stringMatch(shieldHeight, endHeight)) {
           parryItem = deflectingArmor;
           targetParryBonus = +parryItem?.data.data.attributes.base_ac?.value || 0;
-          parryItemHeight = parryItem?.data.data.shield_height;
+          parryItemHeight = shieldHeight;
         }
       }
-
-      const targetDexMod = (targetDead || targetHelpless || targetIncapacitated) ? 0
+      const targetDexMod = (targetDead || targetHelpless || targetIncapacitated || isShooting) ? 0
         : Math.max(Math.min(+targetRollData.dex_mod, +targetRollData.ac.max_dex_mod || 0), 0);
-
       const parryDesc = ` but ${targetActor.name} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
+      const parryHeightPenalty = Util.stringMatch(parryItemHeight, endHeight) ? 0
+        : Util.stringMatch(parryItemHeight, 'mid') || Util.stringMatch(endHeight, 'mid') ? 2
+        : 4;
 
       // determine miss desc
       // riposte
-      if ( isRiposteParrying && totalAtkResult < unarmoredAc + targetParryBonus ) { console.log(targetHasReach)
+      if ( isRiposteParrying && totalAtkResult < unarmoredAc + targetParryBonus - parryHeightPenalty ) {
         missDesc = parryDesc;
         // check for parry item breakage
         if (parryItem && parryItem.data.data.attributes.fragile?.value && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
           missDesc += ` and ${parryItem.name} breaks!`;
+        } else {
+          missDesc += ' and can riposte!';
         }
       } else if (totalAtkResult < unarmoredAc - targetDexMod) {
         missDesc = ` but misses entirely`;
       } else if (totalAtkResult < unarmoredAc) {
-        const verb = Constant.HEIGHT_AREAS.high.includes(coverageArea) ? 'ducks'
+        const dodgeVerb = Constant.HEIGHT_AREAS.high.includes(coverageArea) ? 'ducks'
           : atkForm === 'thrust' ? 'sidesteps'
           : atkForm === 'swing' ? 'jumps back'
           : 'dodges';
-        missDesc = ` but ${targetActor.name} ${verb}`;
-        // dodging defender has a chance to counter-attack equal to follow attack chance
-        if ( !missileAtk && await Util.rollDice('d100') <= followAttackChance * -1 ) {
-          missDesc += ` and can counter-attack!`;
+        missDesc = ` but ${targetActor.name} ${dodgeVerb}`;
+        // dodging defender has a chance to counter equal to follow attack chance
+        if ( targetHasReach && await Util.rollDice('d100') <= followAttackChance * -1 ) {
+          missDesc += ` and can counter!`;
         }
       } else if (totalAtkResult < unarmoredAc + targetParryBonus) {
         missDesc = parryDesc;
@@ -1506,7 +1510,6 @@ async function attack(attackers, targetToken, options) {
           const hideDesc = Util.stringMatch(hide,'leather') ? `${hide}y` : Util.stringMatch(hide, 'scale') ? `${hide.replace('e','')}y` : `${hide}`;
           deflectingArmorName = ` the ${hideDesc} hide`;
         }
-        const isShield = !!deflectingArmor.data.data.attributes.shield_shape?.value;
         const isPlate = deflectingArmor?.data.data.attributes.material?.value.includes('plate');
         missDesc = ` ${deflectingArmorName ? 
          ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && isShield ? ` thunks into ` : isShield ? ` is deflected by` : ` glances off`} ${deflectingArmorName}` : 
@@ -1549,7 +1552,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  const drMod = 0 - dr;console.log('critDmg',critDmg,'impaleDmg',totalImpaleDmg);
+  const drMod = 0 - dr;
   const dmgMods = [drMod, critDmg, totalImpaleDmg, attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
   const dmgModText = dmgMods.reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
   let totalDmgText= `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText}`;
@@ -1603,13 +1606,18 @@ async function attack(attackers, targetToken, options) {
 // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced -- only reduce to half of base_ac, then it falls apart
     if (sumDmg > targetHp) {
       let injuryText = injury.text.replace('them', targetActor?.name);
+      // replace cleaves with slices for curved swords
       if (isCurvedSword) {
         injuryText = injuryText.replace('cleaves','slices');
       }
-      if (injuryText.includes('impales')) {
-        resultText = resultText.replace('impales','hits');
-      }
-      if (injuryText.removal) {
+      // replace impale damage vers
+      ['impales','lacerates','cuts'].forEach(v => {
+        if (injuryText.includes(v)) {
+          resultText = resultText.replace(v,'hits');
+        }
+      });
+
+      if (injury.removal) {
         dmgEffect = dmgEffect.replace(weaponStuckDesc,'');
       }
       resultText += injuryText || '';
@@ -1683,7 +1691,7 @@ async function penetrateArmor(armorMaterial, dmgType, armorPenVal, lastLayerDr) 
   const armorBaseAc = Constant.ARMOR_VS_DMG_TYPE[armorMaterial]?.base_AC || 0;
   const armorAc = armorBaseAc + (Constant.ARMOR_VS_DMG_TYPE[armorMaterial]?.[dmgType].ac || 0);
   if (!armorAc) return true;
-  const penChance = Constant.BASE_IMPALE_CHANCE + armorPenVal * 5 - (armorAc + lastLayerDr) * 5;
+  const penChance = Constant.BASE_IMPALE_CHANCE + armorPenVal * 10 - (armorAc + lastLayerDr) * 10;
   const result = await Util.rollDice('d100');
   return result <= penChance;
 }
