@@ -628,7 +628,7 @@ export const compoundFractureDesc = ' and the broken bones poke through the skin
 export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
-export const knockbackDesc = ' and sends them flying!';
+export const knockbackDesc = ' and knocks them flying!';
 export const staggerDesc = ' and staggers them';
 export const knockWindDesc = ' and knocks the wind from them';
 export const bloodWellDesc = ' and blood wells around the weapon...';
@@ -647,6 +647,7 @@ const ranFinger = () => ranChoice(['thumb','index','middle','ring','pinky']);
 const ranShinBone = () => ranChoice(['fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar bone','radial bone']);
 const ranArmMuscle = () => ranChoice(['triceps','biceps']);
+const ranThighMuscle = () => ranChoice(['quadriceps','quadriceps','hamstrings']);
 const ranChestBone = () => ranChoice(['a rib','the sternum']);
 const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
 const ranChestOrgan = () => ranChoice(['a lung','the heart']);
@@ -892,7 +893,7 @@ export const HIT_LOCATIONS = {
       },
       piercing: {
         light: {
-          text: ' and tears the muscle',
+          text: ` and tears the ${ranThighMuscle()}`,
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -900,7 +901,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and cuts a nerve in the muscle',
+          text: ` and cuts a nerve in the ${ranThighMuscle()}`,
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
@@ -910,11 +911,11 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the muscle',
+          text: ` and gashes the ${ranThighMuscle()}`,
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the muscle',
+          text: ` and cuts a nerve in the ${ranThighMuscle()}`,
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1906,11 +1907,17 @@ export const STANCE_MODS = {
     speed_mod: weap => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
     shield_dr_mod: 1,
     shield_ac_mod: 1,
+    shield_atk_mod: -2,
   },
   counter: {
-    ac_mod: -1,
+    ac_mod: -2,
   }
-}
+};
+export const PREP_MODS = {
+  feint: {
+    atk_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+  }
+};
 
 export const WEAP_BREAK_CHANCE = 5;
 export const SQUARE_SIZE = 5;
