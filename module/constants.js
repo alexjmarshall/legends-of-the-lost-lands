@@ -404,7 +404,7 @@ export const ARMOR_VS_DMG_TYPE = {
 }
 export const MAX_ARMOR_DR = 3;
 export const MIN_BLEED_DMG = 6;
-export const BASE_IMPALE_CHANCE = 25;
+export const BASE_IMPALE_CHANCE = 30;
 export const ATK_MODES = {
   "swi(b)": {
     ATK_ATTR: "str",
@@ -746,6 +746,7 @@ export const HIT_LOCATIONS = {
   },
   shin: {
     weights: [6,4,0,0,14,10,20,10],
+    crit_chance_multi: 2,
     bilateral: true,
     max_impale: 2,
     injury: {
@@ -1051,7 +1052,7 @@ export const HIT_LOCATIONS = {
   },
   gut: {
     weights: [8,16,4,9,12,16,8,12],
-    crit_chance_multi: 1,
+    crit_chance_multi: 2,
     crit_dmg_multi: 2,
     max_impale: 3,
     injury: {
@@ -1082,11 +1083,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and penetrates the abdomen and pierces the ${ranOrgan()}`,
+          text: ` and penetrates the abdomen and pierces ${ranOrgan()}`,
           dmgEffect: lowWeapStuck() + highIntBleed('gut'),
         },
         gruesome: {
-          text: ` and impales them through the abdomen and through the ${ranOrgan()} and through the back`,
+          text: ` and impales them through the abdomen and through ${ranOrgan()} and through the back`,
           fatal: true,
           dmgEffect: highWeapStuck() + highIntBleed('gut'),
         },
@@ -1101,7 +1102,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and cleaves into the abdomen and eviscerates the ${ranOrgan()}`,
+          text: ` and cleaves into the abdomen and eviscerates ${ranOrgan()}`,
           fatal: true,
           dmgEffect: lowIntBleed('gut') || highMinBleed(),
         },
@@ -1115,7 +1116,7 @@ export const HIT_LOCATIONS = {
   },
   chest: {
     weights: [4,12,6,16,2,5,5,8],
-    crit_chance_multi: 2,
+    crit_chance_multi: 1,
     crit_dmg_multi: 3,
     max_impale: 3,
     injury: {
@@ -1293,7 +1294,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the forearm!',
+          text: ' and severs the arm below the elbow!',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1613,8 +1614,7 @@ export const HIT_LOCATIONS = {
   },
   jaw: {
     weights: [3,2,6,3,1,1,2,2],
-    crit_chance_multi: 3,
-    crit_dmg_multi: 1,
+    crit_chance_multi: 2,
     max_impale: 1,
     injury: {
       blunt: {
