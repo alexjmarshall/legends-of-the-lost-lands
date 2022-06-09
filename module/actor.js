@@ -169,7 +169,7 @@ export class SimpleActor extends Actor {
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + stancePenalty;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty }; // TODO can also be bonus for feinting
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
@@ -221,7 +221,7 @@ export class SimpleActor extends Actor {
 
           // determine if parry bonus applies to this area
           let appliedParryBonus = !!riposteItem ? parryBonus : 0;
-          if (Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) appliedParryBonus = Math.max(parryBonus, fluidParryBonus);
+          if (Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) appliedParryBonus = fluidParryBonus;
 
           // worn ac & dr
           for (const dmgType of Constant.DMG_TYPES) {
