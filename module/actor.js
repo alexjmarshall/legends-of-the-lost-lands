@@ -152,7 +152,7 @@ export class SimpleActor extends Actor {
       const fluidWeap = wornOrHeldItems.filter(i => Util.stringMatch(i.data.data.atk_style,'fluid'))
         .reduce((a,b) => +b?.data.data.attributes.parry?.value || 0 > +a?.data.data.attributes.parry?.value || 0 ? b : a, undefined);
       const parryBonus = Math.max( Math.min(+riposteItem?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
-      const fluidParryBonus = Math.max( Math.min(+fluidWeap?.data.data.attributes.parry?.value || 0, max_dex_mod), 0);
+      const fluidParryBonus = +fluidWeap?.data.data.attributes.parry?.value || 0;
       const parryHeight = fluidWeap?.data.data.atk_height || riposteItem?.data.data.atk_height;
       const parry = { 
         parry_item_id: riposteItem?._id || fluidWeap?._id,
@@ -162,6 +162,7 @@ export class SimpleActor extends Actor {
       };
       const powerWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_style,'power'));
       const counterWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_init,'counter'));
+      const timing = counterWeap ? 'counter' : riposteItem ? 'riposte' : '';
 
       let stancePenalty = 0;
       if (powerWeap) stancePenalty += Constant.STANCE_MODS.power.ac_mod;
@@ -169,7 +170,7 @@ export class SimpleActor extends Actor {
 
       const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + stancePenalty;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty };
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty, timing };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
