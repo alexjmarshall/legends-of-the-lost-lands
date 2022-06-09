@@ -1170,7 +1170,7 @@ async function attack(attackers, targetToken, options) {
     const maxImpaleAreas = ['chest','eye'];
     const doubleBleedAreas = ['neck','groin','armpit'];
     const easyBleedAreas = ['neck','jaw','face','skull','eye','forearm','hand','foot','armpit'];
-    const doubleKnockdownAreas = ['skull','face','eye','knee','shin'];
+    const doubleKnockdownAreas = ['skull','face','eye','jaw','knee','shin','foot'];
     const helmetAreas = ['skull','face','eye','jaw'];
     const dropKnockdownAreas = ['hand','forearm'];
     let sortedWornArmors = [];
@@ -1255,11 +1255,13 @@ async function attack(attackers, targetToken, options) {
       const appliedArmors = sortedWornArmors.filter(a => applyArmor(a));
 
       // critical hits
-      const critMulti = Constant.HIT_LOCATIONS[coverageArea].crit_chance_multi ?? 1;
-      const critChance = critMulti * (totalAtkResult - targetAc + weapSpeed); // TODO curved swords have lower min reach
-      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= critChance;
-      if (isCriticalHit) {
-        weapDmgResult = maxWeapDmg;
+      const baseCritChance = totalAtkResult - targetAc;
+      const skillfulHitChance = baseCritChance + weapSpeed;
+      const critMulti = Constant.HIT_LOCATIONS[coverageArea].crit_chance_multi ?? 0;
+      const painCritChance = critMulti * baseCritChance; console.log('skill',skillfulHitChance,'pain',painCritChance)// TODO curved swords have lower min reach
+      const isSkillfulHit = !immuneCriticalHits && await Util.rollDice('d100') <= skillfulHitChance;
+      const isCriticalHit = !immuneCriticalHits && await Util.rollDice('d100') <= painCritChance;
+      if (isSkillfulHit) {
         const armor = appliedArmors[0];
         const armorName = armor?.name;
         const isBulky = !!armor?.data.data.attributes.bulky?.value;
@@ -1362,16 +1364,15 @@ async function attack(attackers, targetToken, options) {
 
       // apply extra location crit damage
       if (isCriticalHit && !bluntingArmor) {
-        const critDmgMulti = Constant.HIT_LOCATIONS[coverageArea].crit_dmg_multi ?? 1;
-        for (let i = 1; i < critDmgMulti; i++) {
-          critDmg += await Util.rollDice(weapDmg) - dr;
-        }
-        hitDesc += ` a weak spot`;
+        weapDmgResult = maxWeapDmg;
+        const critDmgMulti = (Constant.HIT_LOCATIONS[coverageArea].crit_dmg_multi ?? 1) - 1;
+        critDmg += (weapDmgResult - dr + attrDmgMod + stanceDmgMod) * critDmgMulti;
+        hitDesc += ` a vulnerable area`;
       }
 
       // knockdowns
       const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
-      const knockdownChance = knockDownMulti * 5 * weapImp - 20 * (targetSize - 2);
+      const knockdownChance = knockDownMulti * 3 * weapImp - 20 * (targetSize - 2);
       const canKnockdown = Util.stringMatch(atkForm, 'swing') || Util.stringMatch(dmgType, 'blunt');
       const isKnockdown = !immuneKnockdown && !targetProne && canKnockdown && await Util.rollDice('d100') <= knockdownChance;
       if (isKnockdown) {
@@ -1427,13 +1428,15 @@ async function attack(attackers, targetToken, options) {
       }
 
       // bleeding
-      let bleedChance = weapBleed * 3;
-      const canBleed = !appliedArmors.length;
+      const armorMaterial = appliedArmors[0]?.data.data.attributes.material?.value || '';
+      const bleedDr = Constant.ARMOR_VS_DMG_TYPE[armorMaterial]?.[dmgType].dr || 0;
+      let bleedChance = weapBleed * 2 - bleedDr * 3;
+      const canBleed = !Util.stringMatch(dmgType,'blunt') || totalImpaleDmg;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
       const doBleed = !immuneBleed && canBleed && await Util.rollDice('d100') <= bleedChance;
       if (doBleed) {
         // determine severity
-        let severityDesc = totalImpaleDmg > maxWeapDmg && doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
+        let severityDesc = totalImpaleDmg && doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
         if (dmgEffect.includes(Util.replacePunc(weaponStuckDesc))) {
           severityDesc = severityDesc.replace(minorBleedDesc,'').replace(majorBleedDesc,bloodWellDesc);
         }
@@ -1546,7 +1549,7 @@ async function attack(attackers, targetToken, options) {
   }
 
   // damage
-  const drMod = 0 - dr;
+  const drMod = 0 - dr;console.log('critDmg',critDmg,'impaleDmg',totalImpaleDmg);
   const dmgMods = [drMod, critDmg, totalImpaleDmg, attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
   const dmgModText = dmgMods.reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
   let totalDmgText= `${attacker.dmgMulti ? `${weapDmgResult}*${attacker.dmgMulti}` : `${weapDmgResult}`}${dmgModText}`;
@@ -1564,10 +1567,9 @@ async function attack(attackers, targetToken, options) {
   let injuryWeapDmg = weapDmgResult - dr + attrDmgMod + stanceDmgMod;
   if (Util.stringMatch(dmgType,'blunt')) injuryWeapDmg = Math.min(weapImp, injuryWeapDmg);
   const injuryDmg = totalDmgResult > targetHp ? totalDmgResult - targetHp : 0;
-    
-  const injury = (injuryWeapDmg > 5 && injuryDmg > 8 && !!injuryObj['gruesome'] ? injuryObj['gruesome'] :
-    injuryDmg > 5 ? injuryObj['critical'] :
-    injuryDmg > 2 ? injuryObj['serious'] :
+  const injury = (injuryWeapDmg > 8 && injuryDmg > 8 && !!injuryObj['gruesome'] ? injuryObj['gruesome'] :
+    injuryWeapDmg > 5 && injuryDmg > 5 ? injuryObj['critical'] :
+    injuryWeapDmg > 2 && injuryDmg > 2 ? injuryObj['serious'] :
     injuryObj['light']) || {};
 
   attacks.push({
