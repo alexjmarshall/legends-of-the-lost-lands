@@ -1143,10 +1143,12 @@ async function attack(attackers, targetToken, options) {
   let acObj = {};
   const minorBleedDesc = Constant.minorBleedDesc;
   const majorBleedDesc = Constant.majorBleedDesc;
+  const bloodWellDesc = Constant.bloodWellDesc;
   const weaponStuckDesc = Constant.weaponStuckDesc;
   const knockdownDesc = Constant.knockdownDesc;
   const knockbackDesc = Constant.knockbackDesc;
   const staggerDesc = Constant.staggerDesc;
+  const knockWindDesc = Constant.knockWindDesc;
   let coverageArea = '';
   let endHeight = '';
 
@@ -1174,7 +1176,7 @@ async function attack(attackers, targetToken, options) {
     let sortedWornArmors = [];
     const parry = targetRollData.ac.parry || {};
     let parryItem = targetActor.items.get(parry.parry_item_id);
-    const parryItemHeight = parryItem?.data.data.atk_height;
+    let parryItemHeight = parryItem?.data.data.atk_height;
     let targetParryBonus = parry.parry_bonus || 0;
     const isRiposteParrying = parryItem && targetParryBonus > 0;
 
@@ -1364,7 +1366,7 @@ async function attack(attackers, targetToken, options) {
         for (let i = 1; i < critDmgMulti; i++) {
           critDmg += await Util.rollDice(weapDmg) - dr;
         }
-        hitDesc += ` a vulnerable spot`;
+        hitDesc += ` a weak spot`;
       }
 
       // knockdowns
@@ -1411,7 +1413,11 @@ async function attack(attackers, targetToken, options) {
             dmgEffect = knockdownDesc + dmgEffect;
             skipWeaps = true;
           } else {
-            dmgEffect = staggerDesc + dmgEffect;
+            if (['gut','chest','groin'].includes(coverageArea)) {
+              dmgEffect = knockWindDesc + dmgEffect;
+            } else {
+              dmgEffect = staggerDesc + dmgEffect;
+            }
           }
 
           // remove any other weapons
@@ -1424,11 +1430,14 @@ async function attack(attackers, targetToken, options) {
       let bleedChance = weapBleed * 3;
       const canBleed = !appliedArmors.length;
       if (easyBleedAreas.includes(coverageArea)) bleedChance *= 2;
-      const isBleed = !immuneBleed && canBleed && await Util.rollDice('d100') <= bleedChance;
-      if (isBleed) {
+      const doBleed = !immuneBleed && canBleed && await Util.rollDice('d100') <= bleedChance;
+      if (doBleed) {
         // determine severity
-        const severity = totalImpaleDmg > maxWeapDmg && doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
-        dmgEffect = Util.replacePunc(dmgEffect) + severity;
+        let severityDesc = totalImpaleDmg > maxWeapDmg && doubleBleedAreas.includes(coverageArea) ? majorBleedDesc : minorBleedDesc;
+        if (dmgEffect.includes(Util.replacePunc(weaponStuckDesc))) {
+          severityDesc = severityDesc.replace(minorBleedDesc,'').replace(majorBleedDesc,bloodWellDesc);
+        }
+        dmgEffect = Util.replacePunc(dmgEffect) + severityDesc;
         // add bleed/heavy bleed condition manually
       }
 
@@ -1465,6 +1474,7 @@ async function attack(attackers, targetToken, options) {
       // riposte
       if ( isRiposteParrying && totalAtkResult < unarmoredAc + targetParryBonus ) { console.log(targetHasReach)
         missDesc = parryDesc;
+        // check for parry item breakage
         if (parryItem && parryItem.data.data.attributes.fragile?.value && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
           missDesc += ` and ${parryItem.name} breaks!`;
         }
@@ -1482,6 +1492,7 @@ async function attack(attackers, targetToken, options) {
         }
       } else if (totalAtkResult < unarmoredAc + targetParryBonus) {
         missDesc = parryDesc;
+        // check for weapon item breakage
         if (parryItem && fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
           missDesc += ` and ${weapon.name} breaks!`;
         }
@@ -1493,11 +1504,12 @@ async function attack(attackers, targetToken, options) {
           deflectingArmorName = ` the ${hideDesc} hide`;
         }
         const isShield = !!deflectingArmor.data.data.attributes.shield_shape?.value;
+        const isPlate = deflectingArmor?.data.data.attributes.material?.value.includes('plate');
         missDesc = ` ${deflectingArmorName ? 
          ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && isShield ? ` thunks into ` : isShield ? ` is deflected by` : ` glances off`} ${deflectingArmorName}` : 
          ' but misses'}`;
-        if ( (deflectingArmor?.data.data.attributes.metal?.value || Util.stringMatch(deflectingArmor?.data.data.attributes.material?.value, "wood")) &&
-          fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
+        // check for weapon item breakage
+        if ( (isPlate || isShield) && fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
           missDesc += ` and ${weapon.name} breaks!`; // TODO reduce qty -- create repair item macro?
         }
       }
@@ -1533,7 +1545,7 @@ async function attack(attackers, targetToken, options) {
     resultText += ` ${Util.chatInlineRoll(totalAtk)}`;
   }
 
-  // damage // TODO move this inside isHit condition?
+  // damage
   const drMod = 0 - dr;
   const dmgMods = [drMod, critDmg, totalImpaleDmg, attrDmgMod, stanceDmgMod, attackerAttrDmgMod, attackerDmgMod, sitDmgMod].filter(m => m);
   const dmgModText = dmgMods.reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
@@ -1577,9 +1589,9 @@ async function attack(attackers, targetToken, options) {
   if (isHit) {
     resultText += dmgText;
 
-    // if (totalDmgResult < 2 && targetHp > 0) {
-    //   resultText = resultText.replace('hits', 'grazes');
-    // }
+    if (totalDmgResult < 2) {
+      resultText = resultText.replace('hits', 'grazes');
+    }
 // use swing high/low tables, but only when prone or mounted?
 // touch attack macro for grapples/hooks etc.
 // handle bleed dmg like disease
@@ -1588,7 +1600,10 @@ async function attack(attackers, targetToken, options) {
 // finalize death & dying mechanic
 // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced -- only reduce to half of base_ac, then it falls apart
     if (sumDmg > targetHp) {
-      const injuryText = injury.text.replace('them', targetActor?.name);
+      let injuryText = injury.text.replace('them', targetActor?.name);
+      if (isCurvedSword) {
+        injuryText = injuryText.replace('cleaves','slices');
+      }
       if (injuryText.includes('impales')) {
         resultText = resultText.replace('impales','hits');
       }
@@ -1600,7 +1615,7 @@ async function attack(attackers, targetToken, options) {
       if (targetHp > 0) while (weapons.length) weapons.shift();
   
       // remove knockdown/stagger descriptions
-      // dmgEffect = dmgEffect.replace(knockdownDesc,'').replace(staggerDesc,'');
+      dmgEffect = dmgEffect.replace(staggerDesc,'').replace(knockWindDesc,'');
       
       if (injury.dmgEffect) {
         // replace existing dmg effect descs if included in injury dmg effect
@@ -1611,10 +1626,6 @@ async function attack(attackers, targetToken, options) {
           dmgEffect = dmgEffect.replace(weaponStuckDesc,'');
         }
         dmgEffect = Util.replacePunc(dmgEffect.replace(injury.dmgEffect,'')) + injury.dmgEffect;
-      }
-
-      if (injury.text === injuryObj['gruesome']?.text) {
-        dmgEffect = Util.replacePunc(dmgEffect) + '!';
       }
     }
 
@@ -1636,8 +1647,7 @@ async function attack(attackers, targetToken, options) {
 
     // replace bleed description if weapon is stuck
     if (resultText.includes(Util.replacePunc(weaponStuckDesc))) {
-      resultText = resultText.replace(minorBleedDesc,'')
-        .replace(majorBleedDesc,Constant.bloodWellDesc);
+      resultText = resultText.replace(minorBleedDesc,'').replace(majorBleedDesc,bloodWellDesc);
     }
   }
 
