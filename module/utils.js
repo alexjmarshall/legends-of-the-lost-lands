@@ -261,3 +261,12 @@ export function prevTime(interval, startTime, currentTime) {
 export function intervalInSeconds(interval) {
   return SimpleCalendar.api.timestampPlusInterval(0, interval);
 }
+
+export function formatAtkMode(mode) {
+  const form = Constant.ATK_MODES[mode]?.ATK_FORM;
+  return upperCaseFirst(mode.replace(/^.*\(/, `${form} (`).replace(/(\([a-z]\))/, (match, p1) => p1.toUpperCase()));
+} 
+
+export function resultStyle(bgColour) {
+  return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
+}
