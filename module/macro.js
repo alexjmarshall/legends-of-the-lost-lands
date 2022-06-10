@@ -307,7 +307,11 @@ export async function heldWeaponAttackMacro(options={}) {
   const targets = [...game.user.targets];
   const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = options.targetToken || targets[ranTargetIndex];
+  const target = {
+    token: options.targetToken || targets[ranTargetIndex],
+    update: {},
+    itemUpdates:[],
+  } ;
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -378,12 +382,12 @@ export async function heldWeaponAttackMacro(options={}) {
       attacks: [],
       unarmed,
       atkMod: options.atkMod,
-      updates: [],
+      update: {},
       itemUpdates:[],
     })
   }
 
-  return attack(attackers, targetToken, options);
+  return attack(attackers, target, options);
 }
 
 export function quickSlashAttackMacro(itemId, options={}) {
@@ -397,7 +401,11 @@ export function quickSlashAttackMacro(itemId, options={}) {
   const targets = [...game.user.targets];
   const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = targets[ranTargetIndex];
+  const target = {
+    token: targets[ranTargetIndex],
+    update: {},
+    itemUpdates:[],
+  } ;
 
   const attackers = [];
   const flavor = `${weapon.name} (quick slash)`;
@@ -410,11 +418,11 @@ export function quickSlashAttackMacro(itemId, options={}) {
     attacks: [],
     showAltDialog: false,
     throwable: false,
-    updates: [],
+    update: {},
     itemUpdates:[],
   })
 
-  return attack(attackers, targetToken, options);
+  return attack(attackers, target, options);
 }
 
 export function attackRoutineMacro(options={}) {
@@ -423,7 +431,11 @@ export function attackRoutineMacro(options={}) {
   const targets = [...game.user.targets];
   const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = targets[ranTargetIndex];
+  const target = {
+    token: targets[ranTargetIndex],
+    update: {},
+    itemUpdates:[],
+  };
   options.twoWeaponFighting = false;
 
   const attackers = [];
@@ -446,11 +458,11 @@ export function attackRoutineMacro(options={}) {
       ranTarget,
       chatMsgData: {content: '', flavor: '', sound: options.sound, bubbleString: ''},
       attacks: [],
-      updates: [],
+      update: {},
       itemUpdates:[],
     })
   }
-  return attack(attackers, targetToken, options);
+  return attack(attackers, target, options);
 }
 
 export async function saveMacro(damage=0, options={}) {
@@ -649,7 +661,11 @@ export async function attackMacro(weapons, options={}) {
   const targets= [...game.user.targets];
   const ranTarget = targets.length > 1;
   const ranTargetIndex = Math.floor(Math.random() * targets.length);
-  const targetToken = targets[ranTargetIndex];
+  const target = {
+    token: targets[ranTargetIndex],
+    update: {},
+    itemUpdates:[],
+  };
 
   const attackers = [];
   for(const token of selectedTokens) {
@@ -659,12 +675,12 @@ export async function attackMacro(weapons, options={}) {
       ranTarget,
       chatMsgData: { content: '', flavor: '', sound: '', bubbleString: '' },
       attacks: [],
-      updates: [],
+      update: {},
       itemUpdates:[],
     })
   }
 
-  return attack(attackers, targetToken, options);
+  return attack(attackers, target, options);
 }
 
 export function setStanceMacro(options={}) { // TODO refactor into separate wrapper and dialog function in dialogs.js
