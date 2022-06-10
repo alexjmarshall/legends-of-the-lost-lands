@@ -445,6 +445,10 @@
   justify-content: center;
   margin-top:2px;
 }
+.dialog-content .prep-buttons {
+  justify-content: center;
+  margin-top:2px;
+}
 .dialog-content .stance-label {
   align-self: center;
 }
