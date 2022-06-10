@@ -779,9 +779,6 @@ async function attack(attackers, targetToken, options) {
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
   let sitDmgMod = 0;
-  let aimPenalty = 0;
-  let aimArea;
-  let aimText = '';
 
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
@@ -876,54 +873,80 @@ async function attack(attackers, targetToken, options) {
   }
 
 
-  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
+  
+  // get attacker's properties
+  const currentAtkMode = weaponItem.data.data.atk_mode;
+  let atkMode = weapon.atkMode || options.altDialogAtkMode || currentAtkMode || atkModes[0];
+  if (atkMode !== currentAtkMode) {
+    // TODO update weapon atk mode
+  }
   let atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
   let dmgType = Constant.DMG_TYPES.includes(weapAttrs.dmg_type?.value) ? weapAttrs.dmg_type?.value : Constant.ATK_MODES[atkMode]?.DMG_TYPE || 'blunt';
   let atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM || 'attack';
+  let aimArea = options.altDialogAim || '';
+  let atkPrep = options.altDialogPrep || '';
+  let isFeinting = Util.stringMatch(atkPrep,'feint');
+  let hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
+  if (atkHeight === 'high' || atkHeight === 'low') {
+    hitLocTableName += `_${atkHeight.toUpperCase()}`;
+  }
+  if (aimArea) {
+    hitLocTableName += `_${aimArea.toUpperCase()}`;
+  }
+  let aimPenalty = +Constant.AIM_AREA_PENALTIES[hitLocTableName] || 0;
+  const formatAimArea = area => area.replace('_',' ');
+  let prepText = Util.stringMatch(atkPrep,'feint') ? ` feints ${atkHeight} then` : '';
+  let aimText = aimArea ? ` aims at ${targetActor?.name ? `${targetActor.name}'s` : `the`} ${formatAimArea(aimArea)} and` : '';
+
+  const immuneFumbles = !!attackerRollData.immune_fumbles;
+  const bab = attackerRollData.bab || 0;
+  const dexMod = attackerRollData.dex_mod || 0;
+  const strMod = attackerRollData.str_mod || 0;
+  const twoWeaponFightingPenalty = mainhand ? -3 + dexMod : offhand ? -5 + dexMod : 0;
+  const atkAttr = Constant.ATK_MODES[atkMode]?.ATK_ATTR;
+  const dmgAttr = Constant.ATK_MODES[atkMode]?.DMG_ATTR;
+  const attrAtkMod = attackerRollData[`${atkAttr}_mod`] || 0;
+  let attrDmgMod = (offhand && attackerRollData[`${dmgAttr}_mod`] > 0 ? Math.floor(attackerRollData[`${dmgAttr}_mod`] / 2) : attackerRollData[`${dmgAttr}_mod`]) || 0;
+  const attackerAttrAtkMod = attackerRollData.atk_mod || 0;
+  const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
+  const attackerAtkMod = attacker.atkMod || 0;
+  const attackerDmgMod = attacker.dmgMod || 0;
+  const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
+    Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
+  const isProficient = weapProfs.some(a => Util.stringMatch(a,weapCategory));
+  let stanceAtkMod = 0;
+  let stanceDmgMod = 0;
+  let prepAtkMod = 0;
+  let critDmg = 0;
+  let totalImpaleDmg = 0;
+
 
   // attack options dialog
-  let hitLocTableName;
-  let atkPrep;
-  let isFeinting = false;
   if (targetActor) {
     const validAreas = [];
     for (const [k,v] of Object.entries(Constant.AIM_AREAS)) {
       const nonRemovedLocs = v.filter(l => !removedLocs?.includes(l));
       if (nonRemovedLocs.length) validAreas.push(k);
     }
+
+    const getTableName = area => `${atkForm.toUpperCase()}${atkHeight.toUpperCase() === 'MID' ? '' : `_${atkHeight.toUpperCase()}`}_${area.toUpperCase()}`;
     
-    hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
-    if (atkHeight === 'high' || atkHeight === 'low') {
-      hitLocTableName += `_${atkHeight.toUpperCase()}`;
-    }
-
-    const getPenalty = chance => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(1.8)));
-
-    const aimAreaPenalties = Object.fromEntries(validAreas.map( a => {
-      const tableName = hitLocTableName + `_${a.toUpperCase()}`;
-      return [a, getPenalty(Constant.HIT_LOC_ARRS[tableName].length)];
+    const aimPenalties = Object.fromEntries(validAreas.map(a => {
+      const tableName = getTableName(a);
+      const penalty = Constant.AIM_AREA_PENALTIES[tableName];
+      return [a, penalty];
     }));
-
+    
     if ( options.showAltDialog && attacker.showAltDialog !== false && !options.shownAltDialog ) {
-      const title = `${weapon.name} Attack Options`;
-      const stanceDesc = `${Util.upperCaseFirst(atkStyle)} ${atkHeight} ${atkForm}`;
       const callback = () => attack(attackers, targetToken, options);
-      return attackOptionsDialog(attackingActor, options, stanceDesc, title, aimAreaPenalties, callback);
-    }
-
-    // apply attack options dialog choices
-    aimArea = options.altDialogAim;
-    const formatAimArea = area => area.replace('_',' ');
-    aimText = aimArea ? ` aims at ${targetActor?.name ? `${targetActor.name}'s` : `the`} ${formatAimArea(aimArea)} and` : '';
-    aimPenalty = aimAreaPenalties[aimArea];
-    if (aimArea) {
-      hitLocTableName += `_${aimArea.toUpperCase()}`;
-    }
-    atkPrep = options.altDialogPrep;
-    if (Util.stringMatch(atkPrep,'feint')) {
-      isFeinting = true;
+      const preparations = ['none'];
+      if (isProficient) {
+        preparations.push('feint');
+      }
+      return attackOptionsDialog(options, weaponItem, preparations, aimPenalties, callback); // TODO test bow, allow to wear and choose 2 quivers
     }
   }
+
 
   const thrown = Util.stringMatch(atkForm,'throw');
   if (thrown) weapImp = Math.floor(weapImp / 2);
@@ -984,28 +1007,6 @@ async function attack(attackers, targetToken, options) {
     options.shownModDialog = false;
     return attack(attackers, targetToken, options);
   }
-
-  // get attacker's properties
-  const immuneFumbles = !!attackerRollData.immune_fumbles;  //|| attackingActor._id === targetActor?._id;
-  const bab = attackerRollData.bab || 0;
-  const dexMod = attackerRollData.dex_mod || 0;
-  const strMod = attackerRollData.str_mod || 0;
-  const twoWeaponFightingPenalty = mainhand ? -3 + dexMod : offhand ? -5 + dexMod : 0;
-  const atkAttr = Constant.ATK_MODES[atkMode]?.ATK_ATTR;
-  const dmgAttr = Constant.ATK_MODES[atkMode]?.DMG_ATTR;
-  const attrAtkMod = attackerRollData[`${atkAttr}_mod`] || 0;
-  let attrDmgMod = (offhand && attackerRollData[`${dmgAttr}_mod`] > 0 ? Math.floor(attackerRollData[`${dmgAttr}_mod`] / 2) : attackerRollData[`${dmgAttr}_mod`]) || 0;
-  const attackerAttrAtkMod = attackerRollData.atk_mod || 0;
-  const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
-  const attackerAtkMod = attacker.atkMod || 0;
-  const attackerDmgMod = attacker.dmgMod || 0;
-  const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
-    Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
-  let stanceAtkMod = 0;
-  let stanceDmgMod = 0;
-  let prepAtkMod = 0;
-  let critDmg = 0;
-  let totalImpaleDmg = 0;
 
 
   // stance mods
@@ -1073,7 +1074,7 @@ async function attack(attackers, targetToken, options) {
   }
   // -2 if weapon category defined but not in attacker's weapon proficiencies
   // TODO weap specialization and mastery
-  if (weapCategory != null && !weapProfs.includes(weapCategory)) {
+  if (weapCategory != null && !isProficient) {
     sitAtkMod = sitAtkMod - 2;
   }
   // -2 if thrusting with curved sword
@@ -1182,6 +1183,7 @@ async function attack(attackers, targetToken, options) {
       // handle counter
       if ( isCountering && (isFeinting || await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
         resultText = `...but ${targetActor.name} counters!`;
+        attacker.followAttack = false;
         while (weapons.length) weapons.shift();
         // TODO reset defender atk timing
         return;
@@ -1286,10 +1288,9 @@ async function attack(attackers, targetToken, options) {
           const armor = appliedArmors[0];
           const armorName = armor?.name;
           const isBulky = !!armor?.data.data.attributes.bulky?.value;
-          const isShield = !!armor?.data.data.attributes.shield_shape?.value;
           // if pierce and armor is bulky, bypass armor
-          if (Util.stringMatch(dmgType, 'piercing') && isBulky || isShield) {
-            hitDesc += ` and finds a gap ${isBulky ? 'in' : 'around'} ${armorName}`;
+          if (Util.stringMatch(dmgType, 'piercing') && isBulky) {
+            hitDesc += ` and finds a gap in ${armorName}`;
             appliedArmors.shift();
           }
         }
@@ -1673,7 +1674,7 @@ async function attack(attackers, targetToken, options) {
   
       if (dmgEffect) {
         if (!dmgEffect.includes(targetActor?.name)) {
-          dmgEffect = dmgEffect.replace('them', targetActor?.name);
+          dmgEffect = dmgEffect.replace('their', `${targetActor?.name}'s`);
         }
         resultText = Util.replacePunc(resultText) + dmgEffect;
       }
@@ -1697,7 +1698,7 @@ async function attack(attackers, targetToken, options) {
   const rangeText = missileAtk && range ? ` ${range}'` : '';
   const pluralize = name => /h$/.test(name) ? `${Util.lowerCaseFirst(name)}es` : `${Util.lowerCaseFirst(name)}s`;
 
-  chatMsgData.content += `${attackingActor.name}` + aimText;
+  chatMsgData.content += `${attackingActor.name}` + prepText + aimText;
   chatMsgData.content += Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
     ` ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
   chatMsgData.content += `${resultText}`;
@@ -1835,11 +1836,11 @@ export function setStance(options={}) {
 
     const styleButtons = { id: 'styles', label: 'Style', buttons: styles.map(s => getButton(item, 'atk', 'style', s, currStyle)).join('') };
     const heightButtons = { id: 'heights', label: 'Height',  buttons: heights.map(h => getButton(item, 'atk', 'height', h, currHeight)).join('') };
-    const modeButtons = { id: 'modes', label: 'Mode',  buttons: atkModes.map(m => getButton(item, 'atk', 'mode', m, currMode)).join('') };
+    const modeButtons = atkModes.length > 1 ? { id: 'modes', label: 'Mode',  buttons: atkModes.map(m => getButton(item, 'atk', 'mode', m, currMode)).join('') } : null;
     // const gripButtons = { id: 'grips', label: 'Grip',  buttons: grips.map(g => getButton(item, 'atk', 'grip', g, currGrip)).join('') };
     const initButtons = { id: 'inits', label: 'Timing',  buttons: inits.map(i => getButton(item, 'atk', 'init', i, currInit)).join('') };
 
-    const rows = [styleButtons,heightButtons,modeButtons,initButtons];
+    const rows = [styleButtons,heightButtons,modeButtons,initButtons].filter(r => r);
 
     return `
       <div id="${item._id}" style="margin-bottom:1em;">
@@ -1937,7 +1938,7 @@ export function setStance(options={}) {
             $button.addClass("selected-button");
           }
         });
-      }
+      };
     },
     default: "one",
   }).render(true);
@@ -1960,54 +1961,115 @@ function measureRange(token1, token2) {
   return Math.floor(+canvasDistance / Constant.SQUARE_SIZE) * Constant.SQUARE_SIZE;
 }
 
-function attackOptionsDialog(attackingActor, options, stanceDesc, title, choices, callback) {
-  // TODO atk style modifies speed/impact? Or simply must be in fluid style to use preparatory actions and counter (unless masterstrike)
-  // attacking while counter/riposte resets timing to immediate UNLESS parrying with offhand weapon. Then it is persistent on offhand and attacks only with main hand
+function attackOptionsDialog(options, weapon, preparations, aimPenalties, callback) {
   // buttons - 
-  // preparatory: None, Feint (proficient), Beat (proficient), Hook Shield (axe, proficient), Bind (specialize)
-  // attack - attack modes, moulinet (swing, one for each swing atk mode -- specialize), the masterstrikes (obviate feint/beat/bind vs. certain stances, mastery, some require thumb grip)
+  // preparations: None, Feint (proficient), Hook Shield (axe or hook, specialist), Bind (specialist),
+  // moulinet (fluid and swing, specialist), the masterstrikes (obviate feint/bind vs. certain stances, mastery)
+
+  const stanceDesc = '';// `${weapon.data.data.atk_style} ${weapon.data.data.atk_height}`;
+  const label = `${weapon.name}${stanceDesc ? ` — ${stanceDesc} guard` : ''}`;
+
+  const getButton = (key, val, currVal) => `
+    <button id="${val}" class="stance-button${currVal === val ? ' selected-button' : ''}" data-${key}="${val}">
+      ${Util.upperCaseFirst(val)}
+    </button>
+  `;
+
+  const prepButtons = preparations.map(p => getButton('prep', p, preparations[0])).join('');
+
+  const atkOptions = `
+    <div class="flexrow prep-buttons">
+      <label class="flex1 stance-label">Preparation</label>
+      <div class="flexrow flex4">${prepButtons}</div>
+    </div>
+  `;
+
+  // TODO do this programmatically, and fix sections on armor tab
+  const aimButtons = `
+    <div style="padding-top:5px;">
+      <label class="stance-label">Aim</label>
+    </div>
+    <div>
+      <div class="flexrow aim-buttons">
+        ${Object.keys(aimPenalties).includes('head') ? `<button class="choice-button" value="head">Head (${aimPenalties.head})</button>` : ''}
+      </div>
+      <div class="flexrow aim-buttons">
+        ${Object.keys(aimPenalties).includes('shoulders') ? `<button class="choice-button" value="right_arm">R. Arm (${aimPenalties.shoulders})</button>` : ''}
+        ${Object.keys(aimPenalties).includes('pelvis') ? `<button class="choice-button" value="upper_torso">U. Torso (${aimPenalties.pelvis})</button>` : ''}
+        ${Object.keys(aimPenalties).includes('left_arm') ? `<button class="choice-button" value="left_arm">L. Arm (${aimPenalties.left_arm})</button>` : ''}
+      </div>
+      <div class="flexrow aim-buttons">
+        ${Object.keys(aimPenalties).includes('lower_torso') ? `<button class="choice-button" value="lower_torso">L. Torso (${aimPenalties.lower_torso})</button>` : ''}
+      </div>
+      <div class="flexrow aim-buttons">
+        ${Object.keys(aimPenalties).includes('right_leg') ? `<button class="choice-button" value="right_leg">R. Leg (${aimPenalties.right_leg})</button>` : ''}
+        ${Object.keys(aimPenalties).includes('left_leg') ? `<button class="choice-button" value="left_leg">L. Leg (${aimPenalties.left_leg})</button>` : ''}
+      </div>
+    </div>
+  `;
+
   const content = `
-    <div class="flexrow stance-buttons">
-      <label class="flex1 stance-label">Stance</label>
-      <div class="flexrow flex4">${stanceDesc}</div>
-    </div>
-    <div class="flexrow aim-buttons">
-      ${Object.keys(choices).includes('head') ? `<button class="choice-button" value="head">Head (${choices.head})</button>` : ''}
-    </div>
-    <div class="flexrow aim-buttons">
-      ${Object.keys(choices).includes('right_arm') ? `<button class="choice-button" value="right_arm">R. Arm (${choices.right_arm})</button>` : ''}
-      ${Object.keys(choices).includes('upper_torso') ? `<button class="choice-button" value="upper_torso">U. Torso (${choices.upper_torso})</button>` : ''}
-      ${Object.keys(choices).includes('left_arm') ? `<button class="choice-button" value="left_arm">L. Arm (${choices.left_arm})</button>` : ''}
-    </div>
-    <div class="flexrow aim-buttons">
-      ${Object.keys(choices).includes('lower_torso') ? `<button class="choice-button" value="lower_torso">L. Torso (${choices.lower_torso})</button>` : ''}
-    </div>
-    <div class="flexrow aim-buttons">
-      ${Object.keys(choices).includes('right_leg') ? `<button class="choice-button" value="right_leg">R. Leg (${choices.right_leg})</button>` : ''}
-      ${Object.keys(choices).includes('left_leg') ? `<button class="choice-button" value="left_leg">L. Leg (${choices.left_leg})</button>` : ''}
+    <div style="margin-bottom:1em;">
+      <label>${label}</label>
+      <div style="padding-left:5px;">
+        ${atkOptions}
+        ${aimButtons}
+      </div>
     </div>
   `;
 
   const d = new Dialog({
-    title,
+    title: 'Attack Options',
     content,
-    buttons: {},
+    buttons: {
+      one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: `Submit`,
+        callback: async html => {
+          const $selectedPrepButton = $(html.find(`.prep-buttons .selected-button`));
+          const prepVal = $selectedPrepButton.data('prep');
+          options.altDialogPrep = prepVal;
+          options.shownAltDialog= true;
+          callback();
+        },
+      },
+      two: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "Cancel"
+      },
+    },
     render: html => {
-      const $buttons = html.find(`button`);
-      $buttons.click(function() {
+      const stanceButtons = html.find(`.stance-button`);
+      for (const button of stanceButtons) {
+        const $button = $(button);
+        $button.click(function() {
+          const $button = $(this);
+          if (!$button.hasClass("selected-button")) {
+            $button.siblings().removeClass("selected-button");
+            $button.addClass("selected-button");
+          }
+        });
+      };
+      const aimButtons = html.find(`.choice-button`);
+      aimButtons.click(function() {
         const $button = $(this);
-        const value = $button.val();
+        const aimValue = $button.val();
+        const $selectedPrepButton = $(html.find(`.prep-buttons .selected-button`));
+        const prepVal = $selectedPrepButton.data('prep');
+        options.altDialogPrep = prepVal;
+        options.altDialogAim = aimValue;
         options.shownAltDialog= true;
-        options.altDialogAim = value;
         callback();
         return closeDialog();
       });
     },
     default: "one",
-  })
+  });
+
   function closeDialog() {
     d.close();
   }
+
   d.render(true);
 }
 
