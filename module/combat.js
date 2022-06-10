@@ -2,26 +2,44 @@ import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import * as Dialog from "./dialogs.js";
 
-export async function attack(attackers, targetToken, options) {
-  if(!attackers.length) return;
+export async function attack(attackers, target, options) { 
+  const targetToken = target.token;
+  const targetActor = targetToken?.actor;
+  const targetName = targetActor?.name;
+  const targetUpdate = target.update;
+  const targetItemUpdates = target.itemUpdates;
+  const doTargetUpdates = options.applyEffect === true && game.user.isGM;
+
+  if(!attackers.length) {
+    if(doTargetUpdates) {
+      await targetActor.update(targetUpdate);
+      await targetActor.updateEmbeddedDocuments("Item", targetItemUpdates);
+    }
+    return;
+  }
+  const targetRollData = targetActor?.getRollData();
+  const removedLocs = targetActor?.data.data.removedLocs;
+
   const attacker = attackers[0];
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
   const attacks = attacker.attacks;
   const attackingActor = token.actor;
+  const attackerName = attackingActor.name;
+  const attackerUpdate = attacker.update;
+  const attackerItemUpdates = attacker.itemUpdates;
+
+  const reduceQty = (item, updates) => {
+    const qty = +item.data.data.quantity || 0;
+    item._id && qty > 1 && updates.push({'_id': item._id, 'data.quantity': qty - 1});
+  };
+
   const attackerRollData = attackingActor.getRollData();
   if (!attackerRollData) {
     ui.notifications.error("Invalid attacker data");
     attackers.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
-  const targetActor = targetToken?.actor;
-  const targetRollData = targetActor?.getRollData();
-  const removedLocs = targetActor?.data.data.removedLocs;
-  const attackerUpdates = [];
-  const targetUpdates = [];
-  const attackerItemUpdates = [];
-  const targetItemUpdates = [];
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
@@ -29,7 +47,7 @@ export async function attack(attackers, targetToken, options) {
   if (attackerSize == null) {
     ui.notifications.error("Attacker size not set");
     attackers.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   const targetSize = Constant.SIZE_VALUES[targetRollData?.size];
 
@@ -37,16 +55,16 @@ export async function attack(attackers, targetToken, options) {
   if (!weapons.length) {
     chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
     // remove comma at end of flavor and add names
-    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor ? ` vs. ${targetActor.name}` : ''}`;
+    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor ? ` vs. ${targetName}` : ''}`;
     // add follow up attack to content
-    const followAttackText = ` and ${attackingActor.name} is fast enough to attack again!`
-    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText; //TODO remove br
+    const followAttackText = ` and ${attackerName} is fast enough to attack again!`
+    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText;
     Util.macroChatMessage(token, chatMsgData, false);
     const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
     Util.chatBubble(token, chatBubbleString);    
 
     for (const attack of attacks) {
-      if (targetRollData && options.applyEffect === true && game.user.isGM) {
+      if (targetRollData) {
         const targetHp = +targetActor?.data.data.hp?.value;
         const targetMaxNegHP = targetActor?.type === "humanoid" || targetActor?.type === "character" ?
           (0 - (targetActor?.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
@@ -61,7 +79,7 @@ export async function attack(attackers, targetToken, options) {
           Object.assign(update, {"data.hp.max": maxHp - dmg});
         }
         
-        if (hpUpdate < targetHp) await targetActor.update(update);
+        if (hpUpdate < targetHp) Object.assign(targetUpdate, update);
       }
       
       attack.sound && Util.playSound(`${attack.sound}`, token, {push: true, bubble: false});
@@ -77,12 +95,15 @@ export async function attack(attackers, targetToken, options) {
       await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + dmg);
     }
 
+    // update attacking actor
+    await attackingActor.updateEmbeddedDocuments("Item", attackerItemUpdates);
+
     attackers.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
 
   // get weapon and its properties
-  const actorItems = token.actor.data.items;
+  const actorItems = attackingActor.data.items;
   let weaponItem;
   if (attacker.unarmed) {
     weaponItem = Constant.WEAPONS.fist;
@@ -94,21 +115,20 @@ export async function attack(attackers, targetToken, options) {
   if (!weaponItem) {
     ui.notifications.error("Could not find item on this character");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   if (weaponItem.data.data.quantity < 1) {
     ui.notifications.error("Item must have a quantity greater than 0 to use");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
   if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   const weapName = weaponItem.name;
-  weapon.name = weapName;
   const weapAttrs = weaponItem.data.data.attributes;
   let weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize * 2;
   const weapBleed = +weapAttrs.bleed?.value || 0;
@@ -118,7 +138,7 @@ export async function attack(attackers, targetToken, options) {
   if (weapSize == null) {
     ui.notifications.error("Invalid weapon size specified");
     weapons.shift();
-    return attack(attackers, targetToken, options); 
+    return attack(attackers, target, options); 
   }
   const weapCategory = weapAttrs.weap_category?.value || '';
   const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
@@ -132,7 +152,7 @@ export async function attack(attackers, targetToken, options) {
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
 
   // handle double weapon
@@ -142,7 +162,7 @@ export async function attack(attackers, targetToken, options) {
     if (dmgs.length !== 2) {
       ui.notifications.error("Invalid double weapon damage specified");
       weapons.shift();
-      return attack(attackers, targetToken, options);
+      return attack(attackers, target, options);
     }
     if (weapon.dwSideTwo) {
       weapDmg = dmgs[1];
@@ -163,7 +183,7 @@ export async function attack(attackers, targetToken, options) {
   if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
     ui.notifications.error("Invalid attack mode(s) specified");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   const defaultThrowAtkMode = atkModes.find(a => a.includes('thrw'));
   let throwable = attacker.throwable ?? !!(weapAttrs.range?.value && defaultThrowAtkMode);
@@ -182,7 +202,8 @@ export async function attack(attackers, targetToken, options) {
   const flexWeapon = !!weapAttrs.flex_weapon?.value;
   const fragile = !!weapAttrs.fragile?.value;
   const unwieldy = !!weapAttrs.unwieldy?.value;
-  const reload = !!weapAttrs.reload?.value;
+  const loadable = weapAttrs.loaded?.value != null;
+  const doReload = loadable && weapAttrs.loaded.value === false;
   const energyDrain = !!weapAttrs.energy_drain?.value;
   const atkHeight = weaponItem.data.data.atk_height;
   const atkStyle = weaponItem.data.data.atk_style;
@@ -194,19 +215,23 @@ export async function attack(attackers, targetToken, options) {
   if (Util.stringMatch(atkTime,'riposte') || Util.stringMatch(atkTime,'counter')) {
     if (offhand) {
       weapons.shift();
-      return attack(attackers, targetToken, options);
+      return attack(attackers, target, options);
     }
     // reset init of mainhand weapon
   }
   
-  // reload item if needed
-  const loaded =  !!weaponItem.data.data.loaded;
-  if (reload && !loaded) {
-    await token.actor.updateEmbeddedDocuments("Item", [{'_id': weaponItem._id, 'data.loaded': true}]);
-    chatMsgData.content += `${attackingActor.name} reloads ${weapName}<br>`;
-    weapons.shift();
-    return attack(attackers, targetToken, options);
+  // unload/reload loadable item
+  if (loadable) {
+    if (doReload) {
+      weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.attributes.loaded.value': true});
+      chatMsgData.content += `${attackerName} reloads ${weapName}.<br>`;
+      weapons.shift();
+      return attack(attackers, target, options);
+    } else {
+      weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.attributes.loaded.value': false});
+    }
   }
+  
 
   // automatic throw if target beyond max reach in feet
   if ( range > maxReach && throwable && weapon.atkMode == null ) {
@@ -218,17 +243,13 @@ export async function attack(attackers, targetToken, options) {
   const wearingShield = actorItems.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_shape?.value);
   if ( offhand === true && wearingShield ) {
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
 
 
   
   // get attacker's properties
-  const currentAtkMode = weaponItem.data.data.atk_mode;
-  let atkMode = weapon.atkMode || options.altDialogAtkMode || currentAtkMode || atkModes[0];
-  if (atkMode !== currentAtkMode) {
-    // TODO update weapon atk mode
-  }
+  let atkMode = weapon.atkMode || weaponItem.data.data.atk_mode || atkModes[0];
   let atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
   let dmgType = Constant.DMG_TYPES.includes(weapAttrs.dmg_type?.value) ? weapAttrs.dmg_type?.value : Constant.ATK_MODES[atkMode]?.DMG_TYPE || 'blunt';
   let atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM || 'attack';
@@ -245,7 +266,7 @@ export async function attack(attackers, targetToken, options) {
   let aimPenalty = +Constant.AIM_AREA_PENALTIES[hitLocTableName] || 0;
   const formatAimArea = area => area.replace('_',' ');
   let prepText = Util.stringMatch(atkPrep,'feint') ? ` feints ${atkHeight} then` : '';
-  let aimText = aimArea ? ` aims at ${targetActor?.name ? `${targetActor.name}'s` : `the`} ${formatAimArea(aimArea)} and` : '';
+  let aimText = aimArea ? ` aims at ${targetName ? `${targetName}'s` : `the`} ${formatAimArea(aimArea)} and` : '';
 
   const immuneFumbles = !!attackerRollData.immune_fumbles;
   const bab = attackerRollData.bab || 0;
@@ -277,22 +298,24 @@ export async function attack(attackers, targetToken, options) {
       const nonRemovedLocs = v.filter(l => !removedLocs?.includes(l));
       if (nonRemovedLocs.length) validAreas.push(k);
     }
-
-    const getTableName = area => `${atkForm.toUpperCase()}${atkHeight.toUpperCase() === 'MID' ? '' : `_${atkHeight.toUpperCase()}`}_${area.toUpperCase()}`;
     
     const aimPenalties = Object.fromEntries(validAreas.map(a => {
-      const tableName = getTableName(a);
-      const penalty = Constant.AIM_AREA_PENALTIES[tableName];
+      let hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
+      if (atkHeight === 'high' || atkHeight === 'low') {
+        hitLocTableName += `_${atkHeight.toUpperCase()}`;
+      }
+      hitLocTableName += `_${a.toUpperCase()}`;
+      const penalty = Constant.AIM_AREA_PENALTIES[hitLocTableName];
       return [a, penalty];
     }));
     
     if ( options.showAltDialog && attacker.showAltDialog !== false && !options.shownAltDialog ) {
-      const callback = () => attack(attackers, targetToken, options);
+      const callback = () => attack(attackers, target, options);
       const preparations = ['none'];
       if (isProficient) {
         preparations.push('feint');
       }
-      return Dialog.attackOptionsDialog(options, weaponItem, preparations, aimPenalties, callback); // TODO test bow, allow to wear and choose 2 quivers
+      return Dialog.attackOptionsDialog(options, weaponItem, preparations, aimPenalties, callback); // TODO allow to wear and choose atk modes from up to 2 quivers
     }
   }
 
@@ -302,39 +325,46 @@ export async function attack(attackers, targetToken, options) {
   // throwing offhand weapon is not allowed
   if ( offhand === true && thrown ) {
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
 
   // check if target is beyond reach/range
   const weaponRange = +weapAttrs.range?.value;
+  const meleeAtk = Util.stringMatch(atkType, 'melee');
   const missileAtk = Util.stringMatch(atkType, 'missile');
   const isShooting = Util.stringMatch(atkForm,"shoot");
 
   if (missileAtk && !weaponRange) {
     ui.notifications.error("Invalid range specified");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   if (!missileAtk && (maxReach == null || maxReach < 0)) {
     ui.notifications.error("Invalid reach specified");
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
   const maxRange = missileAtk ? weaponRange : maxReach;
   if (range > +maxRange) {
     if (range <= Math.max(...reachValues.map(v => Number(v) * Constant.SQUARE_SIZE))) {
-      ui.notifications.warn(`Must hold ${weapon.name} in two hands to use its max reach`);
+      ui.notifications.warn(`Must hold ${weapName} in two hands to use its max reach`);
     } else {
-      ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of ${weapon.name}`);
+      ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of ${weapName}`);
     }
     weapons.shift();
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
-  const minReach = Math.min(...reachValues) * Constant.SQUARE_SIZE || -1;
-  if (range < +minReach) {
-    weapDmg = '1d3';
-    dmgType = 'blunt';
-    ui.notifications.warn(`Using ${weapon.name} closer than its min reach`);
+  const minReach = missileAtk ? Constant.SQUARE_SIZE : (Math.min(...reachValues) * Constant.SQUARE_SIZE || -1);
+  if ( range < +minReach) {
+    if (meleeAtk) {
+      weapDmg = '1d3';
+      dmgType = 'blunt';
+      ui.notifications.warn(`Using ${weapName} closer than its min reach`);
+    } else {
+      ui.notifications.error(`Target is too close to use ${weapName}`);
+      weapons.shift();
+      return attack(attackers, target, options);
+    }
   }
 
   // mod dialog
@@ -343,7 +373,7 @@ export async function attack(attackers, targetToken, options) {
       {label: 'To-hit modifiers', key: 'dialogAtkMod'}
     ];
     if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers', key: 'dialogDmgMod', placeholder: 'e.g. x2, +3d6'});
-    return Dialog.modDialog(options, 'Attack', fields, () => attack(attackers, targetToken, options));
+    return Dialog.modDialog(options, 'Attack', fields, () => attack(attackers, target, options));
   }
   let dialogAtkMod = {}, dialogDmgMod = {};
   try {
@@ -354,7 +384,7 @@ export async function attack(attackers, targetToken, options) {
   } catch {
     ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
-    return attack(attackers, targetToken, options);
+    return attack(attackers, target, options);
   }
 
 
@@ -449,34 +479,31 @@ export async function attack(attackers, targetToken, options) {
     // reduce qty of thrown weapon/missile
     if (thrown) {
       try {
-        await Util.reduceItemQty(weaponItem, attackingActor);
+        reduceQty(weaponItem, attackerItemUpdates);
       } catch (error) {
         ui.notifications.error(error);
         weapons.shift();
-        return attack(attackers, targetToken, options);
+        return attack(attackers, target, options);
       }
     } else if (isShooting) {
       // must be holding with two hands to use a bow/crossbow
       if (!weaponHeldTwoHands) {
         ui.notifications.error(`Must hold ${weapName} with both hands to use`);
         weapons.shift();
-        return attack(attackers, targetToken, options);
+        return attack(attackers, target, options);
       }
-      const quiver = token.actor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
+      const quiver = attackingActor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
       const quiverQty = quiver?.data.data.quantity;
       
       try {
         if (!quiver || !quiverQty) {
           throw new Error("Nothing found to shoot from this weapon");
         }
-        const itemsUpdate = [{'_id': quiver._id, 'data.quantity': quiverQty - 1}];
-        // set crossbow to unloaded
-        if (reload) itemsUpdate.push({'_id': weaponItem._id, 'data.loaded': false});
-        await token.actor.updateEmbeddedDocuments("Item", itemsUpdate);
+        attackerItemUpdates.push({ '_id': quiver._id, 'data.quantity': quiverQty - 1 });
       } catch (error) {
         ui.notifications.error(error);
         weapons.shift();
-        return attack(attackers, targetToken, options);
+        return attack(attackers, target, options);
       }
     }
   }
@@ -532,7 +559,7 @@ export async function attack(attackers, targetToken, options) {
     if (!isNaN(targetAc)) {
       // handle counter
       if ( isCountering && (isFeinting || await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
-        resultText = `...but ${targetActor.name} counters!`;
+        resultText = `...but ${targetName} counters!`;
         attacker.followAttack = false;
         while (weapons.length) weapons.shift();
         // TODO reset defender atk timing
@@ -569,6 +596,9 @@ export async function attack(attackers, targetToken, options) {
           }
         }
         endHeight = endHeight || atkHeight;
+        if (!Util.stringMatch(endHeight, atkHeight)) {
+          weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.atk_height': endHeight});
+        }
   
         // fluid parrying
         isFluidParrying = parryItem && parry.fluid_parry_bonus >= targetParryBonus && Util.stringMatch(parryItemHeight, endHeight);
@@ -612,16 +642,23 @@ export async function attack(attackers, targetToken, options) {
       
   
       const isBrutalHit = Util.stringMatch(atkStyle, 'power');
-      resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${!aimArea && targetActor?.name ? `${targetActor?.name}'s`: `the`}${hitLoc ? ` ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
+      resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${!aimArea && targetName ? `${targetName}'s`: `the`}${hitLoc ? ` ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
       // 20 always hits
       if( d20Result === 20 && totalAtkResult < targetAc) {
         totalAtkResult = targetAc;
       }
       isHit = totalAtkResult >= targetAc;
+
+
+      // reset power thrust to fluid
+      if (Util.stringMatch(atkStyle, 'power') && Util.stringMatch(atkForm,'thrust')) {
+        weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.atk_style': 'fluid'});
+      }
+      
   
       if (isHit) {
         resultSound = hitSound;
-        const armorUpdates = []; // TODO declare at very beginning, all attacker/defender item updates, and attacker/defender updates
+        const armorUpdates = [];
         let dent = false;
         let lastLayerDr = 0;
         const armorPenVal = Util.stringMatch(dmgType,'blunt') ? weapImp : weapPen;
@@ -649,9 +686,9 @@ export async function attack(attackers, targetToken, options) {
         if (isBrutalHit && appliedArmors.length) {
           await (async () => {
             const armor = appliedArmors[0];
-            const armorName = armor.name;
+            const armorName = armor?.name;
             const regex = new RegExp(`${armorName}$`);
-            const armorMaterial = armor.data.data.attributes.material?.value || '';
+            const armorMaterial = armor?.data.data.attributes.material?.value || '';
             const penArmor = await penetrateArmor(armorMaterial, dmgType, armorPenVal, lastLayerDr);
             if (!penArmor) return;
   
@@ -678,7 +715,7 @@ export async function attack(attackers, targetToken, options) {
             // armor penetration if armor layers remain
             if (appliedArmors.length) {
               const armor = appliedArmors[0];
-              const armorName = armor.name;
+              const armorName = armor?.name;
               const regex = new RegExp(`${armorName}$`);
               const armorMaterial = armor?.data.data.attributes.material?.value || '';
               const penArmor = await penetrateArmor(armorMaterial, dmgType, armorPenVal, lastLayerDr);
@@ -755,7 +792,7 @@ export async function attack(attackers, targetToken, options) {
             if ( !!armor && !isShield && helmetAreas.includes(coverageArea)) {
               const attachedHelm = armor?.data.data.attributes.coverage?.value.includes('neck') && !!armor?.data.data.attributes.material?.value.includes('plate');
               if (!attachedHelm && (2 * Math.random() > 1)) {
-                dmgEffect = ` and knocks ${armor.name} off ${targetActor.name}'s head` + dmgEffect;
+                dmgEffect = ` and knocks ${armor.name} off ${targetName}'s head` + dmgEffect;
                 return;
               }
             }
@@ -764,13 +801,13 @@ export async function attack(attackers, targetToken, options) {
               const otherSide = side === 'right' ? 'left' : 'right;'
               const heldItem = targetActor.items.find(i => i.data.data[`held_${side}`] && !i.data.data[`held_${otherSide}`]);
               if (heldItem && (2 * Math.random() > 1)) {
-                dmgEffect = ` and knocks ${heldItem.name} from ${targetActor.name}'s grip` + dmgEffect;
+                dmgEffect = ` and knocks ${heldItem.name} from ${targetName}'s grip` + dmgEffect;
               }
               return;
             }
             if ( isShield && Util.stringMatch(armor.data.data.shield_style, 'fluid') ) {
               if (2 * Math.random() > 1) {
-                dmgEffect = ` and knocks ${armor.name} from ${targetActor.name}'s grip` + dmgEffect;
+                dmgEffect = ` and knocks ${armor.name} from ${targetName}'s grip` + dmgEffect;
                 appliedArmors.shift();
               }
               return;
@@ -824,8 +861,8 @@ export async function attack(attackers, targetToken, options) {
   
         resultText += hitDesc;
   
-        // apply armor damage updates TODO doo these at the end of attack function, collect all itemUpdates for each actor together in array
-        // if (armorUpdates.length) await targetActor.updateEmbeddedDocuments("Item", armorUpdates);
+        // apply target armor damage updates
+        targetItemUpdates.push(...armorUpdates);
   
       // handle misses
       } else {
@@ -843,7 +880,7 @@ export async function attack(attackers, targetToken, options) {
         }
         const targetDexMod = (targetDead || targetHelpless || targetIncapacitated || isShooting) ? 0
           : Math.max(Math.min(+targetRollData.dex_mod, +targetRollData.ac.max_dex_mod || 0), 0);
-        const parryDesc = ` but ${targetActor.name} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
+        const parryDesc = ` but ${targetName} parries${parryItem ? ` with ${parryItem.name}` : ''}`;
         const parryHeightPenalty = Util.stringMatch(parryItemHeight, endHeight) ? 0
           : Util.stringMatch(parryItemHeight, 'mid') || Util.stringMatch(endHeight, 'mid') ? 2
           : 4;
@@ -855,12 +892,12 @@ export async function attack(attackers, targetToken, options) {
           // check for parry item breakage
           if (parryItem && parryItem.data.data.attributes.fragile?.value && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
             missDesc += ` and ${parryItem.name} breaks!`;
+            reduceQty(parryItem, targetItemUpdates);
           } else {
             // check for disarm if power
             if (Util.stringMatch(parryItem.data.data.atk_style, 'power')) {
-              const parryItemImp = Number(parryItem?.data.data.attributes.impact?.value) || 0;
-              if (await Util.rollDice('d6') + parryItemImp > await Util.rollDice('d6') + weapImp) {
-                missDesc += ` and knocks ${weaponItem.name} from ${attackingActor.name}'s grip`;
+              if (await Util.rollDice('d6') + targetParryBonus > await Util.rollDice('d6') + weapImp) {
+                missDesc += ` and knocks ${weapName} from ${attackerName}'s grip`;
               }
             }
             missDesc += ' and can riposte!';
@@ -873,7 +910,7 @@ export async function attack(attackers, targetToken, options) {
             : atkForm === 'thrust' ? 'sidesteps'
             : atkForm === 'swing' ? 'jumps back'
             : 'dodges';
-          missDesc = ` but ${targetActor.name} ${dodgeVerb}`;
+          missDesc = ` but ${targetName} ${dodgeVerb}`;
           // dodging defender has a chance to counter equal to follow attack chance
           if ( targetHasReach && await Util.rollDice('d100') <= followAttackChance * -1 ) {
             missDesc += ` and can counter!`;
@@ -883,7 +920,8 @@ export async function attack(attackers, targetToken, options) {
           missDesc = parryDesc;
           // check for weapon item breakage
           if (parryItem && fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
-            missDesc += ` and ${weapon.name} breaks!`;
+            missDesc += ` and ${weapName} breaks!`;
+            reduceQty(weaponItem, attackerItemUpdates);
           }
         } else {
           const hide = targetActor.data.data.attributes.hide?.value;
@@ -898,7 +936,8 @@ export async function attack(attackers, targetToken, options) {
            ' but misses'}`;
           // check for weapon item breakage
           if ( (isPlate || isShield) && fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
-            missDesc += ` and ${weapon.name} breaks!`; // TODO reduce qty -- create repair item macro?
+            missDesc += ` and ${weapName} breaks!`;
+            reduceQty(weaponItem, attackerItemUpdates)
           }
         }
   
@@ -918,11 +957,11 @@ export async function attack(attackers, targetToken, options) {
             `stumbles, leaving them open to attack`,
           ];
           unwieldy && fumbles.push(`hits themselves instead!`);
-          heldItems.length && fumbles.push(`drops ${selectRandom(heldItems)?.name}`)
-          Util.stringMatch(atkType,'melee') && adjTargets.length && fumbles.push(`strikes ${selectRandom(adjTargets)?.name} instead!`);
+          heldItems.length && fumbles.push(`drops ${selectRandom(heldItems)?.name}`);
+          meleeAtk && adjTargets.length && fumbles.push(`strikes ${selectRandom(adjTargets)?.name} instead!`);
   
           const fumble = selectRandom(fumbles);
-          const fumbleText = ` and${missDesc.includes('misses entirely') ? '' : ` ${attackingActor.name}`} ${fumble}`;
+          const fumbleText = ` and${missDesc.includes('misses entirely') ? '' : ` ${attackerName}`} ${fumble}`;
           missDesc = Util.replacePunc(missDesc) + fumbleText;
           while (weapons.length) weapons.shift();
         }
@@ -984,15 +1023,14 @@ export async function attack(attackers, targetToken, options) {
       if (totalDmgResult < 2) {
         resultText = resultText.replace('hits', 'grazes');
       }
-  // use swing high/low tables, but only when prone or mounted?
-  // touch attack macro for grapples/hooks etc.
-  // handle bleed dmg like disease
-  // fix disease macros, collect list of GM macros
-  // add XP macro
-  // finalize death & dying mechanic
+  // TODO touch attack macro for grapples/hooks etc. or add hook to atk modes?
+  // TODO handle bleed dmg like disease
+  // TODO fix disease macros, collect list of GM macros
+  // TODO add XP macro
+  // TODO finalize death & dying mechanic
   // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced -- only reduce to half of base_ac, then it falls apart
       if (sumDmg > targetHp) {
-        let injuryText = injury.text.replace('them', targetActor?.name);
+        let injuryText = injury.text.replace('them', targetName);
         // replace cleaves with slices for curved swords
         if (isCurvedSword) {
           injuryText = injuryText.replace('cleaves','slices');
@@ -1027,23 +1065,17 @@ export async function attack(attackers, targetToken, options) {
       }
   
       if (dmgEffect) {
-        if (!dmgEffect.includes(targetActor?.name)) {
-          dmgEffect = dmgEffect.replace('their', `${targetActor?.name}'s`);
-        }
         resultText = Util.replacePunc(resultText) + dmgEffect;
       }
   
-      // remove bleed effects if target is dead
+      // remove major bleeding and knockout descs if target is dead
       if (targetHp <= targetMaxNegHP) {
-        resultText = resultText
-          .replace(minorBleedDesc,'')
-          .replace(majorBleedDesc,'')
-          .replace(Constant.internalBleedDesc(coverageArea),'')
-          .replace(Constant.knockoutDesc.replace('them', targetActor?.name),'');
+        resultText = resultText.replace(majorBleedDesc,'').replace(Constant.knockoutDesc,'');
       }
   
       // replace bleed description if weapon is stuck
       if (resultText.includes(Util.replacePunc(weaponStuckDesc))) {
+        attacker.followAttack = false;
         resultText = resultText.replace(minorBleedDesc,'').replace(majorBleedDesc,bloodWellDesc);
       }
     }
@@ -1052,20 +1084,20 @@ export async function attack(attackers, targetToken, options) {
   const rangeText = missileAtk && range ? ` ${range}'` : '';
   const pluralize = name => /h$/.test(name) ? `${Util.lowerCaseFirst(name)}es` : `${Util.lowerCaseFirst(name)}s`;
 
-  chatMsgData.content += `${attackingActor.name}` + prepText + aimText;
+  chatMsgData.content += `${attackerName}` + prepText + aimText;
   chatMsgData.content += Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
     ` ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
   chatMsgData.content += `${resultText}`;
   const lastChar = resultText.charAt(resultText.length - 1);
   chatMsgData.content += lastChar === '!' || lastChar === '.' ? '<br>' : `.<br>`;
   
-  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` from ${atkHeight}` : ''},`;
-  chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackingActor.name} ${pluralize(weapName)}${targetActor ? ` ${targetActor.name}` : ''}<br>` :
-    `${attackingActor.name} ${atkForm}s ${weapName}${targetActor ? ` at ${targetActor.name}` : ''}.<br>`;
+  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle && atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` from ${atkHeight}` : ''},`;
+  chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackerName} ${pluralize(weapName)}${targetActor ? ` ${targetName}` : ''}<br>` :
+    `${attackerName} ${atkForm}s ${weapName}${targetActor ? ` at ${targetName}` : ''}.<br>`;
 
   weapons.shift();
 
-  return attack(attackers, targetToken, options);
+  return attack(attackers, target, options);
 }
 
 function formatMods(modsArr) {
@@ -1115,7 +1147,7 @@ function armorAbsorption(appliedArmors, armorDented, dmgType, armorUpdates) {
     // only damage armor if not dented
     if (!armorDented) {
       const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
-      if (baseAc < 1) { // TODO use condition instead of base AC
+      if (baseAc < 2) { // TODO use condition instead of base AC
         verb = isShield ? 'splinters' : 'tears apart';
         const qty = +armor.data.data.quantity || 0;
         qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
@@ -1136,3 +1168,4 @@ function measureRange(token1, token2) {
   // return range rounded to 5'
   return Math.floor(+canvasDistance / Constant.SQUARE_SIZE) * Constant.SQUARE_SIZE;
 }
+// TODO do one chat msg for each weapon attack
