@@ -108,8 +108,10 @@ export function attackOptionsDialog(options, weapon, preparations, aimPenalties,
   // preparations: None, Feint (proficient), Hook Shield (axe or hook, specialist), Bind (specialist),
   // moulinet (fluid and swing, specialist), the masterstrikes (obviate feint/bind vs. certain stances, mastery)
 
-  const stanceDesc = '';// `${weapon.data.data.atk_style} ${weapon.data.data.atk_height}`;
-  const label = `${weapon.name}${stanceDesc ? ` — ${stanceDesc} guard` : ''}`;
+  const atkForm = Constant.ATK_MODES[weapon.data.data.atk_mode]?.ATK_FORM;
+  const atkHeight = weapon.data.data.atk_height;
+  const stanceDesc = ` ${atkForm && atkHeight ? `${atkForm} from ${atkHeight}` : ''}`;
+  const label = `${weapon.name}${stanceDesc}`;
 
   const getButton = (key, val, currVal) => `
     <button id="${val}" class="stance-button${currVal === val ? ' selected-button' : ''}" data-${key}="${val}">
@@ -119,34 +121,28 @@ export function attackOptionsDialog(options, weapon, preparations, aimPenalties,
 
   const prepButtons = preparations.map(p => getButton('prep', p, preparations[0])).join('');
 
-  const atkOptions = `
+  const atkOptions = preparations.length > 1 ? `
     <div class="flexrow prep-buttons">
       <label class="flex1 stance-label">Preparation</label>
       <div class="flexrow flex4">${prepButtons}</div>
     </div>
-  `;
+  ` : '';
+
+  const aimButtons = Object.entries(aimPenalties).map(p => {
+    const area = p[0];
+    const penalty = p[1];
+    return `
+      <button id="${area}" class="choice-button" data-area="${area}" data-penalty="${penalty}">
+        ${Util.upperCaseFirst(area)} (${penalty})
+      </button>
+    `;
+  }).join('');
 
   // TODO do this programmatically, and fix sections on armor tab
-  const aimButtons = `
-    <div style="padding-top:5px;">
-      <label class="stance-label">Aim</label>
-    </div>
-    <div>
-      <div class="flexrow aim-buttons">
-        ${Object.keys(aimPenalties).includes('head') ? `<button class="choice-button" value="head">Head (${aimPenalties.head})</button>` : ''}
-      </div>
-      <div class="flexrow aim-buttons">
-        ${Object.keys(aimPenalties).includes('shoulders') ? `<button class="choice-button" value="right_arm">R. Arm (${aimPenalties.shoulders})</button>` : ''}
-        ${Object.keys(aimPenalties).includes('pelvis') ? `<button class="choice-button" value="upper_torso">U. Torso (${aimPenalties.pelvis})</button>` : ''}
-        ${Object.keys(aimPenalties).includes('left_arm') ? `<button class="choice-button" value="left_arm">L. Arm (${aimPenalties.left_arm})</button>` : ''}
-      </div>
-      <div class="flexrow aim-buttons">
-        ${Object.keys(aimPenalties).includes('lower_torso') ? `<button class="choice-button" value="lower_torso">L. Torso (${aimPenalties.lower_torso})</button>` : ''}
-      </div>
-      <div class="flexrow aim-buttons">
-        ${Object.keys(aimPenalties).includes('right_leg') ? `<button class="choice-button" value="right_leg">R. Leg (${aimPenalties.right_leg})</button>` : ''}
-        ${Object.keys(aimPenalties).includes('left_leg') ? `<button class="choice-button" value="left_leg">L. Leg (${aimPenalties.left_leg})</button>` : ''}
-      </div>
+  const aimOptions = `
+    <div class="flexrow aim-buttons">
+      <label class="flex1 aim-label">Aim</label>
+      <div class="flexrow flex4">${aimButtons}</div>
     </div>
   `;
 
@@ -155,7 +151,7 @@ export function attackOptionsDialog(options, weapon, preparations, aimPenalties,
       <label>${label}</label>
       <div style="padding-left:5px;">
         ${atkOptions}
-        ${aimButtons}
+        ${aimOptions}
       </div>
     </div>
   `;
@@ -195,11 +191,13 @@ export function attackOptionsDialog(options, weapon, preparations, aimPenalties,
       const aimButtons = html.find(`.choice-button`);
       aimButtons.click(function() {
         const $button = $(this);
-        const aimValue = $button.val();
+        const aimArea = $button.data('area');
+        const aimPenalty = $button.data('penalty');
         const $selectedPrepButton = $(html.find(`.prep-buttons .selected-button`));
         const prepVal = $selectedPrepButton.data('prep');
         options.altDialogPrep = prepVal;
-        options.altDialogAim = aimValue;
+        options.altDialogAim = aimArea;
+        options.altDialogAimPenalty = aimPenalty;
         options.shownAltDialog= true;
         callback();
         return closeDialog();
@@ -236,7 +234,7 @@ export function setStanceDialog(options={}) { // TODO refactor into separate wra
     return ui.notifications.error("Invalid weapon size specified");
   }
 
-  const heights = ['high','mid','low'];
+  const heights = Constant.ATK_HEIGHTS;
   
   const getButton = (item, type, key, val, currVal) => `
     <button id="${item._id}-${type}-${val}" class="stance-button${currVal === val ? ' selected-button' : ''}" data-${type}-${key}="${val}">

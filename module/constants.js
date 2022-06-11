@@ -652,8 +652,8 @@ const ranChestBone = () => ranChoice(['a rib','the sternum']);
 const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
 const ranChestOrgan = () => ranChoice(['a lung','the heart']);
 const ranGutBone = () => ranChoice(['a rib','the back']);
-const lowBrainBleed = organ => (Math.random() < 0.25) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
-const highBrainBleed = organ => (Math.random() < 0.75) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
+const lowBrainBleed = (organ=null) => (Math.random() < 0.25) ? ` and blood streams from their ${organ || ranOrifice()}` : '';
+const highBrainBleed = (organ=null) => (Math.random() < 0.75) ? ` and blood streams from their ${organ || ranOrifice()}` : '';
 const highMinBleed = () => (Math.random() < 0.75) ? minorBleedDesc : '';
 const lowMinBleed = () => (Math.random() < 0.25) ? minorBleedDesc : '';
 const highWeapStuck = () => (Math.random() < 0.75) ? weaponStuckDesc : '';
@@ -682,7 +682,7 @@ export const HIT_LOC_WEIGHT_INDEXES = {
 };
 export const HIT_LOCATIONS = {
   foot: {
-    weights: [2,2,0,0,8,6,10,4],
+    weights: [2,2,0,0,6,6,10,4],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 1,
@@ -719,7 +719,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + lowMinBleed(),
         },
         gruesome: {
-          text: ' and splits the ankle apart tearing a ligament',
+          text: ' and impales the ankle tearing a ligament',
           dmgEffect: highWeapStuck() + highMinBleed(),
         },
       },
@@ -746,7 +746,7 @@ export const HIT_LOCATIONS = {
     },
   },
   shin: {
-    weights: [6,4,0,0,14,10,20,10],
+    weights: [6,4,0,0,12,8,20,10],
     crit_chance_multi: 2,
     bilateral: true,
     max_impale: 2,
@@ -808,7 +808,7 @@ export const HIT_LOCATIONS = {
     },
   },
   knee: {
-    weights: [8,4,0,0,16,10,8,4],
+    weights: [8,4,0,0,14,8,8,4],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 1,
@@ -838,7 +838,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint apart tearing a ligament',
+          text: ' and impales the joint tearing a ligament',
           dmgEffect: lowWeapStuck() + lowMajBleed(),
         },
         gruesome: {
@@ -856,7 +856,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint open tearing a ligament',
+          text: ' and splits the joint tearing a ligament',
           dmgEffect: highMinBleed(),
         },
         gruesome: {
@@ -868,7 +868,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,10,4,4,16,20,14,14],
+    weights: [10,10,4,4,14,18,14,14],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 3,
@@ -1037,7 +1037,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' splits the inner thigh open severing a tendon',
+          text: ' splits the inner thigh severing a tendon',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
@@ -1216,8 +1216,8 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         gruesome: {
-          text: ' and splits the wrist apart tearing a ligament',
-          dmgEffect: highMinBleed(),
+          text: ' and impales the wrist tearing a ligament',
+          dmgEffect: lowWeapStuck() + highMinBleed(),
         },
       },
       slashing: {
@@ -1226,7 +1226,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and splits the wrist open tearing a ligament',
+          text: ' and splits the wrist tearing a ligament',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1334,7 +1334,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint apart tearing a ligament',
+          text: ' and impales the joint tearing a ligament',
           dmgEffect: lowWeapStuck() + lowMajBleed(),
         },
         gruesome: {
@@ -1352,7 +1352,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint open tearing a ligament',
+          text: ' and splits the joint tearing a ligament',
           dmgEffect: highMinBleed(),
         },
         gruesome: {
@@ -1520,7 +1520,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint apart tearing a ligament',
+          text: ' and impales the joint tearing a ligament',
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
@@ -1550,7 +1550,7 @@ export const HIT_LOCATIONS = {
     },
   },
   neck: {
-    weights: [3,2,6,4,0,0,3,3],
+    weights: [3,2,6,4,2,1,3,3],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 1,
@@ -1614,7 +1614,7 @@ export const HIT_LOCATIONS = {
     },
   },
   jaw: {
-    weights: [3,2,6,3,1,1,2,2],
+    weights: [3,2,6,3,2,1,2,2],
     crit_chance_multi: 2,
     max_impale: 1,
     injury: {
@@ -1682,7 +1682,7 @@ export const HIT_LOCATIONS = {
     },
   },
   "face": {
-    weights: [1,2,2,3,0,0,2,1],
+    weights: [1,2,2,3,1,0,2,1],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 1,
@@ -1751,7 +1751,7 @@ export const HIT_LOCATIONS = {
     },
   },
   eye: {
-    weights: [2,2,4,4,0,0,2,2],
+    weights: [2,2,4,4,0,2,2,2],
     crit_chance_multi: 5,
     crit_dmg_multi: 2,
     max_impale: 1,
@@ -1821,7 +1821,7 @@ export const HIT_LOCATIONS = {
     },
   },
   skull: {
-    weights: [7,4,16,8,0,0,9,6],
+    weights: [7,4,16,8,4,3,9,6],
     crit_chance_multi: 2,
     crit_dmg_multi: 3,
     max_impale: 2,
@@ -1931,7 +1931,7 @@ export const WEAPONS = {
         held_right: true,
         atk_style: 'stable',
         atk_height: 'high',
-        atk_timing: 'immediate',
+        atk_init: 'immediate',
         atk_mode: 'swi(b)',
         attributes: {
           dmg: { value: '1d2/1d2' },
@@ -1942,13 +1942,15 @@ export const WEAPONS = {
           speed: { value: 5},
           parry: { value: 0},
           impact: { value: 1},
-          weap_category: { value: 'boxing' },
+          weap_prof: { value: 'boxing' },
         },
         quantity: 2
       }
     }
   }
 }
+
+export const ATK_HEIGHTS =['high','mid','low'];
 
 export const AMMO_TYPES = [
   "bodkin arrow",
@@ -1957,22 +1959,32 @@ export const AMMO_TYPES = [
   "quarrel",
 ];
 
+// export const AIM_AREAS = {
+//   head: ['skull','left eye','right eye','face','jaw','neck'],
+//   left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
+//   upper_torso: ['left armpit','chest','right armpit'],
+//   right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
+//   lower_torso: ['gut','groin',],
+//   left_leg: ['left hip','left thigh','left knee','left shin','left foot'],
+//   right_leg: ['right hip','right thigh','right knee','right shin','right foot'],
+// };
+
 export const AIM_AREAS = {
   head: ['skull','left eye','right eye','face','jaw','neck'],
-  left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
-  upper_torso: ['left armpit','chest','right armpit'],
-  right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
-  lower_torso: ['gut','groin',],
-  left_leg: ['left hip','left thigh','left knee','left shin','left foot'],
-  right_leg: ['right hip','right thigh','right knee','right shin','right foot'],
+  shoulders: ['left shoulder','left armpit','right shoulder','right armpit',],
+  arms: ['left upper arm','left elbow','left forearm','left hand','right upper arm','right elbow','right forearm','right hand'],
+  torso: ['chest','gut'],
+  pelvis: ['left hip','groin','right hip'],
+  legs: ['left thigh','left knee','left shin','left foot','right thigh','right knee','right shin','right foot'],
 };
 
 export const AIM_AREAS_UNILATERAL = {
   head: ['skull','eye','face','jaw','neck'],
-  arm: ['shoulder','upper arm','elbow','forearm','hand'],
-  upper_torso: ['armpit','chest','armpit'],
-  lower_torso: ['gut','groin',],
-  leg: ['hip','thigh','knee','shin','foot'],
+  shoulders: ['shoulder','armpit'],
+  arms: ['upper arm','elbow','forearm','hand',],
+  torso: ['chest','gut'],
+  pelvis: ['hip','groin'],
+  legs: ['thigh','knee','shin','foot'],
 };
 
 export const SHIELD_WEIGHT_MULTI = {
@@ -1985,7 +1997,7 @@ export const HIT_LOC_ARRS = {
   SWING: [],
   THRUST: [],
 };
-(async function() {
+(() => {
   const fillLocArr = function (loc, weight, bi) {
     const arr = [];
     for (let i = 0; i < weight; i++) {
@@ -2012,6 +2024,13 @@ export const HIT_LOC_ARRS = {
 
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();
+
+
+export const AIM_AREA_PENALTIES = Object.fromEntries(Object.entries(HIT_LOC_ARRS).map( ([k,v]) => {
+  const getPenalty = chance => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(1.8)));
+  return [k, getPenalty(v.length)];
+}));
+
 
 export const SIZE_VALUES = {
   T: 0, // tiny
