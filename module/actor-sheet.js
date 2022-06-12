@@ -120,22 +120,33 @@ export class SimpleActorSheet extends ActorSheet {
   getFatigueData(data) {
     const fatigue = {};
     const tempDescs = [
-      [-Infinity, 'Extremely hot'],
-      [-4, 'Hot'],
-      [6, 'Warm'],
-      [16, 'Cool'],
-      [16, 'Cold'],
-      [26, 'Extremely cold'],
+      [36, 'Extremely hot'],
+      [26, 'Hot'],
+      [16, 'Warm'],
+      [6, 'Cool'],
+      [-4, 'Cold'],
     ];
 
     let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
     if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
 
-    fatigue.tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
+    // ambient temperature = 36 (ideal body temperature) - 10 (core body warmth) - required worn clo
+    const ambientTemp = 36 - 10 - reqClo;
+    let tempDesc = 'Extremely cold';
+    for (const threshold of tempDescs) {
+      if (ambientTemp > threshold[0]) {
+        tempDesc = threshold[1];
+        break;
+      }
+    };
+    // const tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
+    fatigue.tempDesc = `${ambientTemp}°C (${tempDesc})`;
 
-    const diffClo = data.data.clo - reqClo;
+    const wornClo = data.data.clo;
+    const diffClo = wornClo - reqClo;
     const isWarm = data.effects.some(e => e.label === 'Warm');
-    fatigue.exposureDesc = isWarm && diffClo < 10 ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureConditionString(diffClo));
+    const exposureDesc = isWarm && diffClo < 10 ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
+    fatigue.exposureDesc = `${wornClo} (${exposureDesc}) ${diffClo}`;
 
     const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
     const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
@@ -553,7 +564,7 @@ export class SimpleActorSheet extends ActorSheet {
         await this.actor.updateEmbeddedDocuments("Item", [itemUpdate]);
         return game.lostlands.Macro.quickSlashAttackMacro(item._id, {applyEffect: event.ctrlKey, showModDialog: event.shiftKey});
       } else {
-        const verb = item.data.data.attributes.weap_category?.value.includes('sword') && !isHeldOtherHand ? 'draws' : 'wields';
+        const verb = item.data.data.attributes.weap_prof?.value.includes('sword') && !isHeldOtherHand ? 'draws' : 'wields';
         Util.macroChatMessage(this.actor, { flavor: 'Hold Item', content: `${this.actor.name} ${verb} ${item.name}${(isHeldOtherHand || twoHanded) ? ' with both hands' : ''}.` });
       }
     }

@@ -68,7 +68,7 @@ import * as Constant from "./constants.js";
 //  Fatigued
 
 export const FATIGUE_DAMAGE_COMMAND = 'applyFatigue(actorId, type, execTime, newTime)';
-export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)';
+export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)'; // TODO move combat constants to combat.js
 
 export const REST_TYPES = {
   "Rough": null,
@@ -274,7 +274,7 @@ async function resetDamageAndWarn(char, time) {
     let resetExposure = false;
     if (type === 'exposure') {
       const diff = diffClo(char);
-      conditionString = getExposureConditionString(diff);
+      conditionString = getExposureCondition(diff).desc;
       typeString = diffClo < 0 ? 'Cold' : 'Heat';
       resetExposure = isWarm || conditionString === 'cool' || conditionString === 'warm';
     }
@@ -305,14 +305,36 @@ async function resetDamageAndWarn(char, time) {
   }
 }
 
-export function getExposureConditionString(diffClo) {
-  if (diffClo <= -20) return 'extremely cold';
-  if (diffClo <= -10) return 'cold';
-  if (diffClo < 0) return 'cool';
-  if (diffClo < 10) return 'warm';
-  if (diffClo < 20) return 'hot';
-  return 'extremely hot';
+export function getExposureCondition(diffClo) {
+  if (diffClo < -20) return {
+    desc: 'extremely cold',
+    dmgMulti: 2,
+  }
+  if (diffClo < -10) return {
+    desc: 'cold',
+    dmgMulti: 1,
+  }
+  if (diffClo < 0) return {
+    desc: 'cool',
+    dmgMulti: 0,
+  }
+  if (diffClo < 10) return {
+    desc: 'warm',
+    dmgMulti: 0,
+  }
+  if (diffClo < 20) return {
+    desc: 'hot',
+    dmgMulti: 1,
+  }
+  return {
+    desc: 'extremely hot',
+    dmgMulti: 2,
+  }
 }
+
+export const exposureConditions = {
+
+};
 
 async function syncDamageClocks(char, time, override=false) {
   const actorId = char._id;
