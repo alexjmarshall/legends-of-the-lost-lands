@@ -205,7 +205,7 @@ export class SimpleActor extends Actor {
           const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
           const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[unwornIndex]);
           wornWarmthVals.sort((a,b) => b - a);
-          const locWarmth = Math.round(wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0));
+          const locWarmth = wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2,index), 0);
           updateData.clo += locWarmth;
 
           // magic damage reduction
@@ -245,6 +245,8 @@ export class SimpleActor extends Actor {
             ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
           }
         }
+
+        updateData.clo = Math.round(updateData.clo);
 
         // round ac
         for (const v of Object.values(ac.total)) {
