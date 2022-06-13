@@ -265,10 +265,10 @@ export class SimpleActor extends Actor {
         ui.notifications.error(`Invalid weapon proficiency specified for ${this.name}`);
       }
 
-      // st
-      const stItems = wornOrHeldItems.filter(i => i.data.data.attributes.st_mod?.value);
-      const st_mod = stItems.reduce((a, b) => a + (+b.data.data.attributes.st_mod?.value || 0), 0) + (+attributes.st_mod?.value || 0);
-      updateData.st = (+attributes.base_st?.value - st_mod) || 0;
+      // save values
+      const svItems = wornOrHeldItems.filter(i => i.data.data.attributes.sv_mod?.value);
+      const sv_mod = svItems.reduce((a, b) => a + (+b.data.data.attributes.sv_mod?.value || 0), 0) + (+attributes.sv_mod?.value || 0);
+      updateData.sv = (+attributes.base_sv?.value - sv_mod) || 0;
 
     }
     
