@@ -119,67 +119,81 @@ export class SimpleActorSheet extends ActorSheet {
 
   getFatigueData(data) {
     const fatigue = {};
-    const tempDescs = [
-      [36, 'Extremely hot'],
-      [26, 'Hot'],
-      [16, 'Warm'],
-      [6, 'Cool'],
-      [-4, 'Cold'],
-    ];
+
+    const fahrenheitFromCelsius = c => Math.round(c * 9/5 + 32);
 
     let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
     if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
 
     // ambient temperature = 36 (ideal body temperature) - 10 (core body warmth) - required worn clo
-    const ambientTemp = 36 - 10 - reqClo;
-    let tempDesc = 'Extremely cold';
-    for (const threshold of tempDescs) {
-      if (ambientTemp > threshold[0]) {
-        tempDesc = threshold[1];
-        break;
-      }
-    };
+    const tempC = 36 - 10 - reqClo;
+    const tempF = fahrenheitFromCelsius(tempC);
     // const tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
-    fatigue.tempDesc = `${ambientTemp}°C (${tempDesc})`;
+    fatigue.tempDesc = `${tempC}°C / ${tempF}°F`;
 
     const wornClo = data.data.clo;
+    fatigue.wornClo = wornClo;
     const diffClo = wornClo - reqClo;
     const isWarm = data.effects.some(e => e.label === 'Warm');
-    const exposureDesc = isWarm && diffClo < 10 ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
-    fatigue.exposureDesc = `${wornClo} (${exposureDesc}) ${diffClo}`;
+    const exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
+    const exposureDamage = +data.flags?.lostlands?.exposure?.maxHpDamage || 0;
+    fatigue.exposureDesc = `${exposureDesc}${exposureDamage ? ` (${exposureDamage})` : ''}`;
 
-    const diseases = Object.keys(data.flags?.lostlands?.disease ?? {});
-    const symptoms = diseases.flatMap(d => Fatigue.DISEASES[d].symptoms);
+    const diseases = Object.entries(data.flags?.lostlands?.disease ?? {});
+    const diseaseDmg = diseases.reduce((sum, d) => sum + (Number(d[1]?.maxHpDamage) || 0), 0);
+    const symptoms = diseases.filter(d => d[1]?.confirmed).flatMap(d => Fatigue.DISEASES[d[0]].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
     fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
+    fatigue.diseaseDesc += diseaseDmg > 0 ? ` (${diseaseDmg})` : '';
 
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
-    fatigue.exhaustionDesc = exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
+    fatigue.exhaustionDesc = `${exhaustionStatus.desc}${exhaustionStatus.damage ? ` (${exhaustionStatus.damage})` : ''}`; //exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
 
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
-    fatigue.thirstDesc = thirstStatus === 2 ? 'Dehydrated' : thirstStatus === 1 ? 'Thirsty' : 'Fine';
+    fatigue.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;//thirstStatus === 2 ? 'Dehydrated' : thirstStatus === 1 ? 'Thirsty' : 'Fine';
 
     const hungerStatus = this.getFatigueStatus(data, 'hunger');
-    fatigue.hungerDesc = hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Fine';
+    fatigue.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;//hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Fine';
 
     return fatigue;
   }
 
   getFatigueStatus(data, type) {
-    const isResting = data.effects.some(e => e.label === 'Rest');
-    if (isResting) return 0;
+    type = type.toLowerCase();
     const flagData = data.flags?.lostlands?.[type] || {};
-    const damage = !!flagData.maxHpDamage;
-    if (damage) return 2;
+
+    const statusDescs = {
+      exhaustion: {
+        warn: 'Sleepy',
+        damaged: 'Exhausted'
+      },
+      thirst: {
+        warn: 'Thirsty',
+        damaged: 'Dehydrated'
+      },
+      hunger: {
+        warn: 'Hungry',
+        damaged: 'Starving'
+      },
+    };
+    const status = {
+      desc: '',
+      damage: 0,
+    };
+
+    const isResting = data.effects.some(e => e.label === 'Rest');
 
     const startTime = flagData.startTime;
     const warningInterval = Fatigue.CLOCKS[type].warningInterval;
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const time = Util.now();
     const warn = time >= startTime + warningIntervalInSeconds;
-    if (warn) return 1;
+    
+    const damage = +flagData.maxHpDamage || 0;
+    status.damage = damage;
 
-    return 0;
+    status.desc = isResting? 'Fine' : damage > 0 ? statusDescs[type].damaged : warn ? statusDescs[type].warn : 'Fine';
+    return status;
   }
 
   sortEquipmentByType(items) {    
