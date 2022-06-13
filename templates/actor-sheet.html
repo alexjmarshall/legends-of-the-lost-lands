@@ -52,8 +52,8 @@
                 </div>
                 {{/if}}
                 <div class="property">
-                    <label class="property-label">ST</label>
-                    <span class="property-field">{{systemData.st}}</span>
+                    <label class="property-label">SV</label>
+                    <span class="property-field">{{systemData.sv}}</span>
                 </div>
                 <div class="property">
                     <label class="property-label">MV</label>
@@ -95,15 +95,15 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span></span>
-                 <span></span> 
+                <span>Max Dex Mod: {{systemData.ac.max_dex_mod}}</span>
+                <span>Worn Clo: {{fatigue.wornClo}}</span> 
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
             </header>
             {{#each equipment as |type key|}}
             <header class="items-header flexrow">
-                <span>{{#ifeq key "wearable"}}Max Dex Mod: {{../systemData.ac.max_dex_mod}}{{/ifeq}}</span>
+                <span></span>
                 <span style="text-align: center;">
                     {{#ifeq key "holdable"}}Held{{else}}
                     {{#ifeq key "wearable"}}Worn{{else}}
@@ -330,28 +330,28 @@
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
             {{#if isCharacter}}
             <div class="flexrow">
-                <label class="fatigue-label">Environment Temp.</label>
+                <label class="fatigue-label">Ambient Temp.</label>
                 <span class="fatigue-value">{{fatigue.tempDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Personal Temp.</label>
+                <label class="fatigue-label">Exposure</label>
                 <span class="fatigue-value">{{fatigue.exposureDesc}}</span>
-            </div>
-            <div class="flexrow">
-                <label class="fatigue-label">Disease</label>
-                <span class="fatigue-value">{{fatigue.diseaseDesc}}</span>
-            </div>
-            <div class="flexrow">
-                <label class="fatigue-label">Exhaustion</label>
-                <span class="fatigue-value">{{fatigue.exhaustionDesc}}</span>
             </div>
             <div class="flexrow">
                 <label class="fatigue-label">Thirst</label>
                 <span class="fatigue-value">{{fatigue.thirstDesc}}</span>
             </div>
             <div class="flexrow">
+                <label class="fatigue-label">Exhaustion</label>
+                <span class="fatigue-value">{{fatigue.exhaustionDesc}}</span>
+            </div>
+            <div class="flexrow">
                 <label class="fatigue-label">Hunger</label>
                 <span class="fatigue-value">{{fatigue.hungerDesc}}</span>
+            </div>
+            <div class="flexrow">
+                <label class="fatigue-label">Disease</label>
+                <span class="fatigue-value">{{fatigue.diseaseDesc}}</span>
             </div>
             {{/if}}
             <div class="flexrow">
