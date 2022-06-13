@@ -102,15 +102,34 @@ export function altDialog(options, title, buttons) {
   }
 }
 
+export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
+  return new Dialog({
+    title: "Confirm Disease",
+    content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
+    buttons: {
+     one: {
+      icon: '<i class="fas fa-check"></i>',
+      label: "Yes",
+      callback: yesCallback
+     },
+     two: {
+      icon: '<i class="fas fa-times"></i>',
+      label: "No",
+      callback: noCallback
+     }
+    },
+  }).render(true);
+}
 
 export function attackOptionsDialog(options, weapon, preparations, aimPenalties, callback) {
   // buttons - 
   // preparations: None, Feint (proficient), Hook Shield (axe or hook, specialist), Bind (specialist),
   // moulinet (fluid and swing, specialist), the masterstrikes (obviate feint/bind vs. certain stances, mastery)
 
+  const atkStyle = weapon.data.data.atk_style;
   const atkForm = Constant.ATK_MODES[weapon.data.data.atk_mode]?.ATK_FORM;
   const atkHeight = weapon.data.data.atk_height;
-  const stanceDesc = ` ${atkForm && atkHeight ? `${atkForm} from ${atkHeight}` : ''}`;
+  const stanceDesc = ` ${atkStyle && atkForm && atkHeight ? `(${atkStyle} ${atkForm} ${atkHeight})` : ''}`;
   const label = `${weapon.name}${stanceDesc}`;
 
   const getButton = (key, val, currVal) => `
