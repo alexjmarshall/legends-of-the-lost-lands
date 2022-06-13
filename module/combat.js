@@ -75,8 +75,7 @@ export async function attack(attackers, target, options) {
         const energyDrainDmg = attack.energyDrainDamage;
         if (energyDrainDmg) {
           const maxHp = +targetToken?.actor.data.data.hp?.max;
-          const dmg = Math.min(energyDrainDmg, maxHp);
-          Object.assign(update, {"data.hp.max": maxHp - dmg});
+          Object.assign(update, {"data.hp.max": maxHp - energyDrainDmg});
         }
         
         if (hpUpdate < targetHp) Object.assign(targetUpdate, update);
@@ -92,7 +91,7 @@ export async function attack(attackers, target, options) {
     const totalEnergyDrainDmg = +attacker.totalEnergyDrainDmg;
     if (totalEnergyDrainDmg) {
       const storedDamage = targetToken.actor.getFlag("lostlands", "energyDrainDamage") || 0;
-      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + dmg);
+      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
     }
 
     // update attacking actor
@@ -140,7 +139,7 @@ export async function attack(attackers, target, options) {
     weapons.shift();
     return attack(attackers, target, options); 
   }
-  const weapCategory = weapAttrs.weap_category?.value || '';
+  const weapCategory = weapAttrs.weap_prof?.value || '';
   const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
@@ -208,16 +207,19 @@ export async function attack(attackers, target, options) {
   const atkHeight = weaponItem.data.data.atk_height;
   const atkStyle = weaponItem.data.data.atk_style;
   const atkTime = weaponItem.data.data.atk_init;
+  let atkTimeText = '';
   const mainhand = weapon.mainhand && options.twoWeaponFighting !== false;
   const offhand = weapon.offhand && options.twoWeaponFighting !== false;
 
   // reset weapons in non-immediate time if main hand (offhand must be reset manually)
   if (Util.stringMatch(atkTime,'riposte') || Util.stringMatch(atkTime,'counter')) {
+    atkTimeText = ` ${atkTime}s and`;
     if (offhand) {
       weapons.shift();
       return attack(attackers, target, options);
     }
     // reset init of mainhand weapon
+    // weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.atk_init': 'immediate'});
   }
   
   // unload/reload loadable item
@@ -253,9 +255,14 @@ export async function attack(attackers, target, options) {
   let atkType = Constant.ATK_MODES[atkMode]?.ATK_TYPE || 'melee';
   let dmgType = Constant.DMG_TYPES.includes(weapAttrs.dmg_type?.value) ? weapAttrs.dmg_type?.value : Constant.ATK_MODES[atkMode]?.DMG_TYPE || 'blunt';
   let atkForm = Constant.ATK_MODES[atkMode]?.ATK_FORM || 'attack';
+  
   let aimArea = options.altDialogAim || '';
+  let aimPenalty = +options.altDialogAimPenalty || 0;
   let atkPrep = options.altDialogPrep || '';
   let isFeinting = Util.stringMatch(atkPrep,'feint');
+  let prepText = isFeinting ? ` feints ${atkHeight} then` : '';
+  let aimText = aimArea ? ` aims at ${targetName ? `${targetName}'s` : `the`} ${aimArea} and` : '';
+
   let hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
   if (atkHeight === 'high' || atkHeight === 'low') {
     hitLocTableName += `_${atkHeight.toUpperCase()}`;
@@ -263,10 +270,6 @@ export async function attack(attackers, target, options) {
   if (aimArea) {
     hitLocTableName += `_${aimArea.toUpperCase()}`;
   }
-  let aimPenalty = +Constant.AIM_AREA_PENALTIES[hitLocTableName] || 0;
-  const formatAimArea = area => area.replace('_',' ');
-  let prepText = Util.stringMatch(atkPrep,'feint') ? ` feints ${atkHeight} then` : '';
-  let aimText = aimArea ? ` aims at ${targetName ? `${targetName}'s` : `the`} ${formatAimArea(aimArea)} and` : '';
 
   const immuneFumbles = !!attackerRollData.immune_fumbles;
   const bab = attackerRollData.bab || 0;
@@ -281,8 +284,15 @@ export async function attack(attackers, target, options) {
   const attackerAttrDmgMod = attackerRollData.dmg_mod || 0;
   const attackerAtkMod = attacker.atkMod || 0;
   const attackerDmgMod = attacker.dmgMod || 0;
-  const weapProfs = Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs : 
-    Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase());
+
+  const allowedWeapProfs = Util.stringMatch(attackerRollData.allowed_weap_profs, 'all') ? Constant.WEAPON_CATEGORIES
+    : Array.isArray(attackerRollData.allowed_weap_profs) ? attackerRollData.allowed_weap_profs
+    : Util.getArrFromCSL(attackerRollData.allowed_weap_profs || '').map(p => p.toLowerCase());
+
+  const weapProfs = (Array.isArray(attackerRollData.weap_profs) ? attackerRollData.weap_profs
+    : Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase()))
+    .filter(p => allowedWeapProfs.includes(p));
+
   const isProficient = weapProfs.some(a => Util.stringMatch(a,weapCategory));
   let stanceAtkMod = 0;
   let stanceDmgMod = 0;
@@ -299,7 +309,7 @@ export async function attack(attackers, target, options) {
       if (nonRemovedLocs.length) validAreas.push(k);
     }
     
-    const aimPenalties = Object.fromEntries(validAreas.map(a => {
+    const aimPenalties = Object.fromEntries(validAreas.map(a => { // TODO only show aim penalties for Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid')
       let hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
       if (atkHeight === 'high' || atkHeight === 'low') {
         hitLocTableName += `_${atkHeight.toUpperCase()}`;
@@ -554,15 +564,23 @@ export async function attack(attackers, target, options) {
       t.actor._id !== attackingActor._id &&
       measureRange(token, t) < Constant.SQUARE_SIZE * 2);
   }
+
+  let atkText = Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
+    ` ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
   
   await (async () => {
     if (!isNaN(targetAc)) {
+
       // handle counter
-      if ( isCountering && (isFeinting || await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
-        resultText = `...but ${targetName} counters!`;
+      if ( isCountering && targetWeapSpeedItem && (isFeinting || await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
+        resultText = `...but ${targetName} counters with ${targetWeapSpeedItem.name}!`;
+        if (isFeinting) {
+          prepText = prepText.replace(/\s+then\s*$/, '');
+          aimText = '';
+          atkText = '';
+        } 
         attacker.followAttack = false;
         while (weapons.length) weapons.shift();
-        // TODO reset defender atk timing
         return;
       }
   
@@ -578,7 +596,7 @@ export async function attack(attackers, target, options) {
       let parryItem = targetActor.items.get(parry.parry_item_id);
       let parryItemHeight = parryItem?.data.data.atk_height;
       let targetParryBonus = parry.parry_bonus || 0;
-      const isRiposteParrying = parryItem && Util.stringMatch(targetTiming, 'riposte');
+      let isRiposteParrying = parryItem && Util.stringMatch(targetTiming, 'riposte');
       let isFluidParrying = false;
   
       // roll for hit location if character or humanoid
@@ -598,6 +616,13 @@ export async function attack(attackers, target, options) {
         endHeight = endHeight || atkHeight;
         if (!Util.stringMatch(endHeight, atkHeight)) {
           weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.atk_height': endHeight});
+        }
+
+        // apply feint effect to parrying target
+        if (isFeinting && isRiposteParrying) {
+          targetAc -= targetParryBonus;
+          targetParryBonus = 0;
+          isRiposteParrying = false;
         }
   
         // fluid parrying
@@ -740,7 +765,7 @@ export async function attack(attackers, target, options) {
                 : (Util.stringMatch(dmgType, 'piercing') || isShooting) ? 'impales'
                 : 'cuts';
   
-              if (await Util.rollDice('d100') > impaleChance) { // use different stat for continuing into body?
+              if (await Util.rollDice('d100') > impaleChance) { // TODO use bleed stat here for penetrating body for more damage?
                 break;
               }
   
@@ -776,7 +801,7 @@ export async function attack(attackers, target, options) {
           weapDmgResult = maxWeapDmg;
           const critDmgMulti = (Constant.HIT_LOCATIONS[coverageArea].crit_dmg_multi ?? 1) - 1;
           critDmg += (weapDmgResult - dr + attrDmgMod + stanceDmgMod) * critDmgMulti;
-          hitDesc += ` a vulnerable point`;
+          hitDesc += ` a vulnerable spot`;
         }
   
         // knockdowns
@@ -1069,7 +1094,7 @@ export async function attack(attackers, target, options) {
       }
   
       // remove major bleeding and knockout descs if target is dead
-      if (targetHp <= targetMaxNegHP) {
+      if (Util.actorIsDead(targetActor)) {
         resultText = resultText.replace(majorBleedDesc,'').replace(Constant.knockoutDesc,'');
       }
   
@@ -1084,14 +1109,14 @@ export async function attack(attackers, target, options) {
   const rangeText = missileAtk && range ? ` ${range}'` : '';
   const pluralize = name => /h$/.test(name) ? `${Util.lowerCaseFirst(name)}es` : `${Util.lowerCaseFirst(name)}s`;
 
-  chatMsgData.content += `${attackerName}` + prepText + aimText;
-  chatMsgData.content += Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
-    ` ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
-  chatMsgData.content += `${resultText}`;
+  chatMsgData.content += `${attackerName}` + prepText + aimText + atkTimeText + atkText + resultText;
+  // chatMsgData.content += Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
+  //   ` ${atkForm}s${isBow && ammoName ? ` a ${ammoName} from` : ''} ${weapName}`;
+  // chatMsgData.content += `${resultText}`;
   const lastChar = resultText.charAt(resultText.length - 1);
-  chatMsgData.content += lastChar === '!' || lastChar === '.' ? '<br>' : `.<br>`;
+  chatMsgData.content += (lastChar === '!' || lastChar === '.') ? '<br>' : `.<br>`;
   
-  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle && atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` from ${atkHeight}` : ''},`;
+  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle && atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` ${atkHeight}${endHeight && endHeight !== atkHeight ? `-to-${endHeight}` : ''}` : ''},`;
   chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackerName} ${pluralize(weapName)}${targetActor ? ` ${targetName}` : ''}<br>` :
     `${attackerName} ${atkForm}s ${weapName}${targetActor ? ` at ${targetName}` : ''}.<br>`;
 
