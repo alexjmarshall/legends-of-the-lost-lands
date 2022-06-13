@@ -91,7 +91,7 @@ export function diffClo(char) {
 }
 export const CLOCKS = {
   "hunger": {
-    warningInterval: { hour: 12 },
+    warningInterval: { day: 1 },
     warningSound: 'stomach_rumble',
     damageInterval: { day: 3 },
     damageDice: 'd3',
@@ -106,9 +106,9 @@ export const CLOCKS = {
     warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 1 === 0
   },
   "exhaustion": {
-    warningInterval: { hour: 12 },
+    warningInterval: { hour: 18 },
     warningSound: 'sleepy',
-    damageInterval: { day: 1 },
+    damageInterval: { day: 2 },
     damageDice: 'd6',
     condition: "Sleepy",
     warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 2 === 0
@@ -141,7 +141,7 @@ export const DISEASES = {
     damageInterval: { day: 1 },
   },
   "gangrene": {
-    symptoms: ["numbness", "black tissue"],
+    symptoms: ["numbness", "black tissue", "coolness"],
     virulence: "d6",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
@@ -385,34 +385,36 @@ export async function deleteDisease(actor, disease) {
   const intervalId = diseases[disease].intervalId;
   await TimeQ.cancel(intervalId);
 
-  const damage = diseases[disease].maxHpDamage;
+  const damage = +diseases[disease].maxHpDamage || 0;
   damage && await restoreMaxHpDamage(actor, damage);
 
-  delete diseases[disease];
+  const newDiseases = foundry.utils.deepClone(diseases);
+  delete newDiseases[disease];
 
-  if (!Object.keys(diseases).length) {
-    // await Util.removeCondition("Diseased", actor);
-    await actor.unsetFlag("lostlands", "disease");
-  }
-
-  await actor.setFlag("lostlands", "disease", diseases);
+  await actor.unsetFlag("lostlands", "disease");
+  if (Object.keys(newDiseases).length) {
+    await actor.setFlag("lostlands", "disease", newDiseases);
+  } 
 }
 
 export async function deleteAllDiseases(actor) {
   const diseases = actor.getFlag("lostlands", "disease");
-  if (!diseases) return;
+  if (!diseases) return ui.notifications.info(`${actor.name} has no diseases to remove`);
+  
+  
   let damage = 0;
-
   for (const disease of Object.values(diseases)) {
     const intervalId = disease.intervalId;
     await TimeQ.cancel(intervalId);
-    damage += disease.maxHpDamage;
+    damage += +disease.maxHpDamage || 0;
   }
 
   try {
     await actor.unsetFlag("lostlands", "disease");
     damage && await restoreMaxHpDamage(actor, damage);
-    // await Util.removeCondition("Diseased", actor);
+
+    ui.notifications.info(`Removed all diseases from ${actor.name}`);
+
   } catch (error) {
     throw new Error(error);
   }
@@ -420,24 +422,38 @@ export async function deleteAllDiseases(actor) {
 
 async function restoreMaxHpDamage(actor, damage) {
   const maxHp = Number(actor.data.data.hp.max);
-  const result = maxHp + damage;
+  const maxMaxHp = Number(actor.data.data.attributes.max_hp?.value) || Infinity;
+  const result = Math.min(maxMaxHp, maxHp + damage);
   return actor.update({"data.hp.max": result});
 }
 
 export async function clearMaxHpDamage(actor) {
+  let totalDmg = 0;
   // clocks
   for (const type of Object.keys(CLOCKS)) {
     const data = actor.getFlag("lostlands", type) || {};
-    if (data.maxHpDamage !== 0) {
+    const damage = data.maxHpDamage;
+    if (damage) {
+      await restoreMaxHpDamage(actor, damage);
       data.maxHpDamage = 0;
       await actor.setFlag("lostlands", type, data);
+      totalDmg += damage;
     }
   }
-  // diseases
+  // diseases -- Just restores damage from diseases, doesn't eliminate the diseases
   const diseases = actor.getFlag("lostlands", "disease");
-  if (!diseases) return;
+  if (!diseases) return totalDmg;
+  let resetDiseases = false;
   for (const data of Object.values(diseases)) {
-    data.maxHpDamage = 0;
+    const damage = +data.maxHpDamage || 0;
+    if (damage) {
+      await restoreMaxHpDamage(actor, damage);
+      data.maxHpDamage = 0;
+      totalDmg += damage;
+      resetDiseases = true;
+    }
   }
   await actor.setFlag("lostlands", "disease", diseases);
+
+  return totalDmg;
 }
