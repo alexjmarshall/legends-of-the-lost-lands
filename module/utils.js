@@ -127,6 +127,15 @@ export function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
 
+export function actorIsDead(actor) {
+  if (!actor) return false;
+  const maxNegHp = (actor.type === "humanoid" || actor.type === "character") ?
+    Number(0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
+  const currentHp = Number(actor.data.data.hp?.value);
+  
+  return currentHp <= maxNegHp;
+}
+
 export function selectedCharacter() {
   let actor = null;
   let token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : null;
