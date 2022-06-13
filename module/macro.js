@@ -83,7 +83,7 @@ export async function togglePartyRest(options={}) {
   );
 }
 
-export function selectRestDice(actor, options={}) {
+export function selectRestDice(actor, options={}) { // TODO fix this and add disease dialog since changing altDialog params
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
   const choice = options.altDialogChoice;
@@ -93,10 +93,14 @@ export function selectRestDice(actor, options={}) {
   }
   
   const choices = Object.entries(Fatigue.REST_TYPES).map(type => {
-    return {label: `${type[0]}<br>${type[1] ? type[1] : 'd2/d3'}`, value: type[0]};
+    return {
+      label: `${type[0]}<br>${type[1] ? type[1] : 'd2/d3'}`,
+      value: type[0],
+      callback: () => selectRestDice(actor, options),
+    };
   });
   
-  return Dialog.altDialog(options, `${actor.name} Rest Dice`, choices, () => selectRestDice(actor, options));
+  return Dialog.altDialog(options, `${actor.name} Rest Dice`, choices);
 }
 
 export async function castSpell(spellId, options={}) {
@@ -167,7 +171,7 @@ export async function cureDisease() {
   const actor = char.actor;
   
   try {
-    return await Fatigue.deleteAllDiseases(actor);
+    return Fatigue.deleteAllDiseases(actor); 
   } catch (error) {
     return ui.notifications.error(error);
   }
@@ -477,24 +481,29 @@ export async function saveMacro(damage=0, options={}) {
 }
 
 async function save(tokens, damage, options={}) {
-  if(!tokens.length) return;
+  if (!tokens.length) return;
   const token = tokens[0];
   const actor = token.actor;
-  const saveTarget = +token.actor.data.data.st;
-  if(!saveTarget) {
+  if (!actor) return;
+  const saveTarget = +actor.data.data.sv || 0;
+  if (!saveTarget) {
     ui.notifications.error(`${actor.name} has no save target number set`);
     tokens.shift();
     return save(tokens, damage, options);
   }
+
+  // get roll modifiers
+  // press alt to make a mental attack save, i.e. modified by wis
+  const saveVsMental = !!options.showAltDialog;
+  const saveAttr = options.saveAttr || (saveVsMental ? 'wis' : '');
+  const saveAttrMod = saveAttr ? +actor.data.data[`${saveAttr}_mod`] : 0;
+  const d20Result = await new Roll("d20").evaluate().total;
+  // mod dialog
   const modDialogFlavor = options.flavor || 'Saving Throw';
   if (options.showModDialog && !options.shownModDialog) {
     const field = {label: 'Save modifiers', key: 'dialogMod'};
     return Dialog.modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
   }
-  const actorSaveMod = +actor.data.data.sv_mod || 0;
-  const saveAttr = options.saveAttr || 'wis';
-  const saveAttrMod = +actor.data.data[`${saveAttr}_mod`];
-  const d20Result = await new Roll("d20").evaluate().total;
   let dialogMod = '';
   try {
     dialogMod = options.dialogMod ? await new Roll(options.dialogMod).evaluate().total : '';
@@ -503,26 +512,46 @@ async function save(tokens, damage, options={}) {
     options.shownModDialog = false;
     return save(tokens, damage, options);
   }
-  const saveText = `${d20Result}${saveAttrMod ? `+${saveAttrMod}` : ''}${dialogMod ? `+${dialogMod}` : ''}${actorSaveMod ? `+${actorSaveMod}` : ''}`;
-  const savingThrow = new Roll(saveText);
-  await savingThrow.evaluate();
-  const success = savingThrow.total >= saveTarget;
-  const resultText = ` vs. SV ${saveTarget}` + ( success ? ` <span style="${Util.resultStyle('#7CCD7C')}">SUCCESS</span>` : ` <span style="${Util.resultStyle('#EE6363')}">FAIL</span>` );
+
+  const saveText = `${d20Result}${saveAttrMod ? `+${saveAttrMod}` : ''}${dialogMod ? `+${dialogMod}` : ''}`;
+  const savingThrowResult = await Util.rollDice(saveText);
+  // d20 roll of 1 always fails
+  const success = d20Result !== 1 && savingThrowResult >= saveTarget;
+  const resultText = ` vs. SV ${saveTarget}`
+    + ( success ? ` <span style="${Util.resultStyle('#7CCD7C')}">SUCCESS</span>`
+    : ` <span style="${Util.resultStyle('#EE6363')}">FAIL</span>` );
+
+  let content = `${actor.name} saves${saveVsMental ? ' vs. mental attack' : ''} ${Util.chatInlineRoll(saveText)}${resultText}`;
+  let flavor = options.flavor || 'Saving Throw';
+
+  // save for half damage
+  if (damage) {
+    const takenDamage = success ? Math.floor(damage / 2) : damage;
+    content += ` for ${Util.chatInlineRoll(takenDamage)} damage.`;
+    flavor = 'Save for Half Damage';
+    const currentHp = +actor.data.data.hp?.value;
+    if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) {
+      actor.update({"data.hp.value": currentHp - takenDamage});
+    } 
+  }
+
+  // critical fails TODO handle this in separate skill test macro
   const critFail = d20Result === 1 && options.critFailText;
-  if(critFail && options.critFailBrokenItem) {
-    const itemQty = +options.critFailBrokenItem.data.data.quantity;
-    const qtyUpdate = itemQty - 1;
-    options.sound = options.critFailSound || options.sound;
-    try {
-      await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
-    } catch {
-      ui.notifications.error(`Error updating quantity of ${options.critFailBrokenItem.name}`);
+  if(critFail) {
+    content += `${options.critFailText}`;
+    // broken item
+    if (options.critFailBrokenItem) {
+      const itemQty = +options.critFailBrokenItem.data.data.quantity;
+      const qtyUpdate = itemQty - 1;
+      options.sound = options.critFailSound || options.sound;
+      try {
+        await actor.updateEmbeddedDocuments("Item", [{'_id': options.critFailBrokenItem._id, 'data.quantity': qtyUpdate}]);
+      } catch {
+        ui.notifications.error(`Error updating quantity of ${options.critFailBrokenItem.name}`);
+      }
     }
   }
-  const takenDamage = success ? Math.floor(damage / 2) : damage;
-  let content = `${actor.name} saves ${Util.chatInlineRoll(saveText)}${resultText}`;
-  content += `${damage ? ` for ${Util.chatInlineRoll(takenDamage)} damage` : ``}${critFail ? `${options.critFailText}` : ``}.`;
-  const flavor = options.flavor || (damage ? 'Save for Half Damage' : 'Saving Throw');
+  
   const chatBubbleText = options.bubbleText;
   Util.macroChatMessage(token, {
     content: content, 
@@ -530,8 +559,6 @@ async function save(tokens, damage, options={}) {
     sound: options.sound
   }, false);
   Util.chatBubble(token, chatBubbleText);
-  const currentHp = +actor.data.data.hp?.value;
-  if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) await token.actor.update({"data.hp.value": currentHp - takenDamage})
   
   // wait if not last actor
   if (tokens.length > 1) await Util.wait(500);
@@ -896,6 +923,10 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   const actor = game.actors.get(actorId);
   if (!actor) return;
 
+  // only apply fatigue damage if actor is in the current scene
+  const token = Util.getTokenFromActor(actor);
+  if (!token) return;
+
   const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
   
@@ -912,7 +943,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
     if (isWarm) return;
     
     const diffClo = Fatigue.diffClo(actor);
-    dmgMulti = Math.floor(Math.abs(diffClo) / 10);
+    const dmgMulti = Fatigue.getExposureCondition(diffClo).dmgMulti;
     if (!dmgMulti) return;
     typeString = diffClo < 0 ? 'cold' : 'heat';
   }
@@ -934,7 +965,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
 async function applyFatigueDamage(actor, type, dice, heal=false, flavor) {
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
-  if (hp < 0) return 0;
+  if (actor && Util.actorIsDead(actor)) return 0;
 
   let result = await Util.rollDice(dice);
   let appliedResult = result;
@@ -945,8 +976,7 @@ async function applyFatigueDamage(actor, type, dice, heal=false, flavor) {
     const hpUpdate = hp + appliedResult;
     update = {"data.hp.value": hpUpdate};
   } else {
-    appliedResult = Math.min(result, maxHp);
-    const maxHpUpdate = maxHp - appliedResult;
+    const maxHpUpdate = maxHp - result;
     const hpUpdate = hp - result;
     update = {"data.hp.max": maxHpUpdate, "data.hp.value": hpUpdate};
   }
@@ -1018,13 +1048,17 @@ export async function addDisease(disease=null, options={}) {
 
   if ( !disease && !options.shownAltDialog ) {
     const choices = Object.keys(diseases).map(type => {
-      return {label: Util.upperCaseFirst(type), value: type};
+      return {
+        label: Util.upperCaseFirst(type),
+        value: type,
+        callback: () => addDisease(null, options),
+      };
     });
-    return Dialog.altDialog(options, `Add Disease to ${actor.name}`, choices, () => addDisease(null, options));
+    return Dialog.altDialog(options, `Add Disease to ${actor.name}`, choices);
   }
 
   const charDiseases = actor.getFlag("lostlands", "disease") || {};
-  if (charDiseases.hasOwnProperty(disease)) return;
+  if (charDiseases.hasOwnProperty(disease)) return ui.notifications.error(`${actor.name} already has ${disease}`);
 
   const startTime = Util.now();
   const interval = Fatigue.DISEASES[disease].damageInterval;
@@ -1037,7 +1071,8 @@ export async function addDisease(disease=null, options={}) {
   charDiseases[disease] = {
     startTime,
     intervalId,
-    confirmed: false
+    confirmed: false,
+    maxHpDamage: 0,
   };
 
   await actor.setFlag("lostlands", "disease", charDiseases);
@@ -1047,6 +1082,12 @@ export async function addDisease(disease=null, options={}) {
 
 export async function applyDisease(actorId, disease, execTime, newTime) {
   const actor = game.actors.get(actorId);
+  if (!actor) return;
+
+  // only apply fatigue damage if actor is in the current scene
+  const token = Util.getTokenFromActor(actor);
+  if (!token) return;
+
   const type = 'disease';
   const flavor = Util.upperCaseFirst(type);
   const interval = Fatigue.DISEASES[disease].damageInterval;
@@ -1089,22 +1130,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   };
 
   if (!confirmed) {
-    return new Dialog({
-      title: "Confirm Disease",
-      content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
-      buttons: {
-       one: {
-        icon: '<i class="fas fa-check"></i>',
-        label: "Yes",
-        callback: () => Fatigue.deleteDisease(actor, disease)
-       },
-       two: {
-        icon: '<i class="fas fa-times"></i>',
-        label: "No",
-        callback: () => confirmDisease()
-       }
-      },
-    }).render(true);
+    return Dialog.confirmDiseaseDialog(actor, disease, () => confirmDisease(), () => Fatigue.deleteDisease(actor, disease));
   }
   
   // determine damage and whether disease resolves (if 1 is rolled)
@@ -1118,10 +1144,21 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   }
 
   const result = await applyFatigueDamage(actor, type, `${damage}`);
-  actorDiseases[disease].maxHpDamage = actorDiseases[disease].maxHpDamage + result || result;
+  actorDiseases[disease].maxHpDamage = Number(actorDiseases[disease].maxHpDamage + result) || result;
   await actor.setFlag("lostlands", "disease", actorDiseases);
 
   if (resolved) return resolveDisease();
 
   return true;
+}
+
+export async function clearFatigueDamageMacro() {
+  if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
+  const char = Util.selectedCharacter();
+  const actor = char.actor;
+  const healedDamage = await Fatigue.clearMaxHpDamage(actor);
+  const message = healedDamage > 0 ? `Cleared ${healedDamage} max HP damage from ${actor.name}`
+    : `No max HP damage to clear from ${actor.name}`;
+
+  return ui.notifications.info(message);
 }
