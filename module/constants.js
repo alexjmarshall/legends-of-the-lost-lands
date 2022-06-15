@@ -77,17 +77,17 @@ export const MATERIAL_PROPS = {
   },
   wool: {
     weight:2,
-    warmth:20,
+    warmth:16,
     sp_value:12,
   },
   silk: {
     weight:0.5,
-    warmth:14,
+    warmth:11,
     sp_value:90,
   },
   fur: {
-    weight:5,
-    warmth:36,
+    weight:4,
+    warmth:32,
     sp_value:50,
   },
   leather: {
@@ -99,14 +99,14 @@ export const MATERIAL_PROPS = {
   },
   padded: {
     weight:4,
-    warmth:20,
+    warmth:18,
     sp_value:20,
     metal:false,
     bulky:false,
   },
   "cuir bouilli": {
     weight:6,
-    warmth:10,
+    warmth:9,
     sp_value:30,
     metal:false,
     bulky:true,
@@ -120,7 +120,7 @@ export const MATERIAL_PROPS = {
   },
   scale: {
     weight:22,
-    warmth:14,
+    warmth:13,
     sp_value:80,
     metal:true,
     bulky:false,
@@ -148,7 +148,7 @@ export const MATERIAL_PROPS = {
   },
   lamellar: {
     weight:22,
-    warmth:12,
+    warmth:11,
     sp_value:120,
     metal:true,
     bulky:true,
@@ -652,8 +652,8 @@ const ranChestBone = () => ranChoice(['a rib','the sternum']);
 const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
 const ranChestOrgan = () => ranChoice(['a lung','the heart']);
 const ranGutBone = () => ranChoice(['a rib','the back']);
-const lowBrainBleed = (organ=null) => (Math.random() < 0.25) ? ` and blood streams from their ${organ || ranOrifice()}` : '';
-const highBrainBleed = (organ=null) => (Math.random() < 0.75) ? ` and blood streams from their ${organ || ranOrifice()}` : '';
+const lowBrainBleed = (organ=null) => (Math.random() < 0.25) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
+const highBrainBleed = (organ=null) => (Math.random() < 0.75) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
 const highMinBleed = () => (Math.random() < 0.75) ? minorBleedDesc : '';
 const lowMinBleed = () => (Math.random() < 0.25) ? minorBleedDesc : '';
 const highWeapStuck = () => (Math.random() < 0.75) ? weaponStuckDesc : '';
@@ -868,7 +868,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,10,4,4,14,18,14,14],
+    weights: [10,10,4,4,14,18,12,12],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 3,
@@ -1002,7 +1002,7 @@ export const HIT_LOCATIONS = {
           text: ' and bruises the genitals',
         },
         serious: {
-          text: ' and lacerates the genitals',
+          text: ' and crushes the genitals',
         },
         critical: {
           text: ' and fractures the pubic bone',
@@ -1043,10 +1043,12 @@ export const HIT_LOCATIONS = {
         critical: {
           text: ' and severs the genitals',
           dmgEffect: highMinBleed(),
+          removal: true,
         },
         gruesome: {
           text: ' and cleaves through the genitals and into the inner thigh!',
           dmgEffect: lowMajBleed() || highMinBleed(),
+          removal: true,
         },
       },
     },
@@ -1155,7 +1157,7 @@ export const HIT_LOCATIONS = {
         gruesome: {
           text: ` and impales them through the chest and through ${ranChestOrgan()} and through the back!`,
           fatal: true,
-          dmgEffect: highWeapStuck() + highIntBleed('gut'),
+          dmgEffect: highWeapStuck() + highIntBleed('chest'),
         },
       },
       slashing: {
@@ -1426,7 +1428,7 @@ export const HIT_LOCATIONS = {
     },
   },
   armpit: {
-    weights: [2,6,4,12,2,4,2,2],
+    weights: [2,6,4,12,2,4,4,4],
     crit_chance_multi: 2,
     crit_dmg_multi: 2,
     max_impale: 2,
@@ -1620,7 +1622,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and lacerates the chin',
+          text: ' and knocks out a tooth',
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -1689,12 +1691,12 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and lacerates the nose',
+          text: ' and breaks the nose',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and breaks the nose',
-          dmgEffect: lowMinBleed(),
+          text: ' and bruises the brain',
+          dmgEffect: knockoutDesc,
         },
         critical: {
           text: ' and caves the nose into the brain',
@@ -2055,6 +2057,7 @@ export const WEAPON_CATEGORIES = [
   "curved swords",
   "daggers",
   "hammers",
+  "hand-to-hand",
   "large swords",
   "piercing swords",
   "polearms",
