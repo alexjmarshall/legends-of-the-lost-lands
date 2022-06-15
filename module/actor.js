@@ -199,7 +199,8 @@ export class SimpleActor extends Actor {
           const shield = coveringItems.find(i => i.data.data.attributes.shield_shape?.value);
           const shieldStyle = shield?.data.data.shield_style;
           const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
-          const nonBulkyArmor = armor.filter(i => !i.data.data.attributes.bulky?.value);
+          const furAmor = armor.filter(i => Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
+          const nonBulkyNonFurArmor = armor.filter(i => !i.data.data.attributes.bulky?.value && !Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
 
           // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
           const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
@@ -214,9 +215,10 @@ export class SimpleActor extends Actor {
 
           
           // piercing is the basis for sorted armor Ids
-          let sorted_armor_ids = nonBulkyArmor.sort((a,b) => (+b.data.data.ac["piercing"]?.ac || 0) - (+a.data.data.ac["piercing"]?.ac || 0))
+          let sorted_armor_ids = nonBulkyNonFurArmor.sort((a,b) => (+b.data.data.ac["piercing"]?.ac || 0) - (+a.data.data.ac["piercing"]?.ac || 0))
             .map(i => i._id);
           if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
+          if (furAmor.length) sorted_armor_ids = [...furAmor.map(i => i._id), ...sorted_armor_ids];
           if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
           ac[k].sorted_armor_ids = sorted_armor_ids;
 
