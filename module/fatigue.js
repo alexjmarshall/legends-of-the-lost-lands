@@ -84,8 +84,9 @@ const REQ_CLO_BY_SEASON = {
   "winter": 26
 };
 export function diffClo(char) {
-  const requiredClo = game.settings.get("lostlands", "requiredClo");
-  const wornClo = char.data.data.clo;
+  const temp = game.settings.get("lostlands", "temp");
+  const requiredClo = 36 - 10 - temp;
+  const wornClo = Number(char.data.data.clo);
   const diff = wornClo - requiredClo;
   return diff || 0;
 }
@@ -306,8 +307,12 @@ async function resetDamageAndWarn(char, time) {
 }
 
 export function getExposureCondition(diffClo) {
-  if (diffClo < -20) return {
+  if (diffClo < -30) return {
     desc: 'extremely cold',
+    dmgMulti: 3,
+  }
+  if (diffClo < -20) return {
+    desc: 'very cold',
     dmgMulti: 2,
   }
   if (diffClo < -10) return {
@@ -326,9 +331,13 @@ export function getExposureCondition(diffClo) {
     desc: 'hot',
     dmgMulti: 1,
   }
+  if (diffClo < 30) return {
+    desc: 'very hot',
+    dmgMulti: 2,
+  }
   return {
     desc: 'extremely hot',
-    dmgMulti: 2,
+    dmgMulti: 3,
   }
 }
 
