@@ -122,15 +122,11 @@ export class SimpleActorSheet extends ActorSheet {
 
     const fahrenheitFromCelsius = c => Math.round(c * 9/5 + 32);
 
-    let reqClo = Number(game.settings.get("lostlands", "requiredClo"));
-    if (isNaN(reqClo)) return ui.notifications.error("required clo set incorrectly");
-
-    // ambient temperature = 36 (ideal body temperature) - 10 (core body warmth) - required worn clo
-    const tempC = 36 - 10 - reqClo;
+    const tempC = Number(game.settings.get("lostlands", "temp"));
     const tempF = fahrenheitFromCelsius(tempC);
-    // const tempDesc = tempDescs.find((t, i) => reqClo >= t[0] && reqClo < (tempDescs[i+1] ? tempDescs[i+1][0] : Infinity))?.[1];
     fatigue.tempDesc = `${tempC}°C / ${tempF}°F`;
 
+    const reqClo = 36 - 10 - tempC;
     const wornClo = data.data.clo;
     fatigue.wornClo = wornClo;
     const diffClo = wornClo - reqClo;
@@ -147,13 +143,13 @@ export class SimpleActorSheet extends ActorSheet {
     fatigue.diseaseDesc += diseaseDmg > 0 ? ` (${diseaseDmg})` : '';
 
     const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
-    fatigue.exhaustionDesc = `${exhaustionStatus.desc}${exhaustionStatus.damage ? ` (${exhaustionStatus.damage})` : ''}`; //exhaustionStatus === 2 ? 'Exhausted' : exhaustionStatus === 1 ? 'Sleepy' : 'Fine';
+    fatigue.exhaustionDesc = `${exhaustionStatus.desc}${exhaustionStatus.damage ? ` (${exhaustionStatus.damage})` : ''}`;
 
     const thirstStatus = this.getFatigueStatus(data, 'thirst');
-    fatigue.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;//thirstStatus === 2 ? 'Dehydrated' : thirstStatus === 1 ? 'Thirsty' : 'Fine';
+    fatigue.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;
 
     const hungerStatus = this.getFatigueStatus(data, 'hunger');
-    fatigue.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;//hungerStatus === 2 ? 'Starving' : hungerStatus === 1 ? 'Hungry' : 'Fine';
+    fatigue.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;
 
     return fatigue;
   }

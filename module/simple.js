@@ -67,10 +67,10 @@ Hooks.once("init", async function() {
     onChange: formula => _simpleUpdateInit(formula, true)
   });
 
-  // required Clo setting TODO be able to set this as environmental temperature, possibly reset every day by random modifier applied to reqClo by season
-  game.settings.register("lostlands", "requiredClo", {
-    name: "Required Clo",
-    hint: "The warmth of clothing required to not suffer exposure damage. Equal to 36 - 10 - environmental temp.",
+  // required Clo setting
+  game.settings.register("lostlands", "temp", {
+    name: "World Temperature",
+    hint: "Current ambient temperature in Celsius",
     scope: "world",
     type: Number,
     default: 1,
@@ -209,15 +209,15 @@ Hooks.on("ready", () => {
       }
 
       // sync requiredClo to current season when day changes //TODO weather macro
-      const oldDay = SimpleCalendar.api.timestampToDate(oldTime)?.day;
-      const newDay = SimpleCalendar.api.timestampToDate(newTime)?.day;
-      if (oldDay != newDay) {
-        const reqClo = Fatigue.reqClo();
-        const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
-        if (reqClo != currentReqCloSetting) {
-          await game.settings.set("lostlands", "requiredClo", reqClo);
-        }
-      }
+      // const oldDay = SimpleCalendar.api.timestampToDate(oldTime)?.day;
+      // const newDay = SimpleCalendar.api.timestampToDate(newTime)?.day;
+      // if (oldDay != newDay) {
+      //   const reqClo = Fatigue.reqClo();
+      //   const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
+      //   if (reqClo != currentReqCloSetting) {
+      //     await game.settings.set("lostlands", "requiredClo", reqClo);
+      //   }
+      // }
 
       locked = false;
     });
@@ -319,19 +319,21 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const targetHp = actor.data.data.hp?.value;
   const maxHp = actor.data.data.hp?.max;
   const token = Util.getTokenFromActor(actor);
+  const maxNegHP = actor.type === "humanoid" || actor.type === "character" ?
+    (0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
 
-  if (hpUpdate <= -10  && targetHp > 0 ) {
-    Util.macroChatMessage(actor, {
-      flavor: 'Instant Death', 
-      content: `${actor.name} dies instantly.`,
-    }, false);
-    return;
-  }
+  // if (hpUpdate <= maxNegHP  && targetHp > 0 ) {
+  //   Util.macroChatMessage(actor, {
+  //     flavor: 'Instant Death', 
+  //     content: `${actor.name} dies instantly.`,
+  //   }, false);
+  //   return;
+  // }
 
-  if (hpUpdate <= -10  && targetHp > -10 ) {
+  if (hpUpdate <= maxNegHP  && targetHp > maxNegHP) {
     Util.macroChatMessage(actor, {
       flavor: 'Death', 
-      content: `${actor.name} dies.`,
+      content: `${actor.name} dies.${actor.type === 'character' ? ' May the Gods have mercy.' : ''}`,
     }, false);
     return;
   }
@@ -339,7 +341,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if ( hpUpdate <= 0 && targetHp > 0 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Incapacitated', 
-      content: `${actor.name} collapses.`,
+      content: `${actor.name} collapses in pain.`,
     }, false);
   }
 
