@@ -91,6 +91,8 @@ export class SimpleItem extends Item {
           dr: materialAcMods.slashing.dr
         },
       };
+    } else {
+      itemData.ac = {};
     }
 
     // derive weight from size for weapons
