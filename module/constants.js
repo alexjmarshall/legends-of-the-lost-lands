@@ -623,7 +623,7 @@ export const LIMB_GROUPS = {
 
 export const minorBleedDesc = ` and the wound bleeds heavily`;
 export const majorBleedDesc = ` and blood spurts from the wound!`;
-export const internalBleedDesc = area => ` and the ${area} bleeds internally...`;
+export const internalBleedDesc = area => ` and the ${area} bleeds internally`;
 export const compoundFractureDesc = ' and the broken bones poke through the skin';
 export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
@@ -643,7 +643,7 @@ const ranChoice = (choices) => {
 }
 const ranToe = () => ranChoice(['big','long','middle','ring','little']);
 const ranOrifice = () => ranChoice(['nose','mouth','ears']);
-const ranFinger = () => ranChoice(['thumb','index','middle','ring','pinky']);
+const ranFinger = () => ranChoice(['thumb','index finger','middle finger','ring finger','pinky finger']);
 const ranShinBone = () => ranChoice(['fibula','tibia']);
 const ranForearmBone = () => ranChoice(['ulnar bone','radial bone']);
 const ranArmMuscle = () => ranChoice(['triceps','biceps']);
@@ -818,14 +818,14 @@ export const HIT_LOCATIONS = {
           text: ' and cracks the kneecap',
         },
         serious: {
-          text: ' and dislocates the joint',
+          text: ' and dislocates the knee',
         },
         critical: {
           text: ' and shatters the kneecap',
           dmgEffect: lowCompFract(true,'knee'),
         },
         gruesome: {
-          text: ' and mangles the joint tearing the ligaments!',
+          text: ' and mangles the knee tearing the ligaments!',
           dmgEffect: highCompFract(true,'knee'),
         },
       },
@@ -834,29 +834,29 @@ export const HIT_LOCATIONS = {
           text: ' and chips the kneecap',
         },
         serious: {
-          text: ' and tears the tendon below the joint',
+          text: ' and tears the tendon below the knee',
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the joint tearing a ligament',
+          text: ' and impales the knee tearing a ligament',
           dmgEffect: lowWeapStuck() + lowMajBleed(),
         },
         gruesome: {
-          text: ' shatters the kneecap',
+          text: ' and shatters the kneecap',
           dmgEffect: highWeapStuck() + lowIntBleed('knee'),
         },
       },
       slashing: {
         light: {
-          text: ' and gashes the joint',
+          text: ' and gashes the knee',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and severs the tendon below the joint`,
+          text: ` and severs the tendon below the knee`,
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint tearing a ligament',
+          text: ' and splits the knee tearing a ligament',
           dmgEffect: highMinBleed(),
         },
         gruesome: {
@@ -868,7 +868,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,10,4,4,14,18,12,12],
+    weights: [10,10,4,4,14,18,12,10],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 3,
@@ -930,7 +930,7 @@ export const HIT_LOCATIONS = {
     },
   },
   hip: {
-    weights: [6,4,2,0,10,6,4,6],
+    weights: [6,4,2,0,10,6,4,8],
     bilateral: true,
     crit_chance_multi: 1,
     crit_dmg_multi: 2,
@@ -941,14 +941,14 @@ export const HIT_LOCATIONS = {
           text: ' and cracks the femur',
         },
         serious: {
-          text: ' and dislocates the joint',
+          text: ' and dislocates the hip',
         },
         critical: {
           text: ' and breaks the hip',
           dmgEffect: lowCompFract(true,'hip'),
         },
         gruesome: {
-          text: ' and shatters the joint!',
+          text: ' and shatters the hip!',
           dmgEffect: highCompFract(true,'hip'),
         },
       },
@@ -966,7 +966,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' pierces the hip bone!',
+          text: ' and pierces the hip bone!',
           dmgEffect: highWeapStuck() + lowIntBleed('hip'),
         },
       },
@@ -1037,7 +1037,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' splits the inner thigh severing a tendon',
+          text: ' and splits the inner thigh severing a tendon',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
@@ -1112,6 +1112,7 @@ export const HIT_LOCATIONS = {
         gruesome: {
           text: ' and cleaves the body in two at the waist!',
           fatal: true,
+          removal: true,
           dmgEffect: highMajBleed(),
         },
       },
@@ -1174,7 +1175,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed(),
         },
         gruesome: {
-          text: ' and cleaves through the torso from collarbone to navel!',
+          text: ' and cleaves through the torso from chest to navel!',
           fatal: true,
           dmgEffect: highMajBleed(),
         },
@@ -1189,7 +1190,7 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ` and crushes the ${ranFinger()} finger`,
+          text: ` and crushes the ${ranFinger()}`,
         },
         serious: {
           text: ' and breaks the wrist',
@@ -1232,7 +1233,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ` severs the ${ranFinger()} finger`,
+          text: ` and severs the ${ranFinger()}`,
           dmgEffect: highMinBleed(),
         },
         gruesome: {
@@ -1312,18 +1313,18 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and dislocates the joint',
+          text: ' and dislocates the elbow',
         },
         serious: {
           text: ' and breaks the elbow',
           dmgEffect: lowCompFract(),
         },
         critical: {
-          text: ' and shatters the joint',
+          text: ' and shatters the elbow',
           dmgEffect: lowCompFract(true,'elbow'),
         },
         gruesome: {
-          text: ' and mangles the joint tearing the ligaments!',
+          text: ' and mangles the elbow tearing the ligaments!',
           dmgEffect: highCompFract(true,'elbow'),
         },
       },
@@ -1336,7 +1337,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the joint tearing a ligament',
+          text: ' and impales the elbow tearing a ligament',
           dmgEffect: lowWeapStuck() + lowMajBleed(),
         },
         gruesome: {
@@ -1346,7 +1347,7 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the joint',
+          text: ' and gashes the elbow',
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -1354,7 +1355,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the joint tearing a ligament',
+          text: ' and splits the elbow tearing a ligament',
           dmgEffect: highMinBleed(),
         },
         gruesome: {
@@ -1398,7 +1399,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' tears a tendon below the shoulder',
+          text: ' and tears a tendon below the shoulder',
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
@@ -1498,17 +1499,17 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and dislocates the joint',
+          text: ' and dislocates the shoulder',
         },
         serious: {
-          text: ' and separates the joint',
+          text: ' and separates the shoulder',
         },
         critical: {
           text: ' and snaps the collarbone',
           dmgEffect: lowCompFract(true,'shoulder'),
         },
         gruesome: {
-          text: ' and mangles the joint tearing the ligaments',
+          text: ' and mangles the shoulder tearing the ligaments',
           dmgEffect: highCompFract(true,'shoulder'),
         },
       },
@@ -1522,11 +1523,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the joint tearing a ligament',
+          text: ' and impales the shoulder tearing a ligament',
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and impales them below the collarbone and through the upper back',
+          text: ' and impales them through the shoulder and through the upper back',
           dmgEffect: highWeapStuck() + lowIntBleed('shoulder'),
         },
       },
@@ -1796,7 +1797,7 @@ export const HIT_LOCATIONS = {
         gruesome: {
           text: ' and impales them through the eye and through the brain and through the back of the skull',
           fatal: true,
-          dmgEffect: highWeapStuck() +  + lowBrainBleed(),
+          dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
       },
       slashing: {
