@@ -629,11 +629,11 @@ export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
 export const knockbackDesc = ' and knocks them flying!';
-export const staggerDesc = ' and staggers them';
+export const staggerDesc = ' and the pain staggers them';
 export const knockWindDesc = ' and knocks the wind from them';
 export const bloodWellDesc = ' and blood wells around the weapon...';
 const gruesBluntHeadDesc = ' and shatters the skull spattering chunks of gore!';
-const gruesSlashHeadDesc = ' and cleaves through the head spattering blood in an arc!';
+const gruesSlashHeadDesc = ' and cleaves the head in two spattering blood in an arc!';
 export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc];
 export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc,staggerDesc,knockWindDesc];
 
@@ -1945,7 +1945,7 @@ export const WEAPONS = {
           speed: { value: 5},
           parry: { value: 0},
           impact: { value: 1},
-          weap_prof: { value: 'boxing' },
+          weap_prof: { value: 'hand-to-hand' },
         },
         quantity: 2
       }
@@ -2051,20 +2051,20 @@ export const HEIGHT_AREAS = {
 }
 
 export const WEAPON_CATEGORIES = [
-  "axes",
-  "bludgeons",
-  "bows",
-  "crossbows",
-  "curved swords",
-  "daggers",
-  "hammers",
+  "axe",
+  "bludgeon",
+  "bow",
+  "crossbow",
+  "curved sword",
+  "dagger",
+  "hammer",
   "hand-to-hand",
-  "large swords",
-  "piercing swords",
-  "polearms",
-  "spears",
-  "spiked bludgeons",
-  "staves",
-  "straight swords",
+  "large sword",
+  "piercing sword",
+  "polearm",
+  "spear",
+  "spiked bludgeon",
+  "staff",
+  "straight sword",
   "whip/sling",
 ];
