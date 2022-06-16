@@ -345,6 +345,8 @@ export async function attack(attackers, target, options) {
   const meleeAtk = Util.stringMatch(atkType, 'melee');
   const missileAtk = Util.stringMatch(atkType, 'missile');
   const isShooting = Util.stringMatch(atkForm,"shoot");
+  const isSwing = Util.stringMatch(atkForm, 'swing');
+  const isSpiked = weapCategory.includes('spiked');
 
   if (missileAtk && !weaponRange) {
     ui.notifications.error("Invalid range specified");
@@ -733,7 +735,7 @@ export async function attack(attackers, target, options) {
             if (!penArmor) return;
   
             lastLayerDr = Constant.ARMOR_VS_DMG_TYPE[armorMaterial]?.[dmgType].dr;
-            const armorAbsorb = armorAbsorption(appliedArmors, dent, dmgType, armorUpdates);
+            const armorAbsorb = armorAbsorption(appliedArmors, dent, dmgType, armorUpdates, isSpiked);
             if (!armorAbsorb.absorbed) return;
   
             hitDesc = hitDesc.replace(regex,'') + armorAbsorb.hitDesc;
@@ -762,7 +764,7 @@ export async function attack(attackers, target, options) {
               const penArmor = await penetrateArmor(armorMaterial, dmgType, weapPen, lastLayerDr);
               if (!penArmor) break;
   
-              const armorAbsorb = armorAbsorption(appliedArmors, dent, dmgType, armorUpdates);
+              const armorAbsorb = armorAbsorption(appliedArmors, dent, dmgType, armorUpdates, isSpiked);
               if (!armorAbsorb.absorbed) continue;
   
               lastLayerDr = armorAbsorb.absorbDr
@@ -787,7 +789,7 @@ export async function attack(attackers, target, options) {
                 rolledDmg = Math.ceil(rolledDmg / 2);
                 hitVerb = ' cuts';
               } else {
-                rolledDmg = Math.ceil(rolledDmg / 3);
+                rolledDmg = isSpiked ? Math.ceil(rolledDmg / 2) : Math.ceil(rolledDmg / 3);
                 hitVerb = ' tears the flesh';
               }
 
@@ -799,7 +801,7 @@ export async function attack(attackers, target, options) {
 
             }
             // beyond second impale, weapon gets stuck
-            if (i > 1) stuck = true;
+            if (i > 1 && (!isBlunt || isSpiked)) stuck = true;
           }
   
           // apply damage and append results string to hitDesc
@@ -815,9 +817,9 @@ export async function attack(attackers, target, options) {
 
         if (bluntingArmor) {
           hitDesc += !hitDesc.includes(bluntingArmor.name) ? ` and fails to penetrate ${bluntingArmor.name} but` : '';
-          // apply worst of current or blunt dr
-          const bluntAcObj = targetRollData.ac[coverageArea]['blunt'] || {};
-          dr = Math.max(dr, bluntAcObj.dr ?? 0);
+          // // apply worst of current or blunt dr
+          // const bluntAcObj = targetRollData.ac[coverageArea]['blunt'] || {};
+          // dr = Math.max(dr, bluntAcObj.dr ?? 0);
           dmgType = 'blunt';
           isBlunt = true;
           isSlash = false;
@@ -828,7 +830,7 @@ export async function attack(attackers, target, options) {
         // knockdowns
         const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
         let knockdownChance = knockDownMulti * 5 * weapImp - 20 * (targetSize - 2);
-        if (!Util.stringMatch(atkForm, 'swing')) knockdownChance = Math.floor(knockdownChance / 2);
+        if (!isSwing) knockdownChance = Math.floor(knockdownChance / 2);
         const isKnockdown = !immuneKnockdown && !targetProne && await Util.rollDice('d100') <= knockdownChance;
         if (isKnockdown) {
           const armor = appliedArmors[0];
@@ -870,7 +872,7 @@ export async function attack(attackers, target, options) {
               dmgEffect = knockdownDesc + dmgEffect;
               skipWeaps = true;
             } else {
-              if (['gut','chest','groin'].includes(coverageArea)) {
+              if (['gut','chest'].includes(coverageArea)) {
                 dmgEffect = knockWindDesc + dmgEffect;
               } else {
                 dmgEffect = staggerDesc + dmgEffect;
@@ -884,10 +886,22 @@ export async function attack(attackers, target, options) {
         }
   
         // bleeding
-        let bleedChance = (isSlash && !isShooting ? totalImpaleDmg * 2 : totalImpaleDmg) + weapBleed * 2;
-        if (easyBleedAreas.includes(coverageArea) && !isPierce && !isShooting) bleedChance *= 2;
+        const attrBleedChance = isSlash && isSwing ? weapBleed * 2
+          : isSpiked && isSwing ? weapBleed
+          : totalImpaleDmg ? weapBleed
+          : 0;
+        const impaleDmgBleedChance = (isPierce || isShooting) ? totalImpaleDmg : totalImpaleDmg * 2;
+        let bleedChance = impaleDmgBleedChance + attrBleedChance;
+        if (easyBleedAreas.includes(coverageArea) && isSwing && !isPierce) bleedChance *= 2;
         const doBleed = !immuneBleed && await Util.rollDice('d100') <= bleedChance;
         if (doBleed) {
+          // slashing weapons cut through non-blunting armor first
+          if (isSlash && !isShooting) {
+            const armor = appliedArmors[0];
+            const armorName = armor?.name;
+            const armorAbsorb = armorAbsorption(appliedArmors, dent, dmgType, armorUpdates, isSpiked);
+            if (armorAbsorb.absorbed) hitDesc += ` and cuts through ${armorName}`;
+          }
           // determine severity
           let bleedDesc = (isBlunt && intBleedAreas.includes(coverageArea) && !totalImpaleDmg) ? Constant.internalBleedDesc(coverageArea)
             : (!isBlunt && totalImpaleDmg > 5 && doubleBleedAreas.includes(coverageArea)) ? majorBleedDesc
@@ -979,8 +993,9 @@ export async function attack(attackers, target, options) {
             deflectingArmorName = ` the ${hideDesc} hide`;
           }
           const isPlate = deflectingArmor?.data.data.attributes.material?.value.includes('plate');
+          const isWood = Util.stringMatch(deflectingArmor?.data.data.attributes.material?.value, 'wood');
           missDesc = ` ${deflectingArmorName ? 
-           ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && isShield ? ` thunks into ` : isShield ? ` is deflected by` : ` glances off`} ${deflectingArmorName}` : 
+           ` but the ${isShooting ? 'missile' : 'blow'}${isShooting && isWood ? ` thunks into ` : isShield ? ` is deflected by` : ` glances off`} ${deflectingArmorName}` : 
            ' but misses'}`;
           // check for weapon item breakage
           if ( (isPlate || isShield) && fragile && await Util.rollDice('d100') <= Constant.WEAP_BREAK_CHANCE) {
@@ -1206,9 +1221,10 @@ function getPenInchesDesc(dmgType, coverageArea, specDmg, injuryDmg=0, fatal=fal
 
   if (Util.stringMatch(dmgType, 'slashing')) {
     const inchDmg = dmg * 2;
+    if (!injuryDmg) deepLimit = 1;
     let inchesDeep = Math.min(deepLimit, Math.floor(inchDmg / 3));
     if (isFat) inchesDeep++;
-    const inches = Math.max(inchesDeep + 1, Math.min(longLimit, inchDmg));
+    const inches = Math.max(2, inchesDeep + 1, Math.min(longLimit, inchDmg));
     return ` ${inches} inches long${inchesDeep ? ` and ${inchesDeep} inch${inchesDeep > 1 ? 'es' : ''} deep` : ''}`;
   }
 
@@ -1221,8 +1237,7 @@ function getPenInchesDesc(dmgType, coverageArea, specDmg, injuryDmg=0, fatal=fal
 
   const inchDmg = dmg;
   const inches = Math.min(longLimit, inchDmg);
-  return ` ${inches} inches apart`;
-
+  return ` ${inches} inch${inches > 1 ? 'es' : ''} apart`;
 }
 
 function applyArmor(armor) {
@@ -1241,18 +1256,18 @@ async function penetrateArmor(armorMaterial, dmgType, weapPen, lastLayerDr) {
   return pen;
 }
 
-function armorAbsorption(appliedArmors, armorDented, dmgType, armorUpdates) {
+function armorAbsorption(appliedArmors, armorDented, dmgType, armorUpdates, isSpiked=false) {
   const armor = appliedArmors[0];
   if (!armor) return {};
 
-  const isPlate = armor?.data.data.attributes.material?.value.includes('plate');
+  const isSteel = Util.stringMatch(armor?.data.data.attributes.material?.value, 'steel');
   const isBulky = !!armor?.data.data.attributes.bulky?.value;
   const isMetal = !!armor?.data.data.attributes.metal?.value;
-  const isShield = !!armor?.data.data.attributes.shield_shape?.value;
-  const absorbed = dmgType !== 'blunt' || isBulky || isShield;
+  const isWood = Util.stringMatch(armor?.data.data.attributes.material?.value, 'wood');
+  const absorbed = dmgType !== 'blunt' || isSpiked || isBulky || isWood;
 
   // plate armor is dented or broken if already dented
-  armorDented = !armorDented && isPlate;
+  armorDented = !armorDented && isSteel;
 
   const absorbDr = absorbed ? Number(armor?.data.data.ac?.[dmgType]?.dr) || 0 : 0;
 
@@ -1262,19 +1277,18 @@ function armorAbsorption(appliedArmors, armorDented, dmgType, armorUpdates) {
 
   if (absorbed) {
     const baseAc = Number(armor.data.data.attributes.base_ac?.value);
-    let verb = armorDented ? 'dents' : (isBulky && isMetal) ? 'punctures' : (isBulky || isShield) ? 'cracks' : 'tears';
-
+    let verb = armorDented ? 'dents' : (isBulky && isMetal) ? 'punctures' : (isBulky || isWood) ? 'cracks through' : 'tears through';
+    hitDesc = ` and ${verb} ${armor.name}`;
     // only damage armor if not dented
     if (!armorDented) {
       const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
       if (baseAc < 2) { // TODO use condition instead of base AC
-        verb = isShield ? 'splinters' : 'tears apart';
+        hitDesc = isWood ? ` and smashes ${armorName} to splinters` : ` and tears ${armorName} to pieces`;
         const qty = +armor.data.data.quantity || 0;
         qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
       }
       armorUpdates.push(itemUpdate);
     }
-    hitDesc = ` and ${verb} ${armor.name}`;
   }
 
   return { absorbed, absorbDr, armorDented, hitDesc };
