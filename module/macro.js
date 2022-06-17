@@ -1058,7 +1058,14 @@ export async function addDisease(disease=null, options={}) {
   }
 
   const charDiseases = actor.getFlag("lostlands", "disease") || {};
-  if (charDiseases.hasOwnProperty(disease)) return ui.notifications.error(`${actor.name} already has ${disease}`);
+  if ( !options.shownConfirmDialog && charDiseases.hasOwnProperty(disease)) {
+    const yesCallback = () =>{
+      options.shownConfirmDialog = true;
+      addDisease(disease, options);
+    };
+    const noCallback = () => ui.notifications.info(`Did not add ${disease} to ${actor.name}`);
+    return Dialog.confirmSecondDiseaseDialog(actor, disease, noCallback, yesCallback);
+  } 
 
   const startTime = Util.now();
   const interval = Fatigue.DISEASES[disease].damageInterval;

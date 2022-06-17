@@ -102,10 +102,10 @@ export function altDialog(options, title, buttons) {
   }
 }
 
-export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
+function confirmDialog(title, content, noCallback, yesCallback) {
   return new Dialog({
-    title: "Confirm Disease",
-    content: `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`,
+    title,
+    content,
     buttons: {
      one: {
       icon: '<i class="fas fa-check"></i>',
@@ -119,6 +119,20 @@ export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
      }
     },
   }).render(true);
+}
+
+export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
+  const title = "Confirm Disease";
+  const content = `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`;
+  
+  return confirmDialog(title, content, noCallback, yesCallback);
+}
+
+export function confirmSecondDiseaseDialog(actor, disease, noCallback, yesCallback) {
+  const title = "Confirm Disease";
+  const content = `<p>${actor.name} already has ${Util.upperCaseFirst(disease)}. Add again?</p>`;
+  
+  return confirmDialog(title, content, noCallback, yesCallback);
 }
 
 export function attackOptionsDialog(options, weapon, preparations, aimPenalties, callback) {
