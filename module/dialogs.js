@@ -48,12 +48,12 @@ export function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options)
 
 
 
-export function modDialog(options, title, fields=[{label:'', key:'', placeholder:''}], callback) {
+export function modDialog(options, title, fields=[{label:'', key:'', val:'', placeholder:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {
     formFields += `<div class="form-group">
                     <label>${field.label}</label>
-                    <input type="text" id="${field.key}" placeholder="${field.placeholder || 'e.g. +2, -4'}">
+                    <input type="text" id="${field.key}" value="${field.val || ''}" placeholder="${field.placeholder || 'e.g. +2, -4'}">
                   </div>`;
   });
   const content = `<form>${formFields}</form>`;
@@ -67,7 +67,8 @@ export function modDialog(options, title, fields=[{label:'', key:'', placeholder
         callback: html => {
           options.shownModDialog = true;
           fields.forEach(field => {
-            options[field.key] = html.find(`[id=${field.key}]`)?.val().trim().toLowerCase().replace('x','*');
+            const val = html.find(`[id=${field.key}]`)?.val().trim().toLowerCase().replace('x','*');
+            options[field.key] = val;
           });
           callback();
         }
@@ -124,13 +125,6 @@ function confirmDialog(title, content, noCallback, yesCallback) {
 export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
   const title = "Confirm Disease";
   const content = `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`;
-  
-  return confirmDialog(title, content, noCallback, yesCallback);
-}
-
-export function confirmSecondDiseaseDialog(actor, disease, noCallback, yesCallback) {
-  const title = "Confirm Disease";
-  const content = `<p>${actor.name} already has ${Util.upperCaseFirst(disease)}. Add again?</p>`;
   
   return confirmDialog(title, content, noCallback, yesCallback);
 }
