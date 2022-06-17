@@ -501,8 +501,9 @@ async function save(tokens, damage, options={}) {
   // mod dialog
   const modDialogFlavor = options.flavor || 'Saving Throw';
   if (options.showModDialog && !options.shownModDialog) {
-    const field = {label: 'Save modifiers', key: 'dialogMod'};
-    return Dialog.modDialog(options, modDialogFlavor, [field], () => save(tokens, damage, options));
+
+    const fields = [{label: 'Save modifiers', key: 'dialogMod'}];
+    return Dialog.modDialog(options, modDialogFlavor, fields, () => save(tokens, damage, options));
   }
   let dialogMod = '';
   try {
@@ -526,9 +527,11 @@ async function save(tokens, damage, options={}) {
 
   // save for half damage
   if (damage) {
+    const mdr = Math.min(5, +actor.data.data.ac?.mdr || 0);
+    damage = Math.floor(damage * (6 - mdr) / 6);
     const takenDamage = success ? Math.floor(damage / 2) : damage;
     content += ` for ${Util.chatInlineRoll(takenDamage)} damage.`;
-    flavor = 'Save for Half Damage';
+    flavor = `Save for Half ${damage} Damage`;
     const currentHp = +actor.data.data.hp?.value;
     if ( !isNaN(currentHp) && takenDamage && ( game.user.isGM || token.actor.isOwner ) ) {
       actor.update({"data.hp.value": currentHp - takenDamage});
@@ -1059,12 +1062,7 @@ export async function addDisease(disease=null, options={}) {
 
   const charDiseases = actor.getFlag("lostlands", "disease") || {};
   if ( !options.shownConfirmDialog && charDiseases.hasOwnProperty(disease)) {
-    const yesCallback = () =>{
-      options.shownConfirmDialog = true;
-      addDisease(disease, options);
-    };
-    const noCallback = () => ui.notifications.info(`Did not add ${disease} to ${actor.name}`);
-    return Dialog.confirmSecondDiseaseDialog(actor, disease, noCallback, yesCallback);
+    return ui.notifications.error(`${actor.name} already has ${disease}`);
   } 
 
   const startTime = Util.now();
