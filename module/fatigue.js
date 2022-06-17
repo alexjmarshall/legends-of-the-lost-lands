@@ -452,14 +452,12 @@ export async function clearMaxHpDamage(actor) {
   // diseases -- Just restores damage from diseases, doesn't eliminate the diseases
   const diseases = actor.getFlag("lostlands", "disease");
   if (!diseases) return totalDmg;
-  let resetDiseases = false;
   for (const data of Object.values(diseases)) {
     const damage = +data.maxHpDamage || 0;
     if (damage) {
       await restoreMaxHpDamage(actor, damage);
       data.maxHpDamage = 0;
       totalDmg += damage;
-      resetDiseases = true;
     }
   }
   await actor.setFlag("lostlands", "disease", diseases);
