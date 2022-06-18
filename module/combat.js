@@ -2,35 +2,18 @@ import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 import * as Dialog from "./dialogs.js";
 
-export async function attack(attackers, target, options) { 
+export async function attack(attacker, target, options) { // TODO to break attacking loop, return false;
   const targetToken = target.token;
   const targetActor = targetToken?.actor;
   const targetName = targetActor?.name;
   const targetUpdate = target.update;
   const targetItemUpdates = target.itemUpdates;
   const doTargetUpdates = options.applyEffect === true && game.user.isGM;
-
-  // if attackers are finished, update target flags
-  if(!attackers.length) {
-    // if(doTargetUpdates) {
-    //   await targetActor.update(targetUpdate); // TODO do this every attack instead
-    //   await targetActor.updateEmbeddedDocuments("Item", targetItemUpdates);
-    // }
-    const totalEnergyDrainDmg = +target.totalEnergyDrainDmg || 0;
-    if ( doTargetUpdates && totalEnergyDrainDmg && targetActor ) {
-      const storedDamage = +targetActor.getFlag("lostlands", "energyDrainDamage") || 0;
-      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
-    }
-    return;
-  }
-
   const targetRollData = targetActor?.getRollData();
-  const removedLocs = targetActor?.data.data.removedLocs; // TODO use tag instead
+  const removedLocs = targetActor?.getFlag("lostlands", "removedLocs");
 
-  const attacker = attackers[0];
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
-  const attacks = attacker.attacks;
   const attackingActor = token.actor;
   const attackerName = attackingActor.name;
   const attackerUpdate = attacker.update;
@@ -1198,6 +1181,12 @@ export async function attack(attackers, target, options) {
   
   // wait if there are more attacks or more attackers left to handle
   if ( weapons?.length > 1 || attackers.length > 1 ) await Util.wait(500);
+
+  const totalEnergyDrainDmg = +target.totalEnergyDrainDmg || 0;
+  if ( doTargetUpdates && totalEnergyDrainDmg && targetActor ) {
+    const storedDamage = +targetActor.getFlag("lostlands", "energyDrainDamage") || 0;
+    await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
+  }
 
   return attack(attackers, target, options);
 }

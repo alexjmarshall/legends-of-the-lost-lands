@@ -129,7 +129,17 @@ export class SimpleActor extends Actor {
             return Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
           } 
         }).flat().filter(l => Constant.HIT_LOC_ARRS.THRUST.includes(l));
-      actorData.removedLocs = removedLocations;
+      // actorData.removedLocs = removedLocations;
+      const currRemovedLocs = this.getFlag("lostlands", "removedLocs") || [];
+      let updateRemovedLocs = false;
+      removedLocations.forEach(l => {
+        if (!currRemovedLocs.includes(l)) {
+          currRemovedLocs.push(l);
+          updateRemovedLocs = true;
+        }
+      });
+      updateRemovedLocs && this.setFlag("lostlands", "removedLocs", currRemovedLocs);
+      
 
       const naturalAc = +attributes.ac?.value || Constant.AC_MIN;
       const naturalDr = +attributes.dr?.value || 0;
