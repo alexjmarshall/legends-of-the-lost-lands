@@ -10,13 +10,20 @@ export async function attack(attackers, target, options) {
   const targetItemUpdates = target.itemUpdates;
   const doTargetUpdates = options.applyEffect === true && game.user.isGM;
 
+  // if attackers are finished, update target flags
   if(!attackers.length) {
-    if(doTargetUpdates) {
-      await targetActor.update(targetUpdate); // TODO do this every attack instead
-      await targetActor.updateEmbeddedDocuments("Item", targetItemUpdates);
+    // if(doTargetUpdates) {
+    //   await targetActor.update(targetUpdate); // TODO do this every attack instead
+    //   await targetActor.updateEmbeddedDocuments("Item", targetItemUpdates);
+    // }
+    const totalEnergyDrainDmg = +target.totalEnergyDrainDmg || 0;
+    if ( doTargetUpdates && totalEnergyDrainDmg && targetActor ) {
+      const storedDamage = +targetActor.getFlag("lostlands", "energyDrainDamage") || 0;
+      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
     }
     return;
   }
+
   const targetRollData = targetActor?.getRollData();
   const removedLocs = targetActor?.data.data.removedLocs; // TODO use tag instead
 
@@ -50,46 +57,8 @@ export async function attack(attackers, target, options) {
     return attack(attackers, target, options);
   }
 
-  // if this attacker's weapons are finished, remove attacker and create attack chat msg
+  // if this attacker's weapons are finished, update attacker and remove
   if (!weapons.length) {
-    chatMsgData.flavor = attacker.flavor || chatMsgData.flavor;
-    // remove comma at end of flavor and add names
-    chatMsgData.flavor = chatMsgData.flavor.replace(/,\s*$/, '') + `${targetActor ? ` vs. ${targetName}` : ''}`;
-    // add follow up attack to content
-    const followAttackText = ` and ${attackerName} is fast enough to attack again!`
-    if (attacker.followAttack && !attacker.kill) chatMsgData.content = chatMsgData.content.replace(/!<br>\s*$|\.<br>\s*$/, '') + followAttackText;
-    Util.macroChatMessage(token, chatMsgData, false);
-    const chatBubbleString = attacker.bubbleString || chatMsgData.bubbleString;
-    Util.chatBubble(token, chatBubbleString);    
-
-    for (const attack of attacks) {
-      if (targetRollData) {
-        const targetHp = +targetActor?.data.data.hp?.value || 0;
-        const dmg = +attack.damage || 0;
-        let hpUpdate = targetHp - dmg;
-        let update = {"data.hp.value": hpUpdate};
-
-        const energyDrainDmg = attack.energyDrainDamage;
-        if (energyDrainDmg) {
-          const maxHp = +targetToken?.actor.data.data.hp?.max;
-          Object.assign(update, {"data.hp.max": maxHp - energyDrainDmg});
-        }
-        
-        if (hpUpdate < targetHp) Object.assign(targetUpdate, update);
-      }
-      
-      attack.sound && Util.playSound(`${attack.sound}`, token, {push: true, bubble: false});
-      // wait if there are more attacks or more attackers left to handle
-      if ( attacks.indexOf(attack) < attacks.length - 1 || attackers.length > 1 ) await Util.wait(500);
-    }
-
-    if (attacker.kill) Util.playVoiceSound(Constant.VOICE_MOODS.KILL, attackingActor, token, {push: true, bubble: true, chance: 0.7});
-
-    const totalEnergyDrainDmg = +attacker.totalEnergyDrainDmg || 0;
-    if (totalEnergyDrainDmg) {
-      const storedDamage = targetToken.actor.getFlag("lostlands", "energyDrainDamage") || 0;
-      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
-    }
 
     // update attacking actor
     await attackingActor.updateEmbeddedDocuments("Item", attackerItemUpdates);
@@ -223,7 +192,7 @@ export async function attack(attackers, target, options) {
   if (loadable) {
     if (doReload) {
       weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.attributes.loaded.value': true});
-      chatMsgData.content += `${attackerName} reloads ${weapName}.<br>`;
+      chatMsgData.content += `${attackerName} reloads ${weapName}.`;
       weapons.shift();
       return attack(attackers, target, options);
     } else {
@@ -830,7 +799,7 @@ export async function attack(attackers, target, options) {
         // knockdowns
         const knockDownMulti = doubleKnockdownAreas.includes(coverageArea) ? 2 : 1;
         let knockdownChance = knockDownMulti * 5 * weapImp - 20 * (targetSize - 2);
-        if (!isSwing) knockdownChance = Math.floor(knockdownChance / 2);
+        if (!isSwing && isPierce) knockdownChance = 0;
         const isKnockdown = !immuneKnockdown && !targetProne && await Util.rollDice('d100') <= knockdownChance;
         if (isKnockdown) {
           const armor = appliedArmors[0];
@@ -865,19 +834,22 @@ export async function attack(attackers, target, options) {
             const sizeDiff = attackerSize - targetSize;
             const knockdownDmg = sizeDiff * 4 + weapImp;
             const isStunned = targetActor.data.effects.some(e => Util.stringMatch(e.data.label, 'Stunned'));
+            let knockDesc = ''
             if (knockdownDmg > 8 && (2 * Math.random() > 1)) {
-              dmgEffect = knockbackDesc + dmgEffect;
+              knockDesc += knockbackDesc;
               skipWeaps = true;
             } else if ( isStunned || (knockdownDmg > 2 && (2 * Math.random() > 1)) ) {
-              dmgEffect = knockdownDesc + dmgEffect;
+              knockDesc += knockdownDesc;
               skipWeaps = true;
-            } else {
+            }
+            if (3 * Math.random() > 1) {
               if (['gut','chest'].includes(coverageArea)) {
-                dmgEffect = knockWindDesc + dmgEffect;
+                knockDesc += knockWindDesc;
               } else {
-                dmgEffect = staggerDesc + dmgEffect;
+                knockDesc += staggerDesc;
               }
             }
+            dmgEffect = knockDesc + dmgEffect;
   
             // remove any other weapons
             if (skipWeaps) while (weapons.length) weapons.shift();
@@ -920,7 +892,7 @@ export async function attack(attackers, target, options) {
         hitDesc += /but$/.test(hitDesc) ? `${hitVerb}` : ` and${hitVerb}`;
 
         const injuryDmgType = (!isBlunt && isShooting) ? "piercing" : dmgType;
-        inchesText = getPenInchesDesc(injuryDmgType, coverageArea, totalImpaleDmg);
+        inchesText = getPenInchesDesc(injuryDmgType, coverageArea, targetSize, totalImpaleDmg);
         resultText += hitDesc;
   
         // apply target armor damage updates
@@ -1067,21 +1039,14 @@ export async function attack(attackers, target, options) {
       injuryDmg > 5 ? injuryObj['critical'] :
       injuryDmg > 2 ? injuryObj['serious'] :
       injuryObj['light']) || {};
-  
-    attacks.push({
-      instantKill: totalDmgResult > targetHp && injury.fatal,
-      sound: resultSound,
-      damage: isHit ? totalDmgResult : null,
-      energyDrainDamage: isHit && energyDrain ? totalDmgResult : null
-    });
-  
-    const sumDmg = attacks.reduce((sum, a) => sum + a.damage, 0);
-    const sumEnergyDrainDmg = attacks.reduce((sum, a) => sum + a.energyDrainDamage, 0);
-    attacker.totalEnergyDrainDmg = sumEnergyDrainDmg;
-    if (targetHp > 0 && sumDmg >= targetHp) {
-      while (weapons.length) weapons.shift();
+
+
+    if (totalDmgResult >= targetHp) {
       attacker.kill = true;
     }
+
+    target.totalDmg = (target.totalDmg || 0) + (isHit ? totalDmgResult : 0);
+    target.energyDrainDamage = (target.energyDrainDamage || 0) + (isHit && energyDrain ? totalDmgResult : 0);
   
     // add damage and injury to result
     if (isHit) {
@@ -1095,20 +1060,20 @@ export async function attack(attackers, target, options) {
   // TODO add XP macro
   // TODO finalize death & dying mechanic
   // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced -- only reduce to half of base_ac, then it falls apart
-      if (sumDmg > targetHp) {
-        if (targetHp > 0) while (weapons.length) weapons.shift();
+      if (target.totalDmg > targetHp) {
+        // if (targetHp > 0) while (weapons.length) weapons.shift();
 
         // finalize resultText & inchesText
         if (Util.stringMatch(injuryDmgType, 'blunt')) {
           if (injury.dmgEffect?.includes('poke through the skin') || injury.dmgEffect?.includes('red pulp')) {
             const verbReplace = ' tears the flesh';
             resultText = resultText.replace(hitVerb, verbReplace);
-            inchesText = getPenInchesDesc(injuryDmgType, coverageArea, totalImpaleDmg, injuryDmg, injury.fatal, isGruesome);
+            inchesText = getPenInchesDesc(injuryDmgType, coverageArea, targetSize, totalImpaleDmg, injuryDmg, injury.fatal, isGruesome);
           }
         } else if (Util.stringMatch(injuryDmgType, 'slashing') || Util.stringMatch(injuryDmgType, 'piercing')){
           const verbReplace = isSlash ? ' cuts' : isPierce ? ' stabs' : hitVerb;
           resultText = resultText.replace(hitVerb, verbReplace);
-          inchesText = getPenInchesDesc(injuryDmgType, coverageArea, totalImpaleDmg, injuryDmg, injury.fatal, isGruesome);
+          inchesText = getPenInchesDesc(injuryDmgType, coverageArea, targetSize, totalImpaleDmg, injuryDmg, injury.fatal, isGruesome);
         }
 
 
@@ -1159,21 +1124,80 @@ export async function attack(attackers, target, options) {
       resultText += inchesText;
       if (critDmg) resultText += `${inchesText ? ` in` : ''} a vulnerable spot`;
       resultText += dmgText;
+
+
+        // prepare target update
+      if (targetRollData) {
+        const targetHp = +targetActor?.data.data.hp?.value || 0;
+        const dmg = +totalDmgResult || 0;
+        const hpUpdate = targetHp - dmg;
+        const update = {"data.hp.value": hpUpdate};
+
+        const energyDrainDmg = target.energyDrainDamage;
+        if (energyDrainDmg) {
+          const maxHp = +targetToken?.actor.data.data.hp?.max;
+          Object.assign(update, {"data.hp.max": maxHp - energyDrainDmg});
+        }
+        
+        if (hpUpdate < targetHp) Object.assign(targetUpdate, update);
+      }
     }
   })();
-  
+
+
+
+
+
+
+  // finalize chat msg content for this attack
   const rangeText = missileAtk && range ? ` ${range}'` : '';
   const pluralize = name => /h$/.test(name) ? `${Util.lowerCaseFirst(name)}es` : `${Util.lowerCaseFirst(name)}s`;
 
-  chatMsgData.content += `${attackerName}` + prepText + aimText + atkTimeText + atkText + resultText;
-  const lastChar = resultText.charAt(resultText.length - 1);
-  chatMsgData.content += (lastChar === '!' || lastChar === '.') ? '<br>' : `.<br>`;
+  let content = chatMsgData.content || (`${attackerName}` + prepText + aimText + atkTimeText + atkText + resultText);
+  const flavor = attacker.flavor || chatMsgData.flavor || (Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle && atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` ${atkHeight}${endHeight && endHeight !== atkHeight ? `-to-${endHeight}` : ''}` : ''}`+`${targetActor ? ` vs. ${targetName}` : ''}`);
+  const bubbleString = attacker.bubbleString || chatMsgData.bubbleString || (Util.stringMatch(atkForm, 'attack') ? `${attackerName} ${pluralize(weapName)}${targetActor ? ` ${targetName}` : ''}` :
+    `${attackerName} ${atkForm}s ${weapName}${targetActor ? ` at ${targetName}` : ''}.`);
+
+  // add follow up attack to content
+  const followAttackText = ` and ${attackerName} is fast enough to attack again!`
+  if (attacker.followAttack && !attacker.kill) {
+    content += followAttackText;
+  }
+
+  content = content.trim();
+  if (!/!+$|\.+$/.test(content)) {
+    content = content.trim() + '.';
+  }
+
+  Util.macroChatMessage(token, {
+    content,
+    flavor,
+  }, false);
+  Util.chatBubble(token, bubbleString);    
+
+
   
-  chatMsgData.flavor += Util.stringMatch(atkForm, 'attack') ? `${weapName}, ` : `${weapName}${atkStyle && atkStyle !== 'stable' ? ` ${atkStyle}` : ''} ${atkForm.toLowerCase()}${rangeText}${atkHeight ? ` ${atkHeight}${endHeight && endHeight !== atkHeight ? `-to-${endHeight}` : ''}` : ''},`;
-  chatMsgData.bubbleString += Util.stringMatch(atkForm, 'attack') ? `${attackerName} ${pluralize(weapName)}${targetActor ? ` ${targetName}` : ''}<br>` :
-    `${attackerName} ${atkForm}s ${weapName}${targetActor ? ` at ${targetName}` : ''}.<br>`;
+  // sounds
+  resultSound && Util.playSound(`${resultSound}`, token, {push: true, bubble: false});
+  if (attacker.kill) Util.playVoiceSound(Constant.VOICE_MOODS.KILL, attackingActor, token, {push: true, bubble: true, chance: 0.7});
+
+  // update target with results of this attack
+  if(doTargetUpdates) {
+    await targetActor.update(targetUpdate);
+    await targetActor.updateEmbeddedDocuments("Item", targetItemUpdates);
+  }
+
 
   weapons.shift();
+  // remove rest of attacks if this attack drops target
+  if (target.totalDamage >= targetHp) {
+    // while (weapons.length) weapons.shift();
+    while (attackers.length) attackers.shift();
+  }
+  
+  
+  // wait if there are more attacks or more attackers left to handle
+  if ( weapons?.length > 1 || attackers.length > 1 ) await Util.wait(500);
 
   return attack(attackers, target, options);
 }
@@ -1184,7 +1208,7 @@ function formatMods(modsArr) {
   return modsArr.filter(m => m).reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
 }
 
-function getPenInchesDesc(dmgType, coverageArea, specDmg, injuryDmg=0, fatal=false, gruesome=false) {
+function getPenInchesDesc(dmgType, coverageArea, targetSize, specDmg, injuryDmg=0, fatal=false, gruesome=false) {
   if (!specDmg && !injuryDmg) return '';
 
   if (injuryDmg) {
@@ -1192,6 +1216,12 @@ function getPenInchesDesc(dmgType, coverageArea, specDmg, injuryDmg=0, fatal=fal
     : Util.stringMatch(dmgType, 'slashing') ? Math.ceil(injuryDmg / 2)
     : Math.ceil(injuryDmg / 3);
   }
+
+  const targetSizeMulti = targetSize === 0 ? 1/2
+    : targetSize === 1 ? 2/3
+    : targetSize === 2 ? 1
+    : targetSize === 3 ? 3/2
+    : 2;
 
   const isFat = Util.stringMatch(coverageArea, 'gut');
   const isTorso = Constant.AIM_AREAS.torso.includes(coverageArea);
@@ -1213,11 +1243,17 @@ function getPenInchesDesc(dmgType, coverageArea, specDmg, injuryDmg=0, fatal=fal
 
   if (gruesome) {
     longLimit = Math.floor(longLimit * 1.5);
-    deepLimit = Math.floor(deepLimit * 1.5);
+    deepLimit = Math.floor(deepLimit * 2);
+    injuryDmg = Math.floor(injuryDmg * 1.5);
   }
-  if (fatal) injuryDmg = Math.floor(injuryDmg * 1.5);
+  if (fatal) {
+    injuryDmg = Math.floor(injuryDmg * 1.5);
+  }
 
-  const dmg = Math.max(specDmg, injuryDmg);
+  let dmg = Math.max(specDmg, injuryDmg);
+  dmg = Math.ceil(dmg * targetSizeMulti);
+  longLimit = Math.ceil(longLimit * targetSizeMulti);
+  deepLimit = Math.ceil(deepLimit * targetSizeMulti);
 
   if (Util.stringMatch(dmgType, 'slashing')) {
     const inchDmg = dmg * 2;
@@ -1283,7 +1319,7 @@ function armorAbsorption(appliedArmors, armorDented, dmgType, armorUpdates, isSp
     if (!armorDented) {
       const itemUpdate = {'_id': armor._id, 'data.attributes.base_ac.value': Math.max(0, baseAc - 1)};
       if (baseAc < 2) { // TODO use condition instead of base AC
-        hitDesc = isWood ? ` and smashes ${armorName} to splinters` : ` and tears ${armorName} to pieces`;
+        hitDesc = isWood ? ` and smashes ${armor.name} to splinters` : ` and tears ${armor.name} to pieces`;
         const qty = +armor.data.data.quantity || 0;
         qty && Object.assign(itemUpdate, {'data.quantity': qty - 1});
       }
