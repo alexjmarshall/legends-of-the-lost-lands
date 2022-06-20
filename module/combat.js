@@ -10,7 +10,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const targetItemUpdates = target.itemUpdates;
   const doTargetUpdates = options.applyEffect === true && game.user.isGM;
   const targetRollData = targetActor?.getRollData();
-  const removedLocs = targetActor?.getFlag("lostlands", "removedLocs");
+  const removedLocs = targetActor?.getFlag("lostlands", "removedLocs") || [];
 
   const token = attacker.token;
   const chatMsgData = attacker.chatMsgData;
@@ -26,28 +26,26 @@ export async function attack(attacker, target, options) { // TODO to break attac
 
   const attackerRollData = attackingActor.getRollData();
   if (!attackerRollData) {
-    ui.notifications.error("Invalid attacker data");
-    attackers.shift();
-    return attack(attackers, target, options);
+    return ui.notifications.error("Invalid attacker data");
   }
   const weapons = attacker.weapons;
   const weapon = weapons[0];
   const range = measureRange(token, targetToken);
   const attackerSize = Constant.SIZE_VALUES[attackerRollData.size];
   if (attackerSize == null) {
-    ui.notifications.error("Attacker size not set");
-    attackers.shift();
-    return attack(attackers, target, options);
+    return ui.notifications.error("Attacker size not set");
   }
 
-  // if this attacker's weapons are finished, update attacker and remove
+  // if this attacker's weapons are finished, update attacker and target energy drain
   if (!weapons.length) {
 
-    // update attacking actor
-    await attackingActor.updateEmbeddedDocuments("Item", attackerItemUpdates);
+    const totalEnergyDrainDmg = +target.totalEnergyDrainDmg || 0;
+    if ( doTargetUpdates && totalEnergyDrainDmg && targetActor ) {
+      const storedDamage = +targetActor.getFlag("lostlands", "energyDrainDamage") || 0;
+      await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
+    }
 
-    attackers.shift();
-    return attack(attackers, target, options);
+    return attackingActor.updateEmbeddedDocuments("Item", attackerItemUpdates);
   }
 
   // get weapon and its properties
@@ -63,18 +61,18 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (!weaponItem) {
     ui.notifications.error("Could not find item on this character");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   if (weaponItem.data.data.quantity < 1) {
     ui.notifications.error("Item must have a quantity greater than 0 to use");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
   if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   const weapName = weaponItem.name;
   const weapAttrs = weaponItem.data.data.attributes;
@@ -86,7 +84,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (weapSize == null) {
     ui.notifications.error("Invalid weapon size specified");
     weapons.shift();
-    return attack(attackers, target, options); 
+    return attack(attacker, target, options); 
   }
   const weapCategory = weapAttrs.weap_prof?.value || '';
   const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
@@ -100,17 +98,17 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (!weapDmg) {
     ui.notifications.error("Invalid weapon damage specified");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
 
   // handle double weapon
   const isDoubleWeapon = !!weapAttrs.double_weapon?.value;
   if (isDoubleWeapon) {
-    const dmgs = weapDmg.toLowerCase().replace(/\s/g,'').split('/') || [];
+    const dmgs = weapDmg.toLowerCase().replace(/\s/g,'').split('/') || []; // valid format 1d2/1d3
     if (dmgs.length !== 2) {
       ui.notifications.error("Invalid double weapon damage specified");
       weapons.shift();
-      return attack(attackers, target, options);
+      return attack(attacker, target, options);
     }
     if (weapon.dwSideTwo) {
       weapDmg = dmgs[1];
@@ -131,7 +129,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (atkModes.length && atkModes.some(a => !Object.keys(Constant.ATK_MODES).includes(a))) {
     ui.notifications.error("Invalid attack mode(s) specified");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   const defaultThrowAtkMode = atkModes.find(a => a.includes('thrw'));
   let throwable = attacker.throwable ?? !!(weapAttrs.range?.value && defaultThrowAtkMode);
@@ -161,11 +159,11 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const offhand = weapon.offhand && options.twoWeaponFighting !== false;
 
   // reset weapons in non-immediate time if main hand (offhand must be reset manually)
-  if (Util.stringMatch(atkTime,'riposte') || Util.stringMatch(atkTime,'counter')) {
+  if ( Util.stringMatch(atkTime,'riposte') || Util.stringMatch(atkTime,'counter') ) {
     atkTimeText = ` ${atkTime}s and`;
     if (offhand) {
       weapons.shift();
-      return attack(attackers, target, options);
+      return attack(attacker, target, options);
     }
     // reset init of mainhand weapon
     // weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.atk_init': 'immediate'});
@@ -177,7 +175,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.attributes.loaded.value': true});
       chatMsgData.content += `${attackerName} reloads ${weapName}.`;
       weapons.shift();
-      return attack(attackers, target, options);
+      return attack(attacker, target, options);
     } else {
       weaponItem._id && attackerItemUpdates.push({'_id': weaponItem._id, 'data.attributes.loaded.value': false});
     }
@@ -194,7 +192,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const wearingShield = actorItems.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_shape?.value);
   if ( offhand === true && wearingShield ) {
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
 
 
@@ -274,7 +272,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     }));
     
     if ( options.showAltDialog && attacker.showAltDialog !== false && !options.shownAltDialog ) {
-      const callback = () => attack(attackers, target, options);
+      const callback = () => attack(attacker, target, options);
       const preparations = ['none'];
       if (isProficient) {
         preparations.push('feint');
@@ -289,7 +287,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   // throwing offhand weapon is not allowed
   if ( offhand === true && thrown ) {
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
 
   // check if target is beyond reach/range
@@ -303,12 +301,12 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (missileAtk && !weaponRange) {
     ui.notifications.error("Invalid range specified");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   if (!missileAtk && (maxReach == null || maxReach < 0)) {
     ui.notifications.error("Invalid reach specified");
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   const maxRange = missileAtk ? weaponRange : maxReach;
   if (range > +maxRange) {
@@ -318,7 +316,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of ${weapName}`);
     }
     weapons.shift();
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
   const minReach = missileAtk ? Constant.SQUARE_SIZE : (Math.min(...reachValues) * Constant.SQUARE_SIZE || -1);
   if ( range < +minReach) {
@@ -329,7 +327,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     } else {
       ui.notifications.error(`Target is too close to use ${weapName}`);
       weapons.shift();
-      return attack(attackers, target, options);
+      return attack(attacker, target, options);
     }
   }
 
@@ -339,7 +337,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       {label: 'To-hit modifiers', key: 'dialogAtkMod'}
     ];
     if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers', key: 'dialogDmgMod', placeholder: 'e.g. x2, +3d6'});
-    return Dialog.modDialog(options, 'Attack', fields, () => attack(attackers, target, options));
+    return Dialog.modDialog(options, 'Attack', fields, () => attack(attacker, target, options));
   }
   let dialogAtkMod = {}, dialogDmgMod = {};
   try {
@@ -350,7 +348,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   } catch {
     ui.notifications.error("Invalid input to modifier dialog");
     options.shownModDialog = false;
-    return attack(attackers, target, options);
+    return attack(attacker, target, options);
   }
 
 
@@ -448,14 +446,14 @@ export async function attack(attacker, target, options) { // TODO to break attac
       } catch (error) {
         ui.notifications.error(error);
         weapons.shift();
-        return attack(attackers, target, options);
+        return attack(attacker, target, options);
       }
     } else if (isShooting) {
       // must be holding with two hands to use a bow/crossbow
       if (!weaponHeldTwoHands) {
         ui.notifications.error(`Must hold ${weapName} with both hands to use`);
         weapons.shift();
-        return attack(attackers, target, options);
+        return attack(attacker, target, options);
       }
       const quiver = attackingActor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
       const quiverQty = quiver?.data.data.quantity;
@@ -468,7 +466,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       } catch (error) {
         ui.notifications.error(error);
         weapons.shift();
-        return attack(attackers, target, options);
+        return attack(attacker, target, options);
       }
     }
   }
@@ -484,7 +482,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     dialogAtk = `${!dialogAtkMod.includesSign ? `+` : ''}${dialogAtkMod.formula}`;
     totalAtk = /^[\*|\/]/.test(dialogAtk) ? `(${totalAtk})${dialogAtk}` : `${totalAtk}${dialogAtk}`;
   }
-  let totalAtkResult = Math.max(1, await Util.rollDice(totalAtk));
+  let totalAtkResult = await Util.rollDice(totalAtk);
   const hitSound = weapon.hitSound || weapAttrs.hit_sound?.value || Constant.ATK_MODES[atkMode]?.HIT_SOUND;
   const missSound = weapon.missSound || weapAttrs.miss_sound?.value || Constant.ATK_MODES[atkMode]?.MISS_SOUND;
   let resultSound = missSound;
@@ -528,7 +526,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     if (!isNaN(targetAc)) {
 
       // handle counter
-      if ( isCountering && targetWeapSpeedItem && (isFeinting || await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
+      if ( !offhand && isCountering && targetWeapSpeedItem && (await Util.rollDice('d6') + targetWeapSpeed > await Util.rollDice('d6') + weapSpeed) ) {
         resultText = `...but ${targetName} counters with ${targetWeapSpeedItem.name}!`;
         if (isFeinting) {
           prepText = prepText.replace(/\s+then\s*$/, '');
@@ -624,12 +622,21 @@ export async function attack(attacker, target, options) { // TODO to break attac
       
   
       const isBrutalHit = Util.stringMatch(atkStyle, 'power');
-      resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${!aimArea && targetName ? `${targetName}'s`: `the`}${hitLoc ? ` ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
+      
       // 20 always hits
       if( d20Result === 20 && totalAtkResult < targetAc) {
         totalAtkResult = targetAc;
       }
+
+      // apply 1/2 weapPen 
+      const penAtkBonus = Math.min(Math.floor(weapPen/2), targetAc - unarmoredAc);
+      if (penAtkBonus) {
+        totalAtk += `+${penAtkBonus}`; 
+        totalAtkResult += penAtkBonus;
+      }
+
       isHit = totalAtkResult >= targetAc;
+      resultText += `${isBrutalHit ? ' brutally hard' : ''} at ${!aimArea && targetName ? `${targetName}'s`: `the`}${hitLoc ? ` ${hitLoc}`:``} (${Util.chatInlineRoll(totalAtk)} vs. AC ${targetAc})`;
 
 
       // reset power thrust to fluid
@@ -647,7 +654,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   
         // critical hits
         const skillfulHitChance = totalAtkResult - targetAc + weapSpeed;
-        const critMulti = Constant.HIT_LOCATIONS[coverageArea].crit_chance_multi ?? 0;
+        const critMulti = coverageArea ? (Constant.HIT_LOCATIONS[coverageArea]?.crit_chance_multi || 0) : 1;
         const painCritChance = critMulti * skillfulHitChance; // TODO curved swords have lower min reach
         const critRoll = await Util.rollDice('d100');
         const isSkillfulHit = targetHelpless || critRoll <= skillfulHitChance;
@@ -700,9 +707,9 @@ export async function attack(attacker, target, options) { // TODO to break attac
         const impaleChance = Constant.BASE_IMPALE_CHANCE - 5 * weapSize;
         const doImpale = !immuneImpale && (isSkillfulHit || await Util.rollDice('d100') <= impaleChance);
         if (doImpale) {
-          const maxTargetImpales = appliedArmors.length + Constant.HIT_LOCATIONS[coverageArea].max_impale;
+          const maxTargetImpales = coverageArea ? (appliedArmors.length + Constant.HIT_LOCATIONS[coverageArea].max_impale) : targetSize + 1;
           const maxImpales = Math.min(weapSize + 2, maxTargetImpales);
-          let critDmgMulti = Constant.HIT_LOCATIONS[coverageArea].crit_dmg_multi ?? 1;
+          let critDmgMulti = Constant.HIT_LOCATIONS[coverageArea]?.crit_dmg_multi ?? 1;
           let lastLayerDr = 0;
           let stuck = false;
 
@@ -729,8 +736,15 @@ export async function attack(attacker, target, options) { // TODO to break attac
               let rolledDmg = await Util.rollDice(weapDmg);
 
               // first layer is flesh bone for chest/skull TODO need to use hide layer for monsters
-              const penMaterial = (Util.stringMatch(coverageArea, 'skull') || Util.stringMatch(coverageArea, 'chest') && !isShooting && !isPierce)
-                ? 'cuir bouilli' : 'none';
+              let penMaterial = 'none';
+              if (coverageArea) {
+                penMaterial = (Util.stringMatch(coverageArea, 'skull') || Util.stringMatch(coverageArea, 'chest') && !isShooting && !isPierce)
+                  ? 'cuir bouilli' : penMaterial;
+              } else {
+                const hide = targetActor.data.data.attributes.hide?.value;
+                penMaterial = Constant.ARMOR_VS_DMG_TYPE[hide] ? hide : penMaterial;console.log('hide',hide);
+              }
+              
               const penFlesh = !totalImpaleDmg ? await penetrateArmor(penMaterial, dmgType, weapPen, lastLayerDr)
                 : await Util.rollDice('d100') <= impaleChance;
               if (!penFlesh) break;
@@ -824,14 +838,14 @@ export async function attack(attacker, target, options) { // TODO to break attac
             } else if ( isStunned || (knockdownDmg > 2 && (2 * Math.random() > 1)) ) {
               knockDesc += knockdownDesc;
               skipWeaps = true;
-            }
-            if (3 * Math.random() > 1) {
+            } else {
               if (['gut','chest'].includes(coverageArea)) {
                 knockDesc += knockWindDesc;
               } else {
                 knockDesc += staggerDesc;
               }
             }
+
             dmgEffect = knockDesc + dmgEffect;
   
             // remove any other weapons
@@ -922,7 +936,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
           }
         } else if (totalAtkResult < unarmoredAc - targetDexMod) {
           missDesc = ` but misses entirely`;
-        } else if (totalAtkResult < unarmoredAc) {
+        } else if (totalAtkResult < unarmoredAc && (Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid'))) {
           const dodgeVerb = Constant.HEIGHT_AREAS.high.includes(coverageArea) ? 'ducks'
             : atkForm === 'thrust' ? 'sidesteps'
             : atkForm === 'swing' ? 'jumps back'
@@ -1014,8 +1028,8 @@ export async function attack(attacker, target, options) { // TODO to break attac
     // consider any shot weapon as piercing for the purpose of inch desc and injury determination
     const injuryDmgType = (!isBlunt && isShooting) ? "piercing" : dmgType;
     injuryObj = Constant.HIT_LOCATIONS[coverageArea]?.injury?.[injuryDmgType] || {};
-    let injuryWeapDmg = weapDmgResult - dr + attrDmgMod + stanceDmgMod;
-    if (isBlunt) injuryWeapDmg = Math.min(weapImp, injuryWeapDmg);
+    let injuryWeapDmg = maxWeapDmg; //weapDmgResult - dr + attrDmgMod + stanceDmgMod;
+    if (isBlunt && !isSwing) injuryWeapDmg = Math.min(weapImp, injuryWeapDmg);
     const injuryDmg = totalDmgResult > targetHp ? totalDmgResult - targetHp : 0;
     const isGruesome = injuryWeapDmg > 8 && injuryDmg > 8 && !!injuryObj['gruesome'];
     const injury = (isGruesome ? injuryObj['gruesome'] :
@@ -1024,9 +1038,6 @@ export async function attack(attacker, target, options) { // TODO to break attac
       injuryObj['light']) || {};
 
 
-    if (totalDmgResult >= targetHp) {
-      attacker.kill = true;
-    }
 
     target.totalDmg = (target.totalDmg || 0) + (isHit ? totalDmgResult : 0);
     target.energyDrainDamage = (target.energyDrainDamage || 0) + (isHit && energyDrain ? totalDmgResult : 0);
@@ -1044,7 +1055,13 @@ export async function attack(attacker, target, options) { // TODO to break attac
   // TODO finalize death & dying mechanic
   // MAJOR TODO armor should have HP proportional to coverage area, and base_AC is proportionally reduced as HP is reduced -- only reduce to half of base_ac, then it falls apart
       if (target.totalDmg > targetHp) {
-        // if (targetHp > 0) while (weapons.length) weapons.shift();
+        
+
+        if (targetHp > 0) {
+          attacker.kill = true;
+          attacker.followAttack = false;
+          while (weapons.length) weapons.shift();
+        } 
 
         // finalize resultText & inchesText
         if (Util.stringMatch(injuryDmgType, 'blunt')) {
@@ -1143,7 +1160,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
 
   // add follow up attack to content
   const followAttackText = ` and ${attackerName} is fast enough to attack again!`
-  if (attacker.followAttack && !attacker.kill) {
+  if (attacker.followAttack) {
     content += followAttackText;
   }
 
@@ -1174,21 +1191,14 @@ export async function attack(attacker, target, options) { // TODO to break attac
   weapons.shift();
   // remove rest of attacks if this attack drops target
   if (target.totalDamage >= targetHp) {
-    // while (weapons.length) weapons.shift();
-    while (attackers.length) attackers.shift();
+    while (weapons.length) weapons.shift();
   }
   
   
-  // wait if there are more attacks or more attackers left to handle
-  if ( weapons?.length > 1 || attackers.length > 1 ) await Util.wait(500);
+  // wait if there are more attacks left to handle
+  if (weapons?.length) await Util.wait(500);
 
-  const totalEnergyDrainDmg = +target.totalEnergyDrainDmg || 0;
-  if ( doTargetUpdates && totalEnergyDrainDmg && targetActor ) {
-    const storedDamage = +targetActor.getFlag("lostlands", "energyDrainDamage") || 0;
-    await targetToken.actor.setFlag("lostlands", "energyDrainDamage", storedDamage + totalEnergyDrainDmg);
-  }
-
-  return attack(attackers, target, options);
+  return attack(attacker, target, options);
 }
 
 function formatMods(modsArr) {
@@ -1225,8 +1235,8 @@ function getPenInchesDesc(dmgType, coverageArea, targetSize, specDmg, injuryDmg=
   }
 
   const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-  let longLimit = Constant.HIT_LOCATIONS[coverageArea].weights[unwornIndex];
-  let deepLimit = Constant.HIT_LOCATIONS[coverageArea].max_impale * 3;
+  let longLimit = coverageArea ? Constant.HIT_LOCATIONS[coverageArea].weights[unwornIndex] : 12;
+  let deepLimit = coverageArea ? (Constant.HIT_LOCATIONS[coverageArea].max_impale * 3) : 6;
   const isBilateral = Constant.HIT_LOCATIONS[coverageArea].bilateral;
   if (isBilateral) longLimit = Math.ceil(longLimit / 2);
 
