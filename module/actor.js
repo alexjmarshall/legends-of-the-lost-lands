@@ -11,7 +11,7 @@ export class SimpleActor extends Actor {
   /** @inheritdoc */
   async prepareDerivedData() {
 
-    // actor types: character, monster, container, merchant
+    // actor types: character, humanoid, monster, container, merchant
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -19,21 +19,9 @@ export class SimpleActor extends Actor {
     const items = this.data.items;
     const actorData = this.data.data;
     const attributes = actorData.attributes;
-    // const updateData = {};
     const type = this.data.type;
-    const hasPlayerOwner = this.hasPlayerOwner;
     const updateData = {};
     const charSize = Constant.SIZE_VALUES[attributes?.size?.value] ?? 2;
-
-    // level up sound
-    if (type === 'character') {
-      if (actorData.xp?.value >= actorData.xp?.max && !actorData.is_level_up) {
-        Util.playSound('level_up', null, {push: false, bubble: false});
-        updateData.is_level_up = true;
-      } else if (actorData.xp?.max > actorData.xp?.value && actorData.is_level_up !== false) {
-        updateData.is_level_up = false;
-      }
-    }
 
     // encumbrance
     updateData.enc = Math.round(items.filter(i => i.data.type === 'item').reduce((a, b) => a + (+b.data.data.quantity * +b.data.data.weight  || 0), 0) * 10) / 10;

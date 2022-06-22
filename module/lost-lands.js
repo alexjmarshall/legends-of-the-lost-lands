@@ -314,21 +314,21 @@ Hooks.on("updateToken", (token, moved, data) => {
 });
 
 // Play 'hurt'/'death' voice sounds on HP decrease
-Hooks.on("preUpdateActor", (actor, change) => {
+Hooks.on("updateActor", (actor, change) => {
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const maxHp = actor.data.data.hp?.max;
+  const xpUpdate = change.data?.xp?.value;
+  const maxXp = actor.data.data.xp?.max;
   const token = Util.getTokenFromActor(actor);
   const maxNegHP = actor.type === "humanoid" || actor.type === "character" ?
     (0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
 
-  // if (hpUpdate <= maxNegHP  && targetHp > 0 ) {
-  //   Util.macroChatMessage(actor, {
-  //     flavor: 'Instant Death', 
-  //     content: `${actor.name} dies instantly.`,
-  //   }, false);
-  //   return;
-  // }
+  // level up sound
+  if (xpUpdate >= maxXp) {
+    Util.playSound('level_up', null, {push: false, bubble: false});
+    // set is_level_up flag here if necessary
+  }
 
   if (hpUpdate <= maxNegHP  && targetHp > maxNegHP) {
     Util.macroChatMessage(actor, {
@@ -385,13 +385,21 @@ Hooks.on("preUpdateItem", (item, change) => {
   if (change.data?.attributes?.wearable?.value != null || invalidWear) {
     change.data.worn = false;
   }
-  if (change.data?.held_left != null || change.data?.held_right != null) {
-    const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
+  if (change.data?.held_left != null || change.data?.held_right != null) {// || change.data?.data?.attributes?.atk_modes
+    const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',')
+      .map(t => t.toLowerCase().replace(/\s/g, ""))
+      .filter(t => Object.keys(Constant.ATK_MODES).includes(t)) || [];
+
     if (atkModes.length) {
       change.data.atk_mode = atkModes[0];
       change.data.atk_height = 'mid';
       change.data.atk_style = 'stable';
       change.data.atk_init = 'immediate';
+    } else {
+      change.data.atk_mode = null;
+      change.data.atk_height = null;
+      change.data.atk_style = null;
+      change.data.atk_init = null;
     }
   }
   if (change.data?.worn != null && !!item.data?.data?.attributes?.shield_shape) {
