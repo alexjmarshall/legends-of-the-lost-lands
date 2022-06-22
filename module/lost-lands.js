@@ -314,10 +314,11 @@ Hooks.on("updateToken", (token, moved, data) => {
 });
 
 // Play 'hurt'/'death' voice sounds on HP decrease
-Hooks.on("updateActor", (actor, change) => {
+Hooks.on("preUpdateActor", (actor, change) => {
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const maxHp = actor.data.data.hp?.max;
+  const targetXp = actor.data.data.xp?.value;
   const xpUpdate = change.data?.xp?.value;
   const maxXp = actor.data.data.xp?.max;
   const token = Util.getTokenFromActor(actor);
@@ -325,12 +326,12 @@ Hooks.on("updateActor", (actor, change) => {
     (0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
 
   // level up sound
-  if (xpUpdate >= maxXp) {
+  if (targetXp < maxXp && xpUpdate >= maxXp) {
     Util.playSound('level_up', null, {push: false, bubble: false});
     // set is_level_up flag here if necessary
   }
 
-  if (hpUpdate <= maxNegHP  && targetHp > maxNegHP) {
+  if (hpUpdate < maxNegHP  && targetHp >= maxNegHP) {
     Util.macroChatMessage(actor, {
       flavor: 'Death', 
       content: `${actor.name} dies.${actor.type === 'character' ? ' May the Gods have mercy.' : ''}`,
