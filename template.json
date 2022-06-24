@@ -199,8 +199,7 @@
       "min": 0,
       "max": 1000
     },
-    "ac": {},
-    "attitude_map": {}
+    "ac": {}
   },
   "monster": {
     "templates": ["basicProps","basicMonster"],
@@ -240,8 +239,7 @@
     "templates": ["basicProps"]
   },
   "merchant": {
-    "templates": ["basicProps"],
-    "attitude_map": {}
+    "templates": ["basicProps"]
   }
 },
 "Item": {
