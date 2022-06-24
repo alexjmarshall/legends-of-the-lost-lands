@@ -1,18 +1,18 @@
 {
   "name": "lostlands",
-  "title": "Legends of the Lost Lands",
-  "description": "A system for play in the Lost Lands.",
+  "title": "Legends of the Lost",
+  "description": "A simulationist FRPG system.",
   "author": "Alex",
   "authors": [],
   "url": "n/a",
   "license": "LICENSE.txt",
   "flags": {},
-  "version": "0.1",
-  "minimumCoreVersion": "0.8.4",
-  "compatibleCoreVersion": "0.8.8",
+  "version": "0.2",
+  "minimumCoreVersion": "0.8.9",
+  "compatibleCoreVersion": "0.8.9",
   "scripts": [],
   "esmodules": [
-    "module/simple.js"
+    "module/lost-lands.js"
   ],
   "styles": [
     "styles/simple.css"
