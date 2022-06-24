@@ -101,6 +101,7 @@ Hooks.once("init", async function() {
     hint: "Don't touch this",
     scope: "world",
     type: String,
+    default: "[]",
     config: false
   });
 
