@@ -1,16 +1,194 @@
 {
 "Actor": {
-  "types": ["character", "monster", "container", "merchant"],
+  "types": ["character", "humanoid", "monster", "container", "merchant"],
   "templates": {
     "basicProps": {
       "description": "",
       "attributes": {},
-      "groups": {},
-      "injuries": "None"
+      "groups": {}
+    },
+    "basicMonster": {
+      "attributes": {
+        "hd": {
+          "dtype": "String",
+          "group": "",
+          "label": "HD",
+          "value": "1"
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "Magical Beast"
+        },
+        "size": {
+          "dtype": "String",
+          "group": "",
+          "label": "Size",
+          "value": "L"
+        },
+        "mv": {
+          "dtype": "Number",
+          "group": "",
+          "label": "MV",
+          "value": 15
+        },
+        "mr": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Magic Resistance",
+          "value": 0
+        },
+        "d_vul": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Vulnerabilities",
+          "value": "None"
+        },
+        "d_res": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Resistances",
+          "value": "None"
+        },
+        "d_immune": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Immunities",
+          "value": "None"
+        },
+        "hide": {
+          "dtype": "String",
+          "group": "",
+          "label": "Hide",
+          "value": "leather"
+        },
+        "intelligent": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Intelligent",
+          "value": false
+        },
+        "immune_crits": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Immune to Crits",
+          "value": false
+        },
+        "immune_bleed": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Immune to Bleed",
+          "value": false
+        },
+        "immune_knockdown": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Immune to Knockdown",
+          "value": false
+        },
+        "immune_impale": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Immune to Impale",
+          "value": false
+        },
+        "immune_injury": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Immune to Injury",
+          "value": false
+        }
+      },
+      "hp": {
+        "value": 8,
+        "min": 0,
+        "max": 8
+      },
+      "xp": 0,
+      "ac": {}
     }
   },
   "character": {
     "templates": ["basicProps"],
+    "groups": {
+      "ability_scores": {
+        "dtype": "Number",
+        "label": "Ability Scores"
+      },
+      "spell_magic": {
+        "dtype": "Resource",
+        "label": "Magic Spells"
+      },
+      "spell_cleric": {
+        "dtype": "Resource",
+        "label": "Cleric Spells"
+      },
+      "spell_witch": {
+        "dtype": "Resource",
+        "label": "Witch Spells"
+      },
+      "weapons": {
+        "dtype": "String",
+        "label": "Weapons"
+      }
+    },
+    "attributes": {
+      "bab": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base Attack Bonus",
+        "value": 0 
+      },
+      "class": {
+        "dtype": "String",
+        "group": "",
+        "label": "Class",
+        "value": "Fighter" 
+      },
+      "lvl": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Level",
+        "value": 1 
+      },
+      "size": {
+        "dtype": "String",
+        "group": "",
+        "label": "Size",
+        "value": "M"
+      },
+      "hit_die": {
+        "dtype": "String",
+        "group": "",
+        "label": "Hit Die",
+        "value": "d6"
+      },
+      "base_ac": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base AC",
+        "value": 10
+      },
+      "base_sv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base SV",
+        "value": 16
+      },
+      "base_mv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base MV",
+        "value": 12
+      },
+      "max_hp": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Max HP",
+        "value": 8
+      }
+    },
     "hp": {
       "value": 8,
       "min": 0,
@@ -20,26 +198,50 @@
       "value": 0,
       "min": 0,
       "max": 1000
-    }
+    },
+    "ac": {},
+    "attitude_map": {}
   },
   "monster": {
-    "templates": ["basicProps"],
-    "hp": {
-      "value": 8,
-      "min": 0,
-      "max": 8
+    "templates": ["basicProps","basicMonster"],
+    "attributes": {
+      "ac": {
+        "dtype": "Number",
+        "group": "",
+        "label": "AC",
+        "value": 15
+      }
+    }
+  },
+  "humanoid": {
+    "templates": ["basicProps","basicMonster"],
+    "groups": {
+      "ability_scores": {
+        "dtype": "Number",
+        "label": "Ability Scores"
+      }
     },
-    "xp": {
-      "value": 0,
-      "min": 0,
-      "max": 1000
+    "attributes": {
+      "base_ac": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base AC",
+        "value": 10
+      },
+      "mv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "MV",
+        "value": 9
+      }
     }
   },
   "container": {
     "templates": ["basicProps"]
   },
   "merchant": {
-    "templates": ["basicProps"]
+    "templates": ["basicProps"],
+    "attitude_map": {}
   }
 },
 "Item": {
