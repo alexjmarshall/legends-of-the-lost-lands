@@ -68,7 +68,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     weapons.shift();
     return attack(attacker, target, options);
   }
-  const weaponHeld = !!weaponItem.data.data.held_left || !!weaponItem.data.data.held_right;
+  const weaponHeld = !!weaponItem.data.data.held_offhand || !!weaponItem.data.data.held_mainhand;
   if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
@@ -90,7 +90,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
-  const weaponHeldTwoHands = !!weaponItem.data.data.held_left && !!weaponItem.data.data.held_right;
+  const weaponHeldTwoHands = !!weaponItem.data.data.held_offhand && !!weaponItem.data.data.held_mainhand;
   let weapAtkMod = +weapAttrs.atk_mod?.value || 0;
   let sitAtkMod = 0;
   let sitDmgMod = 0;
@@ -368,7 +368,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   // get target's properties
   // can be immune to critical hits, bleed, knockdown and impale
   const targetSize = Constant.SIZE_VALUES[targetRollData?.size];
-  const immuneCriticalHits = !!targetRollData?.immune_critical_hits;
+  const immuneCrits = !!targetRollData?.immune_crits;
   const immuneBleed = !!targetRollData?.immune_bleed;
   const immuneKnockdown = !!targetRollData?.immune_knockdown;
   const immuneImpale = !!targetRollData?.immune_impale;
@@ -384,7 +384,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const targetProne = targetActor?.data.effects.some(e => Util.stringMatch(e.data.label, 'Prone'));
   const targetDead = targetActor?.data.effects.some(e => Util.stringMatch(e.data.label, 'Dead'));
   const targetHelpless = targetActor?.data.effects.some(e => Util.stringMatch(e.data.label, 'Helpless'));
-  const targetHeldItems = targetActor?.items.filter(i => i.data.data.held_right || i.data.data.held_left);
+  const targetHeldItems = targetActor?.items.filter(i => i.data.data.held_mainhand || i.data.data.held_offhand);
   const targetWeapSpeedItem = !targetHeldItems?.length ? null 
     : targetHeldItems.reduce((a,b) => (+b.data.data.attributes.speed?.value || 0) > (+a.data.data.attributes.speed?.value || 0) ? b : a);
   const targetWeapSpeedItemAtkStyle = targetWeapSpeedItem?.data.data.atk_style || 'stable';
@@ -658,7 +658,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
         const painCritChance = critMulti * skillfulHitChance; // TODO curved swords have lower min reach
         const critRoll = await Util.rollDice('d100');
         const isSkillfulHit = targetHelpless || critRoll <= skillfulHitChance;
-        const isCriticalHit = targetHelpless || !immuneCriticalHits && critRoll <= painCritChance;
+        const isCriticalHit = targetHelpless || !immuneCrits && critRoll <= painCritChance;
         if (isSkillfulHit) {
             await (async () => {
               const armor = appliedArmors[0];
@@ -849,7 +849,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
             dmgEffect = knockDesc + dmgEffect;
   
             // remove any other weapons
-            if (skipWeaps) while (weapons.length) weapons.shift();
+            if (skipWeaps) while (weapons.length) weapons.shift(); // TODO return false to skip other attackers
           })();
           // add prone condition manually
         }
@@ -978,7 +978,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
         const fumbleChance = unwieldy ? Math.ceil(1.5 * baseFumbleChance) : baseFumbleChance;
         if (!immuneFumbles && await Util.rollDice('d100') <= fumbleChance) {
           attacker.followAttack = false;
-          const heldItems = attackingActor.items.filter(i => i.data.data.held_right || i.data.data.held_left);
+          const heldItems = attackingActor.items.filter(i => i.data.data.held_mainhand || i.data.data.held_offhand);
           const adjTargets = adjTokens(token);
           const selectRandom = (arr) => {
             const res = Math.floor(Math.random() * arr.length);
@@ -1190,7 +1190,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
 
   weapons.shift();
   // remove rest of attacks if this attack drops target
-  if (target.totalDamage >= targetHp) {
+  if (target.totalDamage >= targetHp) { // TODO and target starts > 0 HP?
     while (weapons.length) weapons.shift();
   }
   
@@ -1207,7 +1207,7 @@ function formatMods(modsArr) {
   return modsArr.filter(m => m).reduce((prev, curr) => curr < 0 ? prev + `-${Math.abs(curr)}` : prev + `+${curr}`, '');
 }
 
-function getPenInchesDesc(dmgType, coverageArea, targetSize, specDmg, injuryDmg=0, fatal=false, gruesome=false) {
+function getPenInchesDesc(dmgType, coverageArea, targetSize=2, specDmg, injuryDmg=0, fatal=false, gruesome=false) {
   if (!specDmg && !injuryDmg) return '';
 
   if (injuryDmg) {
@@ -1216,7 +1216,7 @@ function getPenInchesDesc(dmgType, coverageArea, targetSize, specDmg, injuryDmg=
     : Math.ceil(injuryDmg / 3);
   }
 
-  const targetSizeMulti = targetSize === 0 ? 1/2
+  const targetSizeMulti = targetSize === 0 ? 1/2 
     : targetSize === 1 ? 2/3
     : targetSize === 2 ? 1
     : targetSize === 3 ? 3/2

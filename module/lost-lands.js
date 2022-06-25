@@ -363,8 +363,8 @@ Hooks.on("preCreateItem", (item, data) => {
     data.data.worn = false;
   }
   if (data.data?.attributes?.holdable?.value != null) {
-    data.data.held_right = false;
-    data.data.held_left = false;
+    data.data.held_mainhand = false;
+    data.data.held_offhand = false;
   }
 });
 
@@ -376,18 +376,18 @@ Hooks.on("preUpdateItem", (item, change) => {
   if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
   else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
 
-  const invalidHold = (item.data.data.held_left || item.data.data.held_right) &&
+  const invalidHold = (item.data.data.held_offhand || item.data.data.held_mainhand) &&
     (change.data?.quantity < 1 || change.data?.quantity > heldQtyLimit);
   if (change.data?.attributes?.holdable?.value != null || invalidHold) {
-    change.data.held_left = false;
-    change.data.held_right = false;
+    change.data.held_offhand = false;
+    change.data.held_mainhand = false;
   }
   const wearQtyLimit = 1;
   const invalidWear = item.data.data.worn && (change.data?.quantity < 1 || change.data?.quantity > wearQtyLimit);
   if (change.data?.attributes?.wearable?.value != null || invalidWear) {
     change.data.worn = false;
   }
-  if (change.data?.held_left != null || change.data?.held_right != null) {// || change.data?.data?.attributes?.atk_modes
+  if (change.data?.held_offhand != null || change.data?.held_mainhand != null) {// || change.data?.data?.attributes?.atk_modes
     const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',')
       .map(t => t.toLowerCase().replace(/\s/g, ""))
       .filter(t => Object.keys(Constant.ATK_MODES).includes(t)) || [];
