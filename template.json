@@ -98,6 +98,12 @@
           "group": "",
           "label": "Immune to Injury",
           "value": false
+        },
+        "xp_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "XP Multiplier",
+          "value": 1
         }
       },
       "hp": {
