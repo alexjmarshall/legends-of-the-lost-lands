@@ -9,19 +9,28 @@ import * as Constant from "./constants.js";
 export class SimpleActor extends Actor {
 
   /** @inheritdoc */
-  async prepareDerivedData() {
+  prepareDerivedData() {
 
     // actor types: character, humanoid, monster, container, merchant
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
+    const actorData = this.data;
+
+    this._prepareCharacterData(actorData);
+    // this._prepareHumanoidData(data);
+    // this._prepareMonsterData(data);
+    // this._prepareContainerData(data);
+    // this._prepareMerchantData(data);
+
+    return;
+    
     const items = this.data.items;
-    const actorData = this.data.data;
+    // const actorData = this.data.data;
     const attributes = actorData.attributes;
-    const type = this.data.type;
-    const updateData = {};
-    const charSize = Constant.SIZE_VALUES[attributes?.size?.value] ?? 2;
+    const charSize = Constant.SIZE_VALUES[attributes.size.value] ?? Constant.SIZE_VALUES.default;
+
 
     // encumbrance
     updateData.enc = Math.round(items.filter(i => i.data.type === 'item').reduce((a, b) => a + (+b.data.data.quantity * +b.data.data.weight  || 0), 0) * 10) / 10;
@@ -129,14 +138,13 @@ export class SimpleActor extends Actor {
       updateRemovedLocs && this.setFlag("lostlands", "removedLocs", currRemovedLocs);
       
 
-      const naturalAc = +attributes.ac?.value || Constant.AC_MIN;
+      const naturalAc = +attributes.ac?.value || Constant.DEFAULT_BASE_AC;
       const naturalDr = +attributes.dr?.value || 0;
-      const naturalMdr = +attributes.mdr?.value || 0;
       const mr = +attributes.mr?.value || 0;
       const ac_mod = +attributes.ac_mod?.value || 0;
 
       const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attributes.hide?.value] ? attributes.hide?.value : "none";
-      const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_left || i.data.data.held_right));
+      const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_offhand || i.data.data.held_mainhand));
 
       // spell failure, skill check penalty and max dex mod
       const sf = Math.round(wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.spell_failure || 0), 0));
@@ -166,9 +174,9 @@ export class SimpleActor extends Actor {
       if (powerWeap) stancePenalty += Constant.STANCE_MODS.power.ac_mod;
       if (counterWeap) stancePenalty += Constant.STANCE_MODS.counter.ac_mod;
 
-      const touch_ac = Constant.AC_MIN + dexAcBonus + ac_mod + stancePenalty;
+      const touch_ac = Constant.DEFAULT_BASE_AC + dexAcBonus + ac_mod + stancePenalty;
 
-      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mdr: naturalMdr, mr, total: {}, stance_penalty: stancePenalty, timing };
+      const ac = { touch_ac, sf, sp, parry, max_dex_mod, mr, total: {}, stance_penalty: stancePenalty, timing };
       for (const dmgType of Constant.DMG_TYPES) {
         ac.total[dmgType] = {
           ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus + ac_mod,
@@ -284,12 +292,225 @@ export class SimpleActor extends Actor {
       }
     }
     
-    if (this._id && Object.keys(updateData).length) {
-      await Util.wait(200);
-      this.update({data: updateData});
-    }
+    // if (this._id && Object.keys(updateData).length) {
+    //   await Util.wait(200);
+    //   this.update({data: updateData});
+    // }
 
   }
+
+  _prepareCharacterData(actorData) {
+    const type = actorData.type;
+    if (type !== 'character') return;
+    const charData = actorData.data;
+    const items = actorData.items;
+    const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_offhand || i.data.data.held_mainhand));
+    const attrs = charData.attributes;
+    const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+    const abilities = attrs.ability_scores;
+
+
+    // encumbrance
+    const enc = Math.round(items.reduce((a, b) => a + (+b.data.data.quantity * +b.data.data.weight || 0), 0) * 10) / 10;
+    charData.enc = enc;
+
+
+    // derive mv and speed from encumbrance
+    const encStr = Math.round( Util.sizeMulti(abilities.str.value, charSize) );
+    const baseMv = attrs.base_mv.value;
+    const mvPenalty = Math.floor( Math.max(0, charData.enc - encStr) / encStr * 3 );
+    // If there is no penalty, mv is equal to base (i.e. unencumbered) MV
+    // Otherwise, it's the smaller of the base MV and the default MV minus the penalty.
+    const mv = !mvPenalty ? baseMv : Math.min(baseMv, Constant.DEFAULT_BASE_MV - mvPenalty);
+    charData.mv = mv;
+    charData.speed = mv * Constant.SQUARE_SIZE;
+
+
+    // ability score modifiers
+    if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
+    if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
+    if (abilities.wis) abilities.wis.mod = Math.floor(abilities.wis.value / 3 - 3);
+    if (abilities.dex) abilities.dex.mod = Math.floor(abilities.dex.value / 3 - 3);
+    if (abilities.con) abilities.con.mod = Math.floor(abilities.con.value / 3 - 3);
+    if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
+
+
+    // set remove body part locations
+    // const injuryArr = Util.getArrFromCSL(actorData.injuries || '');
+    // const removedLocations = injuryArr.map(i => i.toLowerCase().replace(/  +/g, ' ').trim())
+    //   .map(loc => {
+    //     if (!loc.includes('severed')) return null;
+    //     loc = loc.replace('severed', '');
+    //     if (Constant.HIT_LOC_ARRS.THRUST.includes(loc)) return loc;
+    //     const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
+    //     loc = loc.replace(side,'').trim();
+    //     if (side) {
+    //       return Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
+    //     } 
+    //   }).flat().filter(l => Constant.HIT_LOC_ARRS.THRUST.includes(l));
+    // // actorData.removedLocs = removedLocations;
+    // const currRemovedLocs = this.getFlag("lostlands", "removedLocs") || [];
+    // let updateRemovedLocs = false;
+    // removedLocations.forEach(l => {
+    //   if (!currRemovedLocs.includes(l)) {
+    //     currRemovedLocs.push(l);
+    //     updateRemovedLocs = true;
+    //   }
+    // });
+    // updateRemovedLocs && this.setFlag("lostlands", "removedLocs", currRemovedLocs);
+    
+
+    
+    // spell failure, skill check penalty and max dex mod
+    charData.spell_failure = Math.round(wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.spell_failure || 0), 0));
+    charData.skill_penalty = Math.round(wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.skill_penalty || 0), 0));
+    const maxDexPenalty = wornOrHeldItems.reduce((sum, i) => sum + (+i.data.data.ac?.max_dex_penalty || 0), 0);
+    charData.max_dex_mod = Math.floor(Constant.MAX_DEX_MOD - maxDexPenalty);
+
+    // AC
+    this._prepareCharHumanoidAc(actorData);
+    
+    // weap profs
+    charData.weap_profs = Util.getArrFromCSL(attrs.weap_profs?.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+
+    // save values
+    const svItems = wornOrHeldItems.filter(i => i.data.data.attributes.sv_mod?.value);
+    const sv_mod = svItems.reduce((a, b) => a + (+b.data.data.attributes.sv_mod.value || 0), 0);
+    charData.sv = attrs.base_sv.value - sv_mod;
+  }
+
+  _prepareCharHumanoidAc(actorData) {
+    const type = actorData.type;
+    if (type !== 'character' && type !== 'humanoid') return;
+    const data = actorData.data;
+    const items = actorData.items;
+    const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_offhand || i.data.data.held_mainhand));
+    const attrs = data.attributes;
+    const abilities = attrs.ability_scores;
+    const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+
+    // AC
+    const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide?.value] ? attrs.hide?.value : "none";
+    const naturalAc = attrs.base_ac.value ?? Constant.DEFAULT_BASE_AC;
+    const naturalDr = Math.max(0, charSize - 2);
+    const dexAcBonus = Math.min(abilities.dex.mod || 0, data.max_dex_mod || 0);
+
+    const getBetterParryItem = (a,b) => (+b?.data.data.attributes.parry?.value || 0) > (+a?.data.data.attributes.parry?.value || 0) ? b : a;
+    const riposteItem = wornOrHeldItems.filter(i => Util.stringMatch(i.type, 'weapon') && Util.stringMatch(i.data.data.atk_init,'riposte'))
+      .reduce(getBetterParryItem, undefined);
+    const fluidWeap = wornOrHeldItems.filter(i => Util.stringMatch(i.type, 'weapon') && Util.stringMatch(i.data.data.atk_style,'fluid'))
+      .reduce(getBetterParryItem, undefined);
+    
+    // parry-riposte overwrites fluid parry
+    const riposteParryBonus = +riposteItem?.data.data.attributes.parry?.value || 0;
+    const fluidParryBonus = +fluidWeap?.data.data.attributes.parry?.value || 0;
+    const parryHeight = riposteItem?.data.data.atk_height || fluidWeap?.data.data.atk_height;
+    const parry = { 
+      parry_item_id: riposteItem?._id || fluidWeap?._id || null,
+      parry_bonus: riposteParryBonus || fluidParryBonus || 0,
+      parry_type: riposteParryBonus ? 'riposte' : fluidParryBonus ? 'fluid' : '',
+      parry_height: parryHeight,
+    };
+
+    // stance penalty
+    const powerWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_style,'power'));
+    const counterWeap = wornOrHeldItems.some(i => Util.stringMatch(i.data.data.atk_init,'counter'));
+    const timing = counterWeap ? 'counter' : riposteItem ? 'riposte' : '';
+    const powerWeapPenalty = powerWeap ? Constant.STANCE_MODS.power.ac_mod : 0;
+    const counterWeapPenalty = counterWeap ? Constant.STANCE_MODS.counter.ac_mod : 0;
+    const stancePenalty = powerWeapPenalty + counterWeapPenalty;
+
+    const touch_ac = naturalAc + dexAcBonus + stancePenalty;
+    const ac = { touch_ac, parry, total: {}, stance_penalty: stancePenalty, timing };
+    // for (const dmgType of Constant.DMG_TYPES) { // this is just for monsters
+    //   ac.total[dmgType] = {
+    //     ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus,
+    //     dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
+    //   }
+    // }
+
+
+    // ac and by hit location
+    // initialize total AC/DR values and clo
+    for (const dmgType of Constant.DMG_TYPES) {
+      ac.total[dmgType] = {
+        ac: 0,
+        dr: 0,
+      }
+    }
+    let clo = 0;
+
+    for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
+      ac[k] = {};
+      const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
+      const garments = coveringItems.filter(i => i.type === 'clothing' || i.type === 'armor');
+      const armor = garments.filter(i => i.type === 'armor');
+      
+      // can only wear one shield and one bulky armor
+      const shield = coveringItems.find(i => i.type === 'shield');
+      const shieldStyle = shield?.data.data.shield_style;
+      const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
+      const furArmor = armor.filter(i => Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
+      const nonBulkyNonFurArmor = armor.filter(i => !i.data.data.attributes.bulky?.value && !Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
+
+      // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
+      const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+      const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[unwornIndex]);
+      wornWarmthVals.sort((a,b) => b - a);
+      const locWarmth = wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2, index), 0);
+      clo += locWarmth;
+
+      // magic damage reduction
+      const mdr = coveringItems.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
+      ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
+
+      
+      // piercing is the basis for sorted armor Ids
+      let sorted_armor_ids = nonBulkyNonFurArmor.sort((a,b) => (+b.data.data.ac["piercing"]?.ac || 0) - (+a.data.data.ac["piercing"]?.ac || 0))
+        .map(i => i._id);
+      if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
+      if (furArmor.length) sorted_armor_ids = [...furArmor.map(i => i._id), ...sorted_armor_ids];
+      if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
+      ac[k].sorted_armor_ids = sorted_armor_ids;
+
+      // parry bonus applies if parry-riposte, or if parryHeight includes this area
+      const appliedParryBonus = (!!riposteItem || Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) ? parry.parry_bonus : 0;
+
+      // worn ac & dr by damage type
+      for (const dmgType of Constant.DMG_TYPES) {
+        const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
+        const fluidShieldAcMod = Util.stringMatch(shieldStyle, 'fluid') ? Constant.STANCE_MODS.fluid.shield_ac_mod : 0;
+        // no shield dr vs. piercing on forearm or hand
+        const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
+        const fluidShieldDrBonus = (Util.stringMatch(shieldStyle, 'fluid')) ? Constant.STANCE_MODS.fluid.shield_dr_mod : 0;
+
+        const unarmoredAc = naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
+        const unarmoredDr = naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
+
+        const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
+        const locAc = Math.max(unarmoredAc, wornAc) + shieldAcBonus + fluidShieldAcMod + dexAcBonus + appliedParryBonus + stancePenalty;
+        const locDr = Math.min(Constant.MAX_ARMOR_DR, armor.reduce((sum, i) => sum + +i.data.data.ac?.[dmgType]?.dr || 0, 0) + shieldDrBonus)
+          + fluidShieldDrBonus + unarmoredDr;
+
+        ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
+        ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
+        ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
+      }
+    }
+
+    data.clo = Math.floor(clo);
+
+    // round ac
+    for (const v of Object.values(ac.total)) {
+      v.ac = Math.floor( Math.round(v.ac), touch_ac);
+      v.dr = Math.floor(v.dr);
+    }
+    ac.mdr = Math.floor(ac.mdr);
+
+    data.ac = ac;
+  }
+
+
 
   /* -------------------------------------------- */
 
