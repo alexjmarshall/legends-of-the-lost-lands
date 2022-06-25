@@ -122,14 +122,14 @@
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
                         {{#if item.data.attributes.holdable.value}}
-                        <a class="item-control {{#if item.data.held_left}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_left">
+                        <a class="item-control {{#if item.data.held_offhand}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_left">
                             <img style="transform: scaleX(-1);" src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
                         {{/if}}
                     </div>
                     <div class="item-toggle">
                         {{#if item.data.attributes.holdable.value}}
-                        <a class="item-control {{#if item.data.held_right}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_right">
+                        <a class="item-control {{#if item.data.held_mainhand}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_right">
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
                         {{else if item.data.attributes.wearable.value}}
@@ -208,7 +208,7 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span>{{#if ../showSf}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.ac.sf}}% {{/ifeq}}{{/if}}</span>
+                <span>{{#if ../showSf}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.spell_failure}}% {{/ifeq}}{{/if}}</span>
                 <span style="text-align: center;">
                     {{#ifeq key "spell_magic"}}Magic{{else}}
                     {{#ifeq key "spell_cleric"}}Cleric{{else}}
@@ -262,7 +262,7 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>{{#if ../showSp}} Skill Penalty: {{../sp}} {{/if}}</span>
+                <span>{{#if ../showSp}} Skill Penalty: {{../skill_penalty}} {{/if}}</span>
                 <span style="text-align: center;">{{key}}</span>
                 <span></span>
             </header>
@@ -315,7 +315,7 @@
 
             {{!-- Render the grouped attributes partial and control. --}}
             <div class="groups">
-                {{> "systems/lostlands/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+                {{> "systems/lostlands/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
 
                 {{#if isGM}}
                 <div class="group-controls flexrow">
@@ -355,7 +355,7 @@
             </div>
             {{/if}}
             <div class="flexrow">
-                <label class="fatigue-label">Injuries</label>
+                <label class="fatigue-label">Wounds</label>
                 <input class="fatigue-value" type="text" name="data.injuries" value="{{systemData.injuries}}" {{#if isPlayer}}readonly{{/if}}/>
             </div>
         </div>

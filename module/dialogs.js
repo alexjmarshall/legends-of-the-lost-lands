@@ -250,7 +250,7 @@ export function setStanceDialog(options={}) { // TODO refactor into separate wra
   const actor = char.actor;
   const weapons = actor.items.filter(i => i.type === 'item'
     && i.data.data.attributes.atk_modes
-    && (i.data.data.held_left || i.data.data.held_right)
+    && (i.data.data.held_offhand || i.data.data.held_mainhand)
   );
   const shields = actor.items.filter(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_shape?.value);
 
