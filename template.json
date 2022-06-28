@@ -2,12 +2,12 @@
 "Actor": {
   "types": ["character", "humanoid", "monster", "container", "merchant"],
   "templates": {
-    "basicProps": {
+    "props": {
       "description": "",
       "attributes": {},
       "groups": {}
     },
-    "basicMonster": {
+    "monster": {
       "attributes": {
         "hd": {
           "dtype": "String",
@@ -116,7 +116,7 @@
     }
   },
   "character": {
-    "templates": ["basicProps"],
+    "templates": ["props"],
     "groups": {
       "ability_scores": {
         "dtype": "Number",
@@ -188,11 +188,41 @@
         "label": "Base MV",
         "value": 12
       },
-      "max_hp": {
+      "str": {
         "dtype": "Number",
-        "group": "",
-        "label": "Max HP",
-        "value": 8
+        "group": "ability_scores",
+        "label": "Strength",
+        "value": 10
+      },
+      "int": {
+        "dtype": "Number",
+        "group": "ability_scores",
+        "label": "Intelligence",
+        "value": 10
+      },
+      "wis": {
+        "dtype": "Number",
+        "group": "ability_scores",
+        "label": "Wisdom",
+        "value": 10
+      },
+      "dex": {
+        "dtype": "Number",
+        "group": "ability_scores",
+        "label": "Dexterity",
+        "value": 10
+      },
+      "con": {
+        "dtype": "Number",
+        "group": "ability_scores",
+        "label": "Constitution",
+        "value": 10
+      },
+      "cha": {
+        "dtype": "Number",
+        "group": "ability_scores",
+        "label": "Charisma",
+        "value": 10
       }
     },
     "hp": {
@@ -208,7 +238,7 @@
     "ac": {}
   },
   "monster": {
-    "templates": ["basicProps","basicMonster"],
+    "templates": ["props","monster"],
     "attributes": {
       "ac": {
         "dtype": "Number",
@@ -219,7 +249,7 @@
     }
   },
   "humanoid": {
-    "templates": ["basicProps","basicMonster"],
+    "templates": ["props","monster"],
     "groups": {
       "ability_scores": {
         "dtype": "Number",
@@ -242,41 +272,236 @@
     }
   },
   "container": {
-    "templates": ["basicProps"]
+    "templates": ["props"],
+    "attributes": {
+      "enc_factor": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Encumbrance Factor",
+        "value": 1
+      },
+      "capacity": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Capacity",
+        "value": 10
+      }
+    }
   },
   "merchant": {
-    "templates": ["basicProps"]
+    "templates": ["props"],
+    "attributes": {
+      "buy_factor": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Buy Factor",
+        "value": 1
+      },
+      "sell_factor": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Sell Factor",
+        "value": 1
+      },
+      "gold": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Gold",
+        "value": 100
+      }
+    }
   }
 },
 "Item": {
-  "types": ["item", "spell_magic", "spell_cleric", "spell_witch", "feature"],
+  "types": [
+    "item",
+    "potion",
+    "charged_item",
+    "armor",
+    "clothing",
+    "shield",
+    "melee_weapon",
+    "missile_weapon",
+    "ammo",
+    "currency",
+    "spell_magic",
+    "spell_cleric",
+    "spell_witch",
+    "feature"
+  ],
   "templates": {
-    "basicProps": {
+    "props": {
       "description": "",
-      "attributes": {},
+      "attributes": {
+        "sp_value": {
+          "dtype": "Number",
+          "group": "",
+          "label": "SP Value",
+          "value": 0
+        }
+      },
       "groups": {},
       "macro": ""
+    },
+    "item": {
+      "quantity": 1,
+      "weight": 1,
+      "attributes": {
+        "magic": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Magic",
+          "value": false
+        }
+      }
+    },
+    "garment": {
+      "worn": false,
+      "attributes": {
+        "material": {
+          "dtype": "String",
+          "group": "",
+          "label": "Material",
+          "value": "leather"
+        },
+        "size": {
+          "dtype": "String",
+          "group": "",
+          "label": "Size",
+          "value": "M"
+        },
+        "sv_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Save Mod.",
+          "value": 0
+        }
+      }
     },
     "spell": {
       "prepared": false
     }
   },
   "item": {
-    "templates": ["basicProps"],
-    "quantity": 1,
-    "weight": 1
+    "templates": ["props","item"],
+    "holdable": true
+  },
+  "potion": {
+    "templates": ["props","item"],
+    "holdable": true,
+    "attributes": {
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": true
+      },
+      "heal": {
+        "dtype": "Formula",
+        "group": "",
+        "label": "Heal",
+        "value": ""
+      }
+    }
+  },
+  "charged_item": {
+    "templates": ["props","item"],
+    "holdable": true,
+    "attributes": {
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": true
+      },
+      "charges": {
+        "dtype": "Resource",
+        "group": "",
+        "label": "Charges",
+        "min": 0,
+        "value": 0,
+        "max": 0
+      }
+    }
+  },
+  "armor": {
+    "templates": ["props","item","garment"],
+    "attributes": {
+      "ac_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "AC Mod.",
+        "value": 0
+      },
+      "coverage": {
+        "dtype": "String",
+        "group": "",
+        "label": "Coverage",
+        "value": ""
+      }
+    }
+  },
+  "clothing": {
+    "templates": ["props","item","garment"],
+    "attributes": {
+      "coverage": {
+        "dtype": "String",
+        "group": "",
+        "label": "Coverage",
+        "value": ""
+      }
+    }
+  },
+  "shield": {
+    "templates": ["props","item","garment"],
+    "attributes": {
+      "ac_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "AC Mod.",
+        "value": 0
+      },
+      "shield_shape": {
+        "dtype": "String",
+        "group": "",
+        "label": "Shield Shape",
+        "value": "round"
+      }
+    }
+  },
+  "melee_weapon": {
+    "templates": ["props","item"],
+    "holdable": true
+  },
+  "missile_weapon": {
+    "templates": ["props","item"],
+    "holdable": true
+  },
+  "ammo": {
+    "templates": ["props","item"]
+  },
+  "currency": {
+    "templates": ["props","item"],
+    "attributes": {
+      "material": {
+        "dtype": "String",
+        "group": "",
+        "label": "Material",
+        "value": "silver"
+      }
+    }
   },
   "spell_magic": {
-    "templates": ["basicProps", "spell"]
+    "templates": ["props", "spell"]
   },
   "spell_cleric": {
-    "templates": ["basicProps", "spell"]
+    "templates": ["props","spell"]
   },
   "spell_witch": {
-    "templates": ["basicProps", "spell"]
+    "templates": ["props","spell"]
   },
   "feature": {
-    "templates": ["basicProps"]
+    "templates": ["props"]
   }
 }
 }
