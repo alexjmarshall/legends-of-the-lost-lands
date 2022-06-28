@@ -1,7 +1,7 @@
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
-export const AC_MIN = 10;
+export const DEFAULT_BASE_AC = 10;
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -44,7 +44,11 @@ export const FIGHTER_XP_PROGRESSION = [
   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
 ];
-export const DMG_TYPES = ["blunt", "piercing", "slashing"];
+export const DMG_TYPES = [
+  "blunt",
+  "piercing",
+  "slashing",
+];
 export const SHIELD_TYPES = {
   round: {
     L: {
@@ -629,7 +633,7 @@ export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
 export const knockbackDesc = ' and knocks them flying!';
-export const staggerDesc = ' and the pain staggers them';
+export const staggerDesc = ' and staggers them';
 export const knockWindDesc = ' and knocks the wind from them';
 export const bloodWellDesc = ' and blood wells around the weapon...';
 const gruesBluntHeadDesc = ' and shatters the skull spattering chunks of gore!';
@@ -697,10 +701,10 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and mangles the ankle tearing the ligaments',
-          dmgEffect: lowCompFract(),
+          // dmgEffect: lowCompFract(),
         },
         gruesome: {
-          text: ' and crushes the foot into red pulp!',
+          text: ' and crushes the foot into red pulp',
           dmgEffect: highMinBleed(),
           removal: true,
         },
@@ -764,7 +768,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highCompFract(),
         },
         gruesome: {
-          text: ' and shatters the lower leg!',
+          text: ' and shatters the lower leg',
           dmgEffect: highCompFract(true, 'shin'),
         },
       },
@@ -825,8 +829,8 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'knee'),
         },
         gruesome: {
-          text: ' and mangles the knee tearing the ligaments!',
-          dmgEffect: highCompFract(true,'knee'),
+          text: ' and mangles the knee tearing the ligaments',
+          // dmgEffect: highCompFract(true,'knee'),
         },
       },
       piercing: {
@@ -887,7 +891,7 @@ export const HIT_LOCATIONS = {
           // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
         gruesome: {
-          text: ' and shatters the femur!',
+          text: ' and shatters the femur',
           dmgEffect: highCompFract(true,'thigh'),
         },
       },
@@ -905,7 +909,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and pierces the femur!',
+          text: ' and pierces the femur',
           dmgEffect: highWeapStuck() + lowIntBleed('thigh'),
         },
       },
@@ -923,7 +927,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and cleaves the thigh to the bone!',
+          text: ' and cleaves the thigh to the bone',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
       }
@@ -948,7 +952,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'hip'),
         },
         gruesome: {
-          text: ' and shatters the hip!',
+          text: ' and shatters the hip',
           dmgEffect: highCompFract(true,'hip'),
         },
       },
@@ -966,7 +970,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and pierces the hip bone!',
+          text: ' and pierces the hip bone',
           dmgEffect: highWeapStuck() + lowIntBleed('hip'),
         },
       },
@@ -1009,7 +1013,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'groin'),
         },
         gruesome: {
-          text: ' and shatters the pelvis!',
+          text: ' and shatters the pelvis',
           dmgEffect: highCompFract(true,'groin'),
         },
       },
@@ -1027,7 +1031,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and pierces the pubic bone!',
+          text: ' and pierces the pubic bone',
           dmgEffect: highWeapStuck() + lowIntBleed('groin'),
         },
       },
@@ -1041,12 +1045,12 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
-          text: ' and severs the genitals',
+          text: ' and severs the genitals!',
           dmgEffect: highMinBleed(),
           removal: true,
         },
         gruesome: {
-          text: ' and cleaves through the genitals and into the inner thigh!',
+          text: ' and cleaves through the genitals and into the inner thigh',
           dmgEffect: lowMajBleed() || highMinBleed(),
           removal: true,
         },
@@ -1073,7 +1077,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highIntBleed('gut'),
         },
         gruesome: {
-          text: ' and breaks the back severing the spine!',
+          text: ' and breaks the back severing the spine!',// TODO paralysis desc
         },
       },
       piercing: {
@@ -1262,17 +1266,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: highCompFract(),
         },
         gruesome: {
-          text: ' and shatters the forearm!',
+          text: ' and shatters the forearm',
           dmgEffect: highCompFract(true,'forearm'),
         },
       },
       piercing: {
         light: {
-          text: ' and tears the muscle',
+          text: ' and tears the forearm muscle',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the muscle',
+          text: ' and cuts a nerve in the forearm muscle',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1286,11 +1290,11 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the muscle',
+          text: ' and gashes the forearm muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the muscle',
+          text: ' and cuts a nerve in the forearm muscle',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1325,7 +1329,7 @@ export const HIT_LOCATIONS = {
         },
         gruesome: {
           text: ' and mangles the elbow tearing the ligaments!',
-          dmgEffect: highCompFract(true,'elbow'),
+          // dmgEffect: highCompFract(true,'elbow'),
         },
       },
       piercing: {
@@ -1510,7 +1514,7 @@ export const HIT_LOCATIONS = {
         },
         gruesome: {
           text: ' and mangles the shoulder tearing the ligaments',
-          dmgEffect: highCompFract(true,'shoulder'),
+          // dmgEffect: highCompFract(true,'shoulder'),
         },
       },
       piercing: {
@@ -1564,14 +1568,14 @@ export const HIT_LOCATIONS = {
         },
         serious: {
           text: ' and fractures a vertebra',
-          dmgEffect: lowCompFract(true,'neck'),
         },
         critical: {
           text: ' and snaps the neck severing the spine',
+          dmgEffect: lowCompFract(true,'neck'),
         },
         gruesome: {
           text: ' and mangles the neck tearing the ligaments',
-          dmgEffect: highCompFract(true,'neck'),
+          // dmgEffect: highCompFract(true,'neck'),
           fatal: true,
         }
       },
@@ -1581,7 +1585,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the muscle',
+          text: ' and cuts a nerve in the neck muscle',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1596,15 +1600,15 @@ export const HIT_LOCATIONS = {
       },
       slashing: {
         light: {
-          text: ' and gashes the muscle',
+          text: ' and gashes the neck muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the muscle',
+          text: ' and cuts a nerve in a neck muscle',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
-          text: ' and severs a muscle',
+          text: ' and severs the neck muscle',
           dmgEffect: highMajBleed() || highMinBleed(),
         },
         gruesome: {
@@ -1726,8 +1730,8 @@ export const HIT_LOCATIONS = {
         },
         gruesome: {
           text: ' and impales them through the nose and through the brain and through the back of the skull',
-          fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed('mouth'),
+          fatal: true,
         },
       },
       slashing: {
@@ -1914,12 +1918,13 @@ export const STANCE_MODS = {
   },
   counter: {
     ac_mod: -2,
-  }
+  },
 };
 export const PREP_MODS = {
   feint: {
     atk_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
-  }
+    speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
+  },
 };
 
 export const WEAP_BREAK_CHANCE = 5;
@@ -1930,8 +1935,8 @@ export const WEAPONS = {
     name: 'Fist',
     data:{
       data: {
-        held_left: true,
-        held_right: true,
+        held_offhand: true,
+        held_mainhand: true,
         atk_style: 'stable',
         atk_height: 'high',
         atk_init: 'immediate',
@@ -2042,7 +2047,12 @@ export const SIZE_VALUES = {
   L: 3, // large
   H: 4, // huge
   G: 5, // gargantuan
+  default: 2,
 };
+
+export const DEFAULT_BASE_MV = 12;
+
+export const MAX_DEX_MOD = 4;
 
 export const HEIGHT_AREAS = {
   low: ['foot','shin','knee','thigh','hip','groin'],
@@ -2067,4 +2077,26 @@ export const WEAPON_CATEGORIES = [
   "staff",
   "straight sword",
   "whip/sling",
+];
+
+export const MONSTER_TYPES = [
+  "beast",
+  "celestial",
+  "construct",
+  "dragon",
+  "elemental",
+  "fey",
+  "fiend",
+  "magical beast",
+  "ooze",
+  "plant",
+  "undead",
+];
+
+export const ALIGNMENTS = [
+  "CE", // chaotic evil
+  "LE", // lawful evil
+  "N", // neutral
+  "CG", // chaotic good
+  "LG", // lawful good
 ];
