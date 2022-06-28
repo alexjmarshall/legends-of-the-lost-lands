@@ -57,7 +57,7 @@ export class SimpleActor extends Actor {
           const containerWeight = Math.floor(updateData.enc / (attributes.factor?.value || 1)) || 1;
           const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
         if (containerWeight !== container.data.data.weight) {
-          await otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
+          otherActor.updateEmbeddedDocuments("Item", [containerUpdateData]);
         }
           break;
         }
@@ -307,7 +307,6 @@ export class SimpleActor extends Actor {
     const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_offhand || i.data.data.held_mainhand));
     const attrs = charData.attributes;
     const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
-    const abilities = attrs.ability_scores;
 
 
     // encumbrance
@@ -316,7 +315,7 @@ export class SimpleActor extends Actor {
 
 
     // derive mv and speed from encumbrance
-    const encStr = Math.round( Util.sizeMulti(abilities.str.value, charSize) );
+    const encStr = Math.round( Util.sizeMulti(attrs.str.value, charSize) );
     const baseMv = attrs.base_mv.value;
     const mvPenalty = Math.floor( Math.max(0, charData.enc - encStr) / encStr * 3 );
     // If there is no penalty, mv is equal to base (i.e. unencumbered) MV
@@ -327,12 +326,12 @@ export class SimpleActor extends Actor {
 
 
     // ability score modifiers
-    if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
-    if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
-    if (abilities.wis) abilities.wis.mod = Math.floor(abilities.wis.value / 3 - 3);
-    if (abilities.dex) abilities.dex.mod = Math.floor(abilities.dex.value / 3 - 3);
-    if (abilities.con) abilities.con.mod = Math.floor(abilities.con.value / 3 - 3);
-    if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
+    if (attrs.str) attrs.str.mod = Math.floor(attrs.str.value / 3 - 3);
+    if (attrs.int) attrs.int.mod = Math.floor(attrs.int.value / 3 - 3);
+    if (attrs.wis) attrs.wis.mod = Math.floor(attrs.wis.value / 3 - 3);
+    if (attrs.dex) attrs.dex.mod = Math.floor(attrs.dex.value / 3 - 3);
+    if (attrs.con) attrs.con.mod = Math.floor(attrs.con.value / 3 - 3);
+    if (attrs.cha) attrs.cha.mod = Math.floor(attrs.cha.value / 3 - 3);
 
 
     // set remove body part locations
@@ -386,14 +385,13 @@ export class SimpleActor extends Actor {
     const items = actorData.items;
     const wornOrHeldItems = items.filter(i => (i.data.data.worn || i.data.data.held_offhand || i.data.data.held_mainhand));
     const attrs = data.attributes;
-    const abilities = attrs.ability_scores;
     const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
 
     // AC
-    const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide?.value] ? attrs.hide?.value : "none";
+    const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide?.value] ? attrs.hide.value : "none";
     const naturalAc = attrs.base_ac.value ?? Constant.DEFAULT_BASE_AC;
     const naturalDr = Math.max(0, charSize - 2);
-    const dexAcBonus = Math.min(abilities.dex.mod || 0, data.max_dex_mod || 0);
+    const dexAcBonus = Math.min(attrs.dex.mod || 0, data.max_dex_mod || 0);
 
     const getBetterParryItem = (a,b) => (+b?.data.data.attributes.parry?.value || 0) > (+a?.data.data.attributes.parry?.value || 0) ? b : a;
     const riposteItem = wornOrHeldItems.filter(i => Util.stringMatch(i.type, 'weapon') && Util.stringMatch(i.data.data.atk_init,'riposte'))
@@ -404,7 +402,7 @@ export class SimpleActor extends Actor {
     // parry-riposte overwrites fluid parry
     const riposteParryBonus = +riposteItem?.data.data.attributes.parry?.value || 0;
     const fluidParryBonus = +fluidWeap?.data.data.attributes.parry?.value || 0;
-    const parryHeight = riposteItem?.data.data.atk_height || fluidWeap?.data.data.atk_height;
+    const parryHeight = riposteItem?.data.data.atk_height || fluidWeap?.data.data.atk_height || null;
     const parry = { 
       parry_item_id: riposteItem?._id || fluidWeap?._id || null,
       parry_bonus: riposteParryBonus || fluidParryBonus || 0,
@@ -442,20 +440,20 @@ export class SimpleActor extends Actor {
 
     for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
       ac[k] = {};
-      const coveringItems = wornOrHeldItems.filter(i => i.data.data.locations?.includes(k));
+      const coveringItems = wornOrHeldItems.filter(i => i.data.data.coverage?.includes(k));
       const garments = coveringItems.filter(i => i.type === 'clothing' || i.type === 'armor');
       const armor = garments.filter(i => i.type === 'armor');
       
       // can only wear one shield and one bulky armor
       const shield = coveringItems.find(i => i.type === 'shield');
       const shieldStyle = shield?.data.data.shield_style;
-      const bulkyArmor = armor.find(i => i.data.data.attributes.bulky?.value);
+      const bulkyArmor = armor.find(i => i.data.data.bulky);
       const furArmor = armor.filter(i => Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
-      const nonBulkyNonFurArmor = armor.filter(i => !i.data.data.attributes.bulky?.value && !Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
+      const nonBulkyNonFurArmor = armor.filter(i => !i.data.data.bulky && !Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
 
       // worn clo -- sort the layers by descending warmth, then second layer adds 1/2 its full warmth, third layer 1/4, and so on
       const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-      const wornWarmthVals = garments.map(i => (+i.data.data.warmth || 0) / 100 * v.weights[unwornIndex]);
+      const wornWarmthVals = garments.map(i => (+i.data.data.clo || 0) / 100 * v.weights[unwornIndex]);
       wornWarmthVals.sort((a,b) => b - a);
       const locWarmth = wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2, index), 0);
       clo += locWarmth;
