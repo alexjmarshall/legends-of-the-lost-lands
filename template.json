@@ -357,7 +357,14 @@
     },
     "garment": {
       "worn": false,
+      "coverage": [],
       "attributes": {
+        "ac_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "AC Mod.",
+          "value": 0
+        },
         "material": {
           "dtype": "String",
           "group": "",
@@ -379,7 +386,45 @@
       }
     },
     "spell": {
-      "prepared": false
+      "prepared": false,
+      "attributes": {
+        "level": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Level",
+          "value": 1
+        },
+        "range": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Range",
+          "value": 60
+        },
+        "duration": {
+          "dtype": "String",
+          "group": "",
+          "label": "Duration",
+          "value": "1 turn"
+        },
+        "area": {
+          "dtype": "String",
+          "group": "",
+          "label": "Area",
+          "value": "30' radius"
+        },
+        "school": {
+          "dtype": "String",
+          "group": "",
+          "label": "School",
+          "value": "Necromancy"
+        },
+        "casting_time": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Casting Time",
+          "value": 3
+        }
+      }
     }
   },
   "item": {
@@ -427,19 +472,14 @@
   "armor": {
     "templates": ["props","item","garment"],
     "attributes": {
-      "ac_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "AC Mod.",
-        "value": 0
-      },
       "coverage": {
         "dtype": "String",
         "group": "",
         "label": "Coverage",
         "value": ""
       }
-    }
+    },
+    "ac": {}
   },
   "clothing": {
     "templates": ["props","item","garment"],
@@ -455,18 +495,15 @@
   "shield": {
     "templates": ["props","item","garment"],
     "attributes": {
-      "ac_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "AC Mod.",
-        "value": 0
-      },
       "shield_shape": {
         "dtype": "String",
         "group": "",
         "label": "Shield Shape",
         "value": "round"
-      }
+      },
+      "shield_height": "mid",
+      "shield_style": "stable",
+      "ac": {}
     }
   },
   "melee_weapon": {
