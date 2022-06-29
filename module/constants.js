@@ -33,31 +33,38 @@ export const ATTITUDE_BUY_ADJ = {
   [ATTITUDES.ACCEPTING]: 1.05,
   [ATTITUDES.HELPFUL]: 1.15
 };
-export const FIGHTER_XP_PROGRESSION = [
-  {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
-  {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
-  {xpRequired: 60000, updateData: {"data.level": 7, "data.bab": 7, "data.st": 10, "data.xp.max": 120000}},
-  {xpRequired: 30000, updateData: {"data.level": 6, "data.bab": 6, "data.st": 11, "data.xp.max": 60000}},
-  {xpRequired: 15000, updateData: {"data.level": 5, "data.bab": 5, "data.st": 11, "data.xp.max": 30000}},
-  {xpRequired: 7000, updateData: {"data.level": 4, "data.bab": 4, "data.st": 12, "data.xp.max": 15000}},
-  {xpRequired: 3000, updateData: {"data.level": 3, "data.bab": 3, "data.st": 13, "data.xp.max": 7000}},
-  {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
-  {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
-];
+// export const FIGHTER_XP_PROGRESSION = [
+//   {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
+//   {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
+//   {xpRequired: 60000, updateData: {"data.level": 7, "data.bab": 7, "data.st": 10, "data.xp.max": 120000}},
+//   {xpRequired: 30000, updateData: {"data.level": 6, "data.bab": 6, "data.st": 11, "data.xp.max": 60000}},
+//   {xpRequired: 15000, updateData: {"data.level": 5, "data.bab": 5, "data.st": 11, "data.xp.max": 30000}},
+//   {xpRequired: 7000, updateData: {"data.level": 4, "data.bab": 4, "data.st": 12, "data.xp.max": 15000}},
+//   {xpRequired: 3000, updateData: {"data.level": 3, "data.bab": 3, "data.st": 13, "data.xp.max": 7000}},
+//   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
+//   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
+// ];
 export const DMG_TYPES = [
   "blunt",
   "piercing",
   "slashing",
 ];
+export const MAGIC_DMG_TYPES = [
+  "fire",
+  "cold",
+  "electricity",
+  "acid",
+  "magic",
+];
 export const SHIELD_TYPES = {
   round: {
     L: {
-      high:"skull,eye,face,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
+      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
       mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // also add a kite shield
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
     },
     M: {
-      high:"skull,eye,face,jaw,neck,shoulder,forearm,hand,chest",
+      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand,chest",
       mid:"armpit,upper arm,elbow,forearm,hand,chest,gut",
       low:"elbow,forearm,hand,gut,groin,hip",
     },
@@ -66,114 +73,114 @@ export const SHIELD_TYPES = {
 export const MATERIAL_PROPS = {
   wood: {
     weight:10,
-    warmth:0,
+    clo:0,
     sp_value:10,
   },
   burlap: {
     weight:2,
-    warmth:5,
+    clo:5,
     sp_value:0.5,
   },
   linen: {
     weight:1,
-    warmth:8,
+    clo:8,
     sp_value:5,
   },
   wool: {
     weight:2,
-    warmth:16,
+    clo:16,
     sp_value:12,
   },
   silk: {
     weight:0.5,
-    warmth:11,
+    clo:11,
     sp_value:90,
   },
   fur: {
     weight:4,
-    warmth:32,
+    clo:32,
     sp_value:50,
   },
   leather: {
     weight:5,
-    warmth:10,
+    clo:10,
     sp_value:25,
     metal:false,
     bulky:false,
   },
   padded: {
     weight:4,
-    warmth:18,
+    clo:18,
     sp_value:20,
     metal:false,
     bulky:false,
   },
   "cuir bouilli": {
     weight:6,
-    warmth:9,
+    clo:9,
     sp_value:30,
     metal:false,
     bulky:true,
   },
   brigandine: {
     weight:20,
-    warmth:16,
+    clo:16,
     sp_value:100,
     metal:true,
     bulky:true,
   },
   scale: {
     weight:22,
-    warmth:13,
+    clo:13,
     sp_value:80,
     metal:true,
     bulky:false,
   },
   chain: {
     weight:12,
-    warmth:2,
+    clo:2,
     sp_value:150,
     metal:true,
     bulky:false,
   },
   "elven chain": {
     weight:6,
-    warmth:1,
+    clo:1,
     sp_value: 1500,
     metal:true,
     bulky:false,
   },
   "banded mail": {
     weight:15,
-    warmth:4,
+    clo:4,
     sp_value:200,
     metal:true,
     bulky:false,
   },
   lamellar: {
     weight:22,
-    warmth:11,
+    clo:11,
     sp_value:120,
     metal:true,
     bulky:true,
   },
   splint: {
     weight:18,
-    warmth:14,
+    clo:14,
     sp_value:160,
     metal:true,
     bulky:true,
   },
   "iron plate": {
     weight:20,
-    warmth:10,
+    clo:10,
     sp_value:400,
     metal:true,
     bulky:true,
   },
   "steel plate": {
     weight:18,
-    warmth:8,
+    clo:8,
     sp_value:1000,
     metal:true,
     bulky:true,
@@ -406,7 +413,6 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
 }
-export const MAX_ARMOR_DR = 3;
 export const MIN_BLEED_DMG = 6;
 export const BASE_IMPALE_CHANCE = 30;
 export const ATK_MODES = {
@@ -886,7 +892,7 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and snaps the femur',
-          // TODO injuries affect leg STR and max MV, arms DEX, torso CON, head/eyes INT, face/neck CHA
+          // TODO injuries affect leg STR and max MV, arms DEX, torso CON, head/eyes INT, nose/neck CHA
           dmgEffect: lowCompFract(true,'thigh'), // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
           // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
@@ -1688,7 +1694,7 @@ export const HIT_LOCATIONS = {
       },
     },
   },
-  "face": {
+  nose: {
     weights: [1,2,2,3,1,0,2,1],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
@@ -1968,7 +1974,7 @@ export const AMMO_TYPES = [
 ];
 
 // export const AIM_AREAS = {
-//   head: ['skull','left eye','right eye','face','jaw','neck'],
+//   head: ['skull','left eye','right eye','nose','jaw','neck'],
 //   left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
 //   upper_torso: ['left armpit','chest','right armpit'],
 //   right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
@@ -1978,7 +1984,7 @@ export const AMMO_TYPES = [
 // };
 
 export const AIM_AREAS = {
-  head: ['skull','left eye','right eye','face','jaw','neck'],
+  head: ['skull','left eye','right eye','nose','jaw','neck'],
   shoulders: ['left shoulder','left armpit','right shoulder','right armpit',],
   arms: ['left upper arm','left elbow','left forearm','left hand','right upper arm','right elbow','right forearm','right hand'],
   torso: ['chest','gut'],
@@ -1987,7 +1993,7 @@ export const AIM_AREAS = {
 };
 
 export const AIM_AREAS_UNILATERAL = {
-  head: ['skull','eye','face','jaw','neck'],
+  head: ['skull','eye','nose','jaw','neck'],
   shoulders: ['shoulder','armpit'],
   arms: ['upper arm','elbow','forearm','hand',],
   torso: ['chest','gut'],
@@ -2052,12 +2058,10 @@ export const SIZE_VALUES = {
 
 export const DEFAULT_BASE_MV = 12;
 
-export const MAX_DEX_MOD = 4;
-
 export const HEIGHT_AREAS = {
   low: ['foot','shin','knee','thigh','hip','groin'],
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
-  high: ['armpit','shoulder','neck','jaw','face','eye','skull'],
+  high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
 }
 
 export const WEAPON_CATEGORIES = [
@@ -2099,4 +2103,17 @@ export const ALIGNMENTS = [
   "N", // neutral
   "CG", // chaotic good
   "LG", // lawful good
+];
+export const HOLDABLE_TYPES = [
+  "charged_item",
+  "melee_weapon",
+  "missile_weapon",
+];
+export const WEARABLE_TYPES = [
+  "armor",
+  "helmet",
+  "clothing",
+  "jewelry",
+  "shield",
+  "ammo",
 ];
