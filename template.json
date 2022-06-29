@@ -143,7 +143,7 @@
       "bab": {
         "dtype": "Number",
         "group": "",
-        "label": "Base Attack Bonus",
+        "label": "Base AB",
         "value": 0 
       },
       "class": {
@@ -188,41 +188,63 @@
         "label": "Base MV",
         "value": 12
       },
-      "str": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Strength",
-        "value": 10
+      "ability_scores": {
+        "str": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Strength",
+          "value": 10
+        },
+        "int": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Intelligence",
+          "value": 10
+        },
+        "wis": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Wisdom",
+          "value": 10
+        },
+        "dex": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Dexterity",
+          "value": 10
+        },
+        "con": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Constitution",
+          "value": 10
+        },
+        "cha": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Charisma",
+          "value": 10
+        }
       },
-      "int": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Intelligence",
-        "value": 10
-      },
-      "wis": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Wisdom",
-        "value": 10
-      },
-      "dex": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Dexterity",
-        "value": 10
-      },
-      "con": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Constitution",
-        "value": 10
-      },
-      "cha": {
-        "dtype": "Number",
-        "group": "ability_scores",
-        "label": "Charisma",
-        "value": 10
+      "weapons": {
+        "weap_cats": {
+          "dtype": "String",
+          "group": "weapons",
+          "label": "Allowed Categories",
+          "value": "All"
+        },
+        "weap_classes": {
+          "dtype": "String",
+          "group": "weapons",
+          "label": "Allowed Classes",
+          "value": "All"
+        },
+        "weap_profs": {
+          "dtype": "String",
+          "group": "weapons",
+          "label": "Proficiencies",
+          "value": "None"
+        }
       }
     },
     "hp": {
@@ -318,7 +340,9 @@
     "potion",
     "charged_item",
     "armor",
+    "helmet",
     "clothing",
+    "jewelry",
     "shield",
     "melee_weapon",
     "missile_weapon",
@@ -332,14 +356,7 @@
   "templates": {
     "props": {
       "description": "",
-      "attributes": {
-        "sp_value": {
-          "dtype": "Number",
-          "group": "",
-          "label": "SP Value",
-          "value": 0
-        }
-      },
+      "attributes": {},
       "groups": {},
       "macro": ""
     },
@@ -347,6 +364,12 @@
       "quantity": 1,
       "weight": 1,
       "attributes": {
+        "sp_value": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Value",
+          "value": 0
+        },
         "magic": {
           "dtype": "Boolean",
           "group": "",
@@ -428,12 +451,11 @@
     }
   },
   "item": {
-    "templates": ["props","item"],
-    "holdable": true
+    "templates": ["props","item"]
   },
   "potion": {
     "templates": ["props","item"],
-    "holdable": true,
+    "macro": "game.lostlands.Macro.drinkPotion(itemId,{})",
     "attributes": {
       "magic": {
         "dtype": "Boolean",
@@ -451,7 +473,7 @@
   },
   "charged_item": {
     "templates": ["props","item"],
-    "holdable": true,
+    "macro": "game.lostlands.Macro.useChargedItem(itemId,{})",
     "attributes": {
       "magic": {
         "dtype": "Boolean",
@@ -481,6 +503,30 @@
     },
     "ac": {}
   },
+  "helmet": {
+    "templates": ["props","item","garment"],
+    "attributes": {
+      "coverage": {
+        "dtype": "String",
+        "group": "",
+        "label": "Coverage",
+        "value": "skull"
+      },
+      "attached": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Attached",
+        "value": false
+      },
+      "closed": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Closed",
+        "value": false
+      }
+    },
+    "ac": {}
+  },
   "clothing": {
     "templates": ["props","item","garment"],
     "attributes": {
@@ -489,6 +535,24 @@
         "group": "",
         "label": "Coverage",
         "value": ""
+      }
+    }
+  },
+  "jewelry": {
+    "templates": ["props","item"],
+    "worn": false,
+    "attributes": {
+      "ac_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "AC Mod.",
+        "value": 0
+      },
+      "sv_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Save Mod.",
+        "value": 0
       }
     }
   },
@@ -507,15 +571,14 @@
     }
   },
   "melee_weapon": {
-    "templates": ["props","item"],
-    "holdable": true
+    "templates": ["props","item"]
   },
   "missile_weapon": {
-    "templates": ["props","item"],
-    "holdable": true
+    "templates": ["props","item"]
   },
   "ammo": {
-    "templates": ["props","item"]
+    "templates": ["props","item"],
+    "worn": false
   },
   "currency": {
     "templates": ["props","item"],
