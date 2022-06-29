@@ -34,6 +34,10 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
+
+    Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
+    
+    // stance AC bonus/penalty text
     const parryBonus = context.systemData.ac?.parry?.parry_bonus;
     const fluidParryBonus = context.systemData.ac?.parry?.fluid_parry_bonus;
     const isFluidParrying = fluidParryBonus > parryBonus;
@@ -44,33 +48,24 @@ export class SimpleActorSheet extends ActorSheet {
     context.stancePenaltyText = !stancePenalty ? '' : `Stance: ${stancePenalty}`;
     
     // sort equipment
-    const items = context.data.items.filter(i => i.type === 'item');
-    items.forEach(item => item.data.totalWeight = Math.round(item.data.quantity * item.data.weight * 10) / 10 || 0);
-    context.equipment = this.sortEquipmentByType(items);
+    context.equipment = this._sortEquipmentByType(context.data.items);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort armors
-    context.armors = this.getArmorsByLocation(context.data);
+    context.armors = this._getArmorsByLocation(context.data);
     context.hasArmors = Object.values(context.armors).flat().length > 0;
 
     // sort spells
     const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
-    context.spells = this.sortSpellsByType(spells, context.data.data.attributes);
+    context.spells = this._sortSpellsByType(spells, context.data.data.attributes);
     context.hasSpells = Object.values(context.spells).flat().length > 0;
 
     // sort features
     const features = context.data.items.filter(i => i.type === 'feature');
-    context.features = this.sortFeaturesBySource(features, context.data.data);
+    context.features = this._sortFeaturesBySource(features, context.data.data);
     context.hasFeatures = Object.values(context.features).flat().length > 0;
 
-    // skill check penalty
-    const sp = context.systemData.ac?.sp;
-    context.sp = `${Number(sp) > 0 ? '-' : ''}${context.systemData.ac?.sp}`;
-    context.showSp = !!sp;
-
-    // spell failure
-    context.showSf = !!context.systemData.ac?.sf;
-
+    // voice board
     context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
     const voiceMoods = [];
     for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
@@ -84,13 +79,13 @@ export class SimpleActorSheet extends ActorSheet {
 
     // fatigue
     if(context.isCharacter) {
-      context.fatigue = this.getFatigueData(context.data);
+      context.fatigue = this._getFatigueData(context.data);
     }
     
     return context;
   }
 
-  getArmorsByLocation(data) {
+  _getArmorsByLocation(data) {
     const ac = data.data.ac || {};
     const armors = {};
     for (let [area, hitLocations] of Object.entries(Constant.AIM_AREAS_UNILATERAL)) {
@@ -117,7 +112,7 @@ export class SimpleActorSheet extends ActorSheet {
     return armors;
   }
 
-  getFatigueData(data) {
+  _getFatigueData(data) {
     const fatigue = {};
 
     const fahrenheitFromCelsius = c => Math.round(c * 9/5 + 32);
@@ -128,7 +123,6 @@ export class SimpleActorSheet extends ActorSheet {
 
     const reqClo = 36 - 10 - tempC;
     const wornClo = data.data.clo;
-    fatigue.wornClo = wornClo;
     const diffClo = wornClo - reqClo;
     const isWarm = data.effects.some(e => e.label === 'Warm');
     const exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
@@ -142,19 +136,19 @@ export class SimpleActorSheet extends ActorSheet {
     fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
     fatigue.diseaseDesc += diseaseDmg > 0 ? ` (${diseaseDmg})` : '';
 
-    const exhaustionStatus = this.getFatigueStatus(data, 'exhaustion');
+    const exhaustionStatus = this._getFatigueStatus(data, 'exhaustion');
     fatigue.exhaustionDesc = `${exhaustionStatus.desc}${exhaustionStatus.damage ? ` (${exhaustionStatus.damage})` : ''}`;
 
-    const thirstStatus = this.getFatigueStatus(data, 'thirst');
+    const thirstStatus = this._getFatigueStatus(data, 'thirst');
     fatigue.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;
 
-    const hungerStatus = this.getFatigueStatus(data, 'hunger');
+    const hungerStatus = this._getFatigueStatus(data, 'hunger');
     fatigue.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;
 
     return fatigue;
   }
 
-  getFatigueStatus(data, type) {
+  _getFatigueStatus(data, type) {
     type = type.toLowerCase();
     const flagData = data.flags?.lostlands?.[type] || {};
 
@@ -192,21 +186,88 @@ export class SimpleActorSheet extends ActorSheet {
     return status;
   }
 
-  sortEquipmentByType(items) {    
+  _sortEquipmentByType(items) {
+    /*
+    Item Types:
+    "item",
+    "potion",
+    "charged_item",
+    "armor",
+    "helmet",
+    "clothing",
+    "jewelry",
+    "shield",
+    "melee_weapon",
+    "missile_weapon",
+    "ammo",
+    "currency",
+    "spell_magic",
+    "spell_cleric",
+    "spell_witch",
+    "feature"
+    Sheet Categories:
+    weapon
+    armor
+    clothing & jewelry
+    ammo
+    potion
+    charged_item
+    magic
+    other
+    currency
+    */
     const equipment = {};
-    const heldArr = items.filter(i => i.data.attributes.holdable?.value);
-    if (heldArr.length) equipment.holdable = heldArr;
-    const wornArr = items.filter(i => !i.data.attributes.holdable?.value && i.data.attributes.wearable?.value);
-    if (wornArr.length) equipment.wearable = wornArr;
-    const magicArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && i.data.attributes.magic?.value);
-    if (magicArr.length) equipment.magic = magicArr
-    const otherArr = items.filter(i => !i.data.attributes.holdable?.value && !i.data.attributes.wearable?.value && !i.data.attributes.magic?.value);
-    if (otherArr.length) equipment.other = otherArr;
+    const types = [
+      {
+        title: "Weapons",
+        condition: i => i.type === 'melee_weapon' || i.type === 'missile_weapon'
+      },
+      {
+        title: "Armor",
+        condition: i => i.type === 'armor' || i.type === 'helmet' || i.type === 'shield',
+        wearable: true
+      },
+      {
+        title: "Clothing & Jewelry",
+        condition: i => i.type === 'clothing' || i.type === 'jewelry',
+        wearable: true
+      },
+      {
+        title: "Ammunition",
+        condition: i => i.type === 'ammo',
+        wearable: true
+      },
+      {
+        title: "Potions",
+        condition: i => i.type === 'potion'
+      },
+      {
+        title: "Wands, Staves & Rods",
+        condition: i => i.type === 'charged_item'
+      },
+      {
+        title: "Misc. Magic",
+        condition: i => i.type === 'item' && i.data.data.attributes.magic?.value
+      },
+      {
+        title: "Other",
+        condition: i => i.type === 'item' && !i.data.data.attributes.magic?.value
+      },
+      {
+        title: "Currency",
+        condition: i => i.type === 'currency'
+      },
+    ];
+    types.forEach(t => {
+      const equipItems = items.filter(t.condition).map(i => ({item: i, wearable: !!t.wearable}));
+      if (!equipItems.length) return;
+      equipment[t.title] = equipItems;
+    });
 
     return equipment;
   }
 
-  sortSpellsByType(spells, attrs) {
+  _sortSpellsByType(spells, attrs) {
     const sortedSpells = {};
     for(const spelltype of Object.values(Constant.SPELL_TYPES)) {
       const spellsByType = spells.filter(s => s.type === spelltype);
@@ -231,12 +292,12 @@ export class SimpleActorSheet extends ActorSheet {
     return sortedSpells;
   }
 
-  sortFeaturesBySource(features, actorData) {
+  _sortFeaturesBySource(features, actorData) {
     const sortedFeatures = {};
     const addSt = feature => {
       const baseSt = feature.data.attributes.base_st?.value;
       const modAttr = feature.data.attributes.mod_attr?.value?.trim().toLowerCase();
-      const skillPenalty = actorData.ac.sp;
+      const skillPenalty = actorData.skill_penalty;
       const modAttrVal = actorData[`${modAttr}_mod`];
       if (baseSt) {
         feature.st = (+baseSt || 0) - (+modAttrVal || 0) + (+skillPenalty);
@@ -437,57 +498,61 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   _handleWear(item) {
-    const isWorn = !!item.data.data.worn;
-    const wornItems = this.actor.data.items.filter(i => i.type === 'item' && i.data.data.worn);
+    const data = item.data.data;
+    const actorData = this.actor.data;
+    const attrs = data.attributes;
+    const isWorn = !!data.worn;
+    const isBulky = !!data.bulky;
+    const isArmor = item.type === 'armor' || item.type === 'helmet';
+    const isAmmo = item.type === 'ammo';
+    const wornItems = actorData.items.filter(i => i.data.data.worn);
+    const charSize = Constant.SIZE_VALUES[actorData.data.attributes.size?.value] ?? 2;
+    const itemSize = Constant.SIZE_VALUES[attrs.size?.value];
+    const itemLocations = item.data.data.coverage;
+
     if (!isWorn) {
-      const charSize = Constant.SIZE_VALUES[this.actor.data.data.attributes.size?.value] ?? 2;
-      const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
+      // can't wear if quantity greater or less than 1 unless ammunition
+      const wearLimit = isAmmo ? 2 : 1;
+      const itemQty = +item?.data.data.quantity || 0;
+      if (itemQty < 1 || itemQty > wearLimit) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
+
 
       // can't wear a bulky item if any of this item's locations are already covered by a bulky item
-      const isBulky = !!item.data.data.attributes.bulky?.value;
       if (isBulky) {
-        const itemLocations = item.data.data.locations;
-        const wornBulkyItems = wornItems.filter(i => i.type === 'item' && !!i.data.data.attributes.bulky?.value);
-        const wornBulkyLocations = wornBulkyItems.map(i => i.data.data.locations).flat();
-        const duplicateLocation = wornBulkyLocations.find(l => itemLocations.includes(l));
-        if (!!duplicateLocation) {
-          return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
-        }
+        const wornBulkyItems = wornItems.filter(i => i.data.data.bulky);
+        const wornBulkyLocations = [...new Set(wornBulkyItems.map(i => i.data.data.coverage).flat())];
+        const duplicateLocation = wornBulkyLocations.some(l => itemLocations.includes(l));
+        if (duplicateLocation) return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
       }
 
-      // can't wear if quantity greater or less than 1 unless quiver
-      const itemQty = +item?.data.data.quantity || 0;
-      const isQuiver = item.data.data.attributes.quiver?.value;
-      if (itemQty !== 1 && !isQuiver) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
+      // can't wear armor if any of this item's locations are already covered by more than 2 armors
+      if (isArmor) {
+        const wornArmors = wornItems.filter(i => i.type === 'armor' || i.type === 'helmet');
+        const wornArmorLocations = wornArmors.flatMap(a => a.data.data.coverage);
+        for (const itemLoc of itemLocations) {
+          const count = wornArmorLocations.filter(l => l === itemLoc).length;
+          if (count > 2) return ui.notifications.error(`Already wearing three armors over ${itemLoc}`);
+        }
+      }
       
       // can't wear a shield if already wearing a shield,
-      //    while holding a small shield or 2 handed weapon
+      //    while holding a 2 handed weapon
       //    or if size of shield is bigger than character size + 1
-      const isShield = !!item.data.data.attributes.shield_shape?.value;
-      const wearingShield = this.actor.data.items.some(i => i.type === 'item' && i.data.data.worn && !!i.data.data.attributes.shield_shape?.value);
-      const holdingShield = this.actor.data.items.some(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right) && !!i.data.data.attributes.shield_shape?.value);
-      const holdingTwoHands = this.actor.data.items.some(i => i.type === 'item' && i.data.data.held_left && i.data.data.held_right);
+      const isShield = item.type === 'shield';
+      const wearingShield = wornItems.some(i => i.type === 'shield');
+      const holdingTwoHands = actorData.items.some(i => i.data.data.held_offhand && i.data.data.held_mainhand);
       if (isShield) {
         if (itemSize > charSize + 1) return ui.notifications.error(`Character is too small to wear a shield of this size`);
         if (wearingShield) return ui.notifications.error("Can only wear one shield");
-        if (holdingShield) return ui.notifications.error("Cannot wear a shield while holding a shield");
         if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
       }
 
-      // can't stack rings of protection
-      const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
-                                wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
-      if (stackingRingofProt ) {
-        return ui.notifications.error("Cannot wear more than one ring of protection");
-      }
-
-      // can't wear item if already wearing an item in that slot
-      const itemSlot = item.data.data.attributes.slot?.value;
-      const wornItemsInSlot = wornItems.filter(i => i.data.data.attributes.slot?.value === itemSlot);
-      const slotLimit = Util.stringMatch(itemSlot, 'ring') ? 10 : 1;
-      if ( itemSlot && wornItemsInSlot.length >= slotLimit ) {
-        return ui.notifications.error(`Must remove an item from the ${itemSlot} slot first`);
-      }
+      // // can't stack rings of protection
+      // const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
+      //                           wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
+      // if (stackingRingofProt ) {
+      //   return ui.notifications.error("Cannot wear more than one ring of protection");
+      // }
     }
     
     let verb = isWorn ? 'doffs' : 'dons';
@@ -525,7 +590,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     if (isHeld) {
       if (twoHanded) {
-        Object.assign(itemUpdate.data, {held_left: false, held_right: false});
+        Object.assign(itemUpdate.data, {held_offhand: false, held_mainhand: false});
       } else {
         itemUpdate.data[`held_${hand}`] = false;
       }
@@ -537,7 +602,7 @@ export class SimpleActorSheet extends ActorSheet {
       if (thisHandFull) return ui.notifications.error("Must release a held item first"); // TODO auto release held items getting in the way
       if (twoHanded) {
         if (!!itemHeldInOtherHand) return ui.notifications.error("Must release a held item first");
-        Object.assign(itemUpdate.data, {held_left: true, held_right: true});
+        Object.assign(itemUpdate.data, {held_offhand: true, held_mainhand: true});
       } else {
         if (isHeldOtherHand) {
           if (!handAndHalf) {

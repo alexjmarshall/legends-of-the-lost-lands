@@ -95,56 +95,48 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>Max Dex Mod: {{systemData.ac.max_dex_mod}}</span>
-                <span>Worn Clo: {{fatigue.wornClo}}</span> 
+                <span>Clo: {{systemData.clo}}</span>
+                <span>{{#if systemData.agility_penalty}}Agility Penalty: {{systemData.agility_penalty}}{{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
             </header>
-            {{#each equipment as |type key|}}
+            {{#each equipment as |items title|}}
             <header class="items-header flexrow">
                 <span></span>
                 <span style="text-align: center;">
-                    {{#ifeq key "holdable"}}Held{{else}}
-                    {{#ifeq key "wearable"}}Worn{{else}}
-                    {{#ifeq key "magic"}}Misc. Magic{{else}}
-                    {{#ifeq key "other"}}Other{{else}}
-                    {{key}}
-                    {{/ifeq}}
-                    {{/ifeq}}
-                    {{/ifeq}}
-                    {{/ifeq}}
+                    {{title}}
                 </span>
                 <span></span>
             </header>
             <ol class="item-list">
-                {{#each type as |item id|}}
+                {{#each items as |val id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-toggle">
-                        {{#if item.data.attributes.holdable.value}}
-                        <a class="item-control {{#if item.data.held_offhand}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_left">
+                        {{#if val.holdable}}
+                        <a class="item-control {{#if item.data.held_offhand}}{{else}}opacity-50{{/if}}" title="Hold Offhand" data-type="{{item.type}}" data-action="hold_offhand">
                             <img style="transform: scaleX(-1);" src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
                         {{/if}}
                     </div>
                     <div class="item-toggle">
-                        {{#if item.data.attributes.holdable.value}}
-                        <a class="item-control {{#if item.data.held_mainhand}}{{else}}opacity-50{{/if}}" title="Hold Item" data-type="{{item.type}}" data-action="hold_right">
+                        {{#if val.holdable}}
+                        <a class="item-control {{#if item.data.held_mainhand}}{{else}}opacity-50{{/if}}" title="Hold Mainhand" data-type="{{item.type}}" data-action="hold_mainhand">
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-gauntlet.png"/>
                         </a>
-                        {{else if item.data.attributes.wearable.value}}
+                        {{else if val.wearable}}
                         <a class="item-control {{#if item.data.worn}}{{else}}opacity-50{{/if}}" title="Wear Item" data-type="{{item.type}}" data-action="wear">
                             <img src="https://img.icons8.com/ios-glyphs/17/000000/armored-breastplate.png"/>
                         </a>
                         {{/if}}
-                        {{#if item.data.macro}}
+                        {{#if val.item.data.macro}}
                         <a class="item-control" data-action="use" title="Use Item"><i class="fas fa-dice-d20"></i></a>
                         {{/if}}
                     </div>
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
-                    <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
-                    <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
-                    <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
+                    <h4 class="item-name item-row" data-action="edit">{{val.item.name}}</h4>
+                    <span class="item-row item-column" data-action="edit">{{val.item.data.quantity}}</span>
+                    <span class="item-row item-column" data-action="edit">{{val.item.data.total_weight}}</span>
                     <div class="item-controls">
                         <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="item" data-action="edit"><i class="fas fa-edit"></i></a>
                         <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="item" data-action="delete"><i class="fas fa-trash"></i></a>
@@ -208,7 +200,7 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span>{{#if ../showSf}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.spell_failure}}% {{/ifeq}}{{/if}}</span>
+                <span>{{#if ../systemData.spell_failure}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.spell_failure}}% {{/ifeq}}{{/if}}</span>
                 <span style="text-align: center;">
                     {{#ifeq key "spell_magic"}}Magic{{else}}
                     {{#ifeq key "spell_cleric"}}Cleric{{else}}
@@ -262,7 +254,7 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>{{#if ../showSp}} Skill Penalty: {{../skill_penalty}} {{/if}}</span>
+                <span>{{#if ../skill_penalty}} Skill Penalty: {{../skill_penalty}} {{/if}}</span>
                 <span style="text-align: center;">{{key}}</span>
                 <span></span>
             </header>
