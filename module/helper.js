@@ -34,14 +34,16 @@ export class EntitySheetHelper {
 
       // Sort the attributes within the group, and then iterate over them.
       Object.keys(group).sort((a, b) => a.localeCompare(b)).forEach(attr => {
-        // Avoid errors if this is an invalid group.
-        if ( typeof group[attr] != "object" || !group[attr]) return;
         // For each attribute, determine whether it's a checkbox or resource, and then add it to the group's attributes list.
         group[attr]['isCheckbox'] = group[attr]['dtype'] === 'Boolean';
         group[attr]['isResource'] = group[attr]['dtype'] === 'Resource';
         group[attr]['isFormula'] = group[attr]['dtype'] === 'Formula';
         data.data.groups[key]['attributes'][attr] = group[attr];
       });
+
+      // If group has attributes, add flag to show on actor sheet.
+      data.data.groups[key].show = !!Object.keys(data.data.groups[key]['attributes']).length;
+
     }
 
     // Sort the remaining attributes attributes.
@@ -590,12 +592,15 @@ export class EntitySheetHelper {
           delete createData.flags.lostlands.isTemplate;
         }
 
-        // Set default icon by type here feature, spell, equipment
-        const img = createData.type === 'feature' ? "icons/svg/feature.svg" :
+        // Set default icon by type
+        const img = createData.type === 'container' ? "icons/svg/chest.svg" :
+                    createData.type === 'feature' ? "icons/svg/feature.svg" :
                     createData.type === 'spell_magic' ? "icons/svg/spell.svg" :
                     createData.type === 'spell_cleric' ? "icons/svg/prayer.svg" :
                     createData.type === 'spell_witch' ? "icons/svg/pentacle.svg" :
-                    createData.type === 'item' ? "icons/svg/equipment.svg" : null;
+                    createData.type === 'currency' ? "icons/svg/coins.svg" : 
+                    documentName === 'Item' ? "icons/svg/equipment.svg"
+                    : null;
         if (img) {
           createData.img = img;
         }
@@ -604,7 +609,7 @@ export class EntitySheetHelper {
         const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
                            createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
                            createData.type === types.feature ? "lostlands.FeatureItemSheet" :
-                           (documentName === 'Item' && createData.type !== 'item') ? "lostlands.SpellItemSheet" : null;
+                           createData.type.includes('spell') ? "lostlands.SpellItemSheet" : null;
         if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
             flags: {
