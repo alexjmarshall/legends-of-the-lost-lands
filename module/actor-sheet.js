@@ -34,6 +34,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = context.data.type === 'character';
+    context.wearsGarments = context.data.type === 'character' || context.data.type === 'humanoid' || context.data.type === 'undead';
 
     Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
     
@@ -52,8 +53,9 @@ export class SimpleActorSheet extends ActorSheet {
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort armors
-    context.armors = this._getArmorsByLocation(context.data);
-    context.hasArmors = Object.values(context.armors).flat().length > 0;
+    if (context.wearsGarments) {
+      context.armors = this._getArmorsByLocation(context.data);
+    }
 
     // sort spells
     const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
@@ -65,20 +67,20 @@ export class SimpleActorSheet extends ActorSheet {
     context.features = this._sortFeaturesBySource(features, context.data.data);
     context.hasFeatures = Object.values(context.features).flat().length > 0;
 
-    // voice board
-    context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
-    const voiceMoods = [];
-    for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
-      voiceMoods.push( { mood: key, icon: value } );
-    }
-    context.voiceMoods = voiceMoods;
-    context.hasVoice = !!context.systemData.voice;
-    context.noVoice = !context.systemData.voice;
-    context.hideVoiceSelection = context.isPlayer && context.hasVoice;
-    context.showSoundBoard = context.isGM || context.hasVoice;
-
-    // fatigue
     if(context.isCharacter) {
+      // voice board
+      context.voiceProfiles = Constant.VOICE_SOUNDS.keys();
+      const voiceMoods = [];
+      for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
+        voiceMoods.push( { mood: key, icon: value } );
+      }
+      context.voiceMoods = voiceMoods;
+      context.hasVoice = !!context.systemData.voice;
+      context.noVoice = !context.systemData.voice;
+      context.hideVoiceSelection = context.isPlayer && context.hasVoice;
+      context.showSoundBoard = context.isGM || context.hasVoice;
+
+      // fatigue
       context.fatigue = this._getFatigueData(context.data);
     }
     
