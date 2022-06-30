@@ -13,7 +13,7 @@
           "dtype": "String",
           "group": "",
           "label": "HD",
-          "value": "1"
+          "value": "5+2"
         },
         "type": {
           "dtype": "String",
@@ -313,6 +313,12 @@
         "group": "",
         "label": "AC",
         "value": 15
+      },
+      "atk_routine": {
+        "dtype": "String",
+        "group": "",
+        "label": "Attack Routine",
+        "value": "Claw, Claw, Bite"
       }
     }
   },
@@ -324,6 +330,20 @@
         "group": "",
         "label": "Type",
         "value": "Humanoid"
+      },
+      "intelligent": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Intelligent",
+        "value": true
+      },
+      "ability_scores": {
+        "str": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Strength",
+          "value": 10
+        }
       }
     }
   },
