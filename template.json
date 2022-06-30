@@ -1,6 +1,6 @@
 {
 "Actor": {
-  "types": ["character", "humanoid", "monster", "container", "merchant"],
+  "types": ["character", "humanoid", "undead", "monster", "container", "merchant"],
   "templates": {
     "props": {
       "description": "",
@@ -39,24 +39,6 @@
           "label": "Magic Resistance",
           "value": 0
         },
-        "d_vul": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage Vulnerabilities",
-          "value": "None"
-        },
-        "d_res": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage Resistances",
-          "value": "None"
-        },
-        "d_immune": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage Immunities",
-          "value": "None"
-        },
         "hide": {
           "dtype": "String",
           "group": "",
@@ -67,36 +49,6 @@
           "dtype": "Boolean",
           "group": "",
           "label": "Intelligent",
-          "value": false
-        },
-        "immune_crits": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Immune to Crits",
-          "value": false
-        },
-        "immune_bleed": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Immune to Bleed",
-          "value": false
-        },
-        "immune_knockdown": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Immune to Knockdown",
-          "value": false
-        },
-        "immune_impale": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Immune to Impale",
-          "value": false
-        },
-        "immune_injury": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Immune to Injury",
           "value": false
         },
         "xp_multi": {
@@ -113,6 +65,100 @@
       },
       "xp": 0,
       "ac": {}
+    },
+    "humanoid": {
+      "groups": {
+        "ability_scores": {
+          "dtype": "Number",
+          "label": "Ability Scores"
+        }
+      },
+      "attributes": {
+        "base_ac": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Base AC",
+          "value": 10
+        },
+        "size": {
+          "dtype": "String",
+          "group": "",
+          "label": "Size",
+          "value": "M"
+        },
+        "mv": {
+          "dtype": "Number",
+          "group": "",
+          "label": "MV",
+          "value": 9
+        }
+      }
+    },
+    "resistances": {
+      "groups": {
+        "dmg_mods": {
+          "dtype": "String",
+          "label": "Damage Modifiers"
+        },
+        "immunities": {
+          "dtype": "Boolean",
+          "label": "Effect Immunities"
+        }
+      },
+      "attributes": {
+        "immunities": {
+          "immune_crits": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Immune to Crits",
+            "value": false
+          },
+          "immune_bleed": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Immune to Bleed",
+            "value": false
+          },
+          "immune_knockdown": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Immune to Knockdown",
+            "value": false
+          },
+          "immune_impale": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Immune to Impale",
+            "value": false
+          },
+          "immune_injury": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Immune to Injury",
+            "value": false
+          }
+        },
+        "dmg_mods": {
+          "d_vul": {
+            "dtype": "String",
+            "group": "dmg_mods",
+            "label": "Damage Vulnerabilities",
+            "value": "None"
+          },
+          "d_res": {
+            "dtype": "String",
+            "group": "dmg_mods",
+            "label": "Damage Resistances",
+            "value": "None"
+          },
+          "d_immune": {
+            "dtype": "String",
+            "group": "dmg_mods",
+            "label": "Damage Immunities",
+            "value": "None"
+          }
+        }
+      }
     }
   },
   "character": {
@@ -150,7 +196,7 @@
         "dtype": "String",
         "group": "",
         "label": "Class",
-        "value": "Fighter" 
+        "value": "Fighter"
       },
       "lvl": {
         "dtype": "Number",
@@ -260,7 +306,7 @@
     "ac": {}
   },
   "monster": {
-    "templates": ["props","monster"],
+    "templates": ["props","monster","resistances"],
     "attributes": {
       "ac": {
         "dtype": "Number",
@@ -271,25 +317,24 @@
     }
   },
   "humanoid": {
-    "templates": ["props","monster"],
-    "groups": {
-      "ability_scores": {
-        "dtype": "Number",
-        "label": "Ability Scores"
-      }
-    },
+    "templates": ["props","monster","humanoid"],
     "attributes": {
-      "base_ac": {
-        "dtype": "Number",
+      "type": {
+        "dtype": "String",
         "group": "",
-        "label": "Base AC",
-        "value": 10
-      },
-      "mv": {
-        "dtype": "Number",
+        "label": "Type",
+        "value": "Humanoid"
+      }
+    }
+  },
+  "undead": {
+    "templates": ["props","monster","humanoid","resistances"],
+    "attributes": {
+      "type": {
+        "dtype": "String",
         "group": "",
-        "label": "MV",
-        "value": 9
+        "label": "Type",
+        "value": "Undead"
       }
     }
   },
