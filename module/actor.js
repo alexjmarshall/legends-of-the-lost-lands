@@ -20,7 +20,7 @@ export class SimpleActor extends Actor {
 
     this._prepareCharacterData(actorData);
     this._prepareHumanoidAndUndeadData(actorData);
-    // this._prepareMonsterData(actorData);
+    this._prepareMonsterData(actorData);
     // this._prepareContainerData(actorData);
     // this._prepareMerchantData(actorData);
 
@@ -299,6 +299,58 @@ export class SimpleActor extends Actor {
 
   }
 
+  _getMonsterXP(hdVal, hpMax, xpMulti) {
+    // hd x hd x 10 x multiplier + 1/hp
+    return hdVal * hdVal * 10 * xpMulti + hpMax;
+  }
+
+  _prepareMonsterData(actorData) {
+    const type = actorData.type;
+    if (type !== 'monster') return;
+    const data = actorData.data;
+    const attrs = data.attributes;
+    const size = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+
+    // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
+    const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
+    const hdVal = Number(hdValArr[0] + hdValArr.length - 1) || 0;
+
+    const xpMulti = Math.max(1, (+attrs.xp_multi.value || 1));
+    const hpMax = +data.hp.max || 0;
+    data.xp = this._getMonsterXP(hdVal, hpMax, xpMulti);
+
+    // mv & speed
+    const mv = +attrs.mv.value || Constant.DEFAULT_MONSTER_MV;
+    data.mv = mv;
+    data.speed = mv * Constant.SQUARE_SIZE;
+
+    data.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal));
+
+    data.bab = hdVal;
+
+    data.size = size;
+
+    // ac & dr
+    const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide.value] ? attrs.hide.value : "none";
+    const naturalAc = attrs.ac.value ?? Constant.DEFAULT_BASE_AC;
+    const naturalDr = Math.max(0, size - 2);
+    const hideAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial].base_AC;
+    const touchAc = naturalAc - hideAc - size;
+    const ac = { touch_ac: touchAc, total: {} };
+
+    for (const dmgType of Constant.DMG_TYPES) {
+      const unarmoredAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
+      const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
+
+      ac.total[dmgType] = {
+        ac: naturalAc + unarmoredAc,
+        dr: naturalDr + unarmoredDr,
+      }
+    }
+
+    data.ac = ac;
+  }
+
   _prepareAbilityScoreMods(abilities) {
     if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
     if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
@@ -315,10 +367,10 @@ export class SimpleActor extends Actor {
   _prepareHumanoidAndUndeadData(actorData) {
     const type = actorData.type;
     if (type !== 'humanoid' && type !== 'undead') return;
-    const humData = actorData.data;
+    const data = actorData.data;
     const items = actorData.items;
     const wornItems = items.filter(i => i.data.data.worn);
-    const attrs = humData.attributes;
+    const attrs = data.attributes;
     const abilities = attrs.ability_scores || {};
     const size = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
 
@@ -328,23 +380,24 @@ export class SimpleActor extends Actor {
 
     // xp -- hd x hd x 10 x multiplier + 1/hp
     const xpMulti = Math.max(1, (+attrs.xp_multi.value || 1));
-    humData.xp = hdVal * hdVal * 10 * xpMulti + (+humData.hp.max || 0);
+    const hpMax = +data.hp.max || 0;
+    data.xp = this._getMonsterXP(hdVal, hpMax, xpMulti);
 
     // mv & speed
     const mv = +attrs.mv.value || Constant.DEFAULT_HUMANOID_MV;
-    humData.mv = mv;
-    humData.speed = mv * Constant.SQUARE_SIZE;
+    data.mv = mv;
+    data.speed = mv * Constant.SQUARE_SIZE;
 
     // sv
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
     const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
     const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
     const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
-    humData.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
+    data.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
 
-    humData.bab = hdVal;
+    data.bab = hdVal;
 
-    humData.size = size;
+    data.size = size;
 
     this._prepareAbilityScoreMods(abilities);
     
@@ -505,12 +558,6 @@ export class SimpleActor extends Actor {
     const counterWeapPenalty = counterWeap ? Constant.STANCE_MODS.counter.ac_mod : 0;
     const stancePenalty = powerWeapPenalty + counterWeapPenalty;
 
-    // for (const dmgType of Constant.DMG_TYPES) { // this is just for monsters
-    //   ac.total[dmgType] = {
-    //     ac: naturalAc + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac + dexAcBonus,
-    //     dr: naturalDr + Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr,
-    //   }
-    // }
 
     // get best clothing magical AC bonus
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
