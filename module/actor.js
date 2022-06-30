@@ -11,7 +11,7 @@ export class SimpleActor extends Actor {
   /** @inheritdoc */
   prepareDerivedData() {console.log(`updatin actor ${this.data.name}`)
 
-    // actor types: character, humanoid, monster, container, merchant
+    // actor types: character, humanoid, undead, monster, container, merchant
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -19,10 +19,10 @@ export class SimpleActor extends Actor {
     const actorData = this.data;
 
     this._prepareCharacterData(actorData);
-    // this._prepareHumanoidData(data);
-    // this._prepareMonsterData(data);
-    // this._prepareContainerData(data);
-    // this._prepareMerchantData(data);
+    this._prepareHumanoidAndUndeadData(actorData);
+    // this._prepareMonsterData(actorData);
+    // this._prepareContainerData(actorData);
+    // this._prepareMerchantData(actorData);
 
     return;
     
@@ -299,6 +299,58 @@ export class SimpleActor extends Actor {
 
   }
 
+  _prepareAbilityScoreMods(abilities) {
+    if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
+    if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
+    if (abilities.wis) abilities.wis.mod = Math.floor(abilities.wis.value / 3 - 3);
+    if (abilities.dex) abilities.dex.mod = Math.floor(abilities.dex.value / 3 - 3);
+    if (abilities.con) abilities.con.mod = Math.floor(abilities.con.value / 3 - 3);
+    if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
+  }
+
+  _getHighestAttrVal(items, key) {
+    return items.length ? Math.max(...items.map(c => (+c.data.data.attributes[key]?.value || 0))) : 0;
+  }
+
+  _prepareHumanoidAndUndeadData(actorData) {
+    const type = actorData.type;
+    if (type !== 'humanoid' && type !== 'undead') return;
+    const humData = actorData.data;
+    const items = actorData.items;
+    const wornItems = items.filter(i => i.data.data.worn);
+    const attrs = humData.attributes;
+    const abilities = attrs.ability_scores || {};
+    const size = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+
+    // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
+    const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
+    const hdVal = Number(hdValArr[0] + hdValArr.length - 1) || 0;
+
+    // xp -- hd x hd x 10 x multiplier + 1/hp
+    const xpMulti = Math.max(1, (+attrs.xp_multi.value || 1));
+    humData.xp = hdVal * hdVal * 10 * xpMulti + (+humData.hp.max || 0);
+
+    // mv & speed
+    const mv = +attrs.mv.value || Constant.DEFAULT_HUMANOID_MV;
+    humData.mv = mv;
+    humData.speed = mv * Constant.SQUARE_SIZE;
+
+    // sv
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
+    const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
+    const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
+    humData.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
+
+    humData.bab = hdVal;
+
+    humData.size = size;
+
+    this._prepareAbilityScoreMods(abilities);
+    
+    this._prepareWornAc(actorData);
+  }
+
   _prepareCharacterData(actorData) {
     const type = actorData.type;
     if (type !== 'character') return;
@@ -321,25 +373,20 @@ export class SimpleActor extends Actor {
     charData.enc = enc;
 
 
-    // derive mv and speed from encumbrance
+    // mv & speed
     const str = abilities.str?.value || 10;
     const encStr = Math.round( Util.sizeMulti(str, charSize) );
     const baseMv = attrs.base_mv.value;
     const mvPenalty = Math.floor( Math.max(0, charData.enc - encStr) / encStr * 3 );
     // If there is no penalty, mv is equal to base (i.e. unencumbered) MV
     // Otherwise, it's the smaller of the base MV and the default MV minus the penalty.
-    const mv = !mvPenalty ? baseMv : Math.min(baseMv, Constant.DEFAULT_BASE_MV - mvPenalty);
+    const mv = Math.max(1, !mvPenalty ? baseMv : Math.min(baseMv, Constant.DEFAULT_BASE_MV - mvPenalty));
     charData.mv = mv;
     charData.speed = mv * Constant.SQUARE_SIZE;
 
 
-    // ability score modifiers
-    if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
-    if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
-    if (abilities.wis) abilities.wis.mod = Math.floor(abilities.wis.value / 3 - 3);
-    if (abilities.dex) abilities.dex.mod = Math.floor(abilities.dex.value / 3 - 3);
-    if (abilities.con) abilities.con.mod = Math.floor(abilities.con.value / 3 - 3);
-    if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
+    // ability score mods
+    this._prepareAbilityScoreMods(abilities);
 
 
     // set remove body part locations
@@ -368,57 +415,92 @@ export class SimpleActor extends Actor {
     
 
     
-    // spell failure, skill check penalty and max dex mod
+    // spell failure, skill check penalty & max dex mod
     const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
     charData.spell_failure = Math.floor(totalPenaltyWgt * 5 / 2);
     charData.skill_penalty = Math.max(0, Math.floor(totalPenaltyWgt - 2));
     charData.agility_penalty = Math.floor( Math.max(0, (totalPenaltyWgt - AGILITY_PENALTY.threshold)) / AGILITY_PENALTY.factor );
 
-    // AC
-    this._prepareCharHumanoidAc(actorData);
+    // sv
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
+    const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
+    const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
+    charData.sv = Math.max(2, ((+attrs.base_sv.value || Constant.DEFAULT_BASE_SV) - magicClothingSvMod - magicJewelrySvMod));
+
+    charData.bab = +attrs.bab.value || 0;
+
+    charData.size = charSize;
+
+    this._prepareWornAc(actorData);
+
+    this._prepareWornClo(actorData);
     
-    // weap profs
-    charData.weap_profs = Util.getArrFromCSL(attrs.weap_profs?.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+    charData.weap_profs = Util.getArrFromCSL(attrs.weapons.weap_profs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
   }
 
-  _prepareCharHumanoidAc(actorData) {
-    const type = actorData.type;
-    if (type !== 'character' && type !== 'humanoid') return;
+  _prepareWornClo(actorData) { // TODO cannot wear clothing/armor too small
+    const data = actorData.data;
+    const items = actorData.items;
+    const wornItems = items.filter(i => i.data.data.worn);
+    const charSize = +data.size ?? Constant.SIZE_VALUES.default;
+    const sizePenalty = itemSize => Math.max(0, charSize - (+itemSize || 0));
+
+    let clo = 0;
+
+    for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
+      const coveringItems = wornItems.filter(i => i.data.data.coverage?.includes(k));
+      const garments = coveringItems.filter(i => Constant.WEARABLE_TYPES.includes(i.type) && Number(i.data.data.clo));
+
+      // sort the layers by descending clo
+      //    second layer adds 1/2 its full clo, third layer 1/4, and so on
+      const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+      const locationWeight = v.weights[unwornIndex] / 100;
+      const cloVals = garments.map(i => (i.data.data.clo - sizePenalty(i.data.data.size)) * locationWeight);
+      cloVals.sort((a,b) => b - a);
+      const locWarmth = cloVals.reduce((sum, val, index) => sum + val/Math.pow(2, index), 0);
+      clo += locWarmth;
+    }
+
+    data.clo = Math.floor(clo);
+  }
+
+  _prepareWornAc(actorData) {
     const data = actorData.data;
     const items = actorData.items;
     const heldItems = items.filter(i => (i.data.data.held_offhand || i.data.data.held_mainhand));
     const wornItems = items.filter(i => i.data.data.worn);
     const attrs = data.attributes;
-    const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+    const charSize = data.size;
+    const sizePenalty = itemSize => Math.max(0, charSize - (+itemSize || 0));
 
-    // AC
     const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide?.value] ? attrs.hide.value : "none";
     const naturalAc = attrs.base_ac.value ?? Constant.DEFAULT_BASE_AC;
     const naturalDr = Math.max(0, charSize - 2);
     const dexAcBonus = +attrs.ability_scores?.dex?.mod || 0;
-    const agilityPenalty = data.agility_penalty;
+    const agilityPenalty = +data.agility_penalty || 0;
     
-    const getBetterParryItem = (a,b) => (+b?.data.data.attributes.parry?.value || 0) > (+a?.data.data.attributes.parry?.value || 0) ? b : a;
-    const riposteItem = heldItems.filter(i => Util.stringMatch(i.type, 'weapon') && Util.stringMatch(i.data.data.atk_init,'riposte'))
-      .reduce(getBetterParryItem, undefined);
-    const fluidWeap = heldItems.filter(i => Util.stringMatch(i.type, 'weapon') && Util.stringMatch(i.data.data.atk_style,'fluid'))
-      .reduce(getBetterParryItem, undefined);
+    const parryValReducer = (a,b) => +b.data.data.attributes.parry.value > +a.data.data.attributes.parry.value ? b : a;
+    const riposteWeaps = heldItems.filter(i => i.type === 'weapon' && i.data.data.atk_init === 'riposte' && +i.data.data.attributes.parry?.value);
+    const riposteWeap = riposteWeaps.reduce(parryValReducer, null);
+    const fluidWeaps = heldItems.filter(i => i.type === 'weapon' && i.data.data.atk_style === 'fluid' && +i.data.data.attributes.parry?.value);
+    const fluidWeap = fluidWeaps.reduce(parryValReducer, null);
     
-    // parry-riposte overwrites fluid parry
-    const riposteParryBonus = +riposteItem?.data.data.attributes.parry?.value || 0;
+    // riposte parry overwrites fluid parry
+    const riposteParryBonus = +riposteWeap?.data.data.attributes.parry?.value || 0;
     const fluidParryBonus = +fluidWeap?.data.data.attributes.parry?.value || 0;
-    const parryHeight = riposteItem?.data.data.atk_height || fluidWeap?.data.data.atk_height || null;
+    const parryHeight = riposteWeap?.data.data.atk_height || fluidWeap?.data.data.atk_height || null;
     const parry = { 
-      parry_item_id: riposteItem?._id || fluidWeap?._id || null,
+      parry_item_id: riposteWeap?._id || fluidWeap?._id || null,
       parry_bonus: riposteParryBonus || fluidParryBonus || 0,
       parry_type: riposteParryBonus ? 'riposte' : fluidParryBonus ? 'fluid' : '',
       parry_height: parryHeight,
     };
 
     // stance penalty
-    const powerWeap = heldItems.some(i => Util.stringMatch(i.data.data.atk_style,'power'));
-    const counterWeap = heldItems.some(i => Util.stringMatch(i.data.data.atk_init,'counter'));
-    const timing = counterWeap ? 'counter' : riposteItem ? 'riposte' : '';
+    const powerWeap = heldItems.some(i => i.data.data.atk_style === 'power');
+    const counterWeap = heldItems.some(i => i.data.data.atk_init === 'counter');
+    const timing = counterWeap ? 'counter' : riposteWeap ? 'riposte' : '';
     const powerWeapPenalty = powerWeap ? Constant.STANCE_MODS.power.ac_mod : 0;
     const counterWeapPenalty = counterWeap ? Constant.STANCE_MODS.counter.ac_mod : 0;
     const stancePenalty = powerWeapPenalty + counterWeapPenalty;
@@ -430,22 +512,17 @@ export class SimpleActor extends Actor {
     //   }
     // }
 
-    // apply best clothing magical AC bonus
+    // get best clothing magical AC bonus
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
-    const magicClothingACBonus = magicWornClothing.length ? Math.max(...magicWornClothing.map(c => (+c.data.data.attributes.ac_mod?.value || 0))) : 0;
-    const magicClothingSVBonus = magicWornClothing.length ? Math.max(...magicWornClothing.map(c => (+c.data.data.attributes.sv_mod?.value || 0))) : 0;
+    const magicClothingACBonus = this._getHighestAttrVal(magicWornClothing, "ac_mod");
 
-    // apply best jewelry magical AC bonus
+    // get best jewelry magical AC bonus
     const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
-    const magicJewelryACBonus = magicWornJewelry.length ? Math.max(...magicWornJewelry.map(c => (+c.data.data.attributes.ac_mod?.value || 0))) : 0;
-    const magicJewelrySVBonus = magicWornJewelry.length ? Math.max(...magicWornJewelry.map(c => (+c.data.data.attributes.sv_mod?.value || 0))) : 0;
-
-    // save values
-    data.sv = attrs.base_sv.value - magicClothingSVBonus - magicJewelrySVBonus;
+    const magicJewelryACBonus = this._getHighestAttrVal(magicWornJewelry, "ac_mod");
 
 
-    // ac and by hit location
-    // initialize total AC/DR values and clo
+    // ac by hit location
+    // initialize total AC/DR values
     const touchAc = Math.max(1, naturalAc + dexAcBonus + stancePenalty - agilityPenalty);
     const ac = { touch_ac: touchAc, mdr: 0, parry, total: {}, stance_penalty: stancePenalty, timing };
     for (const dmgType of Constant.DMG_TYPES) {
@@ -454,70 +531,65 @@ export class SimpleActor extends Actor {
         dr: 0,
       }
     }
-    let clo = 0;
 
     for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
       ac[k] = {};
+      const locationWeight = (v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.SWING] + v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.THRUST]) / 200;
       const coveringItems = wornItems.filter(i => i.data.data.coverage?.includes(k));
-      const garments = coveringItems.filter(i => i.type === 'clothing' || i.type === 'armor' || i.type === 'helmet');
+      // can only wear three total armor layers
+      const armor = coveringItems.filter(i => (i.type === 'armor' || i.type === 'helmet') && i.data.data.ac).slice(0,3);
+      const bulkyArmor = armor.filter(i => i.data.data.bulky);
+      const nonBulkyArmor = armor.filter(i => !i.data.data.bulky);
       
-      // can only wear one shield, one bulky armor and three total armors
-      const armor = garments.filter(i => i.type !== 'clothing').slice(0,3);
-      const shield = coveringItems.find(i => i.type === 'shield');
-      const shieldStyle = shield?.data.data.shield_style;
-      const bulkyArmor = armor.find(i => i.data.data.bulky);
-      const furArmor = armor.filter(i => Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
-      const nonBulkyNonFurArmor = armor.filter(i => !i.data.data.bulky && !Util.stringMatch(i.data.data.attributes.material?.value, 'fur'));
-
-      // worn clo -- sort the layers by descending clo, then second layer adds 1/2 its full clo, third layer 1/4, and so on
-      const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-      const wornWarmthVals = garments.map(i => (+i.data.data.clo || 0) / 100 * v.weights[unwornIndex]);
-      wornWarmthVals.sort((a,b) => b - a);
-      const locWarmth = wornWarmthVals.reduce((sum, val, index) => sum + val/Math.pow(2, index), 0);
-      clo += locWarmth;
-
       // magic damage reduction
       const mdr = armor.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
-      ac.mdr += (mdr * v.weights[0] + mdr * v.weights[1]) / 200;
+      ac.mdr += mdr * locationWeight;
 
-      
-      // piercing is the basis for sorted armor Ids
-      let sorted_armor_ids = nonBulkyNonFurArmor.sort((a,b) => (+b.data.data.ac["piercing"]?.ac || 0) - (+a.data.data.ac["piercing"]?.ac || 0))
-        .map(i => i._id);
-      if (bulkyArmor?._id) sorted_armor_ids = [bulkyArmor._id, ...sorted_armor_ids];
-      if (furArmor.length) sorted_armor_ids = [...furArmor.map(i => i._id), ...sorted_armor_ids];
+      // shield
+      const shield = coveringItems.find(i => i.type === 'shield');
+      const shieldStyle = shield?.data.data.shield_style;
+      const fluidShieldAcMod = shieldStyle === 'fluid' ? Constant.STANCE_MODS.fluid.shield_ac_mod : 0;
+      const shieldAcBonus = (shield?.data.data.ac?.[dmgType]?.ac || 0) + fluidShieldAcMod;
+      const fluidShieldDrBonus = shieldStyle === 'fluid' ? Constant.STANCE_MODS.fluid.shield_dr_mod : 0;
+      const shieldDrBonus = (shield?.data.data.ac?.[dmgType]?.dr || 0) + fluidShieldDrBonus;
+
+      // sort non-bulky armors by piercing AC and record Ids
+      //    shield goes on top of bulky goes on top of non-bulky
+      const getPierceAc = item => +item.data.data.ac.piercing.ac || 0;
+      let sorted_armor_ids = nonBulkyArmor.sort((a,b) => getPierceAc(b) - getPierceAc(a)).map(i => i._id);
+      const bulkyArmorIds = bulkyArmor.sort((a,b) => getPierceAc(b) - getPierceAc(a)).map(i => i._id);
+      sorted_armor_ids = [...bulkyArmorIds, ...sorted_armor_ids];
       if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
       ac[k].sorted_armor_ids = sorted_armor_ids;
 
-      // parry bonus applies if parry-riposte, or if parryHeight includes this area
-      const appliedParryBonus = (!!riposteItem || Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) ? parry.parry_bonus : 0;
+      // parry bonus applies if riposting, or if parryHeight includes this area
+      const appliedParryBonus = (!!riposteWeap || Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) ? parry.parry_bonus : 0;
 
-      // worn ac & dr by damage type
+      // ac & dr by damage type
       for (const dmgType of Constant.DMG_TYPES) {
-        const shieldAcBonus = shield?.data.data.ac?.[dmgType]?.ac || 0;
-        const fluidShieldAcMod = Util.stringMatch(shieldStyle, 'fluid') ? Constant.STANCE_MODS.fluid.shield_ac_mod : 0;
+
         // no shield dr vs. piercing on forearm or hand
-        const shieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shield?.data.data.ac?.[dmgType]?.dr || 0;
-        const fluidShieldDrBonus = (Util.stringMatch(shieldStyle, 'fluid')) ? Constant.STANCE_MODS.fluid.shield_dr_mod : 0;
-
-        const wornAc = Math.max(0, ...armor.map(i => +i.data.data.ac?.[dmgType]?.ac || 0));
+        const appliedShieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shieldDrBonus;
+        
+        // ac -- use highest of worn ACs if wearing armor, else use unarmored AC
         const unarmoredAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
+        const wornAc = Math.max(0, ...armor.map(i => (+i.data.data.ac?.[dmgType]?.ac || 0) - sizePenalty(i.data.data.size)));
         const acMod = armor.length ? wornAc : unarmoredAc;
+        const locAc = touchAc + acMod + shieldAcBonus + appliedParryBonus + magicClothingACBonus + magicJewelryACBonus;
+        
+        // dr -- all source of DR are cumulative
         const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
-
-        const locAc = touchAc + acMod + shieldAcBonus + fluidShieldAcMod + appliedParryBonus + magicClothingACBonus + magicJewelryACBonus;
         const wornDr = armor.reduce((sum, i) => sum + (+i.data.data.ac?.[dmgType]?.dr || 0), 0);
-        const locDr = naturalDr + unarmoredDr + wornDr + shieldDrBonus + fluidShieldDrBonus;
+        const locDr = naturalDr + unarmoredDr + wornDr + appliedShieldDrBonus;
 
+        // record values
         ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
-        ac.total[dmgType].ac += (locAc * v.weights[0] + locAc * v.weights[1]) / 200;
-        ac.total[dmgType].dr += (locDr * v.weights[0] + locDr * v.weights[1]) / 200;
+        ac.total[dmgType].ac += locAc * locationWeight;
+        ac.total[dmgType].dr += locDr * locationWeight;
       }
     }
 
-    data.clo = Math.floor(clo);
-
-    // round ac
+    // round total ac & dr values
     for (const v of Object.values(ac.total)) { // TODO helmet must be closed to cover nose/jaw for pierce
       v.ac = Math.round(v.ac); // crit slash dmg armor must not be shield or helmet
       v.dr = Math.round(v.dr); // if closed, must remove to listen/speak
@@ -525,7 +597,6 @@ export class SimpleActor extends Actor {
     ac.mdr = Math.round(ac.mdr); // hinged helmet has a macro to change between open/closed...automatically muffle in character speaking with closed helmet?
 
     data.ac = ac;
-    
   }
 
 
