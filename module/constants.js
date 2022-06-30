@@ -2,6 +2,10 @@ export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resou
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
 export const DEFAULT_BASE_AC = 10;
+export const DEFAULT_BASE_MV = 12;
+export const DEFAULT_HUMANOID_MV = 9;
+export const DEFAULT_MONSTER_MV = 15;
+export const DEFAULT_BASE_SV = 16;
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -33,17 +37,6 @@ export const ATTITUDE_BUY_ADJ = {
   [ATTITUDES.ACCEPTING]: 1.05,
   [ATTITUDES.HELPFUL]: 1.15
 };
-// export const FIGHTER_XP_PROGRESSION = [
-//   {xpRequired: 240000, updateData: {"data.level": 9, "data.bab": 9, "data.st": 9, "data.xp.max": 360000}},
-//   {xpRequired: 120000, updateData: {"data.level": 8, "data.bab": 8, "data.st": 9, "data.xp.max": 240000}},
-//   {xpRequired: 60000, updateData: {"data.level": 7, "data.bab": 7, "data.st": 10, "data.xp.max": 120000}},
-//   {xpRequired: 30000, updateData: {"data.level": 6, "data.bab": 6, "data.st": 11, "data.xp.max": 60000}},
-//   {xpRequired: 15000, updateData: {"data.level": 5, "data.bab": 5, "data.st": 11, "data.xp.max": 30000}},
-//   {xpRequired: 7000, updateData: {"data.level": 4, "data.bab": 4, "data.st": 12, "data.xp.max": 15000}},
-//   {xpRequired: 3000, updateData: {"data.level": 3, "data.bab": 3, "data.st": 13, "data.xp.max": 7000}},
-//   {xpRequired: 1000, updateData: {"data.level": 2, "data.bab": 2, "data.st": 13, "data.xp.max": 3000}},
-//   {xpRequired: 0, updateData: {"data.level": 1, "data.bab": 1, "data.st": 14, "data.xp.max": 1000}}
-// ];
 export const DMG_TYPES = [
   "blunt",
   "piercing",
@@ -618,19 +611,16 @@ export const VOICE_SOUNDS = new Map();
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
-
 export const CURRENCY_RATIOS = {
   cps_per_sp: 12,
   cps_per_gp: 240,
 };
-
 export const LIMB_GROUPS = {
   "lower leg": ["foot","shin"],
   "leg": ["foot","shin","knee","thigh"],
   "forearm": ["hand","forearm"],
   "arm": ["hand","forearm","elbow","upper arm"],
 };
-
 export const minorBleedDesc = ` and the wound bleeds heavily`;
 export const majorBleedDesc = ` and blood spurts from the wound!`;
 export const internalBleedDesc = area => ` and the ${area} bleeds internally`;
@@ -646,7 +636,6 @@ const gruesBluntHeadDesc = ' and shatters the skull spattering chunks of gore!';
 const gruesSlashHeadDesc = ' and cleaves the head in two spattering blood in an arc!';
 export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc];
 export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc,staggerDesc,knockWindDesc];
-
 const ranChoice = (choices) => {
   const ranInd = Math.floor(Math.random() * choices.length);
   return choices[ranInd];
@@ -679,7 +668,6 @@ const compFract = (chance, intBleed=false, area=null) => {
 };
 const highCompFract = (intBleed=false, area=null) => compFract(0.75, intBleed, area);
 const lowCompFract = (intBleed=false, area=null) => compFract(0.25, intBleed, area);
-
 export const HIT_LOC_WEIGHT_INDEXES = {
   SWING: 0,
   THRUST: 1,
@@ -1902,7 +1890,6 @@ export const HIT_LOCATIONS = {
     },
   },
 };
-
 export const STANCE_MODS = {
   power: {
     ac_mod: -3,
@@ -1932,11 +1919,9 @@ export const PREP_MODS = {
     speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
 };
-
 export const WEAP_BREAK_CHANCE = 5;
 export const SQUARE_SIZE = 5;
-
-export const WEAPONS = {
+export const WEAPONS = { // TODO weapons?
   fist: {
     name: 'Fist',
     data:{
@@ -1963,26 +1948,13 @@ export const WEAPONS = {
     }
   }
 }
-
 export const ATK_HEIGHTS =['high','mid','low'];
-
 export const AMMO_TYPES = [
   "bodkin arrow",
   "broadhead arrow",
   "bolt",
   "quarrel",
 ];
-
-// export const AIM_AREAS = {
-//   head: ['skull','left eye','right eye','nose','jaw','neck'],
-//   left_arm: ['left shoulder','left upper arm','left elbow','left forearm','left hand'],
-//   upper_torso: ['left armpit','chest','right armpit'],
-//   right_arm: ['right shoulder','right upper arm','right elbow','right forearm','right hand'],
-//   lower_torso: ['gut','groin',],
-//   left_leg: ['left hip','left thigh','left knee','left shin','left foot'],
-//   right_leg: ['right hip','right thigh','right knee','right shin','right foot'],
-// };
-
 export const AIM_AREAS = {
   head: ['skull','left eye','right eye','nose','jaw','neck'],
   shoulders: ['left shoulder','left armpit','right shoulder','right armpit',],
@@ -1991,7 +1963,6 @@ export const AIM_AREAS = {
   pelvis: ['left hip','groin','right hip'],
   legs: ['left thigh','left knee','left shin','left foot','right thigh','right knee','right shin','right foot'],
 };
-
 export const AIM_AREAS_UNILATERAL = {
   head: ['skull','eye','nose','jaw','neck'],
   shoulders: ['shoulder','armpit'],
@@ -2000,12 +1971,10 @@ export const AIM_AREAS_UNILATERAL = {
   pelvis: ['hip','groin'],
   legs: ['thigh','knee','shin','foot'],
 };
-
 export const SHIELD_WEIGHT_MULTI = {
   worn: 1.2,
   large: 1.33,
 };
-
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {
   SWING: [],
@@ -2038,14 +2007,10 @@ export const HIT_LOC_ARRS = {
 
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();
-
-
 export const AIM_AREA_PENALTIES = Object.fromEntries(Object.entries(HIT_LOC_ARRS).map( ([k,v]) => {
   const getPenalty = chance => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(1.8)));
   return [k, getPenalty(v.length)];
 }));
-
-
 export const SIZE_VALUES = {
   T: 0, // tiny
   S: 1, // small
@@ -2055,15 +2020,11 @@ export const SIZE_VALUES = {
   G: 5, // gargantuan
   default: 2,
 };
-
-export const DEFAULT_BASE_MV = 12;
-
 export const HEIGHT_AREAS = {
   low: ['foot','shin','knee','thigh','hip','groin'],
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
   high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
 }
-
 export const WEAPON_CATEGORIES = [
   "axe",
   "bludgeon",
@@ -2082,7 +2043,6 @@ export const WEAPON_CATEGORIES = [
   "straight sword",
   "whip/sling",
 ];
-
 export const MONSTER_TYPES = [
   "beast",
   "celestial",
@@ -2096,7 +2056,6 @@ export const MONSTER_TYPES = [
   "plant",
   "undead",
 ];
-
 export const ALIGNMENTS = [
   "CE", // chaotic evil
   "LE", // lawful evil
