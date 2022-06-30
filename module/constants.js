@@ -5,7 +5,7 @@ export const DEFAULT_BASE_AC = 10;
 export const DEFAULT_BASE_MV = 12;
 export const DEFAULT_HUMANOID_MV = 9;
 export const DEFAULT_MONSTER_MV = 15;
-export const DEFAULT_BASE_SV = 16;
+export const DEFAULT_BASE_SV = 17;
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -2018,6 +2018,7 @@ export const SIZE_VALUES = {
   L: 3, // large
   H: 4, // huge
   G: 5, // gargantuan
+  C: 6, // colossal
   default: 2,
 };
 export const HEIGHT_AREAS = {
@@ -2026,22 +2027,23 @@ export const HEIGHT_AREAS = {
   high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
 }
 export const WEAPON_CATEGORIES = [
-  "axe",
-  "bludgeon",
-  "bow",
-  "crossbow",
-  "curved sword",
-  "dagger",
-  "hammer",
+  "axes",
+  "bludgeons",
+  "bows",
+  "crossbows",
+  "curved swords",
+  "daggers", // ?
+  "hammers",
   "hand-to-hand",
-  "large sword",
-  "piercing sword",
-  "polearm",
-  "spear",
-  "spiked bludgeon",
-  "staff",
-  "straight sword",
-  "whip/sling",
+  "large swords",
+  "piercing swords",
+  "polearms",
+  "slings",
+  "spears",
+  "spiked bludgeonss",
+  "staves",
+  "straight swords",
+  "whips",
 ];
 export const MONSTER_TYPES = [
   "beast",
@@ -2075,4 +2077,19 @@ export const WEARABLE_TYPES = [
   "jewelry",
   "shield",
   "ammo",
+];
+export const FEATURE_TYPES = [
+  "feature",
+  "skill",
+  "natural_weapon",
+  "grapple_maneuver",
+];
+export const HUMANOID_TYPES = [
+  "character",
+  "humanoid",
+  "undead",
+];
+export const NONCOMBATANT_TYPES = [
+  "container",
+  "merchant",
 ];
