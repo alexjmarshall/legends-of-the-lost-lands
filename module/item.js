@@ -9,11 +9,12 @@ import * as Constant from "./constants.js";
 export class SimpleItem extends Item {
 
   /** @inheritdoc */
-  async prepareDerivedData() {
+  async prepareDerivedData() {console.log(`updatin item ${this.data.name}`)
 
     // item types: 
-    //  armor, clothing, shield
-    //  spell_magic, spell_cleric, spell_witch, feature
+    //  armor, clothing, shield, helmet, jewelry
+    //  spell_magic, spell_cleric, spell_witch
+    //  feature, skill, natural_weapon, grapple_maneuver
     //  melee_weapon, missile_weapon, ammo
     //  potion, charged_item, currency, item
 
@@ -22,7 +23,7 @@ export class SimpleItem extends Item {
     this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data;
 
-    this._prepareGarmentData(itemData);
+    this._prepareGarmentData(itemData); // TODO separate methods for every single type
 
     return;
 
@@ -32,94 +33,100 @@ export class SimpleItem extends Item {
   }
 
   _prepareGarmentData(itemData) {
-    if ( itemData.type !== 'armor' && itemData.type !== 'clothing' && itemData.type !== 'shield' ) return;
+    if ( itemData.type !== 'armor' && itemData.type !== 'helmet' && itemData.type !== 'clothing' && itemData.type !== 'shield' ) return;
 
-    const attrs = itemData.attributes;
+    const data = itemData.data;
+    const attrs = data.attributes;
     const material = attrs.material.value.toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material] || {};
-    if (!Object.keys(materialAcMods).length) ui.notifications.error(`${itemData.name} has an incorrect material specified`);
     const materialProps = Constant.MATERIAL_PROPS[material] || {};
-    const acMod = +attrs.ac_mod?.value || 0;
+
+    if (!Object.keys(materialAcMods).length && !Object.keys(materialProps).length) {
+      ui.notifications.error(`${itemData.name} has an incorrect material specified`);
+    } 
+    
     const isMagic = !!attrs.magic?.value;
+    const acMod = isMagic ? (+attrs.ac_mod?.value || 0) : 0;
     const size = attrs.size.value.toUpperCase();
     if (!Constant.SIZE_VALUES[size]) ui.notifications.error(`${itemData.name} has an incorrect size specified`);
     const sizeVal = Constant.SIZE_VALUES[size] ?? 2;
     const isShield = itemData.type === 'shield';
+    // const isHelmet = itemData.type === 'helmet';
+    // const isPlate = material.includes('plate');
 
 
     // coverage
     let coverage = "";
     if (isShield) {
       const shape = attrs.shield_shape.value.toLowerCase();
-      const height = itemData.shield_height;
+      const height = data.shield_height;
       coverage = Constant.SHIELD_TYPES[shape]?.[size]?.[height] || "";
     } else {
-      coverage = itemData.attributes.coverage?.value || "";
+      coverage = attrs.coverage?.value || "";
     }
-    itemData.coverage = Util.getArrFromCSL(coverage).filter( l => Object.keys(Constant.HIT_LOCATIONS).includes( l.toLowerCase() ) ) || [];
+    const coverageArr = Util.getArrFromCSL(coverage).filter( l => Object.keys(Constant.HIT_LOCATIONS).includes( l.toLowerCase() ) ) || [];
+    data.coverage = coverageArr;
+    
+
+    // AC mods if not clothing
+    if (itemData.type !== 'clothing') {
+      const baseAc = (materialAcMods.base_AC || 0) + acMod;
+      const mdr = isMagic ? acMod : 0;
+      data.metal = !!materialProps.metal;
+      data.bulky = !!materialProps.bulky;
+
+      data.ac = { mdr, base_ac: baseAc };
+      Constant.DMG_TYPES.forEach( dmgType => {
+        data.ac[dmgType] = {
+          ac: baseAc + (materialAcMods[dmgType]?.ac || 0),
+          dr: materialAcMods[dmgType]?.dr
+        }
+      });
+    }
 
 
-    // AC mods
-    const baseAc = (materialAcMods.base_AC || 0) + acMod;
-    const mdr = isMagic ? acMod : 0;
-    itemData.metal = !!materialProps.metal;
-    itemData.bulky = !!materialProps.bulky;
-
-    itemData.ac = { mdr, base_ac: baseAc };
-    Constant.DMG_TYPES.forEach( dmgType => {
-      itemData.ac[dmgType] = {
-        ac: baseAc + (materialAcMods[dmgType]?.ac || 0),
-        dr: materialAcMods[dmgType]?.dr
-      }
-    });
-
-
-    // weight TODO make weight field uneditable on item sheet for armor/shield/clothing //TODO use worn_weight if applicable on actor sheet and enc calc
-    const isWorn = !!itemData.worn;
-    const getLocationWgt = index => itemData.coverage.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[index], 0);
+    // weight TODO make weight field uneditable on item sheet for armor/helmet/shield/clothing
+    const isWorn = !!data.worn;
+    const getLocationWgt = index => data.coverage.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[index], 0);
     const locUnwornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN);
-    const locWornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN);
+    const baseLocWornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN);
+    let locWornWgt = attrs.attached?.value ? Math.ceil(baseLocWornWgt / 2) : baseLocWornWgt;
     const materialBaseWgt = materialProps.weight || 1;
-    let materialWgt = isMagic ? Math.ceil(materialBaseWgt / 2) : materialBaseWgt;
-     
+    
     if (isShield) {
-      materialWgt = Math.round(materialWgt / 2 * 10) / 10;
-      if (sizeVal >= Constant.SIZE_VALUES.L) materialWgt = Math.round(materialWgt * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
-      if (isWorn) materialWgt = Math.round(materialWgt * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
+      materialBaseWgt = Math.round(materialBaseWgt / 2 * 10) / 10;
+      if (sizeVal >= Constant.SIZE_VALUES.L) materialBaseWgt = Math.round(materialBaseWgt * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
+      if (isWorn) locWornWgt = Math.round(locWornWgt * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
     }
+    
+    let materialWgt = isMagic ? Math.ceil(materialBaseWgt / 2) : materialBaseWgt;
 
-    const getTotalWeight = locWgt => Math.ceil( Util.sizeMulti(materialWgt * locWgt, sizeVal) ) / 100;
-    const unwornWeight = getTotalWeight(locUnwornWgt);
-    itemData.weight = unwornWeight;
-    itemData.worn_weight = getTotalWeight(locWornWgt);
+    const getTotalWeight = (locWgt, matWgt) => Math.ceil( Util.sizeMulti(matWgt * locWgt, sizeVal) / 10) / 10;
+    const unwornWeight = getTotalWeight(locUnwornWgt, materialWgt);
+    data.weight = unwornWeight;
+    const wornWeight = getTotalWeight(locWornWgt, materialWgt);
+    const qty = data.quantity || 0;
+    const totalWeight = isWorn ? wornWeight * qty : unwornWeight * qty;
+    data.total_weight = totalWeight;
+    const paddedOrWood = material === 'padded' || material === 'wood';
+    data.penalty_weight = !isWorn ? 0 : paddedOrWood ? totalWeight * 2 : totalWeight;
+
 
     // clo
-    itemData.clo = materialProps.clo;
+    data.clo = materialProps.clo;
 
 
     // sp value
     const materialValue = materialProps.sp_value || 0;
-    const maxWeight = materialProps.weight || unwornWeight;
-    const ratio = unwornWeight / maxWeight;
-    const baseValue = Math.round(materialValue * ratio * 100) / 100;
-    itemData.base_value = baseValue;
-    if (attrs.sp_value?.value == null) {
-      attrs.sp_value?.value = baseValue;
-    }
+    const valueWgt = getTotalWeight(locUnwornWgt, materialBaseWgt);
+    const maxWeight = materialProps.weight || valueWgt || 1;
+    const ratio = valueWgt / maxWeight;
+    const baseValue = Math.round(materialValue * ratio * 10) / 10;
+    data.base_value = baseValue;
+    if (!attrs.sp_value.value) attrs.sp_value.value = baseValue;
 
-    // spell failure, skill check penalty and max dex mod penalty
-    // for armor and shield
-    if (itemData.type === 'clothing') return;
 
-    const paddedOrWood = material === 'padded' || material === 'wood';
-    const spellFailure = paddedOrWood ? materialWgt * 5 : materialWgt * 5 / 2;
-    itemData.spell_failure = Math.round(spellFailure * locWornWgt) / 100;
-
-    const skillPenalty = spellFailure / 5 - 2;
-    itemData.skill_penalty = Math.round(skillPenalty * locWornWgt) / 100;
-
-    const maxDexWeight = paddedOrWood ? materialWgt * 2 : materialWgt;
-    itemData.max_dex_penalty = Math.round((4 - (6 - Math.floor(maxDexWeight / 3))) * locWornWgt) / 100; // TODO fix this
+    data.size = sizeVal;
 
   }
 
