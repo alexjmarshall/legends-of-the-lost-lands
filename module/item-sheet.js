@@ -29,6 +29,12 @@ export class SimpleItemSheet extends ItemSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
+
+    // disable editing of weight if armor, shield, helmet or clothing
+    context.disableWgtEdit = context.isPlayer || context.data.type === "armor"
+      || context.data.type === "shield" || context.data.type === "helmet"
+      || context.data.type === "clothing";
+
     return context;
   }
 
