@@ -36,6 +36,17 @@ export class SimpleActorSheet extends ActorSheet {
     context.isCharacter = context.data.type === 'character';
     context.wearsGarments = context.data.type === 'character' || context.data.type === 'humanoid' || context.data.type === 'undead';
 
+
+    // sv / msv
+    const sv = +context.systemData.sv || 0;
+    const msv = +context.systemData.msv || 0;
+    const showMsv = sv && msv && sv !== msv;
+    context.sv = {
+      text: showMsv ? `${sv} / ${msv}` : `${sv}`,
+      label: showMsv ?  'SV / MSV' : 'SV',
+    };
+    
+
     Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
     
     // stance AC bonus/penalty text
