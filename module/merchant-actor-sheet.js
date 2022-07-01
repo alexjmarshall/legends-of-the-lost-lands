@@ -35,10 +35,10 @@ export class MerchantActorSheet extends ActorSheet {
     const attitude = merchantActor && character ? await reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
                      Constant.ATTITUDES.UNCERTAIN;
     const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
-    const items = context.data.items.filter(i => i.type === 'item');
+    const items = context.data.items.filter(i => !isNaN(i.data.attributes.sp_value?.value));
     const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
     items.forEach(item => {
-      let priceInCps = Math.ceil(+item.data.attributes.sp_value?.value * sellFactor * sellAdj * Constant.CURRENCY_RATIOS.cps_per_sp);
+      const priceInCps = Math.ceil(+item.data.attributes.sp_value?.value * sellFactor * sellAdj * Constant.CURRENCY_RATIOS.cps_per_sp);
       item.data.price = Util.expandPrice(priceInCps);
     });
     context.data.items = items;
