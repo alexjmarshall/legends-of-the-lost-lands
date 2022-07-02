@@ -42,11 +42,16 @@ export const playVoiceSound = (() => {
   return async function(mood, actor, token, {push = true, bubble = true, chance = 1}={}) {
     
     const actorId = actor.isToken ? actor.token._id : actor._id;
+    const actorType = actor.type;
+    const attrType = actor.data.data.attributes?.type?.value;
+    const voiceType = actorType === 'monster' && Object.keys(Constant.VOICE_PROFILES).includes(attrType)
+      ? attrType
+      : actorType;
     if (speakingActorIds.has(actorId)) return;
     const isSleeping = game.cub.hasCondition("Asleep", actor, {warn: false});
     if (isSleeping) return;
     const voice = actor.data.data.voice;
-    const soundsArr = Constant.VOICE_SOUNDS.get(`${voice}`)?.get(`${mood}`);
+    const soundsArr = Constant.VOICE_SOUNDS[voiceType]?.[voice]?.[mood];
     if (!soundsArr) return;
     const numTracks = soundsArr.length;
     const trackNum = Math.floor(Math.random() * numTracks);
@@ -67,7 +72,7 @@ export const playVoiceSound = (() => {
 
 export function playSound(sound, token, {push = true, bubble = true}={}) {
   if (!sound) return;
-  const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.mp3`;
+  const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.ogg`;
   if (token && bubble) {
     chatBubble(token, '<i class="fas fa-volume-up"></i>', false);
   }
@@ -94,7 +99,7 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
   }
     
   type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
-  sound = sound ? `systems/lostlands/sounds/${sound}.mp3` : null;
+  sound = sound ? `systems/lostlands/sounds/${sound}.ogg` : null;
   content = content.trim();
 
   // if content includes inline rolls, increase line height
