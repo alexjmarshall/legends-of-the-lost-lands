@@ -64,7 +64,8 @@
         "max": 8
       },
       "xp": 0,
-      "ac": {}
+      "ac": {},
+      "voice": ""
     },
     "humanoid": {
       "groups": {
@@ -303,7 +304,8 @@
       "min": 0,
       "max": 1000
     },
-    "ac": {}
+    "ac": {},
+    "voice": ""
   },
   "monster": {
     "templates": ["props","monster","resistances"],
@@ -472,9 +474,9 @@
     },
     "spell": {
       "prepared": false,
-      "macro": "game.lostlands.Macro.castSpell(itemId,{})",
+      "macro": "game.lostlands.Macro.castSpell('itemId',{})",
       "attributes": {
-        "level": {
+        "lvl": {
           "dtype": "Number",
           "group": "",
           "label": "Level",
@@ -509,12 +511,6 @@
           "group": "",
           "label": "Casting Time",
           "value": 3
-        },
-        "sound": {
-          "dtype": "String",
-          "group": "",
-          "label": "Sound",
-          "value": "necromancy"
         }
       }
     },
@@ -568,7 +564,7 @@
   },
   "potion": {
     "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.drinkPotion(itemId,{})",
+    "macro": "game.lostlands.Macro.drinkPotion('itemId',{})",
     "attributes": {
       "magic": {
         "dtype": "Boolean",
@@ -586,7 +582,7 @@
   },
   "charged_item": {
     "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.useChargedItem(itemId,{})",
+    "macro": "game.lostlands.Macro.useChargedItem('itemId',{})",
     "attributes": {
       "magic": {
         "dtype": "Boolean",
