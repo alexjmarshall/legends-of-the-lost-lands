@@ -552,66 +552,70 @@ export const VOICE_MOOD_ICONS = {
   [VOICE_MOODS.TOOT]: "https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png",
   [VOICE_MOODS.WHAT]: "https://img.icons8.com/ios/50/000000/question-mark--v1.png"
 };
-const VOICE_PROFILES = [
-  "F_Barb", 
-  "F_Bard", 
-  "F_Drow", 
-  "F_Fgt01", 
-  "F_Fgt02",
-  "F_Fgt03",
-  "F_Fgt04",
-  "F_Fgt05",
-  "F_HOrc1",
-  "F_HoW1",
-  "F_HoW2",
-  "F_HoW3",
-  "F_Mage1",
-  "F_Mage2",
-  "F_Mage3",
-  "F_Mage4",
-  "F_Mage5",
-  "F_Sorc1",
-  "F_Thief1",
-  "F_Thief2",
-  "M_Barb",
-  "M_Bard",
-  "M_Drow",
-  "M_Fgt01",
-  "M_Fgt02",
-  "M_Fgt03",
-  "M_Fgt04",
-  "M_Fgt05",
-  "M_HOrc1",
-  "M_HoW1",
-  "M_HoW2",
-  "M_HoW3",
-  "M_Mage1",
-  "M_Mage2",
-  "M_Mage3",
-  "M_Mage4",
-  "M_Mage5",
-  "M_Monk1",
-  "M_Sorc1",
-  "MThief1",
-  "MThief2"
-];
-export const VOICE_SOUNDS = new Map();
+export const VOICE_PROFILES = { // TODO add more profiles for humanoid, undead and monster types
+  character: [
+    "F_Barb", 
+    "F_Bard", 
+    "F_Drow", 
+    "F_Fgt01", 
+    "F_Fgt02",
+    "F_Fgt03",
+    "F_Fgt04",
+    "F_Fgt05",
+    "F_HOrc1",
+    "F_HoW1",
+    "F_HoW2",
+    "F_HoW3",
+    "F_Mage1",
+    "F_Mage2",
+    "F_Mage3",
+    "F_Mage4",
+    "F_Mage5",
+    "F_Sorc1",
+    "F_Thief1",
+    "F_Thief2",
+    "M_Barb",
+    "M_Bard",
+    "M_Drow",
+    "M_Fgt01",
+    "M_Fgt02",
+    "M_Fgt03",
+    "M_Fgt04",
+    "M_Fgt05",
+    "M_HOrc1",
+    "M_HoW1",
+    "M_HoW2",
+    "M_HoW3",
+    "M_Mage1",
+    "M_Mage2",
+    "M_Mage3",
+    "M_Mage4",
+    "M_Mage5",
+    "M_Monk1",
+    "M_Sorc1",
+    "M_Thief1",
+    "M_Thief2"
+  ],
+};
+export const VOICE_SOUNDS = {};
 // populate voice sounds on startup
 (async function() {
-  for (const voice of VOICE_PROFILES) {
-    const moodMap = new Map();
-    const response = await fetch(`systems/lostlands/sounds/${voice}/DirContents.txt/`);
-    const fileList = await response.text();
-    const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
-    for (const mood of Object.values(VOICE_MOODS)) {
-      const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.mp3`).test(f)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
-      moodMap.set(`${mood}`, pathArr);
+  for (const [type, voiceSet] of Object.entries(VOICE_PROFILES)) {
+    VOICE_SOUNDS[type] = {};
+    for (const voice of voiceSet) {
+      VOICE_SOUNDS[type][voice] = {};
+      const response = await fetch(`systems/lostlands/sounds/${voice}/DirContents.txt/`);
+      const fileList = await response.text();
+      const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
+      Object.values(VOICE_MOODS).forEach(mood => {
+        const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
+        VOICE_SOUNDS[type][voice][mood] = pathArr;
+      })
     }
-    VOICE_SOUNDS.set(`${voice}`, moodMap);
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
-export const CURRENCY_RATIOS = {
+export const CURRENCY_RATIOS = { // TODO use material values
   cps_per_sp: 12,
   cps_per_gp: 240,
 };
