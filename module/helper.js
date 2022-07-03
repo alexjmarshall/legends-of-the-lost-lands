@@ -593,23 +593,23 @@ export class EntitySheetHelper {
         }
 
         // Set default icon by type
-        const img = createData.type === 'container' ? "icons/svg/chest.svg" :
-                    createData.type === 'feature' ? "icons/svg/feature.svg" :
-                    createData.type === 'spell_magic' ? "icons/svg/spell.svg" :
-                    createData.type === 'spell_cleric' ? "icons/svg/prayer.svg" :
-                    createData.type === 'spell_witch' ? "icons/svg/pentacle.svg" :
-                    createData.type === 'currency' ? "icons/svg/coins.svg" : 
-                    documentName === 'Item' ? "icons/svg/equipment.svg"
-                    : null;
+        const img = createData.type === 'container' ? "icons/svg/chest.svg"
+          : Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type) ? "icons/svg/feature.svg"
+          : createData.type === 'spell_magic' ? "icons/svg/spell.svg"
+          : createData.type === 'spell_cleric' ? "icons/svg/prayer.svg"
+          : createData.type === 'spell_witch' ? "icons/svg/pentacle.svg"
+          : createData.type === 'currency' ? "icons/svg/coins.svg"
+          : documentName === 'Item' ? "icons/svg/equipment.svg"
+          : null;
         if (img) {
           createData.img = img;
         }
 
         // Set sheet for non-default types
-        const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet" :
-                           createData.type === types.merchant ? "lostlands.MerchantActorSheet" :
-                           createData.type === types.feature ? "lostlands.FeatureItemSheet" :
-                           createData.type.includes('spell') ? "lostlands.SpellItemSheet" : null;
+        const sheetClass = createData.type === types.container ? "lostlands.ContainerActorSheet"
+          : createData.type === types.merchant ? "lostlands.MerchantActorSheet"
+          : Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type) ? "lostlands.FeatureItemSheet"
+          : Object.values(Constant.SPELL_TYPES).includes(createData.type) ? "lostlands.SpellItemSheet" : null;
         if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
             flags: {
