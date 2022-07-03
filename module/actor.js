@@ -70,8 +70,9 @@ export class SimpleActor extends Actor {
     if (type !== 'monster') return;
     const data = actorData.data;
     const attrs = data.attributes;
-    // const items = actorData.items;
-    const size = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+    const items = actorData.items;
+    const size = attrs.size.value.toUpperCase().trim();
+    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
 
     // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
     const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
@@ -93,24 +94,24 @@ export class SimpleActor extends Actor {
 
     data.bab = hdVal;
 
-    data.size = size;
+    data.size = sizeVal;
 
-    // // record natural weapon Ids for attack routine
-    // const atkRoutine = attrs.atk_routine.value || '';
-    // const atkRoutineArr = atkRoutine.split(',').map(t => t.trim()).filter(t => t);
-    // const atkRoutineWeapIds = [];
-    // atkRoutineArr.forEach(a => {
-    //   const weap = items.find(i => i.type === 'natural_weapon' && Util.stringMatch(i.name,a));
-    //   if (!weap) return ui.notifications.error(`Could not find a natural weapon called ${a}`);
-    //   atkRoutineWeapIds.push(weap._id);
-    // });
+    // record natural weapon Ids for attack routine
+    const atkRoutine = attrs.atk_routine.value || '';
+    const atkRoutineArr = atkRoutine.split(',').filter(t => t);
+    const atkRoutineIds = [];
+    atkRoutineArr.forEach(a => {
+      const weap = items.find(i => i.type === 'natural_weapon' && Util.stringMatch(i.name, a));
+      if (weap && weap._id) atkRoutineIds.push(weap._id);
+    });
+    data.atk_routine_ids = atkRoutineIds;
 
     // ac & dr
     const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide.value] ? attrs.hide.value : "none";
     const naturalAc = attrs.ac.value ?? Constant.DEFAULT_BASE_AC;
-    const naturalDr = Math.max(0, size - 2);
+    const naturalDr = Math.max(0, sizeVal - 2);
     const hideAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial].base_AC;
-    const touchAc = naturalAc - hideAc - size;
+    const touchAc = naturalAc - hideAc - sizeVal;
     const ac = { touch_ac: touchAc, total: {} };
 
     for (const dmgType of Constant.DMG_TYPES) {
@@ -147,7 +148,8 @@ export class SimpleActor extends Actor {
     const wornItems = items.filter(i => i.data.data.worn);
     const attrs = data.attributes;
     const abilities = attrs.ability_scores || {};
-    const size = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+    const size = attrs.size.value.toUpperCase().trim();
+    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
 
     // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
     const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
@@ -175,7 +177,7 @@ export class SimpleActor extends Actor {
 
     data.bab = hdVal;
 
-    data.size = size;
+    data.size = sizeVal;
 
     this._prepareAbilityScoreMods(abilities);
     
@@ -190,7 +192,8 @@ export class SimpleActor extends Actor {
     const wornItems = items.filter(i => i.data.data.worn);
     const attrs = charData.attributes;
     const abilities = attrs.ability_scores || {};
-    const charSize = Constant.SIZE_VALUES[attrs.size.value] ?? Constant.SIZE_VALUES.default;
+    const size = attrs.size.value.toUpperCase().trim();
+    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
     const AGILITY_PENALTY = {
       threshold: 5,
       factor: 3
@@ -202,7 +205,7 @@ export class SimpleActor extends Actor {
 
     // mv & speed
     const str = abilities.str?.value || 10;
-    const encStr = Math.round( Util.sizeMulti(str, charSize) );
+    const encStr = Math.round( Util.sizeMulti(str, sizeVal) );
     const baseMv = attrs.base_mv.value;
     const mvPenalty = Math.floor( Math.max(0, charData.enc - encStr) / encStr * 3 );
     // If there is no penalty, mv is equal to base (i.e. unencumbered) MV
@@ -262,7 +265,7 @@ export class SimpleActor extends Actor {
 
     charData.bab = +attrs.bab.value || 0;
 
-    charData.size = charSize;
+    charData.size = sizeVal;
 
     this._prepareWornAc(actorData);
 
@@ -399,8 +402,6 @@ export class SimpleActor extends Actor {
         
         // ac -- use highest of worn ACs if wearing armor, else use unarmored AC
         const unarmoredAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
-        const wornAcMod = armor[0]?.data.data.ac?.[dmgType]?.ac;
-        const sizePenaltyy = getSizePenalty(armor[0]?.data.data.size);
         const wornAc = Math.max(0, ...armor.map(i => (+i.data.data.ac?.[dmgType]?.ac || 0) - getSizePenalty(i.data.data.size)));
         const acMod = armor.length ? wornAc : unarmoredAc;
         const locAc = touchAc + acMod + shieldAcBonus + appliedParryBonus + magicClothingACBonus + magicJewelryACBonus;
