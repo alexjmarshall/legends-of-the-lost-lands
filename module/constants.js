@@ -2152,3 +2152,10 @@ export const STATUS_EFFECTS = [
 {id: "magicShield", label: "EFFECT.StatusMagicShield", icon: "icons/svg/mage-shield.svg"},
 {id: "holyShield", label: "EFFECT.StatusHolyShield", icon: "icons/svg/holy-shield.svg"},
 ];
+
+export const NON_PHYSICAL_ITEM_TYPES = [
+  "feature",
+  "skill",
+  "natural_weapon",
+  "grapple_maneuver",
+];
