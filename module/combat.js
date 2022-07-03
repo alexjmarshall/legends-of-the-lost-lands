@@ -69,7 +69,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     return attack(attacker, target, options);
   }
   const weaponHeld = !!weaponItem.data.data.held_offhand || !!weaponItem.data.data.held_mainhand;
-  if (weaponItem.data.data.attributes.holdable && !weaponHeld) {
+  if (Constant.HOLDABLE_TYPES.includes(weaponItem.type) && !weaponHeld) {
     ui.notifications.error("Item must be held to use");
     weapons.shift();
     return attack(attacker, target, options);
@@ -542,9 +542,9 @@ export async function attack(attacker, target, options) { // TODO to break attac
       // const maxImpaleAreas = ['chest','skull','eye'];
       const doubleBleedAreas = ['neck','groin','armpit'];
       const intBleedAreas = ['knee','hip','gut','chest','shoulder','elbow','skull'];
-      const easyBleedAreas = ['neck','jaw','face','skull','eye','forearm','hand','foot','armpit'];
-      const doubleKnockdownAreas = ['skull','face','eye','jaw','knee','shin','foot'];
-      const helmetAreas = ['skull','face','eye','jaw'];
+      const easyBleedAreas = ['neck','jaw','nose','skull','eye','forearm','hand','foot','armpit'];
+      const doubleKnockdownAreas = ['skull','nose','eye','jaw','knee','shin','foot'];
+      const helmetAreas = ['skull','nose','eye','jaw'];
       const dropKnockdownAreas = ['hand','forearm'];
       let sortedWornArmors = [];
       const parry = targetRollData.ac.parry || {};
