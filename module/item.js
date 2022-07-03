@@ -23,13 +23,29 @@ export class SimpleItem extends Item {
     this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data;
 
-    this._prepareGarmentData(itemData); // TODO separate methods for every single type
+    // armor, clothing, shield, helmet
+    this._prepareGarmentData(itemData);
+    // spell_magic, spell_cleric, spell_witch
+    this._prepareSpellData(itemData);
+    // this._prepareArmorData(itemData);
 
     return;
 
     if (this.data.type === 'item') {
       this.prepareItem(itemData)
     }
+  }
+
+  _prepareSpellData(itemData) {
+    if (itemData.type !== 'spell_magic' && itemData.type !== 'spell_cleric' && itemData.type !== 'spell_witch') return;
+
+    const data = itemData.data;
+    const attrs = data.attributes;
+
+    // sound default = school
+    const school = attrs.school.value.toLowerCase().trim();
+    const sound = attrs.sound?.value;
+    data.sound = sound || school;
   }
 
   _prepareGarmentData(itemData) {
@@ -40,29 +56,25 @@ export class SimpleItem extends Item {
     const material = attrs.material.value.toLowerCase().trim();
     const materialAcMods = Constant.ARMOR_VS_DMG_TYPE[material] || {};
     const materialProps = Constant.MATERIAL_PROPS[material] || {};
-
     if (!Object.keys(materialAcMods).length && !Object.keys(materialProps).length) {
       ui.notifications.error(`${itemData.name} has an incorrect material specified`);
     } 
-    
     const isMagic = !!attrs.magic?.value;
     const acMod = isMagic ? (+attrs.ac_mod?.value || 0) : 0;
-    const size = attrs.size.value.toUpperCase();
-    if (!Constant.SIZE_VALUES[size]) ui.notifications.error(`${itemData.name} has an incorrect size specified`);
-    const sizeVal = Constant.SIZE_VALUES[size] ?? 2;
     const isShield = itemData.type === 'shield';
-    // const isHelmet = itemData.type === 'helmet';
-    // const isPlate = material.includes('plate');
 
+    // size
+    const size = Constant.SIZE_VALUES[attrs.size.value.toUpperCase().trim()] ?? Constant.SIZE_VALUES.default;
+    data.size = size;
 
     // coverage
     let coverage = "";
     if (isShield) {
       const shape = attrs.shield_shape.value.toLowerCase();
       const height = data.shield_height;
-      coverage = Constant.SHIELD_TYPES[shape]?.[size]?.[height] || "";
+      coverage = Constant.SHIELD_TYPES[shape]?.[size]?.[height] || coverage;
     } else {
-      coverage = attrs.coverage?.value || "";
+      coverage = attrs.coverage?.value || coverage;
     }
     const coverageArr = Util.getArrFromCSL(coverage).filter( l => Object.keys(Constant.HIT_LOCATIONS).includes( l.toLowerCase() ) ) || [];
     data.coverage = coverageArr;
@@ -85,7 +97,7 @@ export class SimpleItem extends Item {
     }
 
 
-    // weight TODO make weight field uneditable on item sheet for armor/helmet/shield/clothing
+    // weight
     const isWorn = !!data.worn;
     const getLocationWgt = index => data.coverage.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[index], 0);
     const locUnwornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN);
@@ -95,13 +107,13 @@ export class SimpleItem extends Item {
     
     if (isShield) {
       materialBaseWgt = Math.round(materialBaseWgt / 2 * 10) / 10;
-      if (sizeVal >= Constant.SIZE_VALUES.L) materialBaseWgt = Math.round(materialBaseWgt * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
+      if (size >= Constant.SIZE_VALUES.L) materialBaseWgt = Math.round(materialBaseWgt * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
       if (isWorn) locWornWgt = Math.round(locWornWgt * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
     }
     
-    let materialWgt = isMagic ? Math.ceil(materialBaseWgt / 2) : materialBaseWgt;
+    const materialWgt = isMagic ? Math.ceil(materialBaseWgt / 2) : materialBaseWgt;
 
-    const getTotalWeight = (locWgt, matWgt) => Math.ceil( Util.sizeMulti(matWgt * locWgt, sizeVal) / 10) / 10;
+    const getTotalWeight = (locWgt, matWgt) => Math.ceil( Util.sizeMulti(matWgt * locWgt, size) / 10) / 10;
     const unwornWeight = getTotalWeight(locUnwornWgt, materialWgt);
     data.weight = unwornWeight;
     const wornWeight = getTotalWeight(locWornWgt, materialWgt);
@@ -124,10 +136,6 @@ export class SimpleItem extends Item {
     const baseValue = Math.round(materialValue * ratio * 10) / 10;
     data.base_value = baseValue;
     if (!attrs.sp_value.value) attrs.sp_value.value = baseValue;
-
-
-    data.size = sizeVal;
-
   }
 
   prepareItem(itemData) {
