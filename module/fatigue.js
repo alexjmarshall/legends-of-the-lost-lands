@@ -147,7 +147,7 @@ export const DISEASES = {
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
   },
-  "malaria": {
+  "ague": {
     symptoms: ["paroxysms", "vomiting", "fever"],
     virulence: "d6",
     incubationPeriod: { day: 1 },
@@ -256,9 +256,9 @@ async function resetDamageAndWarn(char, time) {
   const isDead = Number(char.data.data.hp.value) < 0;
   if (isDead) return;
 
-  const isAsleep = game.cub.hasCondition('Asleep', char, {warn: false});
-  const isResting = game.cub.hasCondition('Rest', char, {warn: false});
-  const isWarm = game.cub.hasCondition('Warm', char, {warn: false});
+  const isAsleep = char.data.effects.some(e => e.label === 'Asleep');
+  const isResting = char.data.effects.some(e => e.label === 'Rest');
+  const isWarm = char.data.effects.some(e => e.label === 'Warm');
 
   // clocks
   for (const [type, clock] of Object.entries(CLOCKS)) {
@@ -276,7 +276,6 @@ async function resetDamageAndWarn(char, time) {
     if (type === 'exposure') {
       const diff = diffClo(char);
       conditionString = getExposureCondition(diff).desc;
-      typeString = diffClo < 0 ? 'Cold' : 'Heat';
       resetExposure = isWarm || conditionString === 'cool' || conditionString === 'warm';
     }
   
