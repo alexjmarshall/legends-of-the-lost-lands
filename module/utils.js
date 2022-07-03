@@ -48,7 +48,7 @@ export const playVoiceSound = (() => {
       ? attrType
       : actorType;
     if (speakingActorIds.has(actorId)) return;
-    const isSleeping = game.cub.hasCondition("Asleep", actor, {warn: false});
+    const isSleeping = actor.data.effects.some(e => e.label === 'Asleep'); // game.cub.hasCondition("Asleep", actor, {warn: false});
     if (isSleeping) return;
     const voice = actor.data.data.voice;
     const soundsArr = Constant.VOICE_SOUNDS[voiceType]?.[voice]?.[mood];
@@ -163,7 +163,9 @@ export async function rollDice(formula) {
 export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
   const item = actor.data.items.get(itemIdOrName) || 
     actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemIdOrName?.toLowerCase().replace(/\s/g,''));
-  if (!item) throw new Error(`${itemType} ${itemIdOrName} not found on ${actor.name}`);
+  if (!item) {
+    throw new Error(`${itemType} ${itemIdOrName} not found on ${actor.name}`);
+  } 
   return item;
 }
 
@@ -283,4 +285,9 @@ export function formatAtkMode(mode) {
 
 export function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
+}
+
+export function playTokenAnimation(token, animation) {
+  // addAnimation(token, textureData, pushActor, name, oldID)
+  // removeAnimByName(token, name, removeActor, fadeOut)
 }
