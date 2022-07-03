@@ -309,6 +309,7 @@
   },
   "monster": {
     "templates": ["props","monster","resistances"],
+    "atk_routine_ids": [],
     "attributes": {
       "ac": {
         "dtype": "Number",
