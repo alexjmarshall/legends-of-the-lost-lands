@@ -32,7 +32,7 @@
 
         {{!-- Render the grouped attributes partial and control. --}}
         <div class="groups">
-            {{> "systems/lostlands/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+            {{> "systems/lostlands/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
 
             {{#if isGM}}
             <div class="group-controls flexrow">

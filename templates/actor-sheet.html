@@ -25,7 +25,7 @@
             </div>
             <div class="properties">
                 <div class="property" style="max-width:200px;">
-                    <label class="property-label">Summary AC / DR</label>
+                    <label class="property-label">AC / DR</label>
                     <label class="left-label">B</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
                     <label class="left-label">P</label>
@@ -39,10 +39,10 @@
                     <span class="property-field">{{systemData.ac.touch_ac}}</span>
                 </div>
                 {{/if}}
-                {{#if systemData.ac.mr}}
+                {{#if systemData.attributes.mr.value}}
                 <div class="property">
                     <label class="property-label">MR</label>
-                    <span class="property-field">{{systemData.ac.mr}}%</span>
+                    <span class="property-field">{{systemData.attributes.mr.value}}%</span>
                 </div>
                 {{/if}}
                 {{#if systemData.ac.mdr}}
@@ -52,8 +52,8 @@
                 </div>
                 {{/if}}
                 <div class="property">
-                    <label class="property-label">SV</label>
-                    <span class="property-field">{{systemData.sv}}</span>
+                    <label class="property-label">{{sv.label}}</label>
+                    <span class="property-field">{{sv.text}}</span>
                 </div>
                 <div class="property">
                     <label class="property-label">MV</label>
@@ -68,7 +68,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="description">Notes</a>
         <a class="item" data-tab="items">Items</a>
-        {{#if hasArmors}}
+        {{#if wearsGarments}}
         <a class="item" data-tab="armors">Armor</a>
         {{/if}}
         {{#if hasSpells}}
@@ -78,9 +78,7 @@
         <a class="item" data-tab="features">Skills</a>
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
-        {{#if isCharacter}}
         <a class="item" data-tab="voice">Voice</a>
-        {{/if}}
         <a class="item" data-tab="fatigue">Fatigue</a>
     </nav>
 
@@ -95,8 +93,8 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>Clo: {{systemData.clo}}</span>
-                <span>{{#if systemData.agility_penalty}}Agility Penalty: {{systemData.agility_penalty}}{{/if}}</span>
+                <span style="flex:0.33;">{{#if wearsGarments}}Clo: {{systemData.clo}}{{/if}}</span>
+                <span>{{#if wearsGarments}}Agility Penalty: {{systemData.agility_penalty}}{{/if}}</span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
@@ -163,7 +161,7 @@
         <div class="tab armors" data-group="primary" data-tab="armors">
             <header class="armors-header sticky flexrow">
                 <span>Hit Location</span>
-                <span>Armor Layers</span>
+                <span>Layers</span>
                 <span class="text-center">{{#if stanceBonusText}}{{stanceBonusText}}{{/if}}</span>
                 <span class="text-center">{{#if stancePenaltyText}}{{stancePenaltyText}}{{/if}}</span>
                 <span class="flex2 text-center">AC / DR</span>
@@ -215,7 +213,9 @@
                 {{#each spelltype as |level key|}}
                 <header class="spells-header flexrow">
                     <span>{{key}}</span>
-                    <span style="text-align: right;">{{level.slots.value}} / {{level.slots.max}}</span>
+                    <span style="text-align: right;">
+                    {{#if level.slots.value}}{{level.slots.value}}{{else}}0{{/if}} / {{#if level.slots.max}}{{level.slots.max}}{{else}}0{{/if}}
+                    </span>
                 </header>
                 <ol class="item-list">
                     {{#each level.spells as |spell|}}
@@ -235,9 +235,18 @@
                         <img class="item-row" data-action="edit" src="{{spell.img}}" title="{{spell.name}}" width="24" height="24"/>
                         <h4 class="item-name item-row" data-action="edit">{{spell.name}}</h4>
                         <div class="item-row flex3" data-action="edit">
-                            {{#if spell.data.attributes.range.value}}<label class="label">Range:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.range.value}}'</span>{{/if}}
-                            {{#if spell.data.attributes.area.value}}<label class="label">Area:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.area.value}}</span>{{/if}}
-                            {{#if spell.data.attributes.duration.value}}<label class="label">Duration:</label><span>{{spell.data.attributes.duration.value}}</span>{{/if}}
+                            {{#if spell.data.attributes.range.value}}
+                            <label class="label">R:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.range.value}}'</span>
+                            {{/if}}
+                            {{#if spell.data.attributes.area.value}}
+                            <label class="label">A:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.area.value}}</span>
+                            {{/if}}
+                            {{#if spell.data.attributes.duration.value}}
+                            <label class="label">D:</label><span style="margin-right: 0.5em;">{{spell.data.attributes.duration.value}}</span>
+                            {{/if}}
+                            {{#if spell.data.attributes.casting_time.value}}
+                            <label class="label">CT:</label><span>{{spell.data.attributes.casting_time.value}}</span>
+                            {{/if}}
                         </div>
                         <div class="item-controls">
                             <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="{{spell.type}}" data-action="edit"><i class="fas fa-edit"></i></a>
@@ -320,7 +329,6 @@
 
         {{!-- Fatigue Tab --}}
         <div class="tab fatigue" data-group="primary" data-tab="fatigue">
-            {{#if isCharacter}}
             <div class="flexrow">
                 <label class="fatigue-label">Ambient Temp.</label>
                 <span class="fatigue-value">{{fatigue.tempDesc}}</span>
@@ -345,14 +353,12 @@
                 <label class="fatigue-label">Disease</label>
                 <span class="fatigue-value">{{fatigue.diseaseDesc}}</span>
             </div>
-            {{/if}}
-            <div class="flexrow">
+            <!-- <div class="flexrow">
                 <label class="fatigue-label">Wounds</label>
                 <input class="fatigue-value" type="text" name="data.injuries" value="{{systemData.injuries}}" {{#if isPlayer}}readonly{{/if}}/>
-            </div>
+            </div> -->
         </div>
 
-        {{#if isCharacter}}
         {{!-- Voice Tab --}}
         <div class="tab voice" data-group="primary" data-tab="voice">
             <div class="flexrow voice-selection" {{#if hideVoiceSelection}}style="display:none;"{{/if}}>
@@ -385,7 +391,6 @@
             {{/each}}
             {{/if}}
         </div>
-        {{/if}}
 
     </section>
 </form>

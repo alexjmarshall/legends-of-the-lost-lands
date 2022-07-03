@@ -46,7 +46,7 @@
                     <img class="item-row" data-action="edit" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
                     <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
                     <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
-                    <span class="item-row item-column" data-action="edit">{{item.data.totalWeight}}</span>
+                    <span class="item-row item-column" data-action="edit">{{item.data.total_weight}}</span>
                     <div class="item-controls">
                         <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="equipment" data-action="edit"><i class="fas fa-edit"></i></a>
                         <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="equipment" data-action="delete"><i class="fas fa-trash"></i></a>
@@ -83,7 +83,7 @@
 
             {{!-- Render the grouped attributes partial and control. --}}
             <div class="groups">
-                {{> "systems/lostlands/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+                {{> "systems/lostlands/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
 
                 {{#if isGM}}
                 <div class="group-controls flexrow">

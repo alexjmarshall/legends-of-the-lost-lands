@@ -1,7 +1,7 @@
 <ol class="groups-list">
     {{#each groups as |group groupKey|}}
     <li class="group" data-group="{{groupKey}}">
-        <div class="group-header flexrow">
+        <div class="group-header flexrow" {{#if group.show}}{{else}}style="display:none;"{{/if}}>
             <input class="group-key" type="text" readonly name="data.groups.{{groupKey}}.key" value="{{groupKey}}" {{#if ../isPlayer}}style="display:none;"{{/if}} />
             {{#if ../isPlayer}}
             <span class="attribute-label" name="data.groups.{{groupKey}}.label">{{group.label}}</span>
