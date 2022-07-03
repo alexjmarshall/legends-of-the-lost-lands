@@ -27,7 +27,6 @@ export class ContainerActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     const items = context.data.items.filter(i => i.type === 'item');
-    items.forEach(item => item.data.totalWeight = Math.round(item.data.quantity * item.data.weight * 10) / 10 || 0);
     context.data.items = items;
 
     return context;
