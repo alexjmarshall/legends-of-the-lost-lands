@@ -73,7 +73,7 @@ export async function togglePartyRest(options={}) {
 
       try {
         const actor = token.actor;
-        const isResting = game.cub.hasCondition(condition, actor, {warn: false});
+        const isResting = actor.data.effects.some(e => e.label === condition); // game.cub.hasCondition(condition, actor, {warn: false});
         isResting ? await Util.removeCondition(condition, actor) :
                     await Util.addCondition(condition, actor);
       } catch (error) {
@@ -104,37 +104,46 @@ export function selectRestDice(actor, options={}) { // TODO fix this and add dis
 }
 
 export async function castSpell(spellId, options={}) {
-  const char = Util.selectedCharacter();
-  const actor = char.actor;
-  const spell = Util.getItemFromActor(spellId, actor, 'spell');
-  const spellSound = spell.data.data.attributes.sound?.value || null; // TODO need generic spell sound here -- use sounds for school
-
-  const isPrepared = !!spell.data.data.prepared;
-  if (!isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
-
-  const spellLevel = spell.data.data.attributes.lvl?.value;
-  if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
-
-  const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value || 0;
-  if (actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
-
-  const updateData = { data: {
-    attributes: {
-      [`${spell.type}`]: {
-        [`lvl_${spellLevel}`]: {
-          value: (actorSpellSlots - 1)
-        }
-      }
-    }
-  }};
-
   try {
-    // await play sound based on spell school first
-    await useItem(spellId, {
+    const char = Util.selectedCharacter();
+    const actor = char.actor;
+    const token = char.token;
+    const spell = Util.getItemFromActor(spellId, actor, 'spell');
+    const spellSound = spell.data.data.sound ? `spells/${spell.data.data.sound}` : null;
+    const spellAnimation = spell.data.data.animation ? `spells/${spell.data.data.animation}` : null;
+    const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value;
+    const isGM = game.user.isGM;
+
+    const isPrepared = !!spell.data.data.prepared;
+    if (!isGM && !isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
+
+    const spellLevel = spell.data.data.attributes.lvl?.value;
+    if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
+
+    
+    if (actorSpellSlots != null && actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
+
+    if (actorSpellSlots) {
+      const updateData = { data: {
+        attributes: {
+          [`${spell.type}`]: {
+            [`lvl_${spellLevel}`]: {
+              value: (actorSpellSlots - 1)
+            }
+          }
+        }
+      }};
+      actor.update(updateData)
+    }
+
+    // token animation
+    Util.playTokenAnimation(token, spellAnimation);
+
+    return await useItem(spellId, {
       sound: spellSound,
       verb: `casts`
     });
-    await actor.update(updateData);
+    ;
   } catch (error) {
     return ui.notifications.error(error);
   }
@@ -145,15 +154,15 @@ async function useItem(itemId, data={ sound, flavor, verb, chatMsgContent, chatM
   const actor = char.actor;
   const token = char.token;
   const item = Util.getItemFromActor(itemId, actor);
-  const sound = data.sound || item.data.data.attributes.sound?.value;
+  const sound = data.sound || item.data.data.sound;
   const flavor = data.flavor || item.name;
   const desc = item.data.data.description
   const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}.`;
   const content = data.chatMsgContent || desc || chatBubbleText;
   const type = data.chatMsgType || CONST.CHAT_MESSAGE_TYPES.EMOTE;
-  const holdable = item.data.data.attributes.holdable?.value;
+  const holdable = Constant.HOLDABLE_TYPES.includes(item.type);
 
-  if ( holdable && !item.data.data.held_left && !item.data.data.held_right ) {
+  if ( holdable && !item.data.data.held_offhand && !item.data.data.held_mainhand ) {
     throw new Error(`${item.name} must be held to use`);
   }
 
@@ -271,7 +280,7 @@ export async function useChargedItem(itemId, options={}) {
   const actor = char.actor;
   const item = Util.getItemFromActor(itemId, actor);
   const charges = +item.data.data.attributes.charges?.value;
-  const sound = item.data.data.attributes.sound?.value || null; // TODO generic use charges sound
+  const sound = item.data.data.sound || null;
   const numChargesUsed = options.numChargesUsed == null ? 1 : +options.numChargesUsed;
   const chargesLeft = charges - numChargesUsed;
   const itemUpdate = {'_id': item._id, 'data.attributes.charges.value': chargesLeft};
@@ -315,6 +324,7 @@ export async function heldWeaponAttackMacro(options={}) {
     token: options.targetToken || targets[ranTargetIndex],
     update: {},
     itemUpdates:[],
+    totalDmg: 0,
   } ;
 
   const attackers = [];
@@ -324,32 +334,32 @@ export async function heldWeaponAttackMacro(options={}) {
     let weapons = actor.items.filter(i => i.type === 'item' &&
       (!!i.data.data.attributes.atk_modes?.value || !!i.data.data.attributes.bow?.value) &&
       i.data.data.attributes.size &&
-      (i.data.data.held_left || i.data.data.held_right)
+      (i.data.data.held_offhand || i.data.data.held_mainhand)
     );
     if ( weapons.length && weapons.some(w => !Object.keys(Constant.SIZE_VALUES).includes(w.data.data.attributes.size.value.toUpperCase())) ) {
       return ui.notifications.error("Invalid weapon size specified");
     }
 
-    (async () => {
-      const sweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value); // TODO select sweep with maneuver
-      if (!sweepWeap) return;
-      const weapSize = Constant.SIZE_VALUES[sweepWeap.data.data.attributes.size?.value];
-      const sweeping = ranTarget && targets.length <= weapSize && selectedTokens.length === 1 && !options.skipSweep;
-      if (sweeping) {
-        options.skipSweep = true;
-        options.atkMode = 'swi(s)';
-        for (const [i,t] of targets.entries()) {
-          options.targetToken = t;
-          options.atkMod = 0 - (i + 1) || 0;
-          heldWeaponAttackMacro(options);
-          await Util.wait(500);
-        }
-        return;
-      }
-    })();
+    // (async () => {
+    //   const sweepWeap = weapons.find(i => i.data.data.attributes.sweep?.value); // TODO any straight sword, also do slash carry damage here
+    //   if (!sweepWeap) return;
+    //   const weapSize = Constant.SIZE_VALUES[sweepWeap.data.data.attributes.size?.value];
+    //   const sweeping = ranTarget && targets.length <= weapSize && selectedTokens.length === 1 && !options.skipSweep;
+    //   if (sweeping) {
+    //     options.skipSweep = true;
+    //     options.atkMode = 'swi(s)';
+    //     for (const [i,t] of targets.entries()) {
+    //       options.targetToken = t;
+    //       options.atkMod = 0 - (i + 1) || 0;
+    //       heldWeaponAttackMacro(options);
+    //       await Util.wait(500);
+    //     }
+    //     return;
+    //   }
+    // })();
 
     // if no weapons, return error if hands full, otherwise add dummy weapon object
-    const numHeld = actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right)).length;
+    const numHeld = actor.items.filter(i => i.type === 'item' && (i.data.data.held_offhand || i.data.data.held_mainhand)).length;
     const unarmed = !weapons.length;
     if (unarmed) {
       if (numHeld) return ui.notifications.error("Not holding any weapons");
@@ -391,7 +401,11 @@ export async function heldWeaponAttackMacro(options={}) {
     })
   }
 
-  return attack(attackers, target, options);
+  for (const attacker of attackers) {
+    const result = await attack(attacker, target, options);
+    if (result === false) return;
+    await Util.wait(500);
+  }
 }
 
 export function quickSlashAttackMacro(itemId, options={}) {
@@ -409,11 +423,11 @@ export function quickSlashAttackMacro(itemId, options={}) {
     token: targets[ranTargetIndex],
     update: {},
     itemUpdates:[],
+    totalDmg: 0,
   } ;
 
-  const attackers = [];
   const flavor = `${weapon.name} (quick slash)`;
-  attackers.push({
+  const attacker = {
     token: token,
     weapons: [{_id: itemId, atkMode: 'swi(s)'}],
     chatMsgData: {content: '', flavor: '', sound: '', bubbleString: ''},
@@ -424,12 +438,12 @@ export function quickSlashAttackMacro(itemId, options={}) {
     throwable: false,
     update: {},
     itemUpdates:[],
-  })
+  };
 
-  return attack(attackers, target, options);
+  return attack(attacker, target, options);
 }
 
-export function attackRoutineMacro(options={}) {
+export async function attackRoutineMacro(options={}) {
   const selectedTokens = canvas.tokens.controlled;
   if (!selectedTokens.length) return ui.notifications.error("Select attacking token(s)");
   const targets = [...game.user.targets];
@@ -439,6 +453,7 @@ export function attackRoutineMacro(options={}) {
     token: targets[ranTargetIndex],
     update: {},
     itemUpdates:[],
+    totalDmg: 0,
   };
   options.twoWeaponFighting = false;
 
@@ -466,7 +481,12 @@ export function attackRoutineMacro(options={}) {
       itemUpdates:[],
     })
   }
-  return attack(attackers, target, options);
+
+  for (const attacker of attackers) {
+    const result = await attack(attacker, target, options);
+    if (result === false) return;
+    await Util.wait(500);
+  }
 }
 
 export async function saveMacro(damage=0, options={}) {
@@ -525,10 +545,8 @@ async function save(tokens, damage, options={}) {
   let content = `${actor.name} saves${saveVsMental ? ' vs. mental attack' : ''} ${Util.chatInlineRoll(saveText)}${resultText}`;
   let flavor = options.flavor || 'Saving Throw';
 
-  // save for half damage
+  // save for half damage -- have to reduce by MDR per dice manually
   if (damage) {
-    const mdr = Math.min(5, +actor.data.data.ac?.mdr || 0);
-    damage = Math.floor(damage * (6 - mdr) / 6);
     const takenDamage = success ? Math.floor(damage / 2) : damage;
     content += ` for ${Util.chatInlineRoll(takenDamage)} damage.`;
     flavor = `Save for Half ${damage} Damage`;
@@ -639,7 +657,7 @@ export async function learnSpellMacro(options={}) {
 //       ui.notifications.error(`Backstab feature not found on this character`);
 //       continue;
 //     }
-//     const heldWeapons = token.actor.items.filter(i => i.type === 'item' && (i.data.data.held_left || i.data.data.held_right));
+//     const heldWeapons = token.actor.items.filter(i => i.type === 'item' && (i.data.data.held_offhand || i.data.data.held_mainhand));
 //     if (!heldWeapons.length) {
 //       ui.notifications.error(`${token.actor.name} is not holding any weapons`);
 //       continue;
@@ -683,7 +701,7 @@ export async function learnSpellMacro(options={}) {
 *  applyEffect: true/false (press ctrl)
 * }
 */
-export async function attackMacro(weapons, options={}) {
+export async function attackMacro(weapons, options={}) { // TODO clean up various forms of attackMacro
   if (!Array.isArray(weapons)) weapons = [weapons];
   weapons = weapons.map(a => Object.create({_id: a}));
   const selectedTokens = canvas.tokens.controlled;
@@ -695,6 +713,7 @@ export async function attackMacro(weapons, options={}) {
     token: targets[ranTargetIndex],
     update: {},
     itemUpdates:[],
+    totalDmg: 0,
   };
 
   const attackers = [];
@@ -930,11 +949,11 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   const token = Util.getTokenFromActor(actor);
   if (!token) return;
 
-  const isResting = game.cub.hasCondition('Rest', actor, {warn: false});
+  const isResting = actor.data.effects.some(e => e.label === 'Rest'); // game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
   
   if ( Util.stringMatch(type, 'exhaustion')) {
-    const isAsleep = game.cub.hasCondition('Asleep', actor, {warn: false});
+    const isAsleep = actor.data.effects.some(e => e.label === 'Asleep'); //game.cub.hasCondition('Asleep', actor, {warn: false});
     if (isAsleep) return;
   }
 
@@ -942,7 +961,7 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal=false)
   let typeString = type;
 
   if (type == 'exposure') {
-    const isWarm = game.cub.hasCondition('Warm', actor, {warn: false});
+    const isWarm = actor.data.effects.some(e => e.label === 'Warm'); //game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
     
     const diffClo = Fatigue.diffClo(actor);
