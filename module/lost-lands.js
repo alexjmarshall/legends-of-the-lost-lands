@@ -36,6 +36,9 @@ Hooks.once("init", async function() {
   CONFIG.Actor.documentClass = SimpleActor;
   CONFIG.Item.documentClass = SimpleItem;
 
+  // Define custom status effects
+  CONFIG.statusEffects = Constant.STATUS_EFFECTS;
+
   // Register sheet application classes
   Actors.unregisterSheet("core", ActorSheet);
   Actors.registerSheet("lostlands", SimpleActorSheet, { makeDefault: true });
@@ -149,21 +152,21 @@ Hooks.once("init", async function() {
 Hooks.on("ready", () => {
 
   const removeInvalidEffects = async (time) => {
-    const allChars = game.actors.filter(a => a.type === 'character');
+    const allActors = game.actors;
 
     return Promise.all(
-      allChars.map(async (char) => {
+      allActors.map(async (actor) => {
         try {
-          const effects = char.effects.contents;
+          const effects = actor.effects.contents;
+          const effectIds = [];
           for (const effect of effects) {
-            const invalid = effect.data.duration?.startTime > time;
-            if (invalid) {
-              await effect.delete();
-              await Util.wait(200);
-            }
+            const duration = effect.data.duration || {};
+            const invalid = duration.startTime > time || duration.startTime + (duration.seconds || 0) < time;
+            if (invalid && effect._id) effectIds.push(effect._id);
           }
+          return await actor.deleteEmbeddedDocuments("ActiveEffect", effectIds);
         } catch (error) {
-          ui.notifications.error(`Problem removing conditions from ${actor.name}. Refresh!`);
+          ui.notifications.error(`Problem removing effect from ${actor.name}. Refresh!`);
           throw error;
         }
       })
@@ -176,6 +179,7 @@ Hooks.on("ready", () => {
       TimeQ.init();
       const now = Util.now();
       await Fatigue.syncFatigueClocks(now, true);
+      await removeInvalidEffects(now);
     }
     
     console.log(`Simple Calendar | is ready!`);
@@ -196,7 +200,6 @@ Hooks.on("ready", () => {
       let resetClocks = false;
       if (newTime < oldTime) {
         await TimeQ.clear();
-        await removeInvalidEffects(newTime);
         resetClocks = true;
       }
 
@@ -209,16 +212,7 @@ Hooks.on("ready", () => {
         macro && await macro.execute(event.scope);
       }
 
-      // sync requiredClo to current season when day changes //TODO weather macro
-      // const oldDay = SimpleCalendar.api.timestampToDate(oldTime)?.day;
-      // const newDay = SimpleCalendar.api.timestampToDate(newTime)?.day;
-      // if (oldDay != newDay) {
-      //   const reqClo = Fatigue.reqClo();
-      //   const currentReqCloSetting = game.settings.get("lostlands", "requiredClo");
-      //   if (reqClo != currentReqCloSetting) {
-      //     await game.settings.set("lostlands", "requiredClo", reqClo);
-      //   }
-      // }
+      await removeInvalidEffects(newTime);
 
       locked = false;
     });
@@ -309,9 +303,10 @@ Hooks.on("controlToken", (token, selected) => {
 });
 
 // Play 'ok' voice sound on token movement
-Hooks.on("updateToken", (token, moved, data) => {
-  if ( !moved.x && !moved.y ) return;
-  Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
+Hooks.on("updateToken", (token, change) => {
+  if (change.x && change.y ) {
+    Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
+  }
 });
 
 // Play 'hurt'/'death' voice sounds on HP decrease
@@ -358,18 +353,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   }
 });
 
-Hooks.on("preCreateItem", (item, data) => {
-  if (data.data?.attributes?.wearable?.value != null) {
-    data.data.worn = false;
-  }
-  if (data.data?.attributes?.holdable?.value != null) {
-    data.data.held_mainhand = false;
-    data.data.held_offhand = false;
-  }
-});
-
 Hooks.on("preUpdateItem", (item, change) => {
-  // reset held/worn values to false when changing holdable/wearable attribute or quantity
   let heldQtyLimit = 1;
   const charSize = Constant.SIZE_VALUES[item.actor?.data.data.attributes.size?.value] ?? 2;
   const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
@@ -378,13 +362,13 @@ Hooks.on("preUpdateItem", (item, change) => {
 
   const invalidHold = (item.data.data.held_offhand || item.data.data.held_mainhand) &&
     (change.data?.quantity < 1 || change.data?.quantity > heldQtyLimit);
-  if (change.data?.attributes?.holdable?.value != null || invalidHold) {
+  if (invalidHold) {
     change.data.held_offhand = false;
     change.data.held_mainhand = false;
   }
   const wearQtyLimit = 1;
   const invalidWear = item.data.data.worn && (change.data?.quantity < 1 || change.data?.quantity > wearQtyLimit);
-  if (change.data?.attributes?.wearable?.value != null || invalidWear) {
+  if (invalidWear) {
     change.data.worn = false;
   }
   if (change.data?.held_offhand != null || change.data?.held_mainhand != null) {// || change.data?.data?.attributes?.atk_modes
