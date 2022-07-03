@@ -27,13 +27,17 @@ export class SimpleActorSheet extends ActorSheet {
   /** @inheritdoc */
   getData() {
     const context = super.getData();
-    EntitySheetHelper.getAttributeData(context.data);
+    const data = context.data;
+    const type = data.type;
+    const attrs = data.data.attributes;
+    const items = data.items;
+
+    EntitySheetHelper.getAttributeData(data);
     context.shorthand = !!game.settings.get("lostlands", "macroShorthand");
-    context.systemData = context.data.data;
+    context.systemData = data.data;
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
-    const type = context.data.type;
     context.isCharacter = type === 'character';
     context.wearsGarments = type === 'character' || type === 'humanoid' || type === 'undead';
     context.showVoice = context.wearsGarments || type === 'monster';
@@ -62,7 +66,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.stancePenaltyText = !stancePenalty ? '' : `Stance: ${stancePenalty}`;
     
     // sort equipment
-    context.equipment = this._sortEquipmentByType(context.data.items);
+    context.equipment = this._sortEquipmentByType(items);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort armors
@@ -71,19 +75,19 @@ export class SimpleActorSheet extends ActorSheet {
     }
 
     // sort spells
-    const spells = context.data.items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
-    context.spells = this._sortSpellsByType(spells, context.data.data.attributes);
+    const spells = items.filter(i => Object.values(Constant.SPELL_TYPES).includes(i.type));
+    context.spells = this._sortSpellsByType(spells, attrs);
     context.hasSpells = Object.values(context.spells).flat().length > 0;
 
     // sort features
-    const features = context.data.items.filter(i => i.type === 'feature');
-    context.features = this._sortFeaturesBySource(features, context.data.data);
+    const features = items.filter(i => Constant.NON_PHYSICAL_ITEM_TYPES.includes(i.type));
+    context.features = this._sortFeaturesBySource(features, data);
     context.hasFeatures = Object.values(context.features).flat().length > 0;
 
     
     // voice board
     if (context.showVoice) {
-      const attrType = context.systemData.attributes.type?.value;
+      const attrType = attrs.type?.value;
       const voiceType = type === 'monster' && Object.keys(Constant.VOICE_PROFILES).includes(attrType)
         ? attrType
         : type;
@@ -94,7 +98,7 @@ export class SimpleActorSheet extends ActorSheet {
       }
       context.voiceMoods = voiceMoods;
       context.hasVoice = !!context.systemData.voice;
-      context.noVoice = !context.systemData.voice;
+      context.noVoice = !context.hasVoice;
       context.hideVoiceSelection = context.isPlayer && context.hasVoice;
       context.showSoundBoard = context.isGM || context.hasVoice;
     }
@@ -314,25 +318,24 @@ export class SimpleActorSheet extends ActorSheet {
 
   _sortFeaturesBySource(features, actorData) {
     const sortedFeatures = {};
-    const addSt = feature => {
-      const baseSt = feature.data.attributes.base_st?.value;
-      const modAttr = feature.data.attributes.mod_attr?.value?.trim().toLowerCase();
-      const skillPenalty = actorData.skill_penalty;
-      const modAttrVal = actorData[`${modAttr}_mod`];
-      if (baseSt) {
-        feature.st = (+baseSt || 0) - (+modAttrVal || 0) + (+skillPenalty);
-      }
+    const addSt = skill => {
+      const attrs = skill.data.attributes || {};
+      const baseSt = attrs.base_st?.value;
+      const modAttr = attrs.mod_attr?.value;
+      const skillPenalty = actorData.data.skill_penalty;
+      const modAttrVal = actorData.data.attributes.ability_scores?.[modAttr]?.mod;
+      skill.st = Math.max(2, baseSt - modAttrVal + skillPenalty) || 0;
     };
-    const classArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'class'));
-    classArr.forEach(f => addSt(f));
-    if (classArr.length) sortedFeatures['Class'] = classArr;
-    const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
-    raceArr.forEach(f => addSt(f));
-    if (raceArr.length) sortedFeatures['Race'] = raceArr;
-    const otherArr = features.filter(f => !Util.stringMatch(f.data.attributes.source?.value, 'class') && 
-      !Util.stringMatch(f.data.attributes.source?.value, 'race'));
-    otherArr.forEach(f => addSt(f));
-    if (otherArr.length) sortedFeatures['Other'] = otherArr;
+    const skillArr = features.filter( f => f.type === 'skill');
+    skillArr.length && skillArr.forEach(s => addSt(s));
+    if (skillArr.length) sortedFeatures['Skill'] = skillArr;
+    // const classArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'class'));
+    // if (classArr.length) sortedFeatures['Class'] = classArr;
+    // const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
+    // if (raceArr.length) sortedFeatures['Race'] = raceArr;
+    // const otherArr = features.filter(f => !Util.stringMatch(f.data.attributes.source?.value, 'class') && 
+    //   !Util.stringMatch(f.data.attributes.source?.value, 'race'));
+    // if (otherArr.length) sortedFeatures['Other'] = otherArr;
 
     return sortedFeatures;
   }
