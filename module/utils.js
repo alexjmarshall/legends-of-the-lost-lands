@@ -63,16 +63,16 @@ export const playVoiceSound = (() => {
       const sound = await playSound(soundsArr[trackNum], token, {push, bubble});
       return await wait(sound.duration * 1000);
     } catch (error) {
-      throw new Error(error);
+      throw error;
     } finally {
       speakingActorIds.delete(actorId);
     }
   }
 })();
 
-export function playSound(sound, token, {push = true, bubble = true}={}) {
+export async function playSound(sound, token, {push = true, bubble = true}={}) {
   if (!sound) return;
-  const soundPath = /^systems\/lostlands\/sounds\//.test(sound) ? sound : `systems/lostlands/sounds/${sound}.ogg`;
+  const soundPath = sound.includes(`${Constant.ASSETS_PATH}/sounds`) ? sound : `${Constant.ASSETS_PATH}/sounds/${sound}.ogg`;
   if (token && bubble) {
     chatBubble(token, '<i class="fas fa-volume-up"></i>', false);
   }
@@ -99,7 +99,7 @@ export async function macroChatMessage(tokenOrActor, {content, type, flavor, sou
   }
     
   type = type || CONST.CHAT_MESSAGE_TYPES.EMOTE;
-  sound = sound ? `systems/lostlands/sounds/${sound}.ogg` : null;
+  sound = sound ? `${Constant.ASSETS_PATH}/sounds/${sound}.ogg` : null;
   content = content.trim();
 
   // if content includes inline rolls, increase line height
@@ -124,7 +124,9 @@ export function getArrFromCSL(list) {
   if (typeof list === 'string' || list instanceof String) {
     return [...new Set(list?.split(',').map(t => t.trim()).filter(t => t))] || [];
   } else {
-    throw new Error("Input list not a string.");
+    const err = "Input list not a string.";
+    ui.notifications.error(err)
+    throw err;
   }
 }
 
@@ -151,7 +153,9 @@ export function selectedCharacter() {
     token = actor ? getTokenFromActor(actor) : null;
   }
   if (!actor) {
-    throw new Error("Select a character");
+    const err = "Select a character";
+    ui.notifications.error(err);
+    throw err;
   } 
   return {token, actor};
 }
@@ -164,7 +168,9 @@ export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
   const item = actor.data.items.get(itemIdOrName) || 
     actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemIdOrName?.toLowerCase().replace(/\s/g,''));
   if (!item) {
-    throw new Error(`${itemType} ${itemIdOrName} not found on ${actor.name}`);
+    const err = `${itemType} ${itemIdOrName} not found on ${actor.name}`;
+    ui.notifications.error(err);
+    throw err;
   } 
   return item;
 }
@@ -172,7 +178,9 @@ export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
 export async function reduceItemQty(item, actor) {
   const itemQty = +item.data.data.quantity;
   if (!itemQty) {
-    throw new Error(`${item.name} must have quantity greater than 0`);
+    const err = `${item.name} must have quantity greater than 0`;
+    ui.notifications.error(err);
+    throw err;
   }
   return actor.updateEmbeddedDocuments("Item", [{
     '_id': item._id, 
@@ -287,7 +295,26 @@ export function resultStyle(bgColour) {
   return `background: ${bgColour}; padding: 1px 4px; border: 1px solid #4b4a44; border-radius: 2px; white-space: nowrap; word-break: break-all; font-style: normal;`;
 }
 
-export function playTokenAnimation(token, animation) {
+export async function playTokenAnimation(token, name, partialPath) { // TODO make PRs to CTA module
+  const MAX_ANIMATION_LENGTH = 5000;
+  if (!CTA) return;
+  const texturePath = `${Constant.ASSETS_PATH}/animations/${partialPath}.webm`;
+  const textureData = {
+    texturePath,
+    scale: 2,
+    speed: 1,
+    multiple: 1,
+    rotation: "static",
+    xScale: 0.5,
+    yScale: 0.5,
+    opacity: 1,
+    belowToken: false,
+    radius: 0,
+    equip: false
+  };
   // addAnimation(token, textureData, pushActor, name, oldID)
+  await CTA.addAnimation(token, textureData, false, name, false);
+  await wait(MAX_ANIMATION_LENGTH);
   // removeAnimByName(token, name, removeActor, fadeOut)
+  await CTA.removeAnimByName(token, name, false, false);
 }
