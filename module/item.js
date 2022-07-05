@@ -27,7 +27,7 @@ export class SimpleItem extends Item {
     this._prepareGarmentData(itemData);
     // spell_magic, spell_cleric, spell_witch
     this._prepareSpellData(itemData);
-    // this._prepareArmorData(itemData);
+    //  feature, skill, natural_weapon, grapple_maneuver
 
     return;
 
@@ -44,8 +44,13 @@ export class SimpleItem extends Item {
 
     // sound default = school
     const school = attrs.school.value.toLowerCase().trim();
+    if (!Constant.SPELL_SCHOOLS.includes(school)) ui.notifications.error(`${school} is not a valid spell school.`);
     const sound = attrs.sound?.value;
     data.sound = sound || school;
+
+    // animation default = school
+    const animation = attrs.animation?.value;
+    data.animation = animation || school;
   }
 
   _prepareGarmentData(itemData) {
