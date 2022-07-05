@@ -63,27 +63,27 @@ export async function playVoice(mood) {
   }
 }
 
-export async function togglePartyRest(options={}) {
-  const selectedTokens = canvas.tokens.controlled;
-  if (!selectedTokens.length) return ui.notifications.error("Select resting token(s)");
-  const condition = "Rest";
+// export async function togglePartyRest(options={}) {
+//   const selectedTokens = canvas.tokens.controlled;
+//   if (!selectedTokens.length) return ui.notifications.error("Select resting token(s)");
+//   const condition = "Rest";
 
-  return Promise.all(
-    selectedTokens.map(async (token) => {
+//   return Promise.all(
+//     selectedTokens.map(async (token) => {
 
-      try {
-        const actor = token.actor;
-        const isResting = actor.data.effects.some(e => e.label === condition); // game.cub.hasCondition(condition, actor, {warn: false});
-        isResting ? await Util.removeCondition(condition, actor) :
-                    await Util.addCondition(condition, actor);
-      } catch (error) {
-        return ui.notifications.error(error);
-      }
-    })
-  );
-}
+//       try {
+//         const actor = token.actor;
+//         const isResting = actor.data.effects.some(e => e.label === condition); // game.cub.hasCondition(condition, actor, {warn: false});
+//         isResting ? await Util.removeCondition(condition, actor) :
+//                     await Util.addCondition(condition, actor);
+//       } catch (error) {
+//         return ui.notifications.error(error);
+//       }
+//     })
+//   );
+// }
 
-export function selectRestDice(actor, options={}) { // TODO fix this and add disease dialog since changing altDialog params
+export function selectRestDice(actor, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
   const choice = options.altDialogChoice;
@@ -103,63 +103,80 @@ export function selectRestDice(actor, options={}) { // TODO fix this and add dis
   return Dialog.altDialog(options, `${actor.name} Rest Dice`, choices);
 }
 
-export async function castSpell(spellId, options={}) {
-  try {
+export const castSpell = (() => {
+  const castingActorIds = new Map();
+
+  return async function(spellId) {
     const char = Util.selectedCharacter();
     const actor = char.actor;
-    const token = char.token;
-    const spell = Util.getItemFromActor(spellId, actor, 'spell');
-    const spellSound = spell.data.data.sound ? `spells/${spell.data.data.sound}` : null;
-    const spellAnimation = spell.data.data.animation ? `spells/${spell.data.data.animation}` : null;
-    const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value;
-    const isGM = game.user.isGM;
+    const actorId = actor._id;
+    if (castingActorIds.has(actorId)) return;
 
-    const isPrepared = !!spell.data.data.prepared;
-    if (!isGM && !isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
-
-    const spellLevel = spell.data.data.attributes.lvl?.value;
-    if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
-
-    
-    if (actorSpellSlots != null && actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
-
-    if (actorSpellSlots) {
-      const updateData = { data: {
-        attributes: {
-          [`${spell.type}`]: {
-            [`lvl_${spellLevel}`]: {
-              value: (actorSpellSlots - 1)
+    try {
+      castingActorIds.set(actorId);
+      const token = char.token;
+      const spell = Util.getItemFromActor(spellId, actor, 'spell');
+      const genderSuffix = /^F/.test(actor.data.data.voice) ? 'f' : 'm';
+      const sound = spell.data.data.sound;
+      const castingSoundPath = sound ? `spells/${sound}_${genderSuffix}` : '';
+      const effectSoundPath = sound ? `spells/${sound}_e` : '';
+      const animationName = spell.data.data.animation;
+      const animationPath = animationName ? `spells/${spell.data.data.animation}` : '';
+      const isGM = game.user.isGM;
+  
+      const isPrepared = !!spell.data.data.prepared;
+      if (!isGM && !isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
+  
+      const spellLevel = spell.data.data.attributes.lvl?.value;
+      if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
+  
+      const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value;
+      if (actorSpellSlots != null && actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
+  
+      if (actorSpellSlots) {
+        const updateData = { data: {
+          attributes: {
+            [`${spell.type}`]: {
+              [`lvl_${spellLevel}`]: {
+                value: (actorSpellSlots - 1)
+              }
             }
           }
-        }
-      }};
-      actor.update(updateData)
+        }};
+        await actor.update(updateData)
+      }
+  
+      // play casting sound and wait until finished
+      // then use item (broadcasts chat message), play effect sound and play animation
+      const playingSound = await Util.playSound(castingSoundPath, token);
+      await Util.wait(playingSound.duration * 1000);
+      useItem(spellId, {verb: `casts`});
+      Util.playSound(effectSoundPath, token, {bubble: false});
+      return await Util.playTokenAnimation(token, animationName, animationPath);
+
+    } catch (error) {
+      ui.notifications.error(error);
+      throw error;
+
+    } finally {
+      castingActorIds.delete(actorId);
     }
-
-    // token animation
-    Util.playTokenAnimation(token, spellAnimation);
-
-    return await useItem(spellId, {
-      sound: spellSound,
-      verb: `casts`
-    });
-    ;
-  } catch (error) {
-    return ui.notifications.error(error);
   }
-}
+})();
 
-async function useItem(itemId, data={ sound, flavor, verb, chatMsgContent, chatMsgType }, consumable=false) {
+async function useItem(itemId,
+  { sound='', flavor='', verb='', chatMsgContent='', chatMsgType=null }={}, // data
+  { showBubble=true, consumable=false }={} // options
+) {
   const char = Util.selectedCharacter();
   const actor = char.actor;
   const token = char.token;
   const item = Util.getItemFromActor(itemId, actor);
-  const sound = data.sound || item.data.data.sound;
-  const flavor = data.flavor || item.name;
-  const desc = item.data.data.description
-  const chatBubbleText = `${actor.name} ${data.verb || 'uses'} ${item.name}.`;
-  const content = data.chatMsgContent || desc || chatBubbleText;
-  const type = data.chatMsgType || CONST.CHAT_MESSAGE_TYPES.EMOTE;
+  flavor = flavor || item.name;
+  const desc = item.data.data.description;
+  const chatBubbleText = `${actor.name} ${verb || 'uses'} ${item.name}.`;
+  const content = chatMsgContent || desc || chatBubbleText;
+  const type = chatMsgType || CONST.CHAT_MESSAGE_TYPES.EMOTE;
   const holdable = Constant.HOLDABLE_TYPES.includes(item.type);
 
   if ( holdable && !item.data.data.held_offhand && !item.data.data.held_mainhand ) {
@@ -168,8 +185,8 @@ async function useItem(itemId, data={ sound, flavor, verb, chatMsgContent, chatM
 
   try {
     consumable && await Util.reduceItemQty(item, actor);
+    showBubble && Util.chatBubble(token, chatBubbleText);
     Util.macroChatMessage(token || actor, {content, flavor, sound, type}, false);
-    Util.chatBubble(token, chatBubbleText);
   } catch (error) {
     throw error;
   }
