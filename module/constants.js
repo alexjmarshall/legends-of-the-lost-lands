@@ -1,3 +1,4 @@
+export const ASSETS_PATH = 'systems/lostlands/assets';
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
@@ -604,11 +605,11 @@ export const VOICE_SOUNDS = {};
     VOICE_SOUNDS[type] = {};
     for (const voice of voiceSet) {
       VOICE_SOUNDS[type][voice] = {};
-      const response = await fetch(`systems/lostlands/sounds/${voice}/DirContents.txt/`);
+      const response = await fetch(`${ASSETS_PATH}/sounds/${voice}/DirContents.txt/`);
       const fileList = await response.text();
       const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
       Object.values(VOICE_MOODS).forEach(mood => {
-        const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `systems/lostlands/sounds/${voice}/${f}`);
+        const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `${ASSETS_PATH}/sounds/${voice}/${f}`);
         VOICE_SOUNDS[type][voice][mood] = pathArr;
       })
     }
@@ -2159,3 +2160,14 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "natural_weapon",
   "grapple_maneuver",
 ];
+ export const SPELL_SCHOOLS = [
+  "abjuration",
+  "alteration",
+  "conjuration",
+  "divination",
+  "enchantment",
+  "illusion",
+  "invocation",
+  "necromancy"
+ ];
+ 
