@@ -2166,8 +2166,7 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "conjuration",
   "divination",
   "enchantment",
+  "evocation",
   "illusion",
-  "invocation",
   "necromancy"
  ];
- 
