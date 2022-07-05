@@ -424,7 +424,7 @@ export async function deleteAllDiseases(actor) {
     ui.notifications.info(`Removed all diseases from ${actor.name}`);
 
   } catch (error) {
-    throw new Error(error);
+    throw error;
   }
 }
 
