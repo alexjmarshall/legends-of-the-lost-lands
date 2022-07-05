@@ -5,4 +5,7 @@
 # Node Modules
 node_modules/
 package-lock.json
-sounds/
+
+# assets
+assets/sounds
+assets/animations
