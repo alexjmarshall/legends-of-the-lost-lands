@@ -165,7 +165,7 @@ export class SimpleActor extends Actor {
     data.mv = mv;
     data.speed = mv * Constant.SQUARE_SIZE;
 
-    // sv TODO multiple types of saves? can store separately and list on Features tab
+    // sv
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
     const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
     const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
@@ -194,11 +194,9 @@ export class SimpleActor extends Actor {
     const abilities = attrs.ability_scores || {};
     const size = attrs.size.value.toUpperCase().trim();
     const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-    const AGILITY_PENALTY = {
-      threshold: 5,
-      factor: 3
-    };
-
+    const AGILITY_PENALTY = {threshold: 5, factor: 3};
+    const SKILL_PENALTY = {threshold: 2};
+    const SPELL_FAILURE = {factor: 5/2};
 
     // encumbrance
     charData.enc = this._getEnc(items);
@@ -247,8 +245,8 @@ export class SimpleActor extends Actor {
     
     // spell failure, skill check penalty & max dex mod
     const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
-    charData.spell_failure = Math.floor(totalPenaltyWgt * 5 / 2);
-    charData.skill_penalty = Math.max(0, Math.floor(totalPenaltyWgt - 2));
+    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE.factor);
+    charData.skill_penalty = Math.max(0, Math.floor(totalPenaltyWgt - SKILL_PENALTY.threshold));
     charData.agility_penalty = Math.floor( Math.max(0, (totalPenaltyWgt - AGILITY_PENALTY.threshold)) / AGILITY_PENALTY.factor );
 
     // sv
