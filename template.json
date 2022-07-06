@@ -137,6 +137,12 @@
             "group": "immunities",
             "label": "Immune to Injury",
             "value": false
+          },
+          "req_magic": {
+            "dtype": "Boolean",
+            "group": "immunities",
+            "label": "Requires Magic Weapon",
+            "value": false
           }
         },
         "dmg_mods": {
