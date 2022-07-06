@@ -297,14 +297,22 @@ export class SimpleActorSheet extends ActorSheet {
       const spellsByType = spells.filter(s => s.type === spelltype);
       if(!spellsByType.length) continue;
       sortedSpells[spelltype] = {};
+      sortedSpells[spelltype].label = spelltype === "spell_magic" ? "Magic"
+        : spelltype === "spell_cleric" ? "Cleric"
+        : spelltype === "spell_witch" ? "Witch"
+        : "";
+      sortedSpells[spelltype].showSf = ["spell_magic","spell_witch"].includes(spelltype);
+      sortedSpells[spelltype].levels = {};
       const nolevelSpells = spellsByType.filter(s => !s.data.attributes.lvl?.value);
-      if(nolevelSpells.length > 0) sortedSpells[spelltype][`(none)`] = {spells: nolevelSpells};
+      if(nolevelSpells.length > 0) {
+        sortedSpells[spelltype].levels[`(none)`] = {spells: nolevelSpells};
+      } 
       for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[spelltype]; i++) {
         const spellsAtLevel = spellsByType.filter(s => s.data.attributes.lvl?.value === i);
         const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value;
         const slotsAtLevelMax = attrs[spelltype]?.[`lvl_${i}`]?.max;
         if(!spellsAtLevel.length) continue;
-        sortedSpells[spelltype][`Level ${i}`] = {
+        sortedSpells[spelltype].levels[`Level ${i}`] = {
           spells: spellsAtLevel,
           slots: {
             value: slotsAtLevelVal,
@@ -515,7 +523,7 @@ export class SimpleActorSheet extends ActorSheet {
       return ui.notifications.error("Cannot prepare any more spells of this level");
     }
     if (!isPrepared) {
-      Util.macroChatMessage(this.actor, { flavor: 'Spell Preparation', content: `${this.actor.name} prepares ${item.name}.` });
+      Util.macroChatMessage(this.actor, { flavor: 'Prepare Spell', content: `${this.actor.name} prepares ${item.name}.` });
     }
     return this.actor.updateEmbeddedDocuments("Item", [{_id: item._id, "data.prepared": !isPrepared}]);
   }
