@@ -59,7 +59,8 @@ export async function playVoice(mood) {
   try {
     return await Util.playVoiceSound(mood, actor, token);
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -87,11 +88,10 @@ export function selectRestDice(actor, options={}) {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
 
   const choice = options.altDialogChoice;
-
   if (choice) {
     return actor.setFlag("lostlands", "restDice", choice);
   }
-  
+
   const choices = Object.entries(Fatigue.REST_TYPES).map(type => {
     return {
       label: `${type[0]}<br>${type[1] ? type[1] : 'd2/d3'}`,
@@ -99,7 +99,7 @@ export function selectRestDice(actor, options={}) {
       callback: () => selectRestDice(actor, options),
     };
   });
-  
+
   return Dialog.altDialog(options, `${actor.name} Rest Dice`, choices);
 }
 
@@ -109,30 +109,31 @@ export const castSpell = (() => {
   return async function(spellId) {
     const char = Util.selectedCharacter();
     const actor = char.actor;
+    const token = char.token;
+    if (!actor || !token) return;
     const actorId = actor._id;
     if (castingActorIds.has(actorId)) return;
 
     try {
       castingActorIds.set(actorId);
-      const token = char.token;
-      const spell = Util.getItemFromActor(spellId, actor, 'spell');
-      const genderSuffix = /^F/.test(actor.data.data.voice) ? 'f' : 'm';
+      const voice = actor.data.data.voice;
+      const getGenderSuffix = voice => /^F/.test(voice) ? 'f' : 'm';
       const sound = spell.data.data.sound;
-      const castingSoundPath = sound ? `spells/${sound}_${genderSuffix}` : '';
+      const castingSoundPath = sound && voice ? `spells/${sound}_${getGenderSuffix(voice)}` : '';
       const effectSoundPath = sound ? `spells/${sound}_e` : '';
       const animationName = spell.data.data.animation;
       const animationPath = animationName ? `spells/${spell.data.data.animation}` : '';
       const isGM = game.user.isGM;
-  
+
       const isPrepared = !!spell.data.data.prepared;
       if (!isGM && !isPrepared) return ui.notifications.error(`${spell.name} was not prepared`);
-  
+
       const spellLevel = spell.data.data.attributes.lvl?.value;
       if (!spellLevel) return ui.notifications.error(`${spell.name} has no level set`);
-  
+
       const actorSpellSlots = +actor.data.data.attributes[`${spell.type}`]?.[`lvl_${spellLevel}`].value;
       if (actorSpellSlots != null && actorSpellSlots <= 0) return ui.notifications.error(`No spells remaining of level ${spellLevel}`);
-  
+
       if (actorSpellSlots) {
         const updateData = { data: {
           attributes: {
@@ -145,13 +146,29 @@ export const castSpell = (() => {
         }};
         await actor.update(updateData)
       }
-  
+
+
+      // check spell failure
+      const spell = Util.getItemFromActor(spellId, actor);
+      if (!spell) return;
+      const spellFailureChance = actor.data.data.spell_failure || 0;
+      const fail = await Util.rollDice('d100') <= spellFailureChance;
+      if (fail) {
+        Util.playSound('spells/spell_failure', token, {bubble: false});
+        return Util.macroChatMessage(actor, {content: `${actor.name} failed to cast ${spell.name}!`, flavor: 'Spell Failure'});
+      }
+
+      
+      useItem(spellId, char, {flavor: 'Cast Spell', verb: `casts`});
+
       // play casting sound and wait until finished
-      // then use item (broadcasts chat message), play effect sound and play animation
-      const playingSound = await Util.playSound(castingSoundPath, token);
-      await Util.wait(playingSound.duration * 1000);
-      useItem(spellId, {verb: `casts`});
-      Util.playSound(effectSoundPath, token, {bubble: false});
+      // then play effect sound and play animation
+      if (castingSoundPath) {
+        const playingSound = await Util.playSound(castingSoundPath, token, {bubble: false});
+        await Util.wait(playingSound.duration * 1000);
+      }
+
+      effectSoundPath && Util.playSound(effectSoundPath, token, {bubble: false});
       return await Util.playTokenAnimation(token, animationName, animationPath);
 
     } catch (error) {
@@ -164,11 +181,10 @@ export const castSpell = (() => {
   }
 })();
 
-async function useItem(itemId,
+async function useItem(itemId, char,
   { sound='', flavor='', verb='', chatMsgContent='', chatMsgType=null }={}, // data
   { showBubble=true, consumable=false }={} // options
 ) {
-  const char = Util.selectedCharacter();
   const actor = char.actor;
   const token = char.token;
   const item = Util.getItemFromActor(itemId, actor);
@@ -185,7 +201,7 @@ async function useItem(itemId,
 
   try {
     consumable && await Util.reduceItemQty(item, actor);
-    showBubble && Util.chatBubble(token, chatBubbleText);
+    showBubble && token && Util.chatBubble(token, chatBubbleText);
     Util.macroChatMessage(token || actor, {content, flavor, sound, type}, false);
   } catch (error) {
     throw error;
@@ -199,7 +215,8 @@ export async function cureDisease() {
   try {
     return Fatigue.deleteAllDiseases(actor); 
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -212,12 +229,13 @@ export async function drinkPotion(itemId, options={}) {
 
   try {
 
-    await useItem(itemId, {
+    await useItem(itemId, char, {
+      flavor: 'Drink',
       sound: 'drink_potion',
       verb: `quaffs`,
       chatMsgContent,
       chatMsgType
-    }, true);
+    }, {consumable: true});
   
     if (healFormula) {
       const healPoints = await Util.rollDice(healFormula);
@@ -236,18 +254,22 @@ export async function drinkPotion(itemId, options={}) {
   
     await Fatigue.resetFatigueType(actor, 'thirst');
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
 export async function readScroll(itemId, options={}) {
+  const char = Util.selectedCharacter();
   try {
-    await useItem(itemId, {
+    await useItem(itemId, char, {
+      flavor: 'Read Scroll',
       sound: 'read_scroll',
       verb: `reads`
-    }, true);
+    }, {consumable: true});
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -256,13 +278,15 @@ export async function drinkWater(itemId, options={}) {
   const actor = char.actor;
 
   try {
-    await useItem(itemId, {
+    await useItem(itemId, char, {
+      flavor: 'Drink',
       sound: 'drink_water',
       verb: `drinks from`
-    }, false);
+    });
     await Fatigue.resetFatigueType(actor, 'thirst');
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -272,10 +296,11 @@ export async function eatFood(itemId, options={}) {
 
   try {
 
-    await useItem(itemId, {
+    await useItem(itemId, char, {
+      flavor: 'Eat',
       sound: 'eat_food',
       verb: `eats`
-    }, true);
+    }, {consumable: true});
 
     await Fatigue.resetFatigueType(actor, 'hunger');
 
@@ -288,7 +313,8 @@ export async function eatFood(itemId, options={}) {
     }
 
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -318,16 +344,17 @@ export async function useChargedItem(itemId, options={}) {
 
   try {
 
-    await useItem(itemId, {
+    await useItem(itemId, char, {
+      flavor: 'Expend Charge',
       sound,
-      flavor: `${item.name} (expend ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''})`,
       verb: `expends ${numChargesUsed} charge${numChargesUsed > 1 ? 's' : ''} from`
-    }, false);
+    });
 
     chargesLeft < charges && await actor.updateEmbeddedDocuments("Item", [itemUpdate]);
 
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
@@ -766,7 +793,8 @@ export async function reactionRollMacro(options) {
   try {
     return await reactionRoll(reactingActor, targetActor, options);
   } catch (error) {
-    return ui.notifications.error(error);
+    ui.notifications.error(error);
+    throw error;
   }
 }
 
