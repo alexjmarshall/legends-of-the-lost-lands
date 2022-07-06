@@ -481,9 +481,6 @@
 .chat-message.emote {
   background: #ede3ca;
 }
-.chat-message.ic {
-  background: #f3edde;
-}
 .dialog .dialog-button {
   background: rgba(0, 0, 0, 0.1) !important;
   border: 2px groove #f0f0e0 !important;
