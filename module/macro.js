@@ -113,6 +113,8 @@ export const castSpell = (() => {
     if (!actor || !token) return;
     const actorId = actor._id;
     if (castingActorIds.has(actorId)) return;
+    const spell = Util.getItemFromActor(spellId, actor);
+    if (!spell) return;
 
     try {
       castingActorIds.set(actorId);
@@ -149,8 +151,6 @@ export const castSpell = (() => {
 
 
       // check spell failure
-      const spell = Util.getItemFromActor(spellId, actor);
-      if (!spell) return;
       const spellFailureChance = actor.data.data.spell_failure || 0;
       const fail = await Util.rollDice('d100') <= spellFailureChance;
       if (fail) {
@@ -158,7 +158,7 @@ export const castSpell = (() => {
         return Util.macroChatMessage(actor, {content: `${actor.name} failed to cast ${spell.name}!`, flavor: 'Spell Failure'});
       }
 
-      
+
       useItem(spellId, char, {flavor: 'Cast Spell', verb: `casts`});
 
       // play casting sound and wait until finished
