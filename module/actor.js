@@ -89,8 +89,8 @@ export class SimpleActor extends Actor {
 
     const intelligent = attrs.intelligent.value;
     const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
-    data.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal));
-    data.msv = Math.max(2, (Constant.DEFAULT_BASE_SV - msvVal));
+    data.sv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - hdVal));
+    data.msv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - msvVal));
 
     data.bab = hdVal;
 
@@ -172,8 +172,8 @@ export class SimpleActor extends Actor {
     const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
     const intelligent = attrs.intelligent.value;
     const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
-    data.sv = Math.max(2, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
-    data.msv = Math.max(2, (Constant.DEFAULT_BASE_SV - msvVal - magicClothingSvMod - magicJewelrySvMod));
+    data.sv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
+    data.msv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - msvVal - magicClothingSvMod - magicJewelrySvMod));
 
     data.bab = hdVal;
 
@@ -256,7 +256,7 @@ export class SimpleActor extends Actor {
     const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
     const svBase = +attrs.base_sv.value || Constant.DEFAULT_BASE_SV;
     const wisMod = +abilities.wis.mod || 0;
-    const sv = Math.max(2, (svBase - magicClothingSvMod - magicJewelrySvMod));
+    const sv = Math.max(Constant.MIN_SAVE_TARGET, (svBase - magicClothingSvMod - magicJewelrySvMod));
     charData.sv = sv;
     charData.msv = Math.min(19, (wisMod ? sv - wisMod : sv));
     
