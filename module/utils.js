@@ -180,8 +180,8 @@ export function getDerivedSkillTarget(skill, actorData) {
   const attrs = skill.data.attributes || {};
   const baseSt = attrs.base_st?.value;
   const modAttr = attrs.mod_attr?.value;
-  const skillPenalty = actorData.data.skill_penalty;
-  const modAttrVal = actorData.data.attributes.ability_scores?.[modAttr]?.mod;
+  const skillPenalty = +actorData?.data.skill_penalty || 0;
+  const modAttrVal = +actorData?.data.attributes.ability_scores?.[modAttr]?.mod || 0;
   const st = Math.max(Constant.MIN_SAVE_TARGET, baseSt - modAttrVal + skillPenalty) || 0;
   return st;
 }
