@@ -7,6 +7,7 @@ export const DEFAULT_BASE_MV = 12;
 export const DEFAULT_HUMANOID_MV = 9;
 export const DEFAULT_MONSTER_MV = 15;
 export const DEFAULT_BASE_SV = 17;
+export const MIN_SAVE_TARGET = 2;
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -2072,6 +2073,8 @@ export const ALIGNMENTS = [
 ];
 export const HOLDABLE_TYPES = [
   "charged_item",
+  "potion",
+  "scroll",
   "melee_weapon",
   "missile_weapon",
 ];
@@ -2098,7 +2101,6 @@ export const NONCOMBATANT_TYPES = [
   "container",
   "merchant",
 ];
-
 export const STATUS_EFFECTS = [
 {id: "dead", label: "EFFECT.StatusDead", icon: "icons/svg/skull.svg"},
 {id: "unconscious", label: "EFFECT.StatusUnconscious", icon: "icons/svg/unconscious.svg"},
@@ -2153,7 +2155,6 @@ export const STATUS_EFFECTS = [
 {id: "magicShield", label: "EFFECT.StatusMagicShield", icon: "icons/svg/mage-shield.svg"},
 {id: "holyShield", label: "EFFECT.StatusHolyShield", icon: "icons/svg/holy-shield.svg"},
 ];
-
 export const NON_PHYSICAL_ITEM_TYPES = [
   "feature",
   "skill",
