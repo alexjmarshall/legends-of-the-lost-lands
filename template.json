@@ -919,16 +919,16 @@
   "grapple_maneuver": {
     "templates": ["props"],
     "attributes": {
-      "req_atk_cond": {
+      "req_atk_status": {
         "dtype": "String",
         "group": "",
-        "label": "Required Attacker Cond.",
+        "label": "Attacker Status",
         "value": "grappled"
       },
-      "req_def_cond": {
+      "req_def_status": {
         "dtype": "String",
         "group": "",
-        "label": "Required Defender Cond.",
+        "label": "Defender Status",
         "value": "grappled"
       }
     }
