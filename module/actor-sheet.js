@@ -16,8 +16,8 @@ export class SimpleActorSheet extends ActorSheet {
       template: "systems/lostlands/templates/actor-sheet.html",
       width: 600,
       height: 600,
-      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
-      scrollY: [".description", ".items", ".spells", ".features", ".attributes"],
+      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "items"}],
+      scrollY: [".description",".items",".armors",".spells",".features",".attributes",".fatigue"],
       dragDrop: [{dragSelector: ".item-list .item", dropSelector: null}]
     });
   }
@@ -53,8 +53,10 @@ export class SimpleActorSheet extends ActorSheet {
     };
 
 
+    // show or hide empty groups
     Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
-    
+
+
     // stance AC bonus/penalty text
     const parryBonus = context.systemData.ac?.parry?.parry_bonus;
     const fluidParryBonus = context.systemData.ac?.parry?.fluid_parry_bonus;
@@ -63,8 +65,20 @@ export class SimpleActorSheet extends ActorSheet {
     const stancePenalty = context.systemData.ac?.stance_penalty;
     context.stanceBonusText = !parryBonus && !fluidParryBonus ? ''
       : `Parry: ${isFluidParrying ? `${fluidParryBonus} (${parryHeight})`: `${parryBonus}`}`;
-    context.stancePenaltyText = !stancePenalty ? '' : `Stance: ${stancePenalty}`;
-    
+    context.stancePenaltyText = !stancePenalty ? '' : `Stance: -${stancePenalty}`;
+
+    // agility penalty text
+    const agilityPenalty = context.systemData.agility_penalty;
+    context.agilityPenaltyText = agilityPenalty == null ? '' : `Agility Penalty: ${agilityPenalty > 0 ? '-' : ''}${agilityPenalty}`;
+
+    // spell failure text
+    const spellFailure = context.systemData.spell_failure;
+    context.spellFailureText = spellFailure == null ? '' : `Spell Failure: ${spellFailure}%`;
+
+    // skill penalty text
+    const skillPenalty = context.systemData.skill_penalty;
+    context.skillPenaltyText = skillPenalty == null ? '' : `Load Penalty: ${skillPenalty > 0 ? '-' : ''}${skillPenalty}`;
+
     // sort equipment
     context.equipment = this._sortEquipmentByType(items);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
@@ -84,7 +98,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.features = this._sortFeaturesBySource(features, data);
     context.hasFeatures = Object.values(context.features).flat().length > 0;
 
-    
+
     // voice board
     if (context.showVoice) {
       const attrType = attrs.type?.value;
@@ -102,7 +116,7 @@ export class SimpleActorSheet extends ActorSheet {
       context.hideVoiceSelection = context.isPlayer && context.hasVoice;
       context.showSoundBoard = context.isGM || context.hasVoice;
     }
-      
+
     // fatigue
     if (context.isCharacter) context.fatigue = this._getFatigueData(context.data);
     
@@ -147,6 +161,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     const reqClo = 36 - 10 - tempC;
     const wornClo = data.data.clo;
+    fatigue.wornClo = wornClo;
     const diffClo = wornClo - reqClo;
     const isWarm = data.effects.some(e => e.label === 'Warm');
     const exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
