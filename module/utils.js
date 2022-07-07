@@ -1,6 +1,7 @@
 import * as Constant from "./constants.js";
 
 export async function wait(ms) {
+  if (isNaN(ms)) return;
   return new Promise(resolve => {
     setTimeout(resolve, ms);
   });
@@ -164,15 +165,25 @@ export async function rollDice(formula) {
   return new Roll(formula).evaluate().total;
 }
 
-export function getItemFromActor(itemIdOrName, actor, itemType='Item') {
+export function getItemFromActor(itemIdOrName, actor) {
   const item = actor.data.items.get(itemIdOrName) || 
     actor.data.items.find(i => i.name.toLowerCase().replace(/\s/g,'') === itemIdOrName?.toLowerCase().replace(/\s/g,''));
   if (!item) {
-    const err = `${itemType} ${itemIdOrName} not found on ${actor.name}`;
+    const err = `${itemIdOrName} not found on ${actor.name}`;
     ui.notifications.error(err);
     throw err;
   } 
   return item;
+}
+
+export function getDerivedSkillTarget(skill, actorData) {
+  const attrs = skill.data.attributes || {};
+  const baseSt = attrs.base_st?.value;
+  const modAttr = attrs.mod_attr?.value;
+  const skillPenalty = actorData.data.skill_penalty;
+  const modAttrVal = actorData.data.attributes.ability_scores?.[modAttr]?.mod;
+  const st = Math.max(Constant.MIN_SAVE_TARGET, baseSt - modAttrVal + skillPenalty) || 0;
+  return st;
 }
 
 export async function reduceItemQty(item, actor) {
