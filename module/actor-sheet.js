@@ -324,8 +324,8 @@ export class SimpleActorSheet extends ActorSheet {
       } 
       for(let i = 1; i <= Constant.MAX_SPELL_LEVELS[spelltype]; i++) {
         const spellsAtLevel = spellsByType.filter(s => s.data.attributes.lvl?.value === i);
-        const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value;
-        const slotsAtLevelMax = attrs[spelltype]?.[`lvl_${i}`]?.max;
+        const slotsAtLevelVal = attrs[spelltype]?.[`lvl_${i}`]?.value || 0;
+        const slotsAtLevelMax = attrs[spelltype]?.[`lvl_${i}`]?.max || 0;
         if(!spellsAtLevel.length) continue;
         sortedSpells[spelltype].levels[`Level ${i}`] = {
           spells: spellsAtLevel,

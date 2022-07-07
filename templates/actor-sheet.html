@@ -207,7 +207,7 @@
                 {{#each spelltype.levels as |level key|}}
                 <header class="spells-header flexrow">
                     <span>
-                        {{#if level.slots.value}}{{level.slots.value}}{{else}}0{{/if}} / {{#if level.slots.max}}{{level.slots.max}}{{else}}0{{/if}}
+                        {{level.slots.value}} / {{level.slots.max}}
                         </span>
                     <span class="text-center">{{key}}</span>
                     <span></span>
