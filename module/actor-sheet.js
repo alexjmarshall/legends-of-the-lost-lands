@@ -344,13 +344,14 @@ export class SimpleActorSheet extends ActorSheet {
     const skillArr = features.filter( f => f.type === 'skill');
     skillArr.forEach(s => s.st = Util.getDerivedSkillTarget(s, actorData));
     if (skillArr.length) sortedFeatures['Skill'] = skillArr;
-    // const classArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'class'));
-    // if (classArr.length) sortedFeatures['Class'] = classArr;
-    // const raceArr = features.filter( f => Util.stringMatch(f.data.attributes.source?.value, 'race'));
-    // if (raceArr.length) sortedFeatures['Race'] = raceArr;
-    // const otherArr = features.filter(f => !Util.stringMatch(f.data.attributes.source?.value, 'class') && 
-    //   !Util.stringMatch(f.data.attributes.source?.value, 'race'));
-    // if (otherArr.length) sortedFeatures['Other'] = otherArr;
+    const classArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'class'));
+    if (classArr.length) sortedFeatures['Class'] = classArr;
+    const raceArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'race'));
+    if (raceArr.length) sortedFeatures['Race'] = raceArr;
+    const weapArr = features.filter( f => f.type === 'natural_weapon');
+    if (weapArr.length) sortedFeatures['Natural Weapons'] = weapArr;
+    const grappArr = features.filter( f => f.type === 'grapple_maneuver');
+    if (grappArr.length) sortedFeatures['Grappling'] = grappArr;
 
     return sortedFeatures;
   }
