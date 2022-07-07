@@ -244,7 +244,11 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>{{../skillPenaltyText}}</span>
+                <span>
+                    {{#ifeq key 'Skill'}}
+                    {{../skillPenaltyText}}
+                    {{/ifeq}}
+                </span>
                 <span class="text-center">{{key}}</span>
                 <span></span>
             </header>
