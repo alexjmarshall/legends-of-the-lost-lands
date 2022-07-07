@@ -93,8 +93,8 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span style="flex:0.33;">{{#if wearsGarments}}Clo: {{systemData.clo}}{{/if}}</span>
-                <span>{{#if wearsGarments}}Agility Penalty: {{systemData.agility_penalty}}{{/if}}</span>
+                <span>{{#if isCharacter}}Worn Clo: {{fatigue.wornClo}}{{/if}}</span>
+                <span></span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
                 <span style="max-width:74px;"></span>
@@ -102,7 +102,7 @@
             {{#each equipment as |items title|}}
             <header class="items-header flexrow">
                 <span></span>
-                <span style="text-align: center;">
+                <span class="text-center">
                     {{title}}
                 </span>
                 <span></span>
@@ -162,8 +162,8 @@
             <header class="armors-header sticky flexrow">
                 <span>Hit Location</span>
                 <span>Layers</span>
-                <span class="text-center">{{#if stanceBonusText}}{{stanceBonusText}}{{/if}}</span>
-                <span class="text-center">{{#if stancePenaltyText}}{{stancePenaltyText}}{{/if}}</span>
+                <span class="text-center"></span>
+                <span class="text-center"></span>
                 <span class="flex2 text-center">AC / DR</span>
             </header>
             {{#each armors as |loc area|}}
@@ -198,24 +198,19 @@
         <div class="tab spells" data-group="primary" data-tab="spells">
             {{#each spells as |spelltype key|}}
             <header class="spells-header flexrow">
-                <span>{{#if ../systemData.spell_failure}}{{#ifeq key "spell_magic"}} Spell Failure: {{../systemData.spell_failure}}% {{/ifeq}}{{/if}}</span>
-                <span style="text-align: center;">
-                    {{#ifeq key "spell_magic"}}Magic{{else}}
-                    {{#ifeq key "spell_cleric"}}Cleric{{else}}
-                    {{#ifeq key "spell_witch"}}Witch{{else}}
-                    {{key}}
-                    {{/ifeq}}
-                    {{/ifeq}}
-                    {{/ifeq}}
+                <span>{{../spellFailureText}}</span>
+                <span class="text-center">
+                    {{spelltype.label}}
                 </span>
                 <span></span>
             </header>
-                {{#each spelltype as |level key|}}
+                {{#each spelltype.levels as |level key|}}
                 <header class="spells-header flexrow">
-                    <span>{{key}}</span>
-                    <span style="text-align: right;">
-                    {{#if level.slots.value}}{{level.slots.value}}{{else}}0{{/if}} / {{#if level.slots.max}}{{level.slots.max}}{{else}}0{{/if}}
-                    </span>
+                    <span>
+                        {{#if level.slots.value}}{{level.slots.value}}{{else}}0{{/if}} / {{#if level.slots.max}}{{level.slots.max}}{{else}}0{{/if}}
+                        </span>
+                    <span class="text-center">{{key}}</span>
+                    <span></span>
                 </header>
                 <ol class="item-list">
                     {{#each level.spells as |spell|}}
@@ -263,8 +258,8 @@
         <div class="tab features" data-group="primary" data-tab="features">
             {{#each features as |source key|}}
             <header class="features-header flexrow">
-                <span>{{#if ../skill_penalty}} Skill Penalty: {{../skill_penalty}} {{/if}}</span>
-                <span style="text-align: center;">{{key}}</span>
+                <span>{{../skillPenaltyText}}</span>
+                <span class="text-center">{{key}}</span>
                 <span></span>
             </header>
             <ol class="item-list">
