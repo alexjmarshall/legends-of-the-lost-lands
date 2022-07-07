@@ -16,12 +16,13 @@ import { attack } from "./combat.js";
 export async function createLostlandsMacro(data, slot) {
   if(data.type === 'Macro') return false;
   const macroData = {};
-  // case 1: item
-  if (data.data) {
+  // case 1: item macro
+  if (data.data.data.macro) {
     const item = data.data;
-    const itemMacroWithId = item.data.macro?.replace(/itemId/g, item._id);
+    const itemMacroCode = `const itemId = '${item._id}';
+${item.data.macro}`;
     macroData.name = item.name;
-    macroData.command = itemMacroWithId;
+    macroData.command = itemMacroCode;
     macroData.type = "script";
   }
   // case 2: roll
