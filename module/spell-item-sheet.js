@@ -10,7 +10,7 @@ export class SpellItemSheet extends SimpleItemSheet {
       template: "systems/lostlands/templates/spell-item-sheet.html",
       width: 520,
       height: 480,
-      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "attributes"}],
+      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
       scrollY: [".description", ".attributes"],
     });
   }
@@ -23,9 +23,12 @@ export class SpellItemSheet extends SimpleItemSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
-    if(context.data.type === Constant.SPELL_TYPES.SPELL_MAGIC) context.spellType = "Magic";
-    else if(context.data.type === Constant.SPELL_TYPES.SPELL_CLERIC) context.spellType = "Cleric";
-    else if(context.data.type === Constant.SPELL_TYPES.SPELL_WITCH) context.spellType = "Witch";
+
+    context.range = context.systemData.attributes.range?.value;
+    context.area = context.systemData.attributes.area?.value;
+    context.duration = context.systemData.attributes.duration?.value;
+    context.time = context.systemData.attributes.casting_time?.value;
+
     return context;
   }
 }
