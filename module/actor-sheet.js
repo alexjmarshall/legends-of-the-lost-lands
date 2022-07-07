@@ -341,16 +341,8 @@ export class SimpleActorSheet extends ActorSheet {
 
   _sortFeaturesBySource(features, actorData) {
     const sortedFeatures = {};
-    const addSt = skill => {
-      const attrs = skill.data.attributes || {};
-      const baseSt = attrs.base_st?.value;
-      const modAttr = attrs.mod_attr?.value;
-      const skillPenalty = actorData.data.skill_penalty;
-      const modAttrVal = actorData.data.attributes.ability_scores?.[modAttr]?.mod;
-      skill.st = Math.max(2, baseSt - modAttrVal + skillPenalty) || 0;
-    };
     const skillArr = features.filter( f => f.type === 'skill');
-    skillArr.length && skillArr.forEach(s => addSt(s));
+    skillArr.forEach(s => s.st = Util.getDerivedSkillTarget(s, actorData));
     if (skillArr.length) sortedFeatures['Skill'] = skillArr;
     // const classArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'class'));
     // if (classArr.length) sortedFeatures['Class'] = classArr;
@@ -501,22 +493,14 @@ export class SimpleActorSheet extends ActorSheet {
   }
 
   async _handleUseItem(item, event) {
-    let itemMacroWithId = item.data.data.macro.replace(/itemId/g, item._id);
-    let isLostlandsMacro = itemMacroWithId?.includes('game.lostlands.Macro');
-    if (isLostlandsMacro) {
-      let optionsParam = '';
-      if (event.ctrlKey) optionsParam += 'applyEffect: true,';
-      if (event.shiftKey) optionsParam += 'showModDialog: true,';
-      if (event.altKey) optionsParam += 'showAltDialog: true,';
-      optionsParam = `{${optionsParam}}`;
-      itemMacroWithId = itemMacroWithId.replace(/{}/g, optionsParam);
-    }
-    let macro = game.macros.find(m => ( m.name === item.name && m.data.command === itemMacroWithId ));
+    const optionsParam = `{applyEffect:${event.ctrlKey},showModDialog:${event.shiftKey},showAltDialog:${event.altKey}}`;
+    const itemMacroCode = `const itemId = '${item._id}';const options = ${optionsParam};${item.data.data.macro}`;
+    let macro = game.macros.find(m => ( m.name === item.name && m.data.command === itemMacroCode ));
     if ( !macro ) {
       macro = await Macro.create({
         name: item.name,
         type: "script",
-        command: itemMacroWithId,
+        command: itemMacroCode,
         flags: { "lostlands.attrMacro": true }
       });
     }
