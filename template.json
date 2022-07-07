@@ -412,6 +412,7 @@
   "types": [
     "item",
     "potion",
+    "scroll",
     "charged_item",
     "armor",
     "helmet",
@@ -481,7 +482,7 @@
     },
     "spell": {
       "prepared": false,
-      "macro": "game.lostlands.Macro.castSpell('itemId',{})",
+      "macro": "game.lostlands.Macro.castSpell(itemId,options)",
       "attributes": {
         "lvl": {
           "dtype": "Number",
@@ -522,74 +523,58 @@
       }
     },
     "weapon": {
-      "atk_mode": "",
-      "atk_height": "mid",
-      "atk_style": "stable",
-      "atk_init": "immediate",
       "attributes": {
-        "atk_modes": {
-          "dtype": "String",
+        "magic": {
+          "dtype": "Boolean",
           "group": "",
-          "label": "Attack Mode(s)",
-          "value": "swing(s)"
+          "label": "Magic",
+          "value": false
         },
-        "dmg": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage",
-          "value": "d6"
-        },
-        "reach": {
-          "dtype": "String",
-          "group": "",
-          "label": "Reach",
-          "value": "1"
-        },
-        "bleed": {
+        "atk_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Bleed",
+          "label": "Attack Mod.",
           "value": 0
         },
-        "pen": {
+        "dmg_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Penetration",
-          "value": 0
-        },
-        "range": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Throwing Range (ft.)",
+          "label": "Damage Mod.",
           "value": 0
         }
       }
     }
   },
   "item": {
-    "templates": ["props","item"]
+    "templates": ["props","item"],
+    "held_mainhand": false,
+    "held_offhand": false
   },
   "potion": {
     "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.drinkPotion('itemId',{})",
+    "held_mainhand": false,
+    "held_offhand": false,
+    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)"
+  },
+  "scroll": {
+    "templates": ["props","item","spell"],
+    "held_mainhand": false,
+    "held_offhand": false,
+    "macro": "game.lostlands.Macro.readScroll(itemId,options)",
     "attributes": {
-      "magic": {
-        "dtype": "Boolean",
+      "class": {
+        "dtype": "String",
         "group": "",
-        "label": "Magic",
-        "value": true
-      },
-      "heal": {
-        "dtype": "Formula",
-        "group": "",
-        "label": "Heal",
-        "value": ""
+        "label": "Class",
+        "value": "Magic-User"
       }
     }
   },
   "charged_item": {
     "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.useChargedItem('itemId',{})",
+    "held_mainhand": false,
+    "held_offhand": false,
+    "macro": "game.lostlands.Macro.useChargedItem(itemId,options)",
     "attributes": {
       "magic": {
         "dtype": "Boolean",
@@ -694,7 +679,49 @@
   },
   "melee_weapon": {
     "templates": ["props","item","weapon"],
+    "held_mainhand": false,
+    "held_offhand": false,
+    "atk_mode": "",
+    "atk_height": "mid",
+    "atk_style": "stable",
+    "atk_init": "immediate",
     "attributes": {
+      "atk_modes": {
+        "dtype": "String",
+        "group": "",
+        "label": "Attack Mode(s)",
+        "value": "swing(s)"
+      },
+      "dmg": {
+        "dtype": "String",
+        "group": "",
+        "label": "Damage",
+        "value": "d6"
+      },
+      "reach": {
+        "dtype": "String",
+        "group": "",
+        "label": "Reach",
+        "value": "1"
+      },
+      "bleed": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Bleed",
+        "value": 1
+      },
+      "pen": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Armor Penetration",
+        "value": 0
+      },
+      "range": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Throwing Range (ft.)",
+        "value": 0
+      },
       "size": {
         "dtype": "String",
         "group": "",
@@ -748,35 +775,13 @@
         "group": "",
         "label": "Class",
         "value": "martial"
-      },
-      "magic": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Magic",
-        "value": false
-      },
-      "atk_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Attack Mod.",
-        "value": 0
-      },
-      "dmg_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Damage Mod.",
-        "value": 0
-      },
-      "range": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Throwing Range (ft.)",
-        "value": 0
       }
     }
   },
   "missile_weapon": {
-    "templates": ["props","item"],
+    "templates": ["props","item","weapon"],
+    "held_mainhand": false,
+    "held_offhand": false,
     "attributes": {
       "rof": {
         "dtype": "String",
@@ -784,11 +789,23 @@
         "label": "Rate of Fire",
         "value": "1"
       },
-      "size": {
-        "dtype": "String",
+      "range": {
+        "dtype": "Number",
         "group": "",
-        "label": "Size",
-        "value": "M"
+        "label": "Max. Range (ft.)",
+        "value": 120
+      },
+      "pen": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Armor Penetration Bonus",
+        "value": 0
+      },
+      "impact": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Impact",
+        "value": 1
       },
       "category": {
         "dtype": "String",
@@ -796,16 +813,16 @@
         "label": "Category",
         "value": "bows"
       },
-      "range": {
-        "dtype": "Number",
+      "class": {
+        "dtype": "String",
         "group": "",
-        "label": "Range (ft.)",
-        "value": 120
+        "label": "Class",
+        "value": "simple"
       }
     }
   },
   "ammo": {
-    "templates": ["props","item"],
+    "templates": ["props","item","weapon"],
     "worn": false,
     "attributes": {
       "dmg": {
@@ -820,11 +837,23 @@
         "label": "Category",
         "value": "bows"
       },
-      "atk_modes": {
+      "dmg_type": {
         "dtype": "String",
         "group": "",
-        "label": "Attack Mode(s)",
-        "value": "shoot(p)"
+        "label": "Damage Type",
+        "value": "P"
+      },
+      "bleed": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Bleed",
+        "value": 1
+      },
+      "pen": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Armor Penetration",
+        "value": 1
       }
     }
   },
