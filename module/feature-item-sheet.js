@@ -1,6 +1,7 @@
 import { SimpleItemSheet } from "./item-sheet.js";
 import { EntitySheetHelper } from "./helper.js";
 import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 export class FeatureItemSheet extends SimpleItemSheet {
   /** @inheritdoc */
@@ -24,6 +25,22 @@ export class FeatureItemSheet extends SimpleItemSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
 
+    context.propA = {
+      label: 'Type',
+      value: Util.upperCaseFirst(context.data.type).replace('_',' '),
+    };
+
+    this._prepareSkillData(context)
+
     return context;
+  }
+
+  _prepareSkillData(context) {
+    if (context.data.type !== 'skill') return;
+    const actorData = context.document.actor?.data;
+    context.propB = {
+      label: 'ST',
+      value: Util.getDerivedSkillTarget(context.data, actorData),
+    };
   }
 }

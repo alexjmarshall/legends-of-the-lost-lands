@@ -2,9 +2,22 @@
   <header class="sheet-header">
       <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
       <div class="header-fields">
-          <h1 class="charname">
-              <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
-          </h1>
+            <h1 class="charname">
+                <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
+            </h1>
+            {{#if propA}}
+            <div class="resource">
+                <label class="left-label">{{propA.label}}</label>
+                <input type="text" value="{{propA.value}}" disabled/>
+            </div>
+            {{/if}}
+            {{#if propB}}
+            <div class="resource">
+                <label class="left-label">{{propB.label}}</label>
+                <input type="text" value="{{propB.value}}" disabled/>
+            </div>
+            {{/if}}
+          </div>
       </div>
   </header>
 
