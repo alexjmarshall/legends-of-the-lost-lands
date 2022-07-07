@@ -492,3 +492,6 @@
 .chat-message .message-content * {
   user-select: text;
 }
+input:disabled {
+  color: #191813;
+}
