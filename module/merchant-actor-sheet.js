@@ -28,20 +28,28 @@ export class MerchantActorSheet extends ActorSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
-    // item price
+    const data = context.systemData;
+    const attrs = data.attributes;
+
+    // gold label
+    const label = attrs.gold.label.trim();
+    context.goldLabel = (/s$/.test(label) || label.toLowerCase() === 'gold') ? label : label + 's';
+
+    // item prices
     const merchantActor = context.actor.isToken ? context.actor :
                           canvas.tokens.objects.children.find(t => t.actor._id === context.actor._id && t.data.actorLink === true)?.actor;
     const character = game.user.character;
     const attitude = merchantActor && character ? await reactionRoll(merchantActor, character, {showModDialog: false, showChatMsg: false}) :
                      Constant.ATTITUDES.UNCERTAIN;
+    context.attitude = Util.upperCaseFirst(attitude);
     const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
-    const items = context.data.items.filter(i => !isNaN(i.data.attributes.sp_value?.value));
-    const sellFactor = +context.systemData.attributes.sell_factor?.value || 1;
+    const items = context.data.items.filter(i => !isNaN(i.data.attributes.value?.value));
+    const sellFactor = +attrs.sell_factor?.value || 1;
     items.forEach(item => {
-      const priceInCps = Math.ceil(+item.data.attributes.sp_value?.value * sellFactor * sellAdj * Constant.CURRENCY_RATIOS.cps_per_sp);
+      const priceInCps = Math.ceil(+item.data.attributes.value?.value * sellFactor * sellAdj);
       item.data.price = Util.expandPrice(priceInCps);
     });
-    context.data.items = items;
+    context.items = items;
 
     return context;
   }
@@ -93,7 +101,7 @@ export class MerchantActorSheet extends ActorSheet {
         if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
           return ui.notifications.error("There was a problem reading the price of this item");
         }
-        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.CURRENCY_RATIOS.cps_per_sp + goldPrice * Constant.CURRENCY_RATIOS.cps_per_gp));
+        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.CURRENCIES_IN_CP.sp + goldPrice * Constant.CURRENCIES_IN_CP.gp));
         return buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;
