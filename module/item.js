@@ -16,7 +16,8 @@ export class SimpleItem extends Item {
     //  spell_magic, spell_cleric, spell_witch
     //  feature, skill, natural_weapon, grapple_maneuver
     //  melee_weapon, missile_weapon, ammo
-    //  potion, charged_item, currency, item
+    //  potion, charged_item, scroll, item
+    //  currency
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -27,13 +28,23 @@ export class SimpleItem extends Item {
     this._prepareGarmentData(itemData);
     // spell_magic, spell_cleric, spell_witch
     this._prepareSpellData(itemData);
-    //  feature, skill, natural_weapon, grapple_maneuver
+    // currency
+    this._prepareCurrencyData(itemData);
 
-    return;
+  }
 
-    if (this.data.type === 'item') {
-      this.prepareItem(itemData)
-    }
+  _prepareCurrencyData(itemData) {
+    if (itemData.type !== 'currency') return;
+
+    const data = itemData.data;
+    const attrs = data.attributes;
+
+    const material = attrs.material.value;
+    const weight = +data.weight || 0;
+    const valuePerPound = +Constant.PRECIOUS_METALS_VALUE_PER_POUND[material] || 0;
+    const value = Math.round(weight * valuePerPound);
+    
+    if (attrs.value.value == null) attrs.value.value = value;
   }
 
   _prepareSpellData(itemData) {
@@ -107,7 +118,7 @@ export class SimpleItem extends Item {
     const getLocationWgt = index => data.coverage.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[index], 0);
     const locUnwornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN);
     const baseLocWornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN);
-    let locWornWgt = attrs.attached?.value ? Math.ceil(baseLocWornWgt / 2) : baseLocWornWgt;
+    let locWornWgt = attrs.attached?.value ? Math.round(baseLocWornWgt / 2) : baseLocWornWgt;
     const materialBaseWgt = materialProps.weight || 1;
     
     if (isShield) {
@@ -116,9 +127,9 @@ export class SimpleItem extends Item {
       if (isWorn) locWornWgt = Math.round(locWornWgt * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
     }
     
-    const materialWgt = isMagic ? Math.ceil(materialBaseWgt / 2) : materialBaseWgt;
+    const materialWgt = isMagic ? Math.round(materialBaseWgt / 2) : materialBaseWgt;
 
-    const getTotalWeight = (locWgt, matWgt) => Math.ceil( Util.sizeMulti(matWgt * locWgt, size) / 10) / 10;
+    const getTotalWeight = (locWgt, matWgt) => Math.round( Util.sizeMulti(matWgt * locWgt, size) / 10) / 10;
     const unwornWeight = getTotalWeight(locUnwornWgt, materialWgt);
     data.weight = unwornWeight;
     const wornWeight = getTotalWeight(locWornWgt, materialWgt);
@@ -133,14 +144,14 @@ export class SimpleItem extends Item {
     data.clo = materialProps.clo;
 
 
-    // sp value
-    const materialValue = materialProps.sp_value || 0;
+    // value
+    const materialValue = materialProps.value || 0;
     const valueWgt = getTotalWeight(locUnwornWgt, materialBaseWgt);
     const maxWeight = materialProps.weight || valueWgt || 1;
     const ratio = valueWgt / maxWeight;
-    const baseValue = Math.round(materialValue * ratio * 10) / 10;
+    const baseValue = Math.round(materialValue * ratio);
     data.base_value = baseValue;
-    if (!attrs.sp_value.value) attrs.sp_value.value = baseValue;
+    if (attrs.value.value == null) attrs.value.value = baseValue;
   }
 
   prepareItem(itemData) {
@@ -194,7 +205,7 @@ export class SimpleItem extends Item {
     if (materialProps && locations.length) {
       
 
-      // const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);// TODO fix sp_value changing with worn weight...do totalLocWeight Transformation last
+      // const totalLocationWeight = locations.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[weightingsIndex], 0);// TODO fix value changing with worn weight...do totalLocWeight Transformation last
       // let weight = Math.round(materialProps.weight * totalLocationWeight) / 100;
       // if (isShield) {
       //   weight = Math.round(weight / 2 * 10) / 10;
