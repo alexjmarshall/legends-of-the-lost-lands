@@ -7,8 +7,12 @@
           <h1 class="charname">
           <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
           </h1>
-          <div class="resource merchant-resource">
-              <label>Gold</label>
+          <div class="resource">
+            <label>Attitude</label>
+            <input type="text" value="{{attitude}}" disabled />
+        </div>
+          <div class="resource">
+              <label>{{goldLabel}}</label>
               <input type="number" value="{{systemData.attributes.gold.value}}" disabled />
           </div>
       </div>
@@ -54,7 +58,7 @@
                     {{#if item.data.price.sp}}<span class="silver-price">{{item.data.price.sp}}</span> sp{{/if}}
                     {{#if item.data.price.cp}}<span class="copper-price">{{item.data.price.cp}}</span> cp{{/if}}
                     {{else}}
-                    {{item.data.attributes.sp_value.value}} sp{{/if}}
+                    {{item.data.attributes.value.value}} sp{{/if}}
                 </span>
                 {{#if ../isGM}}
                 <div class="item-controls">
