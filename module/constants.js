@@ -26,15 +26,15 @@ export const ATTITUDES = {
   HELPFUL: "helpful"
 };
 export const ATTITUDE_SELL_ADJ = {
-  [ATTITUDES.HOSTILE]: 1.3,
-  [ATTITUDES.DISMISSIVE]: 1.1,
+  [ATTITUDES.HOSTILE]: 1.5,
+  [ATTITUDES.DISMISSIVE]: 1.15,
   [ATTITUDES.UNCERTAIN]: 1,
   [ATTITUDES.ACCEPTING]: 0.95,
   [ATTITUDES.HELPFUL]: 0.85
 };
 export const ATTITUDE_BUY_ADJ = {
-  [ATTITUDES.HOSTILE]: 0.7,
-  [ATTITUDES.DISMISSIVE]: 0.9,
+  [ATTITUDES.HOSTILE]: 0.5,
+  [ATTITUDES.DISMISSIVE]: 0.85,
   [ATTITUDES.UNCERTAIN]: 1,
   [ATTITUDES.ACCEPTING]: 1.05,
   [ATTITUDES.HELPFUL]: 1.15
@@ -69,114 +69,114 @@ export const MATERIAL_PROPS = {
   wood: {
     weight:10,
     clo:0,
-    sp_value:10,
+    value:120,
   },
   burlap: {
     weight:2,
     clo:5,
-    sp_value:0.5,
+    value:6,
   },
   linen: {
     weight:1,
     clo:8,
-    sp_value:5,
+    value:60,
   },
   wool: {
     weight:2,
     clo:16,
-    sp_value:12,
+    value:144,
   },
   silk: {
     weight:0.5,
     clo:11,
-    sp_value:90,
+    value:1080,
   },
   fur: {
     weight:4,
     clo:32,
-    sp_value:50,
+    value:600,
   },
   leather: {
     weight:5,
     clo:10,
-    sp_value:25,
+    value:300,
     metal:false,
     bulky:false,
   },
   padded: {
     weight:4,
     clo:18,
-    sp_value:20,
+    value:240,
     metal:false,
     bulky:false,
   },
   "cuir bouilli": {
     weight:6,
     clo:9,
-    sp_value:30,
+    value:360,
     metal:false,
     bulky:true,
   },
   brigandine: {
     weight:20,
     clo:16,
-    sp_value:100,
+    value:1200,
     metal:true,
     bulky:true,
   },
   scale: {
     weight:22,
     clo:13,
-    sp_value:80,
+    value:960,
     metal:true,
     bulky:false,
   },
   chain: {
     weight:12,
     clo:2,
-    sp_value:150,
+    value:1800,
     metal:true,
     bulky:false,
   },
   "elven chain": {
     weight:6,
     clo:1,
-    sp_value: 1500,
+    value: 18000,
     metal:true,
     bulky:false,
   },
   "banded mail": {
     weight:15,
     clo:4,
-    sp_value:200,
+    value:2400,
     metal:true,
     bulky:false,
   },
   lamellar: {
     weight:22,
     clo:11,
-    sp_value:120,
+    value:1440,
     metal:true,
     bulky:true,
   },
   splint: {
     weight:18,
     clo:14,
-    sp_value:160,
+    value:1920,
     metal:true,
     bulky:true,
   },
   "iron plate": {
     weight:20,
     clo:10,
-    sp_value:400,
+    value:2880,
     metal:true,
     bulky:true,
   },
   "steel plate": {
     weight:18,
     clo:8,
-    sp_value:1000,
+    value:7200,
     metal:true,
     bulky:true,
   },
@@ -617,9 +617,24 @@ export const VOICE_SOUNDS = {};
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
-export const CURRENCY_RATIOS = { // TODO use material values
-  cps_per_sp: 12,
-  cps_per_gp: 240,
+export const PRECIOUS_METALS_VALUE_PER_POUND = {
+  "copper": 33,
+  "silver": 400,
+  "electrum": 3000,
+  "gold": 4800,
+  "platinum": 24000,
+};
+export const CURRENCIES_IN_CP = {
+  "cp": 1,
+  "sp": 12,
+  "ep": 120,
+  "gp": 240,
+  "pp": 1200
+};
+export const COIN_NAMES = { // TODO make this editable by a game setting
+  "cp": "Pfennig",
+  "sp": "Groschen",
+  "gp": "Florin"
 };
 export const LIMB_GROUPS = {
   "lower leg": ["foot","shin"],
@@ -646,6 +661,14 @@ const ranChoice = (choices) => {
   const ranInd = Math.floor(Math.random() * choices.length);
   return choices[ranInd];
 }
+
+
+export const ranAnnoyedMerchant = () => ranChoice([
+  'The merchant purses their lips.',
+  'The merchant rubs the bridge of their nose.',
+  'The merchant closes their eyes and sighs.',
+  'The merchant clucks their tongue.',
+  'The merchant looks upward.']);
 const ranToe = () => ranChoice(['big','long','middle','ring','little']);
 const ranOrifice = () => ranChoice(['nose','mouth','ears']);
 const ranFinger = () => ranChoice(['thumb','index finger','middle finger','ring finger','pinky finger']);
@@ -1896,7 +1919,7 @@ export const HIT_LOCATIONS = {
     },
   },
 };
-export const STANCE_MODS = {
+export const STANCE_MODS = { // TODO move this to combat file
   power: {
     ac_mod: -3,
     atk_mod: -2,
