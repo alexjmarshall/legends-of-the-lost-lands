@@ -24,10 +24,10 @@ export function sizeComparator(a, b) {
 
 export function expandPrice(priceInCps) {
   if (!priceInCps) return;
-  const gp = Math.floor(priceInCps / Constant.CURRENCY_RATIOS.cps_per_gp);
-  priceInCps -= gp * Constant.CURRENCY_RATIOS.cps_per_gp;
-  const sp = Math.floor(priceInCps / Constant.CURRENCY_RATIOS.cps_per_sp);
-  const cp = priceInCps - sp * Constant.CURRENCY_RATIOS.cps_per_sp;
+  const gp = Math.floor(priceInCps / Constant.CURRENCIES_IN_CP.gp);
+  priceInCps -= gp * Constant.CURRENCIES_IN_CP.gp;
+  const sp = Math.floor(priceInCps / Constant.CURRENCIES_IN_CP.sp);
+  const cp = priceInCps - sp * Constant.CURRENCIES_IN_CP.sp;
   return {gp, sp, cp};
 }
 
