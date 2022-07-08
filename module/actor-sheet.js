@@ -286,11 +286,11 @@ export class SimpleActorSheet extends ActorSheet {
       },
       {
         title: "Misc. Magic",
-        condition: i => i.type === 'item' && i.data.data.attributes.magic?.value
+        condition: i => i.type === 'item' && i.data?.data?.attributes?.magic?.value
       },
       {
         title: "Other",
-        condition: i => i.type === 'item' && !i.data.data.attributes.magic?.value
+        condition: i => i.type === 'item' && !i.data?.data?.attributes?.magic?.value
       },
       {
         title: "Currency",
