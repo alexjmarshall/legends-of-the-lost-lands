@@ -170,6 +170,7 @@
   },
   "character": {
     "templates": ["props"],
+    "attitude_map": {},
     "groups": {
       "ability_scores": {
         "dtype": "Number",
@@ -386,23 +387,24 @@
   },
   "merchant": {
     "templates": ["props"],
+    "attitude_map": {},
     "attributes": {
       "buy_factor": {
         "dtype": "Number",
         "group": "",
         "label": "Buy Factor",
-        "value": 1
+        "value": 0.8
       },
       "sell_factor": {
         "dtype": "Number",
         "group": "",
         "label": "Sell Factor",
-        "value": 1
+        "value": 1.2
       },
       "gold": {
         "dtype": "Number",
         "group": "",
-        "label": "Gold",
+        "label": "Florins",
         "value": 100
       }
     }
@@ -442,17 +444,11 @@
       "quantity": 1,
       "weight": 1,
       "attributes": {
-        "sp_value": {
+        "value": {
           "dtype": "Number",
           "group": "",
           "label": "Value",
           "value": 0
-        },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Magic",
-          "value": false
         }
       }
     },
@@ -477,6 +473,12 @@
           "group": "",
           "label": "Size",
           "value": "M"
+        },
+        "magic": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Magic",
+          "value": false
         }
       }
     },
@@ -548,7 +550,15 @@
   "item": {
     "templates": ["props","item"],
     "held_mainhand": false,
-    "held_offhand": false
+    "held_offhand": false,
+    "attributes": {
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": false
+      }
+    }
   },
   "potion": {
     "templates": ["props","item"],
@@ -576,12 +586,6 @@
     "held_offhand": false,
     "macro": "game.lostlands.Macro.useChargedItem(itemId,options)",
     "attributes": {
-      "magic": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Magic",
-        "value": true
-      },
       "charges": {
         "dtype": "Resource",
         "group": "",
@@ -660,6 +664,12 @@
         "group": "",
         "label": "Save Mod.",
         "value": 0
+      },
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": false
       }
     }
   },
@@ -865,6 +875,12 @@
         "group": "",
         "label": "Material",
         "value": "silver"
+      },
+      "value": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Value",
+        "value": 12
       }
     }
   },
