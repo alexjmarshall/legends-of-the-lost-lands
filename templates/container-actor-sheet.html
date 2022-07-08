@@ -7,11 +7,11 @@
             <h1 class="charname">
             <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
             </h1>
-            <div class="resource merchant-resource">
+            <div class="resource">
                 <label>Capacity</label>
                 <input type="number" value="{{systemData.enc}}" disabled />
                 <span> / </span>
-                <input type="number" value="{{systemData.attributes.limit.value}}" disabled />
+                <input type="number" value="{{systemData.attributes.capacity.value}}" disabled />
             </div>
         </div>
     </header>
