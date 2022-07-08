@@ -866,11 +866,13 @@ export async function reactionRoll(reactingActor, targetActor, options) {
 
 export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   if (!priceInCp) return;
-  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
-  const actor = game.user.character || token?.actor;
+  const char = Util.selectedCharacter();
+  const token = char.token;
+  const actor = char.actor;
   const sameActor = actor?.isToken ? merchant.isToken && actor.token._id === merchant.token._id :
     actor?._id === merchant._id;
   if ( !actor || sameActor ) return ui.notifications.error("Select buying token");
+
   const merchantGold = +merchant.data.data.attributes.gold?.value;
   if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set");
   const merchantQty = +item.data.data.quantity;
@@ -884,10 +886,10 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   const actorItems = actor.data.items;
   const gpItem = actorItems.find(i => Util.stringMatch(i.name, 'Gold Pieces'));
   const gp = +gpItem?.data.data.quantity || 0;
-  const gpInCp = gp * Constant.CURRENCY_RATIOS.cps_per_gp;
+  const gpInCp = gp * Constant.CURRENCIES_IN_CP.gp;
   const spItem = actorItems.find(i => Util.stringMatch(i.name, 'Silver Pieces'));
   const sp = +spItem?.data.data.quantity || 0;
-  const spInCp = sp * Constant.CURRENCY_RATIOS.cps_per_sp;
+  const spInCp = sp * Constant.CURRENCIES_IN_CP.sp;
   const cpItem = actorItems.find(i => Util.stringMatch(i.name, 'Copper Pieces'));
   const cp = +cpItem?.data.data.quantity || 0;
   const totalMoneyInCp = gpInCp + spInCp + cp;
@@ -899,7 +901,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   // case 1: not enough money
   if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
-      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. The merchant appears annoyed.`,
+      content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. ${Constant.ranAnnoyedMerchant()}`,
       flavor: `Buy`
     };
     return Util.macroChatMessage(actor, chatData, true);
@@ -911,15 +913,15 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   } else if (cp + spInCp >= totalPriceInCp) {
     const cpAndSpInCp = cp + spInCp;
     let changeInCp = cpAndSpInCp - totalPriceInCp;
-    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_sp);
-    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCY_RATIOS.cps_per_sp;
+    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.sp);
+    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCIES_IN_CP.sp;
   // case 4: payment requires gp
   } else {
     let changeInCp = totalMoneyInCp - totalPriceInCp;
-    gpUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_gp);
-    changeInCp -= gpUpdateQty * Constant.CURRENCY_RATIOS.cps_per_gp;
-    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCY_RATIOS.cps_per_sp);
-    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCY_RATIOS.cps_per_sp;
+    gpUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.gp);
+    changeInCp -= gpUpdateQty * Constant.CURRENCIES_IN_CP.gp;
+    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.sp);
+    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCIES_IN_CP.sp;
   }
   const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty},
         spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty},
@@ -954,7 +956,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   async function finalizePurchase() {
     await actor.updateEmbeddedDocuments("Item", updates);
     await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
-    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / Constant.CURRENCY_RATIOS.cps_per_gp)});
+    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / Constant.CURRENCIES_IN_CP.gp)});
 
     // add item to actor
     const itemData = {
