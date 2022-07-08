@@ -93,19 +93,9 @@
 .lostlands .property-field-ac {
   margin-right: 5px;
 }
-.lostlands .container-resource,
-.lostlands .merchant-resource {
-  width: 100%;
-  text-align: right;
-  padding-right: 5px;
-}
 .lostlands .resource input {
   width: 75px;
   height: 28px;
-}
-.lostlands .container-resource input,
-.lostlands .merchant-resource input {
-  text-align: center;
 }
 .lostlands .tabs {
   flex: 0 0 40px;
