@@ -39,12 +39,17 @@ export class SimpleItem extends Item {
     const data = itemData.data;
     const attrs = data.attributes;
 
+    // value by material and weight
     const material = attrs.material.value;
     const weight = +data.weight || 0;
     const valuePerPound = +Constant.PRECIOUS_METALS_VALUE_PER_POUND[material] || 0;
-    const value = Math.round(weight * valuePerPound);
-    
-    if (attrs.value.value == null) attrs.value.value = value;
+    const baseValue = Math.round(weight * valuePerPound);
+    data.value = data.value || baseValue;
+
+    // total weight by quantity and weight
+    const qty = +data.quantity || 0;
+    const totalWeight = Math.round(weight * qty * 10) / 10;
+    data.total_weight = totalWeight;
   }
 
   _prepareSpellData(itemData) {
@@ -131,11 +136,14 @@ export class SimpleItem extends Item {
 
     const getTotalWeight = (locWgt, matWgt) => Math.round( Util.sizeMulti(matWgt * locWgt, size) / 10) / 10;
     const unwornWeight = getTotalWeight(locUnwornWgt, materialWgt);
-    data.weight = unwornWeight;
     const wornWeight = getTotalWeight(locWornWgt, materialWgt);
-    const qty = data.quantity || 0;
+    const qty = +data.quantity || 0;
     const totalWeight = isWorn ? wornWeight * qty : unwornWeight * qty;
-    data.total_weight = totalWeight;
+
+    const currWeight = data.weight;
+    data.weight = currWeight || unwornWeight;
+    data.total_weight = currWeight ? Math.round(totalWeight * currWeight / unwornWeight * 10) / 10 : totalWeight;
+    
     const paddedOrWood = material === 'padded' || material === 'wood';
     data.penalty_weight = !isWorn ? 0 : paddedOrWood ? totalWeight * 2 : totalWeight;
 
@@ -150,8 +158,7 @@ export class SimpleItem extends Item {
     const maxWeight = materialProps.weight || valueWgt || 1;
     const ratio = valueWgt / maxWeight;
     const baseValue = Math.round(materialValue * ratio);
-    data.base_value = baseValue;
-    if (attrs.value.value == null) attrs.value.value = baseValue;
+    data.value = data.value || baseValue;
   }
 
   prepareItem(itemData) {
