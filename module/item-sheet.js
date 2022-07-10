@@ -30,10 +30,10 @@ export class SimpleItemSheet extends ItemSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
 
-    // disable editing of weight if armor, shield, helmet or clothing
-    context.disableWgtEdit = context.isPlayer || context.data.type === "armor"
-      || context.data.type === "shield" || context.data.type === "helmet"
-      || context.data.type === "clothing";
+    context.showValue = context.isGM || context.data.type === "currency";
+
+    // show empty groups to GM
+    Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
 
     return context;
   }
