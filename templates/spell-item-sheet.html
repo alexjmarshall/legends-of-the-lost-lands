@@ -6,30 +6,12 @@
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
             </h1>
             <div class="properties">
-                {{#if range}}
+                {{#each props as |value label|}}
                 <div class="property">
-                    <label class="property-label">Range</label>
-                    <span class="property-field">{{range}}'</span>
+                    <label class="property-label">{{label}}</label>
+                    <span class="property-field">{{value}}</span>
                 </div>
-                {{/if}}
-                {{#if area}}
-                <div class="property">
-                    <label class="property-label">Area</label>
-                    <span class="property-field">{{area}}</span>
-                </div>
-                {{/if}}
-                {{#if duration}}
-                <div class="property">
-                    <label class="property-label">Duration</label>
-                    <span class="property-field">{{duration}}</span>
-                </div>
-                {{/if}}
-                {{#if time}}
-                <div class="property">
-                    <label class="property-label">Time</label>
-                    <span class="property-field">{{time}}</span>
-                </div>
-                {{/if}}
+                {{/each}}
             </div>
         </div>
     </header>
