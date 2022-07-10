@@ -5,19 +5,14 @@
             <h1 class="charname">
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
             </h1>
-            {{#if propA}}
-            <div class="resource">
-                <label class="left-label">{{propA.label}}</label>
-                <input type="text" value="{{propA.value}}" disabled/>
+            <div class="properties">
+                {{#each props as |value label|}}
+                <div class="property">
+                    <label class="property-label">{{label}}</label>
+                    <span class="property-field">{{value}}</span>
+                </div>
+                {{/each}}
             </div>
-            {{/if}}
-            {{#if propB}}
-            <div class="resource">
-                <label class="left-label">{{propB.label}}</label>
-                <input type="text" value="{{propB.value}}" disabled/>
-            </div>
-            {{/if}}
-          </div>
       </div>
   </header>
 
