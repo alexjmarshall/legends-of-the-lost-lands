@@ -5,14 +5,20 @@
             <h1 class="charname">
                 <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
             </h1>
-            <div class="resource">
+            <div class="item-resource">
                 <label>Quantity</label>
                 <input type="number" name="data.quantity" value="{{systemData.quantity}}" {{#if isPlayer}}disabled{{/if}}/>
             </div>
-            <div class="resource">
+            <div class="item-resource">
                 <label>Weight</label>
-                <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if disableWgtEdit}}disabled{{/if}}/>
+                <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if isPlayer}}disabled{{/if}}/>
             </div>
+            {{#if showValue}}
+            <div class="item-resource">
+                <label>Value</label>
+                <input type="number" name="data.value" value="{{systemData.value}}" {{#if isPlayer}}disabled{{/if}}/>
+            </div>
+            {{/if}}
         </div>
     </header>
 
