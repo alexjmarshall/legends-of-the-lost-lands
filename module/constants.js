@@ -67,114 +67,114 @@ export const SHIELD_TYPES = {
 };
 export const MATERIAL_PROPS = {
   wood: {
-    weight:10,
+    weight:40,
     clo:0,
     value:120,
   },
   burlap: {
-    weight:2,
+    weight:8,
     clo:5,
     value:6,
   },
   linen: {
-    weight:1,
+    weight:4,
     clo:8,
     value:60,
   },
   wool: {
-    weight:2,
+    weight:8,
     clo:16,
     value:144,
   },
   silk: {
-    weight:0.5,
+    weight:2,
     clo:11,
     value:1080,
   },
   fur: {
-    weight:4,
+    weight:16,
     clo:32,
     value:600,
   },
   leather: {
-    weight:5,
+    weight:20,
     clo:10,
     value:300,
     metal:false,
     bulky:false,
   },
   padded: {
-    weight:4,
+    weight:16,
     clo:18,
     value:240,
     metal:false,
     bulky:false,
   },
   "cuir bouilli": {
-    weight:6,
+    weight:24,
     clo:9,
     value:360,
     metal:false,
     bulky:true,
   },
   brigandine: {
-    weight:20,
+    weight:80,
     clo:16,
     value:1200,
     metal:true,
     bulky:true,
   },
   scale: {
-    weight:22,
+    weight:88,
     clo:13,
     value:960,
     metal:true,
     bulky:false,
   },
   chain: {
-    weight:12,
+    weight:48,
     clo:2,
     value:1800,
     metal:true,
     bulky:false,
   },
   "elven chain": {
-    weight:6,
+    weight:24,
     clo:1,
     value: 18000,
     metal:true,
     bulky:false,
   },
   "banded mail": {
-    weight:15,
+    weight:60,
     clo:4,
     value:2400,
     metal:true,
     bulky:false,
   },
   lamellar: {
-    weight:22,
+    weight:88,
     clo:11,
     value:1440,
     metal:true,
     bulky:true,
   },
   splint: {
-    weight:18,
+    weight:72,
     clo:14,
     value:1920,
     metal:true,
     bulky:true,
   },
   "iron plate": {
-    weight:20,
+    weight:80,
     clo:10,
     value:2880,
     metal:true,
     bulky:true,
   },
   "steel plate": {
-    weight:18,
+    weight:72,
     clo:8,
     value:7200,
     metal:true,
@@ -618,23 +618,31 @@ export const VOICE_SOUNDS = {};
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
 export const PRECIOUS_METALS_VALUE_PER_POUND = {
-  "copper": 33,
-  "silver": 400,
-  "electrum": 3000,
-  "gold": 4800,
-  "platinum": 24000,
+  "copper": 40,
+  "silver": 240, // weight 0.5 for Silver Mark ingot worth 120
+  "electrum": 1600, // weight 0.075 for ep ("Stater") coin worth 120
+  "gold": 2400, // weight 0.5 for Gold Mark ingot worth 1200
+  "platinum": 12000, // weight 0.1 for pp ("Medallion") coin worth 1200
 };
-export const CURRENCIES_IN_CP = {
-  "cp": 1,
-  "sp": 12,
-  "ep": 120,
-  "gp": 240,
-  "pp": 1200
-};
-export const COIN_NAMES = { // TODO make this editable by a game setting
-  "cp": "Pfennig",
-  "sp": "Groschen",
-  "gp": "Florin"
+export const UNITS_OF_ACCOUNT = {
+  "cp": {
+    weight: 0.025,
+    value: 1,
+    name: "Pfennig",
+    abbr: "pf",
+  },
+  "sp": {
+    weight: 0.05,
+    value: 12,
+    name: "Groschen",
+    abbr: "gr",
+  },
+  "gp": {
+    weight: 0.1,
+    value: 240,
+    name: "Florin",
+    abbr: "fl",
+  },
 };
 export const LIMB_GROUPS = {
   "lower leg": ["foot","shin"],
@@ -2108,6 +2116,19 @@ export const WEARABLE_TYPES = [
   "jewelry",
   "shield",
   "ammo",
+];
+export const DERIVED_WEIGHT_TYPES = [
+  "armor",
+  "helmet",
+  "clothing",
+  "shield",
+];
+export const DERIVED_VALUE_TYPES = [
+  "armor",
+  "helmet",
+  "clothing",
+  "shield",
+  "currency",
 ];
 export const FEATURE_TYPES = [
   "feature",
