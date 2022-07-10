@@ -31,9 +31,9 @@ export class MerchantActorSheet extends ActorSheet {
     const data = context.systemData;
     const attrs = data.attributes;
 
-    // gold label
-    const label = attrs.gold.label.trim();
-    context.goldLabel = (/s$/.test(label) || label.toLowerCase() === 'gold') ? label : label + 's';
+    // money label
+    const money = attrs.money.value;
+    context.moneyValue = Util.getPriceString(money);
 
     // item prices
     const merchantActor = context.actor.isToken ? context.actor :
@@ -43,11 +43,17 @@ export class MerchantActorSheet extends ActorSheet {
                      Constant.ATTITUDES.UNCERTAIN;
     context.attitude = Util.upperCaseFirst(attitude);
     const sellAdj = Constant.ATTITUDE_SELL_ADJ[attitude];
-    const items = context.data.items.filter(i => !isNaN(i.data.attributes.value?.value));
+    const items = context.data.items.filter(i => i.data.value);
     const sellFactor = +attrs.sell_factor?.value || 1;
     items.forEach(item => {
-      const priceInCps = Math.ceil(+item.data.attributes.value?.value * sellFactor * sellAdj);
-      item.data.price = Util.expandPrice(priceInCps);
+      const priceInCps = Math.ceil(+item.data.value * sellFactor * sellAdj);
+      const expandedPrice = Util.expandPrice(priceInCps);
+      for (const [k,v] of Object.entries(expandedPrice)) {
+        expandedPrice[k] = {};
+        expandedPrice[k].value = v;
+        expandedPrice[k].label = Constant.UNITS_OF_ACCOUNT[k].abbr;
+      }
+      item.price = expandedPrice;
     });
     context.items = items;
 
@@ -101,7 +107,7 @@ export class MerchantActorSheet extends ActorSheet {
         if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
           return ui.notifications.error("There was a problem reading the price of this item");
         }
-        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.CURRENCIES_IN_CP.sp + goldPrice * Constant.CURRENCIES_IN_CP.gp));
+        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.UNITS_OF_ACCOUNT.sp.value + goldPrice * Constant.UNITS_OF_ACCOUNT.gp.value));
         return buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;

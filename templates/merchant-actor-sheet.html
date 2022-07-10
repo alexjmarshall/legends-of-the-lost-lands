@@ -7,13 +7,13 @@
           <h1 class="charname">
           <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
           </h1>
-          <div class="resource">
+          <div class="merchant-resource">
             <label>Attitude</label>
             <input type="text" value="{{attitude}}" disabled />
         </div>
-          <div class="resource">
-              <label>{{goldLabel}}</label>
-              <input type="number" value="{{systemData.attributes.gold.value}}" disabled />
+          <div class="merchant-resource">
+              <label>Funds</label>
+              <input type="text" value="{{moneyValue}}" disabled />
           </div>
       </div>
   </header>
@@ -45,7 +45,7 @@
               {{#each data.items as |item id|}}
               <li class="item flexrow" data-item-id="{{item._id}}">
                 <div class="item-toggle">
-                    {{#if item.data.price}}
+                    {{#if item.price}}
                     <a class="item-control" data-action="buy" title="Buy Item"><i class="fas fa-coins"></i></a>
                     {{/if}}
                 </div>
@@ -53,12 +53,11 @@
                 <h4 class="item-name item-row" data-action="edit">{{item.name}}</h4>
                 <span class="item-row item-column" data-action="edit">{{item.data.quantity}}</span>
                 <span class="item-row item-column item-price-column item-price" data-action="edit">
-                    {{#if item.data.price}}
-                    {{#if item.data.price.gp}}<span class="gold-price">{{item.data.price.gp}}</span> gp{{/if}}
-                    {{#if item.data.price.sp}}<span class="silver-price">{{item.data.price.sp}}</span> sp{{/if}}
-                    {{#if item.data.price.cp}}<span class="copper-price">{{item.data.price.cp}}</span> cp{{/if}}
-                    {{else}}
-                    {{item.data.attributes.value.value}} sp{{/if}}
+                    {{#if item.price}}
+                    {{#if item.price.gp.value}}<span class="gold-price">{{item.price.gp.value}}</span> {{item.price.gp.label}}{{/if}}
+                    {{#if item.price.sp.value}}<span class="silver-price">{{item.price.sp.value}}</span> {{item.price.sp.label}}{{/if}}
+                    {{#if item.price.cp.value}}<span class="copper-price">{{item.price.cp.value}}</span> {{item.price.cp.label}}{{/if}}
+                    {{/if}}
                 </span>
                 {{#if ../isGM}}
                 <div class="item-controls">
