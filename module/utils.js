@@ -22,19 +22,33 @@ export function sizeComparator(a, b) {
   if ( aSize === bSize ) return 0;
 }
 
+export function cloneItem(item) {
+  const itemData = {
+    data: foundry.utils.deepClone(item.data.data),
+    img: item.data.img,
+    name: item.data.name,
+    type: item.data.type,
+  };
+  return itemData;
+}
+
 export function expandPrice(priceInCps) {
   if (!priceInCps) return;
-  const gp = Math.floor(priceInCps / Constant.CURRENCIES_IN_CP.gp);
-  priceInCps -= gp * Constant.CURRENCIES_IN_CP.gp;
-  const sp = Math.floor(priceInCps / Constant.CURRENCIES_IN_CP.sp);
-  const cp = priceInCps - sp * Constant.CURRENCIES_IN_CP.sp;
+  const gp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.gp.value);
+  priceInCps -= gp * Constant.UNITS_OF_ACCOUNT.gp.value;
+  const sp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.sp.value);
+  const cp = priceInCps - sp * Constant.UNITS_OF_ACCOUNT.sp.value;
   return {gp, sp, cp};
 }
 
 export function getPriceString(priceInCps) {
   if (!priceInCps) return;
   const priceObj = expandPrice(priceInCps);
-  return `${priceObj.gp ? `${priceObj.gp} gp, ` : ''}${priceObj.sp ? `${priceObj.sp} sp, ` : ''}${priceObj.cp ? `${priceObj.cp} cp, ` : ''}`.replace(/,\s*$/, '');
+  let priceString = '';
+  for (const [unit, value] of Object.entries(priceObj)) {
+    if (value) priceString += `${value} ${Constant.UNITS_OF_ACCOUNT[unit].abbr}, `;
+  };
+  return priceString.replace(/,\s*$/, '');
 }
 
 export const playVoiceSound = (() => {
@@ -117,7 +131,7 @@ export function replacePunc(str) {
 
 export function getTokenFromActor(actor) {
   const token = actor?.isToken ? actor.token.data :
-    canvas.tokens?.objects?.children.find(t => t.actor._id === actor?._id && t.name == actor?.name);
+    canvas.tokens?.objects?.children.find(t => t.actor?._id === actor?._id && t.name == actor?.name);
   return token;
 }
 
