@@ -2,7 +2,7 @@ import * as Constant from "./constants.js";
 import { TimeQ } from "./time-queue.js";
 import * as Util from "./utils.js";
 import * as Fatigue from "./fatigue.js";
-import * as Dialog from "./dialogs.js";
+import * as Dialogs from "./dialogs.js";
 import { attack } from "./combat.js";
 
 /**
@@ -101,7 +101,7 @@ export function selectRestDice(actor, options={}) {
     };
   });
 
-  return Dialog.altDialog(options, `${actor.name} Rest Dice`, choices);
+  return Dialogs.altDialog(options, `${actor.name} Rest Dice`, choices);
 }
 
 export const castSpell = (() => {
@@ -333,7 +333,7 @@ export async function useChargedItem(itemId, options={}) {
 
   if(!options.numChargesUsed && !options.shownModDialog && options.showModDialog) {
     const field = {label: 'Charges used', key: 'numChargesUsed'};
-    return Dialog.modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
+    return Dialogs.modDialog(options, `Use ${item.name}`, [field], () => useChargedItem(itemId, options));
   }
 
   if (chargesLeft > charges) {
@@ -568,7 +568,7 @@ async function save(tokens, damage, options={}) {
   if (options.showModDialog && !options.shownModDialog) {
 
     const fields = [{label: 'Save modifiers', key: 'dialogMod'}];
-    return Dialog.modDialog(options, modDialogFlavor, fields, () => save(tokens, damage, options));
+    return Dialogs.modDialog(options, modDialogFlavor, fields, () => save(tokens, damage, options));
   }
   let dialogMod = '';
   try {
@@ -778,7 +778,7 @@ export async function attackMacro(weapons, options={}) { // TODO clean up variou
 }
 
 export function setStanceMacro(options={}) { // TODO refactor into separate wrapper and dialog function in dialogs.js
-  return Dialog.setStanceDialog(options);
+  return Dialogs.setStanceDialog(options);
 }
 
 export async function reactionRollMacro(options) {
@@ -812,7 +812,7 @@ export async function reactionRoll(reactingActor, targetActor, options) {
       const fields = [
         {label: `${Util.upperCaseFirst(flavor.toLowerCase())} modifiers`, key: 'dialogMod'}
       ];
-      return Dialog.modDialog(options, flavor, fields, () => reactionRoll(reactingActor, targetActor, options));
+      return Dialogs.modDialog(options, flavor, fields, () => reactionRoll(reactingActor, targetActor, options));
     }
     options.shownModDialog = false;
     const chaMod = +targetActor.data.data.cha_mod;
@@ -866,39 +866,34 @@ export async function reactionRoll(reactingActor, targetActor, options) {
 
 export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   if (!priceInCp) return;
-  const char = Util.selectedCharacter();
-  const token = char.token;
-  const actor = char.actor;
-  const sameActor = actor?.isToken ? merchant.isToken && actor.token._id === merchant.token._id :
-    actor?._id === merchant._id;
+  const token = canvas.tokens.controlled.length === 1 ? canvas.tokens.controlled[0] : undefined;
+  const actor = game.user.character || token?.actor;
+  const sameActor = actor?.isToken ? merchant.isToken && actor.token._id === merchant.token._id
+    : actor?._id === merchant._id;
   if ( !actor || sameActor ) return ui.notifications.error("Select buying token");
 
-  const merchantGold = +merchant.data.data.attributes.gold?.value;
-  if (!merchantGold) return ui.notifications.error("Merchant gold attribute not set");
+  const merchantMoney = +merchant.data.data.attributes.money?.value;
+  if (isNaN(merchantMoney) || merchantMoney == null) return ui.notifications.error("Merchant money attribute not set");
   const merchantQty = +item.data.data.quantity;
   if (!merchantQty) return ui.notifications.error("No stock available");
   if (merchantQty > 1 && !options.shownSplitDialog) {
-    return Dialog.itemSplitDialog(merchantQty, item, priceInCp, merchant, options);
+    return Dialogs.itemSplitDialog(merchantQty, item, priceInCp, merchant, options);
   }
   if (!qty) qty = merchantQty;
 
-  // pay for item
-  const actorItems = actor.data.items;
-  const gpItem = actorItems.find(i => Util.stringMatch(i.name, 'Gold Pieces'));
-  const gp = +gpItem?.data.data.quantity || 0;
-  const gpInCp = gp * Constant.CURRENCIES_IN_CP.gp;
-  const spItem = actorItems.find(i => Util.stringMatch(i.name, 'Silver Pieces'));
-  const sp = +spItem?.data.data.quantity || 0;
-  const spInCp = sp * Constant.CURRENCIES_IN_CP.sp;
-  const cpItem = actorItems.find(i => Util.stringMatch(i.name, 'Copper Pieces'));
-  const cp = +cpItem?.data.data.quantity || 0;
-  const totalMoneyInCp = gpInCp + spInCp + cp;
+
+  // total price
   const totalPriceInCp = priceInCp * qty;
   const totalPriceString = Util.getPriceString(totalPriceInCp);
 
-  // pay for item from actor
-  let cpUpdateQty = cp, spUpdateQty = sp, gpUpdateQty = gp;
-  // case 1: not enough money
+  // pay for item
+  //    can use any currency item with a defined value
+  const actorItems = actor.data.items;
+  const currencyItems = actorItems.filter(i => i.type === 'currency' && i.data.data.value);
+  currencyItems.sort((a,b) => a.data.data.value - b.data.data.value);
+  const totalMoneyInCp = currencyItems.reduce((sum, i) => sum + (i.data.data.value * i.data.data.quantity), 0) || 0;
+
+  // if actor does not have enough money, return chat msg
   if (totalPriceInCp > totalMoneyInCp) {
     const chatData = {
       content: `${actor.name} tries to buy ${qty} ${item.name}${qty > 1 ? 's' : ''} for ${totalPriceString}, but doesn't have enough money. ${Constant.ranAnnoyedMerchant()}`,
@@ -906,30 +901,71 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
     };
     return Util.macroChatMessage(actor, chatData, true);
   }
-  // case 2: can pay with cp
-  if (cp >= totalPriceInCp) {
-    cpUpdateQty = cp - totalPriceInCp;
-  // case 3: can pay with cp and sp
-  } else if (cp + spInCp >= totalPriceInCp) {
-    const cpAndSpInCp = cp + spInCp;
-    let changeInCp = cpAndSpInCp - totalPriceInCp;
-    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.sp);
-    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCIES_IN_CP.sp;
-  // case 4: payment requires gp
-  } else {
-    let changeInCp = totalMoneyInCp - totalPriceInCp;
-    gpUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.gp);
-    changeInCp -= gpUpdateQty * Constant.CURRENCIES_IN_CP.gp;
-    spUpdateQty = Math.floor(changeInCp / Constant.CURRENCIES_IN_CP.sp);
-    cpUpdateQty = changeInCp - spUpdateQty * Constant.CURRENCIES_IN_CP.sp;
+
+  // pay for item with lower value currencies first
+  let updates = [];
+  let createItemUpdates = [];
+  let priceLeft = totalPriceInCp;
+  let totalPaid = 0;
+
+  for (const i of currencyItems) {
+    if (!i._id) continue;
+    const value = i.data.data.value;
+    const qty = i.data.data.quantity;
+    const totalValue = value * qty;
+    if (totalValue >= priceLeft) {
+      const qtyNeeded = Math.ceil(priceLeft / value);
+      updates.push({_id: i._id, "data.quantity": qty - qtyNeeded});
+      const valuePaid = qtyNeeded * value;
+      totalPaid += valuePaid;
+      break;
+    }
+    const valuePaid = qty * value;
+    totalPaid += valuePaid;
+    priceLeft -= valuePaid;
+    updates.push({_id: i._id, "data.quantity": 0});
   }
-  const cpUpdate = {_id: cpItem?._id, "data.quantity": cpUpdateQty},
-        spUpdate = {_id: spItem?._id, "data.quantity": spUpdateQty},
-        gpUpdate = {_id: gpItem?._id, "data.quantity": gpUpdateQty};
-  // add to updates if item has id and update quantity is different than existing quantity
-  const updates = [cpUpdate, spUpdate, gpUpdate].filter( u => u._id &&
-    u["data.quantity"] !== Number(actorItems.get(u._id)?.data.data.quantity));
+
+  const changeInCp = totalPaid - totalPriceInCp;
+
   
+  // if any change, return in higher value currencies first
+  if (changeInCp) { // TODO TESTTTT buying AND selling thoroughly
+    const expandedPriceObj = Util.expandPrice(changeInCp);
+    const keyToItemName = {gp: Constant.UNITS_OF_ACCOUNT.gp.name, sp: Constant.UNITS_OF_ACCOUNT.sp.name, cp: Constant.UNITS_OF_ACCOUNT.cp.name};
+    
+    for (const [k, v] of Object.entries(expandedPriceObj)) {
+      if (!v) continue;
+      const itemName = keyToItemName[k];
+      const item = actor.items.find(i => Util.stringMatch(i.name, itemName));
+
+      // create currency item on actor if does not exist
+      if (!item) {
+        const coinItem = game.items.getName(itemName);
+        if (!coinItem) return ui.notifications.error(`Could not find ${itemName} in game items!`);
+        const createData = Util.cloneItem(coinItem);
+        createData.data.quantity = v;
+        createItemUpdates.push(createData);
+        continue;
+      }
+
+      const updateIndex = updates.findIndex(u => u._id === item._id);
+      const itemQty = updateIndex >= 0 ? updates[updateIndex]["data.quantity"] : item.data.data.quantity;
+      const itemUpdateQty = itemQty + v;
+      if (updateIndex >= 0) {
+        updates[updateIndex] = {_id: item._id, "data.quantity": itemUpdateQty};
+        continue;
+      }
+      updates.push({_id: item._id, "data.quantity": itemUpdateQty});
+    }
+  }
+
+
+  // check that update data is valid
+  const checkValid = u => u._id && u["data.quantity"] !== Number(actorItems.get(u._id)?.data.data.quantity);
+  updates = updates.filter( u => checkValid(u));
+
+
   // show confirmation dialog if haven't shown split item dialog
   if (!options.shownSplitDialog) {
     return new Dialog({
@@ -954,17 +990,8 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
   return finalizePurchase();
 
   async function finalizePurchase() {
-    await actor.updateEmbeddedDocuments("Item", updates);
-    await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
-    await merchant.update({"data.attributes.gold.value": merchantGold + Math.floor(totalPriceInCp / Constant.CURRENCIES_IN_CP.gp)});
-
     // add item to actor
-    const itemData = {
-      data: foundry.utils.deepClone(item.data.data),
-      img: item.data.img,
-      name: item.data.name,
-      type: item.data.type,
-    };
+    const itemData = Util.cloneItem(item);
     itemData.data.quantity = qty;
     const targetItem = actor.items.find(i => {
       return i.data.type === itemData.type &&
@@ -972,12 +999,19 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       i.data.data.macro === itemData.data.macro &&
       foundry.utils.fastDeepEqual(i.data.data.attributes, itemData.data.attributes);
     });
+
     if (targetItem) {
       const currentTargetQty = +targetItem.data.data.quantity;
-      await actor.updateEmbeddedDocuments("Item", [{ "_id": targetItem._id, "data.quantity": currentTargetQty + qty }]);
+      updates.push({ "_id": targetItem._id, "data.quantity": currentTargetQty + qty });
     } else {
-      await actor.createEmbeddedDocuments("Item", [itemData]);
+      createItemUpdates.push(itemData);
     }
+
+    if (createItemUpdates.length) await actor.createEmbeddedDocuments("Item", createItemUpdates);
+    await actor.updateEmbeddedDocuments("Item", updates);
+    await merchant.updateEmbeddedDocuments("Item", [{'_id': item._id, 'data.quantity': merchantQty - qty}]);
+    const merchantMoneyUpdate = merchantMoney + totalPriceInCp;
+    await merchant.update({"data.attributes.money.value": merchantMoneyUpdate});
 
     // create chat message
     const chatData = {
@@ -985,6 +1019,7 @@ export async function buyMacro(item, priceInCp, merchant, qty, options={}) {
       sound: 'coins',
       flavor: 'Buy'
     }
+
     return Util.macroChatMessage(actor, chatData, true);
   }
 }
@@ -1124,7 +1159,7 @@ export async function addDisease(disease=null, options={}) {
         callback: () => addDisease(null, options),
       };
     });
-    return Dialog.altDialog(options, `Add Disease to ${actor.name}`, choices);
+    return Dialogs.altDialog(options, `Add Disease to ${actor.name}`, choices);
   }
 
   const charDiseases = actor.getFlag("lostlands", "disease") || {};
@@ -1202,7 +1237,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   };
 
   if (!confirmed) {
-    return Dialog.confirmDiseaseDialog(actor, disease, () => confirmDisease(), () => Fatigue.deleteDisease(actor, disease));
+    return Dialogs.confirmDiseaseDialog(actor, disease, () => confirmDisease(), () => Fatigue.deleteDisease(actor, disease));
   }
   
   // determine damage and whether disease resolves (if 1 is rolled)
