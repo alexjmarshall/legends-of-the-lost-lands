@@ -23,6 +23,12 @@ export class SimpleItem extends Item {
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data;
+    const data = itemData.data;
+
+    // calculate total weight -- may be overridden below
+    if (!isNaN(data.weight) && !isNaN(data.quantity)) {
+      data.total_weight = Math.round(data.weight * data.quantity * 10) / 10;
+    }
 
     // armor, clothing, shield, helmet
     this._prepareGarmentData(itemData);
@@ -45,11 +51,6 @@ export class SimpleItem extends Item {
     const valuePerPound = +Constant.PRECIOUS_METALS_VALUE_PER_POUND[material] || 0;
     const baseValue = Math.round(weight * valuePerPound);
     data.value = data.value || baseValue;
-
-    // total weight by quantity and weight
-    const qty = +data.quantity || 0;
-    const totalWeight = Math.round(weight * qty * 10) / 10;
-    data.total_weight = totalWeight;
   }
 
   _prepareSpellData(itemData) {
