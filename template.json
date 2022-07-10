@@ -401,11 +401,11 @@
         "label": "Sell Factor",
         "value": 1.2
       },
-      "gold": {
+      "money": {
         "dtype": "Number",
         "group": "",
-        "label": "Florins",
-        "value": 100
+        "label": "Money",
+        "value": 24000
       }
     }
   }
@@ -441,14 +441,23 @@
       "macro": ""
     },
     "item": {
+      "value": 0,
       "quantity": 1,
-      "weight": 1,
+      "weight": 1
+    },
+    "magic": {
       "attributes": {
-        "value": {
-          "dtype": "Number",
+        "magic": {
+          "dtype": "Boolean",
           "group": "",
-          "label": "Value",
-          "value": 0
+          "label": "Magic",
+          "value": false
+        }
+      },
+      "groups": {
+        "magic_mods": {
+          "dtype": "Number",
+          "label": "Magic Effects"
         }
       }
     },
@@ -456,12 +465,6 @@
       "worn": false,
       "coverage": [],
       "attributes": {
-        "ac_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "AC Mod.",
-          "value": 0
-        },
         "material": {
           "dtype": "String",
           "group": "",
@@ -473,12 +476,6 @@
           "group": "",
           "label": "Size",
           "value": "M"
-        },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Magic",
-          "value": false
         }
       }
     },
@@ -523,42 +520,12 @@
           "value": 3
         }
       }
-    },
-    "weapon": {
-      "attributes": {
-        "magic": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Magic",
-          "value": false
-        },
-        "atk_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Attack Mod.",
-          "value": 0
-        },
-        "dmg_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Damage Mod.",
-          "value": 0
-        }
-      }
     }
   },
   "item": {
-    "templates": ["props","item"],
+    "templates": ["props","item","magic"],
     "held_mainhand": false,
-    "held_offhand": false,
-    "attributes": {
-      "magic": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Magic",
-        "value": false
-      }
-    }
+    "held_offhand": false
   },
   "potion": {
     "templates": ["props","item"],
@@ -597,7 +564,7 @@
     }
   },
   "armor": {
-    "templates": ["props","item","garment"],
+    "templates": ["props","item","garment","magic"],
     "ac": {},
     "attributes": {
       "coverage": {
@@ -605,11 +572,17 @@
         "group": "",
         "label": "Coverage",
         "value": "chest"
+      },
+      "size": {
+        "dtype": "String",
+        "group": "",
+        "label": "Size",
+        "value": "M"
       }
     }
   },
   "helmet": {
-    "templates": ["props","item","garment"],
+    "templates": ["props","item","garment","magic"],
     "ac": {},
     "attributes": {
       "coverage": {
@@ -629,11 +602,17 @@
         "group": "",
         "label": "Closed",
         "value": false
+      },
+      "size": {
+        "dtype": "String",
+        "group": "",
+        "label": "Size",
+        "value": "M"
       }
     }
   },
   "clothing": {
-    "templates": ["props","item","garment"],
+    "templates": ["props","item","garment","magic"],
     "attributes": {
       "coverage": {
         "dtype": "String",
@@ -641,40 +620,20 @@
         "label": "Coverage",
         "value": "chest"
       },
-      "sv_mod": {
-        "dtype": "Number",
+      "size": {
+        "dtype": "String",
         "group": "",
-        "label": "Save Mod.",
-        "value": 0
+        "label": "Size",
+        "value": "M"
       }
     }
   },
   "jewelry": {
-    "templates": ["props","item"],
-    "worn": false,
-    "attributes": {
-      "ac_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "AC Mod.",
-        "value": 0
-      },
-      "sv_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Save Mod.",
-        "value": 0
-      },
-      "magic": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Magic",
-        "value": false
-      }
-    }
+    "templates": ["props","item","magic"],
+    "worn": false
   },
   "shield": {
-    "templates": ["props","item","garment"],
+    "templates": ["props","item","garment","magic"],
     "shield_height": "mid",
     "shield_style": "stable",
     "ac": {},
@@ -688,7 +647,7 @@
     }
   },
   "melee_weapon": {
-    "templates": ["props","item","weapon"],
+    "templates": ["props","item","weapon","magic"],
     "held_mainhand": false,
     "held_offhand": false,
     "atk_mode": "",
@@ -789,7 +748,7 @@
     }
   },
   "missile_weapon": {
-    "templates": ["props","item","weapon"],
+    "templates": ["props","item","weapon","magic"],
     "held_mainhand": false,
     "held_offhand": false,
     "attributes": {
@@ -832,7 +791,7 @@
     }
   },
   "ammo": {
-    "templates": ["props","item","weapon"],
+    "templates": ["props","item","weapon","magic"],
     "worn": false,
     "attributes": {
       "dmg": {
@@ -875,12 +834,6 @@
         "group": "",
         "label": "Material",
         "value": "silver"
-      },
-      "value": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Value",
-        "value": 12
       }
     }
   },
