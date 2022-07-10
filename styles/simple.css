@@ -61,8 +61,16 @@
   height: 100%;
   margin: 0;
 }
-.lostlands .resource {
+.lostlands .resource,
+.lostlands .merchant-resource {
   width: 50%;
+  height: 38px;
+  margin-top: 8px;
+  float: left;
+  text-align: center;
+}
+.lostlands .item-resource {
+  width: 33%;
   height: 38px;
   margin-top: 8px;
   float: left;
@@ -95,6 +103,14 @@
 }
 .lostlands .resource input {
   width: 75px;
+  height: 28px;
+}
+.lostlands .item-resource input {
+  width: 55px;
+  height: 28px;
+}
+.lostlands .merchant-resource input {
+  width: 145px;
   height: 28px;
 }
 .lostlands .tabs {
