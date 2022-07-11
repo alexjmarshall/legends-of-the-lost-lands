@@ -374,14 +374,14 @@
       "enc_factor": {
         "dtype": "Number",
         "group": "",
-        "label": "Encumbrance Factor",
+        "label": "Enc. Factor",
         "value": 1
       },
       "capacity": {
         "dtype": "Number",
         "group": "",
         "label": "Capacity",
-        "value": 10
+        "value": 50
       }
     }
   },
@@ -424,6 +424,7 @@
     "melee_weapon",
     "missile_weapon",
     "ammo",
+    "container",
     "currency",
     "spell_magic",
     "spell_cleric",
@@ -453,12 +454,6 @@
           "label": "Magic",
           "value": false
         }
-      },
-      "groups": {
-        "magic_mods": {
-          "dtype": "Number",
-          "label": "Magic Effects"
-        }
       }
     },
     "garment": {
@@ -476,6 +471,18 @@
           "group": "",
           "label": "Size",
           "value": "M"
+        },
+        "sv_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "SV Mod.",
+          "value": 0
+        },
+        "ac_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "AC Mod.",
+          "value": 0
         }
       }
     },
@@ -544,6 +551,23 @@
         "group": "",
         "label": "Class",
         "value": "Magic-User"
+      }
+    }
+  },
+  "container": {
+    "templates": ["props","item","magic"],
+    "attributes": {
+      "enc_factor": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Enc. Factor",
+        "value": 1
+      },
+      "capacity": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Capacity",
+        "value": 50
       }
     }
   },
@@ -630,7 +654,19 @@
   },
   "jewelry": {
     "templates": ["props","item","magic"],
-    "worn": false
+    "worn": false,
+    "sv_mod": {
+      "dtype": "Number",
+      "group": "",
+      "label": "SV Mod.",
+      "value": 0
+    },
+    "ac_mod": {
+      "dtype": "Number",
+      "group": "",
+      "label": "AC Mod.",
+      "value": 0
+    }
   },
   "shield": {
     "templates": ["props","item","garment","magic"],
@@ -744,6 +780,12 @@
         "group": "",
         "label": "Class",
         "value": "martial"
+      },
+      "atk_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "To-Hit Mod.",
+        "value": 0
       }
     }
   },
@@ -787,6 +829,12 @@
         "group": "",
         "label": "Class",
         "value": "simple"
+      },
+      "atk_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "To-Hit Mod.",
+        "value": 0
       }
     }
   },
@@ -823,6 +871,12 @@
         "group": "",
         "label": "Armor Penetration",
         "value": 1
+      },
+      "atk_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "To-Hit Mod.",
+        "value": 0
       }
     }
   },
