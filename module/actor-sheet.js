@@ -45,8 +45,9 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sv / msv
     const sv = +context.systemData.sv || 0;
+    const msvTypes = ["monster","undead","humanoid"];
     const msv = +context.systemData.msv || 0;
-    const showMsv = sv && msv && sv !== msv;
+    const showMsv = msvTypes.includes(type) && sv !== msv;
     context.sv = {
       text: showMsv ? `${sv} / ${msv}` : `${sv}`,
       label: showMsv ?  'SV / MSV' : 'SV',
