@@ -1,5 +1,6 @@
 import { EntitySheetHelper } from "./helper.js";
 import * as Constant from "./constants.js";
+import * as Util from "./utils.js";
 
 export class ContainerActorSheet extends ActorSheet {
   /** @inheritdoc */
@@ -26,8 +27,12 @@ export class ContainerActorSheet extends ActorSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
-    const items = context.data.items.filter(i => i.type === 'item');
+    const items = context.data.items;
     context.data.items = items;
+
+    // sort equipment
+    context.equipment = Util.sortEquipmentByType(items);
+    context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     return context;
   }
