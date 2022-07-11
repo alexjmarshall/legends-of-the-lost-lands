@@ -53,7 +53,7 @@ export class SimpleActorSheet extends ActorSheet {
     };
 
 
-    // show or hide empty groups
+    // show empty groups to GM
     Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
 
 
@@ -77,10 +77,10 @@ export class SimpleActorSheet extends ActorSheet {
 
     // skill penalty text
     const skillPenalty = context.systemData.skill_penalty;
-    context.skillPenaltyText = skillPenalty == null ? '' : `Load Penalty: ${skillPenalty > 0 ? '-' : ''}${skillPenalty}`;
+    context.skillPenaltyText = skillPenalty == null ? '' : `Enc. Penalty: ${skillPenalty > 0 ? '-' : ''}${skillPenalty}`;
 
     // sort equipment
-    context.equipment = this._sortEquipmentByType(items);
+    context.equipment = Util.sortEquipmentByType(items);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort armors
@@ -223,87 +223,6 @@ export class SimpleActorSheet extends ActorSheet {
 
     status.desc = isResting? 'Fine' : damage > 0 ? statusDescs[type].damaged : warn ? statusDescs[type].warn : 'Fine';
     return status;
-  }
-
-  _sortEquipmentByType(items) {
-    /*
-    Item Types:
-    "item",
-    "potion",
-    "charged_item",
-    "armor",
-    "helmet",
-    "clothing",
-    "jewelry",
-    "shield",
-    "melee_weapon",
-    "missile_weapon",
-    "ammo",
-    "currency",
-    "spell_magic",
-    "spell_cleric",
-    "spell_witch",
-    "feature"
-    Sheet Categories:
-    weapon
-    armor
-    clothing & jewelry
-    ammo
-    potion
-    charged_item
-    magic
-    other
-    currency
-    */
-    const equipment = {};
-    const types = [
-      {
-        title: "Weapons",
-        condition: i => i.type === 'melee_weapon' || i.type === 'missile_weapon'
-      },
-      {
-        title: "Armor",
-        condition: i => i.type === 'armor' || i.type === 'helmet' || i.type === 'shield',
-        wearable: true
-      },
-      {
-        title: "Clothing & Jewelry",
-        condition: i => i.type === 'clothing' || i.type === 'jewelry',
-        wearable: true
-      },
-      {
-        title: "Ammunition",
-        condition: i => i.type === 'ammo',
-        wearable: true
-      },
-      {
-        title: "Potions",
-        condition: i => i.type === 'potion'
-      },
-      {
-        title: "Wands, Staves & Rods",
-        condition: i => i.type === 'charged_item'
-      },
-      {
-        title: "Misc. Magic",
-        condition: i => i.type === 'item' && i.data?.data?.attributes?.magic?.value
-      },
-      {
-        title: "Other",
-        condition: i => i.type === 'item' && !i.data?.data?.attributes?.magic?.value
-      },
-      {
-        title: "Currency",
-        condition: i => i.type === 'currency'
-      },
-    ];
-    types.forEach(t => {
-      const equipItems = items.filter(t.condition).map(i => ({item: i, wearable: !!t.wearable}));
-      if (!equipItems.length) return;
-      equipment[t.title] = equipItems;
-    });
-
-    return equipment;
   }
 
   _sortSpellsByType(spells, attrs) {
