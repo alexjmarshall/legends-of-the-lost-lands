@@ -555,21 +555,7 @@
     }
   },
   "container": {
-    "templates": ["props","item","magic"],
-    "attributes": {
-      "enc_factor": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Enc. Factor",
-        "value": 1
-      },
-      "capacity": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Capacity",
-        "value": 50
-      }
-    }
+    "templates": ["props","item","magic"]
   },
   "charged_item": {
     "templates": ["props","item"],
