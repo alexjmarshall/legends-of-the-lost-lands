@@ -66,7 +66,7 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Notes</a>
+        <a class="item" data-tab="description">Description</a>
         <a class="item" data-tab="items">Items</a>
         {{#if wearsGarments}}
         <a class="item" data-tab="armors">Armor</a>
@@ -151,7 +151,11 @@
                     <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
                     {{/if}}
                 </span>
-                <span class="item-column"></span>
+                <div class="flex3">
+                    <select class="item-select">
+                        {{selectOptions itemTypes selected=type}}
+                    </select>
+                </div>
                 <div class="item-column"><label class="label">Total:</label><span>{{systemData.enc}}</span></div>
                 <span style="max-width:82px;"></span> 
             </div>
@@ -271,15 +275,6 @@
                 {{/each}}
             </ol>
             {{/each}}
-            <div class="flexrow" style="margin: 0.5em 0;">
-                <span style="max-width:23px;">
-                </span>
-                <span>
-                    {{#if isGM}}
-                    <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="feature" data-action="create"><i class="fas fa-plus"></i> Create Feature </a>
-                    {{/if}}
-                </span>
-            </div>
         </div>
 
         {{!-- Attributes Tab --}}
