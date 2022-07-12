@@ -43,17 +43,19 @@ export class SimpleActor extends Actor {
     data.enc = enc;
 
     // find item with same name as this container owned by another character
-    const characters = game.actors.filter(a => a.type === "character" && a.items.some(i => item.name === containerName));
+    if (!game.actors) return;
+    const characters = game.actors.filter(a => a.type === "character" 
+      && a.items.some(i => i.type === "container" && i.name === containerName));
     if (!characters.length) return;
 
-    if (characters.length > 1) ui.notifications.error(`More than one character with container ${containerName}`);
+    if (characters.length > 1) ui.notifications.error(`More than one character with container ${containerName}!`);
 
     const character = characters[0];
     const container = character.items.find(item => item.name === containerName);
     if (!container?._id) return;
 
     const containerFactor = +attrs.enc_factor.value || 1;
-    const containerWeight = Math.floor(enc / containerFactor) || 1;
+    const containerWeight = (Math.round(enc / containerFactor * 10) / 10) || 1;
     const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
     if (containerWeight !== container.data.data.weight) {
       character.updateEmbeddedDocuments("Item", [containerUpdateData]);
@@ -255,11 +257,8 @@ export class SimpleActor extends Actor {
     const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
     const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
     const svBase = +attrs.base_sv.value || Constant.DEFAULT_BASE_SV;
-    const wisMod = +abilities.wis.mod || 0;
     const sv = Math.max(Constant.MIN_SAVE_TARGET, (svBase - magicClothingSvMod - magicJewelrySvMod));
-    charData.sv = sv;
-    charData.msv = Math.min(19, (wisMod ? sv - wisMod : sv));
-    
+    charData.sv = sv;    
 
     charData.bab = +attrs.bab.value || 0;
 
