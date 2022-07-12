@@ -42,6 +42,14 @@ export class SimpleActorSheet extends ActorSheet {
     context.wearsGarments = type === 'character' || type === 'humanoid' || type === 'undead';
     context.showVoice = context.wearsGarments || type === 'monster';
 
+    // item types for create item dropdown
+    const setTypes = game.items?.documentClass.metadata.types;
+    const types = {};
+    for ( let a of setTypes ) {
+      types[a] = a;
+    }
+    context.itemTypes = types;
+
 
     // sv / msv
     const sv = +context.systemData.sv || 0;
@@ -293,6 +301,7 @@ export class SimpleActorSheet extends ActorSheet {
     // Item Controls
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".item-row").dblclick(this._onItemControl.bind(this));
+    html.find(".item-select").change(e => e.stopPropagation());
 
     // Voice Sounds
     html.find(".voice-play").click(this._onVoicePlay.bind(this));
@@ -326,7 +335,8 @@ export class SimpleActorSheet extends ActorSheet {
     const li = button.closest(".item");
     const itemId = li?.dataset.itemId;
     const item = this.actor.items.get(itemId);
-    const type = button.dataset.type;
+    const selectType = document.querySelector(".tab.items .item-select")?.value;
+    const type = selectType || button.dataset.type;
     const data = {name: game.i18n.localize("SIMPLE.ItemNew"), type: type};
     const itemQty = +item?.data.data.quantity || 0;
     
@@ -335,19 +345,22 @@ export class SimpleActorSheet extends ActorSheet {
       case "create":
         const cls = getDocumentClass("Item");
         let createData = data;
+
         // Set default icon by type here feature, spell, equipment
-        const img = createData.type === 'feature' ? "icons/svg/feature.svg" :
-         createData.type === 'spell_magic' ? "icons/svg/spell.svg" :
-         createData.type === 'spell_cleric' ? "icons/svg/prayer.svg" :
-         createData.type === 'spell_witch' ? "icons/svg/pentacle.svg" :
-         createData.type === 'item' ? "icons/svg/equipment.svg" : null;
+        const img = createData.type === 'container' ? "icons/svg/chest.svg"
+          : Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type) ? "icons/svg/feature.svg"
+          : createData.type === 'spell_magic' ? "icons/svg/spell.svg"
+          : createData.type === 'spell_cleric' ? "icons/svg/prayer.svg"
+          : createData.type === 'spell_witch' ? "icons/svg/pentacle.svg"
+          : createData.type === 'currency' ? "icons/svg/coins.svg"
+          : "icons/svg/equipment.svg";
         if (img) {
           createData.img = img;
         }
 
         // Set sheet for non-default types
-        const sheetClass = createData.type === 'feature' ? "lostlands.FeatureItemSheet" :
-         createData.type !== 'item' ? "lostlands.SpellItemSheet" : null;
+        const sheetClass = Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type) ? "lostlands.FeatureItemSheet"
+          : Object.values(Constant.SPELL_TYPES).includes(createData.type) ? "lostlands.SpellItemSheet" : null;
         if (sheetClass) {
           createData = foundry.utils.mergeObject(createData, {
             flags: {
