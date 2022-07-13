@@ -1,6 +1,6 @@
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
-import * as Dialog from "./dialogs.js";
+import * as Dialogs from "./dialogs.js";
 
 export async function attack(attacker, target, options) { // TODO to break attacking loop, return false;
   const targetToken = target.token;
@@ -277,7 +277,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       if (isProficient) {
         preparations.push('feint');
       }
-      return Dialog.attackOptionsDialog(options, weaponItem, preparations, aimPenalties, callback); // TODO allow to wear and choose atk modes from up to 2 quivers
+      return Dialogs.attackOptionsDialog(options, weaponItem, preparations, aimPenalties, callback); // TODO allow to wear and choose atk modes from up to 2 quivers
     }
   }
 
@@ -337,7 +337,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       {label: 'To-hit modifiers', key: 'dialogAtkMod'}
     ];
     if (!attacker.skipDmgDialog) fields.push({label: 'Damage modifiers', key: 'dialogDmgMod', placeholder: 'e.g. x2, +3d6'});
-    return Dialog.modDialog(options, 'Attack', fields, () => attack(attacker, target, options));
+    return Dialogs.modDialog(options, 'Attack', fields, () => attack(attacker, target, options));
   }
   let dialogAtkMod = {}, dialogDmgMod = {};
   try {
