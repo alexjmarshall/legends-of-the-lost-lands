@@ -373,50 +373,55 @@ export function sortEquipmentByType(items) {
   const types = [
     {
       title: "Weapons",
-      condition: i => i.type === 'melee_weapon' || i.type === 'missile_weapon'
+      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'melee_weapon' || i.type === 'missile_weapon')
     },
     {
       title: "Armor",
-      condition: i => i.type === 'armor' || i.type === 'helmet' || i.type === 'shield',
-      wearable: true
+      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'armor' || i.type === 'helmet' || i.type === 'shield'),
     },
     {
-      title: "Clothing & Jewelry",
-      condition: i => i.type === 'clothing' || i.type === 'jewelry',
-      wearable: true
+      title: "Clothing",
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'clothing',
+    },
+    {
+      title: "Gems & Jewelry",
+      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'gem' || i.type === 'jewelry'),
     },
     {
       title: "Ammunition",
-      condition: i => i.type === 'ammo',
-      wearable: true
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'ammo',
     },
     {
       title: "Potions",
-      condition: i => i.type === 'potion'
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'potion'
     },
     {
       title: "Wands, Staves & Rods",
-      condition: i => i.type === 'charged_item'
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'charged_item'
     },
     {
       title: "Containers",
-      condition: i => i.type === 'container'
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'container'
     },
     {
       title: "Misc. Magic",
-      condition: i => i.type === 'item' && i.data?.data?.attributes?.magic?.value
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'item' && i.data?.data?.attributes?.magic?.value
     },
     {
       title: "Other",
-      condition: i => i.type === 'item' && !i.data?.data?.attributes?.magic?.value
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'item' && !i.data?.data?.attributes?.magic?.value
     },
     {
       title: "Currency",
-      condition: i => i.type === 'currency'
+      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'currency'
+    },
+    {
+      title: "Treasure",
+      condition: i => i.data?.data?.attributes?.treasure?.value
     },
   ];
   types.forEach(t => {
-    const equipItems = items.filter(t.condition).map(i => ({item: i, wearable: !!t.wearable}));
+    const equipItems = items.filter(t.condition).map(i => ({item: i, wearable: Constant.WEARABLE_TYPES.includes(i.type)}));
     if (!equipItems.length) return;
     equipment[t.title] = equipItems;
   });
