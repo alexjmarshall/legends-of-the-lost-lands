@@ -89,7 +89,8 @@ export class SimpleActorSheet extends ActorSheet {
     context.skillPenaltyText = skillPenalty == null ? '' : `Enc. Penalty: ${skillPenalty > 0 ? '-' : ''}${skillPenalty}`;
 
     // sort equipment
-    context.equipment = Util.sortEquipmentByType(items);
+    const equipment = items.filter(i => !Object.values(Constant.SPELL_TYPES).includes(i.type) && !Constant.NON_PHYSICAL_ITEM_TYPES.includes(i.type));
+    context.equipment = Util.sortEquipmentByType(equipment);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // sort armors
