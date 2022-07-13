@@ -617,7 +617,7 @@ export const VOICE_SOUNDS = {};
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
-export const PRECIOUS_METALS_VALUE_PER_POUND = {
+export const PRECIOUS_MATERIALS_VALUE_PER_POUND = {
   "copper": 40,
   "silver": 240, // weight 0.5 for Silver Mark ingot worth 120
   "electrum": 1600, // weight 0.075 for ep ("Stater") coin worth 120

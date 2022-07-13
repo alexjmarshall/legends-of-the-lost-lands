@@ -48,9 +48,9 @@ export class SimpleItem extends Item {
     // value by material and weight
     const material = attrs.material.value;
     const weight = +data.weight || 0;
-    const valuePerPound = +Constant.PRECIOUS_METALS_VALUE_PER_POUND[material] || 0;
+    const valuePerPound = +Constant.PRECIOUS_MATERIALS_VALUE_PER_POUND[material] || 0;
     const baseValue = Math.round(weight * valuePerPound);
-    data.value = data.value || baseValue;
+    data.value = data.value || baseValue; 
   }
 
   _prepareSpellData(itemData) {
