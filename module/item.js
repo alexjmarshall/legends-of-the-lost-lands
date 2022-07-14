@@ -45,7 +45,7 @@ export class SimpleItem extends Item {
     const data = itemData.data;
     const attrs = data.attributes;
 
-    if (!data.value) {
+    // if (!data.value) {
       // derive value from gem type, weight and quality
       const gemType = attrs.gem_type.value?.trim().toLowerCase();
       const weight = +data.weight;
@@ -58,22 +58,22 @@ export class SimpleItem extends Item {
       const value = Math.round(baseValue * weightFactor * qualityFactor) || 0;
       data.value = data.value || value;
 
-    } else {
-      // derive gem type, weight and quality from value
-      const value = +data.value;
-      const gemType = Object.entries(Constant.GEM_BASE_VALUE).reduce((a,b) => value >= b[1] ? b[0] : a, null) || 'ornamental';
-      const ranNum = Math.ceil(Math.random() * 112)
-      const quality = ranNum < 11 ? 'AAA' : ranNum < 25 ? 'AA' : ranNum < 45 ? 'A' : ranNum < 73 ? 'B' : 'C';
-      const baseValue = Constant.GEM_BASE_VALUE[gemType];
-      const qualityValue = baseValue * Constant.GEM_QUALITY_ADJ[quality];
-      const weightAdj = value / qualityValue;
-      const weightRatio = Math.sqrt(weightAdj);
-      const weight = Math.round(weightRatio * Constant.GEM_DEFAULT_WEIGHT * 100) / 100;
+    // } else {
+    //   // derive gem type, weight and quality from value
+    //   const value = +data.value;
+    //   const gemType = Object.entries(Constant.GEM_BASE_VALUE).reduce((a,b) => value >= b[1] ? b[0] : a, null) || 'ornamental';
+    //   const ranNum = Math.ceil(Math.random() * 112)
+    //   const quality = ranNum < 11 ? 'AAA' : ranNum < 25 ? 'AA' : ranNum < 45 ? 'A' : ranNum < 73 ? 'B' : 'C';
+    //   const baseValue = Constant.GEM_BASE_VALUE[gemType];
+    //   const qualityValue = baseValue * Constant.GEM_QUALITY_ADJ[quality];
+    //   const weightAdj = value / qualityValue;
+    //   const weightRatio = Math.sqrt(weightAdj);
+    //   const weight = Math.round(weightRatio * Constant.GEM_DEFAULT_WEIGHT * 100) / 100;
 
-      data.weight = weight;
-      attrs.gem_type.value = gemType;
-      attrs.quality.value = quality;
-    }
+    //   data.weight = weight;
+    //   attrs.gem_type.value = gemType;
+    //   attrs.quality.value = quality;
+    // }
   }
 
   _prepareCurrencyData(itemData) {

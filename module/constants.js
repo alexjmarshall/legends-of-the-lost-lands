@@ -2226,7 +2226,7 @@ export const NON_PHYSICAL_ITEM_TYPES = [
  export const GEM_BASE_VALUE = {
   "ornamental": 80, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite
   "semi-precious": 2000, // e.g. peridot, topaz, garnet, pearl, amethyst
-  "precious": 8000 // e.g. diamond, ruby, sapphire, emerald, opal
+  "precious": 14000 // e.g. diamond, ruby, sapphire, emerald, opal
  };
  export const GEM_DEFAULT_WEIGHT = 0.1;
  export const GEM_QUALITY_ADJ = {
