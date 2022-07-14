@@ -2215,6 +2215,25 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "illusion",
   "necromancy"
  ];
-
- export const HIDDEN_ITEM_ATTRIBUTES = ["magic", "identified"];
- 
+ export const HIDDEN_ITEM_ATTRIBUTES = [
+  "magic", 
+  "identified",
+  "atk_mod",
+  "ac_mod",
+  "sv_mod",
+  "treasure"
+];
+ export const GEM_BASE_VALUE = {
+  "ornamental": 80, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite
+  "semi-precious": 2000, // e.g. peridot, topaz, garnet, pearl, amethyst
+  "precious": 8000 // e.g. diamond, ruby, sapphire, emerald, opal
+ };
+ export const GEM_DEFAULT_WEIGHT = 0.1;
+ export const GEM_QUALITY_ADJ = {
+  "AAA": 4,
+  "AA": 2.8,
+  "A": 2,
+  "B": 1.4,
+  "C": 1
+ };
+ export const GEM_WEIGHT_ADJ = ratio => Math.pow(ratio, 2);

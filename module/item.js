@@ -17,7 +17,7 @@ export class SimpleItem extends Item {
     //  feature, skill, natural_weapon, grapple_maneuver
     //  melee_weapon, missile_weapon, ammo
     //  potion, charged_item, scroll, item
-    //  currency
+    //  currency, gem
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -34,9 +34,46 @@ export class SimpleItem extends Item {
     this._prepareGarmentData(itemData);
     // spell_magic, spell_cleric, spell_witch
     this._prepareSpellData(itemData);
-    // currency
     this._prepareCurrencyData(itemData);
+    this._prepareGemData(itemData);
 
+  }
+
+  _prepareGemData(itemData) {
+    if (itemData.type !== 'gem') return;
+
+    const data = itemData.data;
+    const attrs = data.attributes;
+
+    if (!data.value) {
+      // derive value from gem type, weight and quality
+      const gemType = attrs.gem_type.value?.trim().toLowerCase();
+      const weight = +data.weight;
+      const quality = attrs.quality.value?.trim().toUpperCase();
+
+      const baseValue = Constant.GEM_BASE_VALUE[gemType];
+      const weightFactor = Constant.GEM_WEIGHT_ADJ(weight / Constant.GEM_DEFAULT_WEIGHT);
+      const qualityFactor = Constant.GEM_QUALITY_ADJ[quality];
+
+      const value = Math.round(baseValue * weightFactor * qualityFactor) || 0;
+      data.value = data.value || value;
+
+    } else {
+      // derive gem type, weight and quality from value
+      const value = +data.value;
+      const gemType = Object.entries(Constant.GEM_BASE_VALUE).reduce((a,b) => value >= b[1] ? b[0] : a, null) || 'ornamental';
+      const ranNum = Math.ceil(Math.random() * 112)
+      const quality = ranNum < 11 ? 'AAA' : ranNum < 25 ? 'AA' : ranNum < 45 ? 'A' : ranNum < 73 ? 'B' : 'C';
+      const baseValue = Constant.GEM_BASE_VALUE[gemType];
+      const qualityValue = baseValue * Constant.GEM_QUALITY_ADJ[quality];
+      const weightAdj = value / qualityValue;
+      const weightRatio = Math.sqrt(weightAdj);
+      const weight = Math.round(weightRatio * Constant.GEM_DEFAULT_WEIGHT * 100) / 100;
+
+      data.weight = weight;
+      attrs.gem_type.value = gemType;
+      attrs.quality.value = quality;
+    }
   }
 
   _prepareCurrencyData(itemData) {
@@ -47,9 +84,9 @@ export class SimpleItem extends Item {
 
     // value by material and weight
     const material = attrs.material.value;
-    const weight = +data.weight || 0;
-    const valuePerPound = +Constant.PRECIOUS_MATERIALS_VALUE_PER_POUND[material] || 0;
-    const baseValue = Math.round(weight * valuePerPound);
+    const weight = +data.weight;
+    const valuePerPound = +Constant.PRECIOUS_MATERIALS_VALUE_PER_POUND[material];
+    const baseValue = Math.round(weight * valuePerPound) || 0;
     data.value = data.value || baseValue; 
   }
 
