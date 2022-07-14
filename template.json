@@ -698,11 +698,11 @@
   "gem": {
     "templates": ["props","item","magic"],
     "attributes": {
-      "material": {
+      "gem_type": {
         "dtype": "String",
         "group": "",
-        "label": "Material",
-        "value": "agate"
+        "label": "Gem Type",
+        "value": "semi-precious"
       },
       "quality": {
         "dtype": "String",
