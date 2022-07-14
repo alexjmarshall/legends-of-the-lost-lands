@@ -2215,3 +2215,6 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "illusion",
   "necromancy"
  ];
+
+ export const HIDDEN_ITEM_ATTRIBUTES = ["magic", "identified"];
+ 
