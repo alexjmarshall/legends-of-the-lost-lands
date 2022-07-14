@@ -206,11 +206,11 @@ export class SimpleActor extends Actor {
     // mv & speed
     const str = abilities.str?.value || 10;
     const encStr = Math.round( Util.sizeMulti(str, sizeVal) );
-    const baseMv = attrs.base_mv.value;
-    const mvPenalty = Math.floor( Math.max(0, charData.enc - encStr * 4) / encStr * 3/4 ); // TODO magic numbers
-    // If there is no penalty, mv is equal to base (i.e. unencumbered) MV
-    // Otherwise, it's the smaller of the base MV and the default MV minus the penalty.
-    const mv = Math.max(1, !mvPenalty ? baseMv : Math.min(baseMv, Constant.DEFAULT_BASE_MV - mvPenalty));
+    const baseMv = attrs.base_mv?.value || Constant.DEFAULT_BASE_MV;
+    const encBase = 20/3;
+    const encFactor = 2/3;
+    const mvPenalty = Math.floor( charData.enc / (encBase + encStr * encFactor) * baseMv / Constant.DEFAULT_BASE_MV );
+    const mv = Math.max(0, baseMv - mvPenalty);
     charData.mv = mv;
     charData.speed = mv * Constant.SQUARE_SIZE;
 
