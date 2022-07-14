@@ -30,16 +30,19 @@ export class SimpleItemSheet extends ItemSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
 
-    // hide "magic" and "identified" attributes from players
-    const hiddenKey = key => Constant.HIDDEN_ITEM_ATTRIBUTES.includes(key);
-    Object.keys(context.systemData.ungroupedAttributes).forEach(k => context.systemData.ungroupedAttributes[k].show = context.isGM || !hiddenKey(k));
-
     context.showValue = context.isGM || context.data.type === "currency";
-
     context.showAttributes = context.isGM || context.systemData.attributes.identified?.value == null || context.systemData.attributes.identified?.value === true;
 
-    // show empty groups to GM
-    Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
+    // hide empty groups from players
+    Object.keys(context.systemData.groups).forEach(k => {
+      context.systemData.groups[k].hide = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+    });
+
+    // hide "magic" and "identified" attributes from players
+    const hiddenKey = key => Constant.HIDDEN_ITEM_ATTRIBUTES.includes(key);
+    Object.keys(context.systemData.ungroupedAttributes).forEach(k => {
+      context.systemData.ungroupedAttributes[k].hide = context.isPlayer && hiddenKey(k)
+    });
 
     return context;
   }

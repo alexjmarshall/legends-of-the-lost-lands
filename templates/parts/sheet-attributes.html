@@ -1,7 +1,7 @@
 <section class="attributes-group">
     <ol class="attributes-list">
         {{#each attributes as |attr key|}}
-        <li class="attribute flexrow" data-attribute="{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}" {{#if attr.show}}{{else}}style="display:none;"{{/if}}>
+        <li class="attribute flexrow" data-attribute="{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}" {{#if attr.hide}}style="display:none;"{{/if}}>
             <div class="attribute-key-wrapper flexrow" {{#if ../isPlayer}}style="display:none;"{{/if}}>
                 <input class="attribute-key" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.key" value="{{key}}" placeholder="{{localize "SIMPLE.AttributeKey"}}"/>
             </div>

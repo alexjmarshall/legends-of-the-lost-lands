@@ -62,8 +62,10 @@ export class SimpleActorSheet extends ActorSheet {
     };
 
 
-    // show empty groups to GM
-    Object.keys(context.systemData.groups).forEach(k => context.systemData.groups[k].show = context.isGM || context.systemData.groups[k].show);
+    // hide empty groups from players
+    Object.keys(context.systemData.groups).forEach(k => {
+      context.systemData.groups[k].hide = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+    });
 
 
     // stance AC bonus/penalty text
