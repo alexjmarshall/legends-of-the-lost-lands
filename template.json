@@ -419,6 +419,7 @@
     "armor",
     "helmet",
     "clothing",
+    "gem",
     "jewelry",
     "shield",
     "melee_weapon",
@@ -444,7 +445,15 @@
     "item": {
       "value": 0,
       "quantity": 1,
-      "weight": 1
+      "weight": 0,
+      "attributes": {
+        "treasure": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Treasure",
+          "value": false
+        }
+      }
     },
     "magic": {
       "attributes": {
@@ -453,6 +462,12 @@
           "group": "",
           "label": "Magic",
           "value": false
+        },
+        "identified": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Identified",
+          "value": true
         }
       }
     },
@@ -530,15 +545,33 @@
     }
   },
   "item": {
-    "templates": ["props","item","magic"],
-    "held_mainhand": false,
-    "held_offhand": false
+    "templates": ["props","item","magic"]
   },
   "potion": {
     "templates": ["props","item"],
     "held_mainhand": false,
     "held_offhand": false,
-    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)"
+    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)",
+    "attributes": {
+      "desc": {
+        "dtype": "String",
+        "group": "",
+        "label": "Description",
+        "value": "red, viscous"
+      },
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": true
+      },
+      "identified": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Identified",
+        "value": false
+      }
+    }
   },
   "scroll": {
     "templates": ["props","item","spell"],
@@ -551,6 +584,18 @@
         "group": "",
         "label": "Class",
         "value": "Magic-User"
+      },
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": true
+      },
+      "identified": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Identified",
+        "value": false
       }
     }
   },
@@ -570,6 +615,18 @@
         "min": 0,
         "value": 20,
         "max": 20
+      },
+      "magic": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Magic",
+        "value": true
+      },
+      "identified": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Identified",
+        "value": false
       }
     }
   },
@@ -638,20 +695,39 @@
       }
     }
   },
+  "gem": {
+    "templates": ["props","item","magic"],
+    "attributes": {
+      "material": {
+        "dtype": "String",
+        "group": "",
+        "label": "Material",
+        "value": "agate"
+      },
+      "quality": {
+        "dtype": "String",
+        "group": "",
+        "label": "Quality",
+        "value": "B"
+      }
+    }
+  },
   "jewelry": {
     "templates": ["props","item","magic"],
     "worn": false,
-    "sv_mod": {
-      "dtype": "Number",
-      "group": "",
-      "label": "SV Mod.",
-      "value": 0
-    },
-    "ac_mod": {
-      "dtype": "Number",
-      "group": "",
-      "label": "AC Mod.",
-      "value": 0
+    "attributes": {
+      "sv_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "SV Mod.",
+        "value": 0
+      },
+      "ac_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "AC Mod.",
+        "value": 0
+      }
     }
   },
   "shield": {
@@ -707,12 +783,6 @@
         "label": "Armor Penetration",
         "value": 0
       },
-      "range": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Throwing Range (ft.)",
-        "value": 0
-      },
       "size": {
         "dtype": "String",
         "group": "",
@@ -736,24 +806,6 @@
         "group": "",
         "label": "Impact",
         "value": 3
-      },
-      "fragile": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Fragile",
-        "value": false
-      },
-      "unwieldy": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Unwieldy",
-        "value": false
-      },
-      "flex": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Flexible",
-        "value": false
       },
       "category": {
         "dtype": "String",
@@ -795,7 +847,7 @@
       "pen": {
         "dtype": "Number",
         "group": "",
-        "label": "Armor Penetration Bonus",
+        "label": "Armor Penetration",
         "value": 0
       },
       "impact": {
@@ -922,6 +974,60 @@
         "group": "",
         "label": "Push",
         "value": false
+      },
+      "atk_modes": {
+        "dtype": "String",
+        "group": "",
+        "label": "Attack Mode(s)",
+        "value": "swing(s)"
+      },
+      "dmg": {
+        "dtype": "String",
+        "group": "",
+        "label": "Damage",
+        "value": "d6"
+      },
+      "reach": {
+        "dtype": "String",
+        "group": "",
+        "label": "Reach",
+        "value": ""
+      },
+      "bleed": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Bleed",
+        "value": 1
+      },
+      "pen": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Armor Penetration",
+        "value": 0
+      },
+      "speed": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Speed",
+        "value": 0
+      },
+      "parry": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Parry",
+        "value": 3
+      },
+      "impact": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Impact",
+        "value": 3
+      },
+      "atk_mod": {
+        "dtype": "Number",
+        "group": "",
+        "label": "To-Hit Mod.",
+        "value": 0
       }
     }
   },
