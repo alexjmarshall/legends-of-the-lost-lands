@@ -41,9 +41,6 @@ export class EntitySheetHelper {
         data.data.groups[key]['attributes'][attr] = group[attr];
       });
 
-      // If group has attributes, add flag to show on actor sheet.
-      data.data.groups[key].show = !!Object.keys(data.data.groups[key]['attributes']).length;
-
     }
 
     // Sort the remaining attributes attributes.
