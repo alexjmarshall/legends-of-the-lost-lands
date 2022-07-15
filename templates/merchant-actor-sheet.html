@@ -5,7 +5,7 @@
       <img class="profile-img merchant-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
       <div class="header-fields">
           <h1 class="charname">
-          <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
+          <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}readonly{{/if}}/>
           </h1>
           <div class="merchant-resource">
             <label>Attitude</label>
