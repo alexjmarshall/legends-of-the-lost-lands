@@ -155,6 +155,10 @@
   flex: 0 0 65px;
   margin-right: 5px;
 }
+.lostlands .items .item-column-total {
+  text-align: right;
+  margin-right: 5px;
+}
 .lostlands .items .item-price-column {
   flex: 0 0 125px;
 }
@@ -309,7 +313,7 @@
   max-width: 30%;
 }
 .lostlands .attributes-list .attribute-col {
-  flex: 0 0 41px;
+  flex: 1;
 }
 .lostlands .attributes-list .attribute-col label {
   font-size: 10px;
@@ -317,10 +321,9 @@
   line-height: 1;
 }
 .lostlands .attributes-list .attribute-col input {
-  font-size: 11px;
   text-align: center;
-  line-height: 1;
-  height: 50%;
+  line-height: 24px;
+  height: 28px;
 }
 .lostlands .attribute input[type="text"]::placeholder,
 .lostlands .group-header input[type="text"]::placeholder {
