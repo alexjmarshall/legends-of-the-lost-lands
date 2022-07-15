@@ -44,6 +44,13 @@ export class SimpleItem extends Item {
 
     const data = itemData.data;
     const attrs = data.attributes;
+    const isGM = game.user.isGM;
+
+    // select menu options
+    attrs.gem_type.options = Object.keys(Constant.GEM_BASE_VALUE);
+    if (isGM && attrs.gem_type.options.length) attrs.gem_type.isSelect = true;
+    attrs.quality.options = Object.keys(Constant.GEM_QUALITY_ADJ);
+    if (isGM && attrs.quality.options.length) attrs.quality.isSelect = true;
 
     // if (!data.value) {
       // derive value from gem type, weight and quality
