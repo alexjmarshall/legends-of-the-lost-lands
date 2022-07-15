@@ -15,37 +15,45 @@
             {{!-- Handle booleans. --}}
             {{#if attr.isCheckbox}}
             <label class="attribute-value checkbox" style="flex:1;padding: 1px 3px;">
-                <input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" {{checked attr.value}} {{#if ../isPlayer}}disabled{{/if}} />
+                <input type="checkbox" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" {{checked attr.value}} {{#if ../isPlayer}}readonly{{/if}} />
             </label>
             {{else}}
             {{!-- Handle resources. --}}
             {{#if attr.isResource}}
-            {{#if ../isPlayer}}
-            <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
-            value="{{attr.value}}" data-dtype="Number" />
-            {{else}}
             <div class="attribute-group flexrow" style="min-width:125px;">
-                <span class="attribute-col flexcol">
+                <!-- <span class="attribute-col flexcol">
                     <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min">{{localize "SIMPLE.ResourceMin"}}</label>
                     <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min" value="{{attr.min}}"
-                        data-dtype="Number" />
-                </span>
+                        data-dtype="Number" {{#if ../isPlayer}}readonly{{/if}}/>
+                </span> -->
                 <span class="attribute-col flexcol">
-                    <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value">{{localize "SIMPLE.ResourceValue"}}</label>
+                    <!-- <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value">{{localize "SIMPLE.ResourceValue"}}</label> -->
                     <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
-                        value="{{attr.value}}" data-dtype="Number" />
+                        value="{{attr.value}}" data-dtype="Number" {{#if ../isPlayer}}readonly{{/if}}/>
                 </span>
+                <span style="max-width:8px;"> / </span> 
                 <span class="attribute-col flexcol">
-                    <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max">{{localize "SIMPLE.ResourceMax"}}</label>
+                    <!-- <label for="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max">{{localize "SIMPLE.ResourceMax"}}</label> -->
                     <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max" value="{{attr.max}}"
-                        data-dtype="Number" />
+                        data-dtype="Number" {{#if ../isPlayer}}readonly{{/if}}/>
                 </span>
             </div>
-            {{/if}}
+            {{else}}
+            {{!-- Handle selects. --}}
+            {{#if attr.isSelect}}
+            <select class="attribute-select" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" {{#if ../isPlayer}}style="display:none;"{{/if}}
+                data-dtype="{{attr.dtype}}">
+                {{#select attr.value}}
+                {{#each attr.options as |t|}}
+                <option value="{{t}}">{{t}}</option>
+                {{/each}}
+                {{/select}}
+            </select>
             {{!-- Handle other input types. --}}
             {{else}}
             <input class="attribute-value" type="text" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" value="{{attr.value}}"
                 data-dtype="{{attr.dtype}}" placeholder="{{localize "SIMPLE.AttributeValue"}}" {{#if ../isPlayer}}readonly{{/if}} />
+            {{/if}}
             {{/if}}
             {{/if}}
             <select class="attribute-dtype" name="data.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.dtype" {{#if ../isPlayer}}style="display:none;"{{/if}}>
