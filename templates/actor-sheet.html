@@ -9,18 +9,18 @@
             </h1>
             <div class="resource">
                 <label class="left-label">HP</label>
-                <input type="number" name="data.hp.value" value="{{systemData.hp.value}}" {{#if isPlayer}}disabled{{/if}}/>
+                <input type="number" name="data.hp.value" value="{{systemData.hp.value}}" {{#if isPlayer}}readonly{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}" {{#if isPlayer}}disabled{{/if}}/>
+                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}" {{#if isPlayer}}readonly{{/if}}/>
             </div>
             <div class="resource">
                 <label class="left-label">XP</label>
                 {{#if isCharacter}}
-                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}" {{#if isPlayer}}disabled{{/if}}/>
+                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}" {{#if isPlayer}}readonly{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.xp.max" value="{{systemData.xp.max}}" {{#if isPlayer}}disabled{{/if}}/>
+                <input type="number" name="data.xp.max" value="{{systemData.xp.max}}" {{#if isPlayer}}readonly{{/if}}/>
                 {{else}}
-                <input type="number" name="data.xp.value" value="{{systemData.xp}}" disabled/>
+                <input type="number" name="data.xp.value" value="{{systemData.xp}}" readonly/>
                 {{/if}}
             </div>
             <div class="properties">
@@ -136,27 +136,28 @@
                     <span class="item-row item-column" data-action="edit">{{val.item.data.quantity}}</span>
                     <span class="item-row item-column" data-action="edit">{{val.item.data.total_weight}}</span>
                     <div class="item-controls">
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="item" data-action="edit"><i class="fas fa-edit"></i></a>
-                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="item" data-action="delete"><i class="fas fa-trash"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemEdit" }}" data-type="{{item.type}}" data-action="edit"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" title="{{ localize "SIMPLE.ItemDelete" }}" data-type="{{item.type}}" data-action="delete"><i class="fas fa-trash"></i></a>
                     </div>
                 </li>
                 {{/each}}
             </ol>
             {{/each}}
             <div class="flexrow" style="margin: 0.5em 0;">
+                {{#if isGM}}
                 <span style="max-width:46px;">
                 </span>
-                <span>
-                    {{#if isGM}}
+                <span style="min-width:90px;">
                     <a class="item-control" title="{{ localize "SIMPLE.ItemCreate" }}" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{ localize "SIMPLE.ItemCreate" }}</a>
-                    {{/if}}
+                    
                 </span>
                 <div class="flex3">
                     <select class="item-select">
                         {{selectOptions itemTypes selected=type}}
                     </select>
                 </div>
-                <div class="item-column"><label class="label">Total:</label><span>{{systemData.enc}}</span></div>
+                {{/if}}
+                <div class="item-column-total"><label class="label">Total:</label><span>{{systemData.enc}}</span></div>
                 <span style="max-width:82px;"></span> 
             </div>
         </div>

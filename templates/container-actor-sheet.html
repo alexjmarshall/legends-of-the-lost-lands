@@ -5,13 +5,13 @@
         <img class="profile-img container-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
         <div class="header-fields">
             <h1 class="charname">
-            <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}disabled{{/if}}/>
+            <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}readonly{{/if}}/>
             </h1>
             <div class="resource">
                 <label>Capacity</label>
-                <input type="number" value="{{systemData.enc}}" disabled />
+                <input type="number" value="{{systemData.enc}}" readonly />
                 <span> / </span>
-                <input type="number" value="{{systemData.attributes.capacity.value}}" disabled />
+                <input type="number" value="{{systemData.attributes.capacity.value}}" readonly />
             </div>
         </div>
     </header>
