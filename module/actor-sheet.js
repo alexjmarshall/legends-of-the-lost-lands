@@ -356,7 +356,7 @@ export class SimpleActorSheet extends ActorSheet {
           : createData.type === 'spell_cleric' ? "icons/svg/prayer.svg"
           : createData.type === 'spell_witch' ? "icons/svg/pentacle.svg"
           : createData.type === 'currency' ? "icons/svg/coins.svg"
-          : "icons/svg/equipment.svg";
+          : "icons/svg/item-bag.svg";
         if (img) {
           createData.img = img;
         }
