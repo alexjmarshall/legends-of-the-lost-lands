@@ -5,14 +5,15 @@ export class EntitySheetHelper {
 
   static getAttributeData(data) {
 
-    // Determine attribute type.
     for ( let attr of Object.values(data.data.attributes) ) {
+      // Determine attribute type.
       if ( attr.dtype ) {
         attr.isCheckbox = attr.dtype === "Boolean";
         attr.isResource = attr.dtype === "Resource";
         attr.isFormula = attr.dtype === "Formula";
       }
     }
+
 
     // Initialize ungrouped attributes for later.
     data.data.ungroupedAttributes = {};
@@ -596,7 +597,7 @@ export class EntitySheetHelper {
           : createData.type === 'spell_cleric' ? "icons/svg/prayer.svg"
           : createData.type === 'spell_witch' ? "icons/svg/pentacle.svg"
           : createData.type === 'currency' ? "icons/svg/coins.svg"
-          : documentName === 'Item' ? "icons/svg/equipment.svg"
+          : documentName === 'Item' ? "icons/svg/item-bag.svg"
           : null;
         if (img) {
           createData.img = img;
