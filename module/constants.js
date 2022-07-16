@@ -40,16 +40,17 @@ export const ATTITUDE_BUY_ADJ = {
   [ATTITUDES.HELPFUL]: 1.15
 };
 export const DMG_TYPES = [
-  "blunt",
-  "piercing",
-  "slashing",
+  "blunt",        // B
+  "piercing",     // P
+  "slashing",     // S
+  "rending",      // R
 ];
 export const MAGIC_DMG_TYPES = [
-  "fire",
-  "cold",
-  "electricity",
-  "acid",
-  "magic",
+  "fire",         // F
+  "cold",         // C
+  "electricity",  // E
+  "acid",         // A
+  "magic",        // M
 ];
 export const SHIELD_TYPES = {
   round: {
@@ -196,6 +197,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:-1,
       dr:0,
     },
+    rending: {
+      ac:0,
+      dr:0,
+    },
   },
   fur: {
     base_AC: 1,
@@ -210,6 +215,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:0,
       dr:0,
+    },
+    rending: {
+      ac:-1,
+      dr:1,
     },
   },
   leather: {
@@ -226,6 +235,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:-1,
       dr:1,
     },
+    rending: {
+      ac:-2,
+      dr:2,
+    },
   },
   padded: {
     base_AC: 2,
@@ -240,6 +253,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:-1,
       dr:0,
+    },
+    rending: {
+      ac:-2,
+      dr:1,
     },
   },
   "cuir bouilli": {
@@ -256,6 +273,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:0,
       dr:0,
     },
+    rending: {
+      ac:-2,
+      dr:2,
+    },
   },
   wood: {
     base_AC: 2,
@@ -270,6 +291,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:0,
       dr:0,
+    },
+    rending: {
+      ac:-2,
+      dr:2,
     },
   },
   scale: {
@@ -286,6 +311,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:3,
       dr:0,
     },
+    rending: {
+      ac:-2,
+      dr:2,
+    },
   },
   brigandine: {
     base_AC: 3,
@@ -300,6 +329,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:1,
       dr:0,
+    },
+    rending: {
+      ac:-3,
+      dr:2,
     },
   },
   chain: {
@@ -316,6 +349,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:2,
       dr:1,
     },
+    rending: {
+      ac:-3,
+      dr:3,
+    },
   },
   "elven chain": {
     base_AC: 3,
@@ -330,6 +367,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:2,
       dr:1,
+    },
+    rending: {
+      ac:-3,
+      dr:3,
     },
   },
   lamellar: {
@@ -346,6 +387,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:1,
       dr:1,
     },
+    rending: {
+      ac:-3,
+      dr:3,
+    },
   },
   "banded mail": {
     base_AC: 4,
@@ -360,6 +405,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac:1,
       dr:1,
+    },
+    rending: {
+      ac:-4,
+      dr:3,
     },
   },
   splint: {
@@ -376,6 +425,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac:1,
       dr:1,
     },
+    rending: {
+      ac:-4,
+      dr:2,
+    },
   },
   "iron plate": {
     base_AC: 5,
@@ -391,6 +444,10 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 1,
       dr: 2,
     },
+    rending: {
+      ac:-5,
+      dr:2,
+    },
   },
   "steel plate": {
     base_AC: 6,
@@ -405,6 +462,10 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: 1,
       dr: 2,
+    },
+    rending: {
+      ac:-6,
+      dr:2,
     },
   },
 }
@@ -521,98 +582,87 @@ export const ATK_MODES = {
   },
 };
 export const VOICE_MOODS = {
-  AMUSED: "amused",
-  ANGRY: "angry",
-  BORED: "bored",
-  DEATH: "death",
-  DYING: "dying",
-  HURT: "hurt",
-  KILL: "kill",
-  LEAD: "lead",
-  OK: "ok",
-  PARTY_DEATH: "party_death",
-  PARTY_FAIL: "party_fail",
-  RETREAT: "retreat",
-  SLEEPY: "sleepy",
-  TOOT: "toot",
-  WHAT: "what"
-};
-export const VOICE_MOOD_ICONS = {
-  [VOICE_MOODS.AMUSED]: "https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png",
-  [VOICE_MOODS.ANGRY]: "https://img.icons8.com/ios/50/000000/battle.png",
-  [VOICE_MOODS.BORED]: "https://img.icons8.com/ios/50/000000/bored.png",
-  [VOICE_MOODS.DEATH]: "https://img.icons8.com/ios/50/000000/dying.png",
-  [VOICE_MOODS.DYING]: "https://img.icons8.com/ios/50/000000/wound.png",
-  [VOICE_MOODS.HURT]: "https://img.icons8.com/ios/50/000000/action.png",
-  [VOICE_MOODS.KILL]:"https://img.icons8.com/ios/50/000000/murder.png",
-  [VOICE_MOODS.LEAD]: "https://img.icons8.com/ios/50/000000/leadership.png",
-  [VOICE_MOODS.OK]: "https://img.icons8.com/ios/50/000000/easy.png",
-  [VOICE_MOODS.PARTY_DEATH]: "https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png",
-  [VOICE_MOODS.PARTY_FAIL]: "https://img.icons8.com/ios/50/000000/facepalm.png",
-  [VOICE_MOODS.RETREAT]: "https://img.icons8.com/ios/50/000000/running-rabbit.png",
-  [VOICE_MOODS.SLEEPY]: "https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png",
-  [VOICE_MOODS.TOOT]: "https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png",
-  [VOICE_MOODS.WHAT]: "https://img.icons8.com/ios/50/000000/question-mark--v1.png"
-};
-export const VOICE_PROFILES = { // TODO add more profiles for humanoid, undead and monster types
-  character: [
-    "F_Barb", 
-    "F_Bard", 
-    "F_Drow", 
-    "F_Fgt01", 
-    "F_Fgt02",
-    "F_Fgt03",
-    "F_Fgt04",
-    "F_Fgt05",
-    "F_HOrc1",
-    "F_HoW1",
-    "F_HoW2",
-    "F_HoW3",
-    "F_Mage1",
-    "F_Mage2",
-    "F_Mage3",
-    "F_Mage4",
-    "F_Mage5",
-    "F_Sorc1",
-    "F_Thief1",
-    "F_Thief2",
-    "M_Barb",
-    "M_Bard",
-    "M_Drow",
-    "M_Fgt01",
-    "M_Fgt02",
-    "M_Fgt03",
-    "M_Fgt04",
-    "M_Fgt05",
-    "M_HOrc1",
-    "M_HoW1",
-    "M_HoW2",
-    "M_HoW3",
-    "M_Mage1",
-    "M_Mage2",
-    "M_Mage3",
-    "M_Mage4",
-    "M_Mage5",
-    "M_Monk1",
-    "M_Sorc1",
-    "M_Thief1",
-    "M_Thief2"
-  ],
+  "amused": {
+    title: "amused",
+    icon: "https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png",
+  },
+  "angry": {
+    title: "amused",
+    icon: "https://img.icons8.com/ios/50/000000/battle.png",
+  },
+  "bored": {
+    title: "bored",
+    icon: "https://img.icons8.com/ios/50/000000/bored.png",
+  },
+  "death": {
+    title: "death",
+    icon: "https://img.icons8.com/ios/50/000000/dying.png",
+  },
+  "dying": {
+    title: "wounded",
+    icon: "https://img.icons8.com/ios/50/000000/wound.png",
+  },
+  "hurt": {
+    title: "hurt",
+    icon: "https://img.icons8.com/ios/50/000000/action.png",
+  },
+  "kill": {
+    title: "kill",
+    icon: "https://img.icons8.com/ios/50/000000/murder.png",
+  },
+  "lead": {
+    title: "lead",
+    icon: "https://img.icons8.com/ios/50/000000/leadership.png",
+  },
+  "ok": {
+    title: "ok",
+    icon: "https://img.icons8.com/ios/50/000000/easy.png",
+  },
+  "party_death": {
+    title: "rip",
+    icon: "https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png",
+  },
+  "party_fail": {
+    title: "facepalm",
+    icon: "https://img.icons8.com/ios/50/000000/facepalm.png",
+  },
+  "retreat": {
+    title: "retreat",
+    icon: "https://img.icons8.com/ios/50/000000/running-rabbit.png",
+  },
+  "sleepy": {
+    title: "sleepy",
+    icon: "https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png",
+  },
+  "toot": {
+    title: "toot",
+    icon: "https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png",
+  },
+  "what": {
+    title: "what",
+    icon: "https://img.icons8.com/ios/50/000000/question-mark--v1.png"
+  },
 };
 export const VOICE_SOUNDS = {};
 // populate voice sounds on startup
 (async function() {
-  for (const [type, voiceSet] of Object.entries(VOICE_PROFILES)) {
-    VOICE_SOUNDS[type] = {};
-    for (const voice of voiceSet) {
-      VOICE_SOUNDS[type][voice] = {};
-      const response = await fetch(`${ASSETS_PATH}/sounds/${voice}/DirContents.txt/`);
-      const fileList = await response.text();
-      const fileArr = fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(item => item);
-      Object.values(VOICE_MOODS).forEach(mood => {
-        const pathArr = fileArr.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `${ASSETS_PATH}/sounds/${voice}/${f}`);
-        VOICE_SOUNDS[type][voice][mood] = pathArr;
-      })
+  const getFileArr = async partialPath => {
+    const response = await fetch(`${ASSETS_PATH}/sounds/voice${partialPath}/DirContents.txt/`);
+    const fileList = await response.text();
+    return fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(i => i).map(i => i.trim());
+  }
+  const voiceTypeList = await getFileArr('');
+  for (const voiceType of voiceTypeList) {
+    VOICE_SOUNDS[voiceType] = {};
+    const voiceProfiles = await getFileArr(`/${voiceType}`);
+    for (const voiceProfile of voiceProfiles) {
+      VOICE_SOUNDS[voiceType][voiceProfile] = {};
+      const partialPath = `/${voiceType}/${voiceProfile}`;
+      const voiceFiles = await getFileArr(partialPath);
+      Object.keys(VOICE_MOODS).forEach(mood => {
+        const pathArr = voiceFiles.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `${ASSETS_PATH}/sounds/voice${partialPath}/${f}`);
+        VOICE_SOUNDS[voiceType][voiceProfile][mood] = pathArr;
+      });
     }
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
@@ -2062,7 +2112,7 @@ export const HEIGHT_AREAS = {
   low: ['foot','shin','knee','thigh','hip','groin'],
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
   high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
-}
+};
 export const WEAPON_CATEGORIES = [
   "axes",
   "bludgeons",
@@ -2221,7 +2271,8 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "atk_mod",
   "ac_mod",
   "sv_mod",
-  "treasure"
+  "treasure",
+  "base_weight"
 ];
  export const GEM_BASE_VALUE = {
   "ornamental": 60, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite

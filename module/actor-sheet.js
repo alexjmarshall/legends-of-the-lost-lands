@@ -113,20 +113,24 @@ export class SimpleActorSheet extends ActorSheet {
 
     // voice board
     if (context.showVoice) {
+      const selectedVoice = context.systemData.voice;
       const attrType = attrs.type?.value;
-      const voiceType = type === 'monster' && Object.keys(Constant.VOICE_PROFILES).includes(attrType)
+      const voiceType = type === 'monster' && Object.keys(Constant.VOICE_SOUNDS)?.includes(attrType)
         ? attrType
         : type;
-      context.voiceProfiles = Object.keys(Constant.VOICE_SOUNDS[voiceType]);
+      const voiceProfileObj = Constant.VOICE_SOUNDS[voiceType] || {};
+      context.voiceProfiles = Object.keys(voiceProfileObj);
       const voiceMoods = [];
-      for (const [key, value] of Object.entries(Constant.VOICE_MOOD_ICONS)) {
-        voiceMoods.push( { mood: key, icon: value } );
+      const selectedVoiceMoods = voiceProfileObj[selectedVoice] || {};
+      for (const [key, value] of Object.entries(Constant.VOICE_MOODS)) {
+        if (!Object.keys(selectedVoiceMoods).includes(key)) continue;
+        voiceMoods.push( { mood: key, icon: value.icon, title: value.title} );
       }
       context.voiceMoods = voiceMoods;
-      context.hasVoice = !!context.systemData.voice;
+      context.hasVoice = !!selectedVoice;
       context.noVoice = !context.hasVoice;
       context.hideVoiceSelection = context.isPlayer && context.hasVoice;
-      context.showSoundBoard = context.isGM || context.hasVoice;
+      context.showSoundBoard = context.hasVoice;
     }
 
     // fatigue
