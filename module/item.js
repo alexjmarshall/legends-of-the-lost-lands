@@ -36,7 +36,44 @@ export class SimpleItem extends Item {
     this._prepareSpellData(itemData);
     this._prepareCurrencyData(itemData);
     this._prepareGemData(itemData);
+    this._prepareMeleeWeaponData(itemData);
+    this._prepareMissileWeaponData(itemData);
+    this._prepareSkillData(itemData);
+  }
 
+  _prepareSkillData(itemData) {
+    if (itemData.type !== 'skill') return;
+
+    //derived ST
+  }
+
+  _prepareMeleeWeaponData(itemData) {
+    if (itemData.type !== 'melee_weapon') return;
+
+    const data = itemData.data;
+    const attrs = data.attributes;
+
+    const atkModes = Util.getArrFromCSL(attrs.atk_modes.value)
+      .replace(' ','')
+      .toLowerCase()
+      .filter(a => Object.keys(Constant.ATK_MODES).includes(a));
+
+    data.atk_mode = data.atk_mode || atkModes[0] || "";
+
+  }
+
+  _prepareMissileWeaponData(itemData) {
+    if (itemData.type !== 'missile_weapon') return;
+
+    const data = itemData.data;
+    const attrs = data.attributes;
+    const category = attrs.category.value;
+    const ownerItems = this.actor?.data?.items || [];
+
+    const wornAmmo = ownerItems.find(i => i.data.data.worn
+      && Util.stringMatch(i.data.data.attributes.category?.value, category));
+
+    data.ammo = data.ammo || wornAmmo?.name || "";
   }
 
   _prepareGemData(itemData) {
