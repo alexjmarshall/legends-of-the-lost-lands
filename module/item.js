@@ -45,6 +45,21 @@ export class SimpleItem extends Item {
     if (itemData.type !== 'skill') return;
 
     //derived ST
+    const data = itemData.data;
+    const attrs = data.attributes;
+    const baseSt = attrs.base_st?.value;
+    const modAttr = attrs.mod_attr?.value;
+    
+    const actor = itemData.document.actor;
+    if (!actor) return;
+
+    const actorData = actor.data;
+    const skillPenalty = +actorData?.data.skill_penalty || 0;
+    const attrVal = +actorData?.data.attributes.ability_scores?.[modAttr]?.value || 0;
+    const attrMod = Math.floor(attrVal / 3 - 3);
+    const st = Math.max(Constant.MIN_SAVE_TARGET, baseSt - attrMod + skillPenalty) || 0;
+
+    data.st = st;
   }
 
   _prepareMeleeWeaponData(itemData) {
@@ -58,7 +73,9 @@ export class SimpleItem extends Item {
       .toLowerCase()
       .filter(a => Object.keys(Constant.ATK_MODES).includes(a));
 
-    data.atk_mode = data.atk_mode || atkModes[0] || "";
+    const currMode = atkModes.includes(data.atk_mode) ? data.atk_mode : "";
+
+    data.atk_mode = currMode || atkModes[0] || "";
 
   }
 
@@ -70,10 +87,13 @@ export class SimpleItem extends Item {
     const category = attrs.category.value;
     const ownerItems = this.actor?.data?.items || [];
 
-    const wornAmmo = ownerItems.find(i => i.data.data.worn
-      && Util.stringMatch(i.data.data.attributes.category?.value, category));
+    const wornAmmo = ownerItems.filter(i => i.data.data.worn
+      && Util.stringMatch(i.data.data.attributes.category?.value, category)).map(i => i.name);
 
-    data.ammo = data.ammo || wornAmmo?.name || "";
+    const currAmmo = wornAmmo.incldues(data.ammo) ? data.ammo : "";
+    const ranWornAmmo = wornAmmo[0]?.name;
+
+    data.ammo = currAmmo || ranWornAmmo || "";
   }
 
   _prepareGemData(itemData) {

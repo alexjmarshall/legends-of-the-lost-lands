@@ -37,8 +37,7 @@ export class FeatureItemSheet extends SimpleItemSheet {
 
   _prepareSkillData(context) {
     if (context.data.type !== 'skill') return;
-    const actorData = context.document.actor?.data;
-    context.props['ST'] = Util.getDerivedSkillTarget(context.data, actorData);
+    context.props['ST'] = +context.data.data.st ?? +context.data.data.attributes.base_st?.value;
   }
 
   _prepareFeatureData(context) {
