@@ -277,7 +277,6 @@ export class SimpleActorSheet extends ActorSheet {
   _sortFeaturesBySource(features, actorData) {
     const sortedFeatures = {};
     const skillArr = features.filter( f => f.type === 'skill');
-    skillArr.forEach(s => s.st = Util.getDerivedSkillTarget(s, actorData));
     if (skillArr.length) sortedFeatures['Skill'] = skillArr;
     const classArr = features.filter( f => f.type === 'feature' && Util.stringMatch(f.data.attributes.source?.value, 'class'));
     if (classArr.length) sortedFeatures['Class'] = classArr;
