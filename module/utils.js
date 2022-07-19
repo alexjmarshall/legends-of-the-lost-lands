@@ -190,16 +190,6 @@ export function getItemFromActor(itemIdOrName, actor) {
   return item;
 }
 
-export function getDerivedSkillTarget(skill, actorData) {
-  const attrs = skill.data.attributes || {};
-  const baseSt = attrs.base_st?.value;
-  const modAttr = attrs.mod_attr?.value;
-  const skillPenalty = +actorData?.data.skill_penalty || 0;
-  const modAttrVal = +actorData?.data.attributes.ability_scores?.[modAttr]?.mod || 0;
-  const st = Math.max(Constant.MIN_SAVE_TARGET, baseSt - modAttrVal + skillPenalty) || 0;
-  return st;
-}
-
 export async function reduceItemQty(item, actor) {
   const itemQty = +item.data.data.quantity;
   if (!itemQty) {
