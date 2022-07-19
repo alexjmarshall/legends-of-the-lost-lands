@@ -299,13 +299,13 @@ Hooks.on("controlToken", (token, selected) => {
   const actor = token.actor;
   const actorHp = actor.data.data.hp?.value;
   if ( +actorHp < 1 ) return;
-  Util.playVoiceSound(Constant.VOICE_MOODS.WHAT, actor, token, {push: false, bubble: false, chance: 0.5});
+  Util.playVoiceSound(Constant.VOICE_MOODS.what, actor, token, {push: false, bubble: false, chance: 0.5});
 });
 
 // Play 'ok' voice sound on token movement
 Hooks.on("updateToken", (token, change) => {
   if (change.x && change.y ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.OK, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
+    Util.playVoiceSound(Constant.VOICE_MOODS.ok, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
   }
 });
 
@@ -345,11 +345,11 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if (targetHp < 1) return;
 
   if (hpUpdate < 0) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DEATH, actor, token, {push: true, bubble: true, chance: 1});
+    Util.playVoiceSound(Constant.VOICE_MOODS.death, actor, token, {push: true, bubble: true, chance: 1});
   } else if ( hpUpdate < maxHp / 2 && targetHp >= maxHp / 2 ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.DYING, actor, token, {push: true, bubble: true, chance: 0.7});
+    Util.playVoiceSound(Constant.VOICE_MOODS.dying, actor, token, {push: true, bubble: true, chance: 0.7});
   } else if (hpUpdate > 0 && hpUpdate < targetHp) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.HURT, actor, token, {push: true, bubble: true, chance: 0.5});
+    Util.playVoiceSound(Constant.VOICE_MOODS.hurt, actor, token, {push: true, bubble: true, chance: 0.5});
   }
 });
 

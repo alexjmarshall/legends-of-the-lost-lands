@@ -1179,7 +1179,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   
   // sounds
   resultSound && Util.playSound(`${resultSound}`, token, {push: true, bubble: false});
-  if (attacker.kill) Util.playVoiceSound(Constant.VOICE_MOODS.KILL, attackingActor, token, {push: true, bubble: true, chance: 0.7});
+  if (attacker.kill) Util.playVoiceSound(Constant.VOICE_MOODS.kill, attackingActor, token, {push: true, bubble: true, chance: 0.7});
 
   // update target with results of this attack
   if(doTargetUpdates) {
