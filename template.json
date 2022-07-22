@@ -452,6 +452,12 @@
           "group": "",
           "label": "Treasure",
           "value": false
+        },
+        "base_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Base Weight",
+          "value": 0
         }
       }
     },
@@ -745,7 +751,7 @@
     }
   },
   "melee_weapon": {
-    "templates": ["props","item","weapon","magic"],
+    "templates": ["props","item","magic"],
     "held_mainhand": false,
     "held_offhand": false,
     "atk_mode": "",
@@ -780,7 +786,7 @@
       "pen": {
         "dtype": "Number",
         "group": "",
-        "label": "Armor Penetration",
+        "label": "Penetration",
         "value": 0
       },
       "size": {
@@ -828,9 +834,10 @@
     }
   },
   "missile_weapon": {
-    "templates": ["props","item","weapon","magic"],
+    "templates": ["props","item","magic"],
     "held_mainhand": false,
     "held_offhand": false,
+    "ammo": "",
     "attributes": {
       "rof": {
         "dtype": "String",
@@ -847,7 +854,7 @@
       "pen": {
         "dtype": "Number",
         "group": "",
-        "label": "Armor Penetration",
+        "label": "Penetration",
         "value": 0
       },
       "impact": {
@@ -877,7 +884,7 @@
     }
   },
   "ammo": {
-    "templates": ["props","item","weapon","magic"],
+    "templates": ["props","item","magic"],
     "worn": false,
     "attributes": {
       "dmg": {
@@ -907,7 +914,7 @@
       "pen": {
         "dtype": "Number",
         "group": "",
-        "label": "Armor Penetration",
+        "label": "Penetration",
         "value": 1
       },
       "atk_mod": {
@@ -961,13 +968,13 @@
       "mod_attr": {
         "dtype": "String",
         "group": "",
-        "label": "Modifying Attribute",
+        "label": "Modifying Ability",
         "value": "dex"
       }
     }
   },
   "natural_weapon": {
-    "templates": ["props","weapon"],
+    "templates": ["props"],
     "attributes": {
       "push": {
         "dtype": "Boolean",
@@ -1002,7 +1009,7 @@
       "pen": {
         "dtype": "Number",
         "group": "",
-        "label": "Armor Penetration",
+        "label": "Penetration",
         "value": 0
       },
       "speed": {
