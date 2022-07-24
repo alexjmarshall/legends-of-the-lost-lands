@@ -54,7 +54,7 @@ export class SimpleActor extends Actor {
     const container = character.items.find(item => item.name === containerName);
     if (!container?._id) return;
 
-    const containerFactor = +attrs.enc_factor.value || 1;
+    const containerFactor = +attrs.load_factor.value || 1;
     const containerWeight = (Math.round(enc / containerFactor * 10) / 10) || 1;
     const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
     if (containerWeight !== container.data.data.weight) {
