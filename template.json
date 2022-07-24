@@ -92,6 +92,20 @@
           "group": "",
           "label": "MV",
           "value": 9
+        },
+        "intelligent": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Intelligent",
+          "value": true
+        },
+        "ability_scores": {
+          "str": {
+            "dtype": "Number",
+            "group": "ability_scores",
+            "label": "Strength",
+            "value": 10
+          }
         }
       }
     },
@@ -138,10 +152,10 @@
             "label": "Immune to Injury",
             "value": false
           },
-          "req_magic": {
+          "immune_non_magic": {
             "dtype": "Boolean",
             "group": "immunities",
-            "label": "Requires Magic Weapon",
+            "label": "Immune to Non-Magic",
             "value": false
           }
         },
@@ -169,7 +183,7 @@
     }
   },
   "character": {
-    "templates": ["props"],
+    "templates": ["props","resistances"],
     "attitude_map": {},
     "groups": {
       "ability_scores": {
@@ -333,27 +347,13 @@
     }
   },
   "humanoid": {
-    "templates": ["props","monster","humanoid"],
+    "templates": ["props","monster","humanoid","resistances"],
     "attributes": {
       "type": {
         "dtype": "String",
         "group": "",
         "label": "Type",
-        "value": "Humanoid"
-      },
-      "intelligent": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Intelligent",
-        "value": true
-      },
-      "ability_scores": {
-        "str": {
-          "dtype": "Number",
-          "group": "ability_scores",
-          "label": "Strength",
-          "value": 10
-        }
+        "value": "humanoid"
       }
     }
   },
@@ -371,10 +371,10 @@
   "container": {
     "templates": ["props"],
     "attributes": {
-      "enc_factor": {
+      "load_factor": {
         "dtype": "Number",
         "group": "",
-        "label": "Enc. Factor",
+        "label": "Load Factor",
         "value": 1
       },
       "capacity": {
@@ -452,12 +452,6 @@
           "group": "",
           "label": "Treasure",
           "value": false
-        },
-        "base_weight": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base Weight",
-          "value": 0
         }
       }
     },
@@ -606,7 +600,15 @@
     }
   },
   "container": {
-    "templates": ["props","item","magic"]
+    "templates": ["props","item","magic"],
+    "attributes": {
+      "base_weight": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base Weight",
+        "value": 0
+      }
+    }
   },
   "charged_item": {
     "templates": ["props","item"],
@@ -922,6 +924,12 @@
         "group": "",
         "label": "To-Hit Mod.",
         "value": 0
+      },
+      "base_weight": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base Weight",
+        "value": 0
       }
     }
   },
@@ -976,12 +984,6 @@
   "natural_weapon": {
     "templates": ["props"],
     "attributes": {
-      "push": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Push",
-        "value": false
-      },
       "atk_modes": {
         "dtype": "String",
         "group": "",
