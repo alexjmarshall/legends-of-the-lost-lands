@@ -1,53 +1,6 @@
 import * as Constant from "./constants.js";
 import * as Util from "./utils.js";
 
-export function itemSplitDialog(maxQty, itemData, priceInCps, merchant, options) {
-  new Dialog({
-    title: `Buy ${itemData.name}`,
-    content: 
-      `<form>
-        <div class="form-group">
-          <label style="max-width:fit-content;max-width:-moz-fit-content;margin-right:0.5em">How many?</label>
-          <span id="selectedQty" style="flex:1;text-align:center;"></span>
-          <input class="flex7" type="range" id="qty" min="1" max="${maxQty}" value="1">
-        </div>
-        <div class="form-group">
-          <label style="max-width:fit-content;max-width:-moz-fit-content;margin-right:0.5em">Total price:</label>
-          <span id="price"></span>
-        </div>
-      </form>`,
-    buttons: {
-      one: {
-        icon: '<i class="fas fa-check"></i>',
-        label: `Buy`,
-        callback: html => {
-          const quantity = +html.find('[id=qty]').val();
-          options.shownSplitDialog = true;
-          buyMacro(itemData, priceInCps, merchant, quantity, options);
-        }
-      },
-      two: {
-        icon: '<i class="fas fa-times"></i>',
-        label: "Cancel"
-      }
-    },
-    render: html => {
-      const qtyRange = html.find('[id=qty]'),
-            qtySpan = html.find('[id=selectedQty]'),
-            priceSpan = html.find('[id=price]');
-      qtySpan.html(+qtyRange.val());
-      priceSpan.html(Util.getPriceString(+qtyRange.val() * priceInCps));
-      qtyRange.on("input", () => {
-        qtySpan.html(+qtyRange.val());
-        priceSpan.html(Util.getPriceString(+qtyRange.val() * priceInCps));
-      });
-    },
-    default: "one",
-  }).render(true);
-}
-
-
-
 export function modDialog(options, title, fields=[{label:'', key:'', val:'', placeholder:''}], callback) {
   let formFields = ``;
   fields.forEach(field => {

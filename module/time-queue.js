@@ -70,7 +70,7 @@ class TimeQueue {
     return this.doAt(timestamp, macroId, scope);
   }
 
-  async doEvery(interval = {day:0, hour:0, minute:0, second:0}, start, macroId, scope = {}, id = Util.uniqueId()) {
+  async doEvery(interval={day:0, hour:0, minute:0, second:0}, start, macroId, scope={}, id=Util.uniqueId()) {
 
     // create new macro that combines the given macro with a statement to reschedule itself
     const givenMacro = game.macros.get(macroId);
