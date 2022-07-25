@@ -62,9 +62,11 @@ export class SimpleActorSheet extends ActorSheet {
     };
 
 
-    // hide empty groups from players
+    // hide empty and hidden groups from players
     Object.keys(context.systemData.groups).forEach(k => {
-      context.systemData.groups[k].hide = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+      const hideHidden = context.isPlayer && Constant.HIDDEN_GROUPS.includes(k);
+      const hideEmpty = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+      context.systemData.groups[k].hide = hideHidden || hideEmpty;
     });
 
 

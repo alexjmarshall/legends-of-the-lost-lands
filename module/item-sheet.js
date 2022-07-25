@@ -31,17 +31,16 @@ export class SimpleItemSheet extends ItemSheet {
     context.isPlayer = !game.user.isGM;
 
     context.showValue = context.isGM || context.data.type === "currency";
-    context.showAttributes = context.isGM || context.systemData.attributes.identified?.value == null || context.systemData.attributes.identified?.value === true;
+    const identified = context.systemData.attributes.admin?.identified.value;
+    context.identified = context.isGM || identified == null || identified === true;
 
-    // hide empty groups from players
+    // hide empty and hidden groups from players
+    const isMagic = context.systemData.attributes.admin?.magic.value;
     Object.keys(context.systemData.groups).forEach(k => {
-      context.systemData.groups[k].hide = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
-    });
-
-    // hide "magic" and "identified" attributes from players
-    const hiddenKey = key => Constant.HIDDEN_ITEM_ATTRIBUTES.includes(key);
-    Object.keys(context.systemData.ungroupedAttributes).forEach(k => {
-      context.systemData.ungroupedAttributes[k].hide = context.isPlayer && hiddenKey(k)
+      const hideMagic = context.isPlayer && !isMagic && Constant.MAGIC_GROUPS.includes(k);
+      const hideHidden = context.isPlayer && Constant.HIDDEN_GROUPS.includes(k);
+      const hideEmpty = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+      context.systemData.groups[k].hide = hideMagic || hideHidden || hideEmpty;
     });
 
     return context;
