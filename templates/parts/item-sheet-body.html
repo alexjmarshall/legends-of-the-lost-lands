@@ -12,12 +12,14 @@
 
     {{!-- Description Tab --}}
     <div class="tab" data-group="primary" data-tab="description">
+        {{#if identified}}
         {{editor content=systemData.description target="data.description" button=true owner=owner editable=editable rollData=rollData}}
+        {{/if}}
     </div>
 
     {{!-- Attributes Tab --}}
     <div class="tab attributes" data-group="primary" data-tab="attributes">
-        {{#if showAttributes}}
+        {{#if identified}}
         {{#if isGM}}
         <header class="attributes-header flexrow">
             <span class="attribute-key attribute-key-wrapper">{{localize "SIMPLE.AttributeKey"}}</span>
