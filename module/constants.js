@@ -2136,10 +2136,12 @@ export const MONSTER_TYPES = [
   "beast",
   "celestial",
   "construct",
+  "demon",
+  "devil",
   "dragon",
   "elemental",
   "fey",
-  "fiend",
+  "humanoid",
   "magical beast",
   "ooze",
   "plant",
@@ -2157,7 +2159,9 @@ export const HOLDABLE_TYPES = [
   "potion",
   "scroll",
   "melee_weapon",
+  "throw_weapon",
   "missile_weapon",
+  "bow",
 ];
 export const WEARABLE_TYPES = [
   "armor",
@@ -2167,19 +2171,19 @@ export const WEARABLE_TYPES = [
   "shield",
   "ammo",
 ];
-export const DERIVED_WEIGHT_TYPES = [
-  "armor",
-  "helmet",
-  "clothing",
-  "shield",
-];
-export const DERIVED_VALUE_TYPES = [
-  "armor",
-  "helmet",
-  "clothing",
-  "shield",
-  "currency",
-];
+// export const DERIVED_WEIGHT_TYPES = [
+//   "armor",
+//   "helmet",
+//   "clothing",
+//   "shield",
+// ];
+// export const DERIVED_VALUE_TYPES = [
+//   "armor",
+//   "helmet",
+//   "clothing",
+//   "shield",
+//   "currency",
+// ];
 export const FEATURE_TYPES = [
   "feature",
   "skill",
@@ -2265,20 +2269,13 @@ export const NON_PHYSICAL_ITEM_TYPES = [
   "illusion",
   "necromancy"
  ];
- export const HIDDEN_ITEM_ATTRIBUTES = [
-  "magic", 
-  "identified",
-  "atk_mod",
-  "ac_mod",
-  "sv_mod",
-  "treasure",
-  "base_weight"
-];
- export const GEM_BASE_VALUE = {
+export const HIDDEN_GROUPS = ["admin","dmg_mods","immunities"];
+export const MAGIC_GROUPS = ["magic_dmg","magic_mods"];
+export const GEM_BASE_VALUE = {
   "ornamental": 60, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite
   "semi-precious": 1200, // e.g. peridot, topaz, garnet, pearl, amethyst
   "precious": 12000 // e.g. diamond, ruby, sapphire, emerald, opal
- };
+};
  export const GEM_DEFAULT_WEIGHT = 0.1;
  export const GEM_QUALITY_ADJ = {
   "AAA": 4,

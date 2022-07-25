@@ -138,8 +138,8 @@ export class SimpleActor extends Actor {
     if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
   }
 
-  _getHighestAttrVal(items, key) {
-    return items.length ? Math.max(...items.map(c => (+c.data.data.attributes[key]?.value || 0))) : 0;
+  _getHighestMagicVal(items, key) {
+    return items.length ? Math.max(...items.map(c => (+c.data.data.attributes.magic_mods?.[key].value || 0))) : 0;
   }
 
   _prepareHumanoidAndUndeadData(actorData) {
@@ -168,10 +168,10 @@ export class SimpleActor extends Actor {
     data.speed = mv * Constant.SQUARE_SIZE;
 
     // sv
-    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
-    const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
-    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
-    const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
+    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
+    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
     const intelligent = attrs.intelligent.value;
     const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
     data.sv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
@@ -252,10 +252,10 @@ export class SimpleActor extends Actor {
     charData.agility_penalty = Math.floor( Math.max(0, (totalPenaltyWgt - AGILITY_PENALTY.threshold)) / AGILITY_PENALTY.factor );
 
     // sv
-    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
-    const magicClothingSvMod = this._getHighestAttrVal(magicWornClothing, "sv_mod");
-    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
-    const magicJewelrySvMod = this._getHighestAttrVal(magicWornJewelry, "sv_mod");
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
+    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
+    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
     const svBase = +attrs.base_sv.value || Constant.DEFAULT_BASE_SV;
     const sv = Math.max(Constant.MIN_SAVE_TARGET, (svBase - magicClothingSvMod - magicJewelrySvMod));
     charData.sv = sv;    
@@ -339,12 +339,12 @@ export class SimpleActor extends Actor {
 
 
     // get best clothing magical AC bonus
-    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.magic?.value);
-    const magicClothingACBonus = this._getHighestAttrVal(magicWornClothing, "ac_mod");
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
+    const magicClothingACBonus = this._getHighestMagicVal(magicWornClothing, "ac_mod");
 
     // get best jewelry magical AC bonus
-    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.magic?.value);
-    const magicJewelryACBonus = this._getHighestAttrVal(magicWornJewelry, "ac_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
+    const magicJewelryACBonus = this._getHighestMagicVal(magicWornJewelry, "ac_mod");
 
 
     // ac by hit location
