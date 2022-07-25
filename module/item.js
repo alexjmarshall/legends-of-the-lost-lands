@@ -15,9 +15,9 @@ export class SimpleItem extends Item {
     //  armor, clothing, shield, helmet, jewelry
     //  spell_magic, spell_cleric, spell_witch
     //  feature, skill, natural_weapon, grapple_maneuver
-    //  melee_weapon, missile_weapon, ammo
+    //  melee_weapon, throw_weapon, missile_weapon, bow, ammo
     //  potion, charged_item, scroll, item
-    //  currency, gem
+    //  currency, gem, trade_good
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -63,14 +63,13 @@ export class SimpleItem extends Item {
   }
 
   _prepareMeleeWeaponData(itemData) {
-    if (itemData.type !== 'melee_weapon') return;
+    if (itemData.type !== 'melee_weapon' || itemData.type !== 'throw_weapon') return;
 
     const data = itemData.data;
     const attrs = data.attributes;
 
     const atkModes = Util.getArrFromCSL(attrs.atk_modes.value)
-      .replace(' ','')
-      .toLowerCase()
+      .map(a => a.toLowerCase().replace(' ',''))
       .filter(a => Object.keys(Constant.ATK_MODES).includes(a));
 
     const currMode = atkModes.includes(data.atk_mode) ? data.atk_mode : "";
@@ -80,7 +79,7 @@ export class SimpleItem extends Item {
   }
 
   _prepareMissileWeaponData(itemData) {
-    if (itemData.type !== 'missile_weapon') return;
+    if (itemData.type !== 'missile_weapon' || itemData.type !== 'bow') return;
 
     const data = itemData.data;
     const attrs = data.attributes;
@@ -90,7 +89,7 @@ export class SimpleItem extends Item {
     const wornAmmo = ownerItems.filter(i => i.data.data.worn
       && Util.stringMatch(i.data.data.attributes.category?.value, category)).map(i => i.name);
 
-    const currAmmo = wornAmmo.incldues(data.ammo) ? data.ammo : "";
+    const currAmmo = wornAmmo.includes(data.ammo) ? data.ammo : "";
     const ranWornAmmo = wornAmmo[0]?.name;
 
     data.ammo = currAmmo || ranWornAmmo || "";
@@ -111,32 +110,32 @@ export class SimpleItem extends Item {
 
     // if (!data.value) {
       // derive value from gem type, weight and quality
-      const gemType = attrs.gem_type.value?.trim().toLowerCase();
-      const weight = +data.weight;
-      const quality = attrs.quality.value?.trim().toUpperCase();
+      // const gemType = attrs.gem_type.value?.trim().toLowerCase();
+      // const weight = +data.weight;
+      // const quality = attrs.quality.value?.trim().toUpperCase();
 
-      const baseValue = Constant.GEM_BASE_VALUE[gemType];
-      const weightFactor = Constant.GEM_WEIGHT_ADJ(weight / Constant.GEM_DEFAULT_WEIGHT);
-      const qualityFactor = Constant.GEM_QUALITY_ADJ[quality];
+      // const baseValue = Constant.GEM_BASE_VALUE[gemType];
+      // const weightFactor = Constant.GEM_WEIGHT_ADJ(weight / Constant.GEM_DEFAULT_WEIGHT);
+      // const qualityFactor = Constant.GEM_QUALITY_ADJ[quality];
 
-      const value = Math.round(baseValue * weightFactor * qualityFactor) || 0;
-      data.value = data.value || value;
+      // const value = Math.round(baseValue * weightFactor * qualityFactor) || 0;
+      // data.value = data.value || value;
 
     // } else {
-    //   // derive gem type, weight and quality from value
-    //   const value = +data.value;
-    //   const gemType = Object.entries(Constant.GEM_BASE_VALUE).reduce((a,b) => value >= b[1] ? b[0] : a, null) || 'ornamental';
-    //   const ranNum = Math.ceil(Math.random() * 112)
-    //   const quality = ranNum < 11 ? 'AAA' : ranNum < 25 ? 'AA' : ranNum < 45 ? 'A' : ranNum < 73 ? 'B' : 'C';
-    //   const baseValue = Constant.GEM_BASE_VALUE[gemType];
-    //   const qualityValue = baseValue * Constant.GEM_QUALITY_ADJ[quality];
-    //   const weightAdj = value / qualityValue;
-    //   const weightRatio = Math.sqrt(weightAdj);
-    //   const weight = Math.round(weightRatio * Constant.GEM_DEFAULT_WEIGHT * 100) / 100;
+      // derive gem type, weight and quality from value
+      const value = +data.value;
+      const gemType = Object.entries(Constant.GEM_BASE_VALUE).reduce((a,b) => value >= b[1] ? b[0] : a, null) || 'ornamental';
+      const ranNum = Math.ceil(Math.random() * 112)
+      const quality = ranNum < 11 ? 'AAA' : ranNum < 25 ? 'AA' : ranNum < 45 ? 'A' : ranNum < 73 ? 'B' : 'C';
+      const baseValue = Constant.GEM_BASE_VALUE[gemType];
+      const qualityValue = baseValue * Constant.GEM_QUALITY_ADJ[quality];
+      const weightAdj = value / qualityValue;
+      const weightRatio = Math.sqrt(weightAdj);
+      const weight = Math.round(weightRatio * Constant.GEM_DEFAULT_WEIGHT * 100) / 100;
 
-    //   data.weight = weight;
-    //   attrs.gem_type.value = gemType;
-    //   attrs.quality.value = quality;
+      data.weight = weight;
+      attrs.gem_type.value = gemType;
+      attrs.quality.value = quality;
     // }
   }
 
@@ -182,8 +181,8 @@ export class SimpleItem extends Item {
     if (!Object.keys(materialAcMods).length && !Object.keys(materialProps).length) {
       ui.notifications.error(`${itemData.name} has an incorrect material specified`);
     } 
-    const isMagic = !!attrs.magic?.value;
-    const acMod = isMagic ? (+attrs.ac_mod?.value || 0) : 0;
+    const isMagic = !!attrs.admin?.magic.value;
+    const acMod = isMagic ? (+attrs.magic_mods?.ac_mod.value || 0) : 0;
     const isShield = itemData.type === 'shield';
 
     // size

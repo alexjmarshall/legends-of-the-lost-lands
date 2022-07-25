@@ -344,9 +344,12 @@ export function sortEquipmentByType(items) {
   "helmet",
   "clothing",
   "jewelry",
+  "trade_good",
   "shield",
   "melee_weapon",
+  "throw_weapon",
   "missile_weapon",
+  "bow",
   "ammo",
   "container",
   "currency",
@@ -357,57 +360,57 @@ export function sortEquipmentByType(items) {
   "skill",
   "natural_weapon",
   "grapple_maneuver",
-  "currency"
   */
   const equipment = {};
   const types = [
     {
       title: "Weapons",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'melee_weapon' || i.type === 'missile_weapon')
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value
+        && (i.type === 'melee_weapon' || i.type === 'throw_weapon' || i.type === 'missile_weapon' || i.type === 'bow')
     },
     {
       title: "Armor",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'armor' || i.type === 'helmet' || i.type === 'shield'),
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && (i.type === 'armor' || i.type === 'helmet' || i.type === 'shield'),
     },
     {
       title: "Clothing",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'clothing',
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'clothing',
     },
     {
       title: "Gems & Jewelry",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && (i.type === 'gem' || i.type === 'jewelry'),
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && (i.type === 'gem' || i.type === 'jewelry'),
     },
     {
       title: "Ammunition",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'ammo',
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'ammo',
     },
     {
       title: "Potions",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'potion'
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'potion'
     },
     {
       title: "Wands, Staves & Rods",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'charged_item'
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'charged_item'
     },
     {
       title: "Containers",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'container'
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'container'
     },
     {
       title: "Misc. Magic",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'item' && i.data?.data?.attributes?.magic?.value
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'item' && i.data?.data?.attributes?.admin?.magic?.value
     },
     {
       title: "Other",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'item' && !i.data?.data?.attributes?.magic?.value
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'item' && !i.data?.data?.attributes?.admin?.magic?.value
     },
     {
       title: "Currency",
-      condition: i => !i.data?.data?.attributes?.treasure?.value && i.type === 'currency'
+      condition: i => !i.data?.data?.attributes?.admin?.treasure?.value && i.type === 'currency'
     },
     {
       title: "Treasure",
-      condition: i => i.data?.data?.attributes?.treasure?.value
+      condition: i => i.data?.data?.attributes?.admin?.treasure?.value
     },
   ];
   types.forEach(t => {
