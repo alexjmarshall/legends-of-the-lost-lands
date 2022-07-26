@@ -282,7 +282,7 @@ export class SimpleActor extends Actor {
 
     for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
       const coveringItems = wornItems.filter(i => i.data.data.coverage?.includes(k));
-      const garments = coveringItems.filter(i => Constant.WEARABLE_TYPES.includes(i.type) && Number(i.data.data.clo));
+      const garments = coveringItems.filter(i => i.data.data.attributes.admin?.wearable.value && Number(i.data.data.clo));
 
       // sort the layers by descending clo
       //    second layer adds 1/2 its full clo, third layer 1/4, and so on

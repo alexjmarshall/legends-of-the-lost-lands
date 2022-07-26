@@ -353,13 +353,6 @@ export function sortEquipmentByType(items) {
   "ammo",
   "container",
   "currency",
-  "spell_magic",
-  "spell_cleric",
-  "spell_witch",
-  "feature",
-  "skill",
-  "natural_weapon",
-  "grapple_maneuver",
   */
   const equipment = {};
   const types = [
@@ -414,7 +407,12 @@ export function sortEquipmentByType(items) {
     },
   ];
   types.forEach(t => {
-    const equipItems = items.filter(t.condition).map(i => ({item: i, wearable: Constant.WEARABLE_TYPES.includes(i.type)}));
+    const equipItems = items.filter(t.condition)
+      .map(i => ({
+        item: i,
+        holdable: i.data?.data?.attributes?.admin?.holdable?.value,
+        wearable: i.data?.data?.attributes?.admin?.wearable?.value,
+      }));
     if (!equipItems.length) return;
     equipment[t.title] = equipItems;
   });

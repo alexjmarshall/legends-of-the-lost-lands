@@ -727,6 +727,7 @@
       }
     },
     "item": {
+      "worn": false,
       "held_mainhand": false,
       "held_offhand": false,
       "value": 0,
@@ -757,12 +758,23 @@
             "group": "admin",
             "label": "Treasure",
             "value": false
+          },
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          },
+          "wearable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Wearable",
+            "value": false
           }
         }
       }
     },
     "garment": {
-      "worn": false,
       "coverage": [],
       "attributes": {
         "material": {
@@ -1002,8 +1014,7 @@
     }
   },
   "jewelry": {
-    "templates": ["props","item","magic_mods"],
-    "worn": false
+    "templates": ["props","item","magic_mods"]
   },
   "shield": {
     "templates": ["props","item","garment","magic_mods"],
@@ -1071,7 +1082,6 @@
   },
   "ammo": {
     "templates": ["props","item","magic_dmg"],
-    "worn": false,
     "attributes": {
       "type": {
         "dtype": "String",
