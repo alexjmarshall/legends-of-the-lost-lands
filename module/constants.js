@@ -674,6 +674,9 @@ export const PRECIOUS_MATERIALS_VALUE_PER_POUND = {
   "gold": 2400, // weight 0.5 for Gold Mark ingot worth 1200
   "platinum": 12000, // weight 0.1 for pp ("Medallion") coin worth 1200
 };
+export const TRADE_GOODS_VALUE_PER_POUND = {
+  // TODO add clothing types to material dict below as well
+};
 export const UNITS_OF_ACCOUNT = {
   "cp": {
     weight: 0.025,
@@ -2154,36 +2157,18 @@ export const ALIGNMENTS = [
   "CG", // chaotic good
   "LG", // lawful good
 ];
-export const HOLDABLE_TYPES = [
-  "charged_item",
-  "potion",
-  "scroll",
-  "melee_weapon",
-  "throw_weapon",
-  "missile_weapon",
-  "bow",
-];
-export const WEARABLE_TYPES = [
-  "armor",
-  "helmet",
-  "clothing",
-  "jewelry",
-  "shield",
-  "ammo",
-];
-// export const DERIVED_WEIGHT_TYPES = [
-//   "armor",
-//   "helmet",
-//   "clothing",
-//   "shield",
-// ];
-// export const DERIVED_VALUE_TYPES = [
-//   "armor",
-//   "helmet",
-//   "clothing",
-//   "shield",
-//   "currency",
-// ];
+export const MERCHANT_SUBTYPES = {
+  "apothecary": ["potion"],
+  "magic": ["charged_item","scroll"],
+  "armorer": ["armor","helmet","shield"],
+  "clothier": ["clothing"],
+  "jeweller": ["jewelry","gem"],
+  "innkeeper": ["drink","food"],
+  "general": ["item","container"],
+  "trader": ["trade_good"],
+  "weaponsmith": ["melee_weapon","throw_weapon"],
+  "bowyer": ["missile_weapon","bow","ammo"],
+};
 export const FEATURE_TYPES = [
   "feature",
   "skill",
