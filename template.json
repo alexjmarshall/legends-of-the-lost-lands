@@ -433,6 +433,8 @@
     "clothing",
     "gem",
     "trade_good",
+    "food",
+    "drink",
     "jewelry",
     "shield",
     "melee_weapon",
@@ -476,6 +478,14 @@
         }
       },
       "attributes": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": true
+          }
+        },
         "swing": {
           "atk_mod": {
             "dtype": "Number",
@@ -488,6 +498,12 @@
             "group": "swing",
             "label": "Damage",
             "value": "d6"
+          },
+          "dmg_type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Damage Type",
+            "value": "slashing"
           },
           "bleed": {
             "dtype": "Number",
@@ -518,12 +534,6 @@
             "group": "swing",
             "label": "Sweep Targets",
             "value": 0
-          },
-          "sweep_mod": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Sweep Penalty",
-            "value": 0
           }
         },
         "thrust": {
@@ -538,6 +548,12 @@
             "group": "thrust",
             "label": "Damage",
             "value": "d6"
+          },
+          "dmg_type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Damage Type",
+            "value": "piercing"
           },
           "bleed": {
             "dtype": "Number",
@@ -626,6 +642,14 @@
         }
       },
       "attributes": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": true
+          }
+        },
         "type": {
           "category": {
             "dtype": "String",
@@ -777,6 +801,14 @@
     "garment": {
       "coverage": [],
       "attributes": {
+        "admin": {
+          "wearable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Wearable",
+            "value": true
+          }
+        },
         "material": {
           "dtype": "String",
           "group": "",
@@ -859,6 +891,12 @@
           "group": "admin",
           "label": "Magic",
           "value": true
+        },
+        "holdable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Holdable",
+          "value": true
         }
       }
     }
@@ -884,6 +922,12 @@
           "dtype": "Boolean",
           "group": "admin",
           "label": "Magic",
+          "value": true
+        },
+        "holdable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Holdable",
           "value": true
         }
       }
@@ -917,6 +961,14 @@
         "min": 0,
         "value": 20,
         "max": 20
+      },
+      "admin": {
+        "holdable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Holdable",
+          "value": true
+        }
       }
     }
   },
@@ -1013,8 +1065,46 @@
       }
     }
   },
+  "food": {
+    "templates": ["props","item"],
+    "macro": "game.lostlands.Macro.eatFood(itemId,options)",
+    "attributes": {
+      "admin": {
+        "spoiled": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Spoiled",
+          "value": false
+        }
+      }
+    }
+  },
+  "drink": {
+    "templates": ["props","item"],
+    "macro": "game.lostlands.Macro.drinkWater(itemId,options)",
+    "attributes": {
+      "admin": {
+        "alcohol": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Alcoholic",
+          "value": false
+        }
+      }
+    }
+  },
   "jewelry": {
-    "templates": ["props","item","magic_mods"]
+    "templates": ["props","item","magic_mods"],
+    "attributes": {
+      "admin": {
+        "wearable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Wearable",
+          "value": true
+        }
+      }
+    }
   },
   "shield": {
     "templates": ["props","item","garment","magic_mods"],
@@ -1083,6 +1173,14 @@
   "ammo": {
     "templates": ["props","item","magic_dmg"],
     "attributes": {
+      "admin": {
+        "wearable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Wearable",
+          "value": true
+        }
+      },
       "type": {
         "dtype": "String",
         "group": "",
@@ -1172,17 +1270,17 @@
   "natural_weapon": {
     "templates": ["props","magic_dmg"],
     "attributes": {
-      "atk_modes": {
-        "dtype": "String",
-        "group": "",
-        "label": "Attack Mode(s)",
-        "value": "swing(s)"
-      },
       "dmg": {
         "dtype": "String",
         "group": "",
         "label": "Damage",
         "value": "d6"
+      },
+      "dmg_type": {
+        "dtype": "String",
+        "group": "",
+        "label": "Damage Type",
+        "value": "slashing"
       },
       "reach": {
         "dtype": "String",
