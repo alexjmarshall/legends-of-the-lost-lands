@@ -1,6 +1,6 @@
 {
 "Actor": {
-  "types": ["character", "humanoid", "undead", "monster", "container", "merchant"],
+  "types": ["character", "humanoid", "monster", "container", "merchant"],
   "templates": {
     "props": {
       "description": "",
@@ -32,12 +32,6 @@
           "group": "",
           "label": "MV",
           "value": 15
-        },
-        "mr": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Magic Resistance",
-          "value": 0
         },
         "hide": {
           "dtype": "String",
@@ -151,12 +145,6 @@
             "group": "immunities",
             "label": "Immune to Injury",
             "value": false
-          },
-          "immune_non_magic": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Non-Magic",
-            "value": false
           }
         },
         "dmg_mods": {
@@ -175,8 +163,20 @@
           "d_immune": {
             "dtype": "String",
             "group": "dmg_mods",
-            "label": "Damage Type Immune",
+            "label": "Damage Type Immun.",
             "value": "none"
+          },
+          "mr": {
+            "dtype": "Number",
+            "group": "dmg_mods",
+            "label": "Magic Resistance",
+            "value": 0
+          },
+          "req_magic": {
+            "dtype": "Number",
+            "group": "dmg_mods",
+            "label": "Req. Magic Weapon",
+            "value": 0
           }
         }
       }
@@ -357,17 +357,6 @@
       }
     }
   },
-  "undead": {
-    "templates": ["props","monster","humanoid","resistances"],
-    "attributes": {
-      "type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Type",
-        "value": "undead"
-      }
-    }
-  },
   "container": {
     "templates": ["props"],
     "attributes": {
@@ -393,13 +382,13 @@
         "dtype": "Number",
         "group": "",
         "label": "Buy Factor",
-        "value": 0.8
+        "value": 0.6
       },
       "sell_factor": {
         "dtype": "Number",
         "group": "",
         "label": "Sell Factor",
-        "value": 1.2
+        "value": 1
       },
       "money": {
         "dtype": "Number",
@@ -410,13 +399,13 @@
       "demand": {
         "dtype": "String",
         "group": "",
-        "label": "Demand",
+        "label": "Demand Trade Goods",
         "value": ""
       },
       "surplus": {
         "dtype": "String",
         "group": "",
-        "label": "Surplus",
+        "label": "Surplus Trade Goods",
         "value": ""
       }
     }
@@ -458,25 +447,59 @@
       "groups": {},
       "macro": ""
     },
+    "item": {
+      "worn": false,
+      "held_mainhand": false,
+      "held_offhand": false,
+      "value": 0,
+      "quantity": 1,
+      "weight": 0,
+      "groups": {
+        "admin": {
+          "dtype": "Boolean",
+          "label": "Admin"
+        }
+      },
+      "attributes": {
+        "admin": {
+          "identified": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Identified",
+            "value": true
+          },
+          "magic": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Magic",
+            "value": false
+          },
+          "treasure": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Treasure",
+            "value": false
+          },
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          },
+          "wearable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Wearable",
+            "value": false
+          }
+        }
+      }
+    },
     "melee_weapon": {
       "atk_mode": "",
       "atk_height": "mid",
       "atk_style": "stable",
       "atk_init": "immediate",
-      "groups": {
-        "swing": {
-          "dtype": "String",
-          "label": "Swing"
-        },
-        "thrust": {
-          "dtype": "String",
-          "label": "Thrust"
-        },
-        "type": {
-          "dtype": "String",
-          "label": "Type"
-        }
-      },
       "attributes": {
         "admin": {
           "holdable": {
@@ -486,131 +509,65 @@
             "value": true
           }
         },
-        "swing": {
-          "atk_mod": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "To-Hit Mod.",
-            "value": 0
-          },
-          "dmg": {
-            "dtype": "String",
-            "group": "swing",
-            "label": "Damage",
-            "value": "d6"
-          },
-          "dmg_type": {
-            "dtype": "String",
-            "group": "",
-            "label": "Damage Type",
-            "value": "slashing"
-          },
-          "bleed": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Bleed",
-            "value": 0
-          },
-          "pen": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Penetration",
-            "value": 0
-          },
-          "impact": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Impact",
-            "value": 0
-          },
-          "speed": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Speed",
-            "value": 0
-          },
-          "sweep": {
-            "dtype": "Number",
-            "group": "swing",
-            "label": "Sweep Targets",
-            "value": 0
-          }
+        "atk_mod": {
+          "dtype": "Number",
+          "group": "thrust",
+          "label": "To-Hit Mod.",
+          "value": 0
         },
-        "thrust": {
-          "atk_mod": {
-            "dtype": "Number",
-            "group": "thrust",
-            "label": "To-Hit Mod.",
-            "value": 0
-          },
-          "dmg": {
-            "dtype": "String",
-            "group": "thrust",
-            "label": "Damage",
-            "value": "d6"
-          },
-          "dmg_type": {
-            "dtype": "String",
-            "group": "",
-            "label": "Damage Type",
-            "value": "piercing"
-          },
-          "bleed": {
-            "dtype": "Number",
-            "group": "thrust",
-            "label": "Bleed",
-            "value": 0
-          },
-          "pen": {
-            "dtype": "Number",
-            "group": "thrust",
-            "label": "Penetration",
-            "value": 0
-          },
-          "impact": {
-            "dtype": "Number",
-            "group": "thrust",
-            "label": "Impact",
-            "value": 0
-          },
-          "speed": {
-            "dtype": "Number",
-            "group": "thrust",
-            "label": "Speed",
-            "value": 0
-          }
-        },
-        "type": {
-          "category": {
-            "dtype": "String",
-            "group": "type",
-            "label": "Category",
-            "value": "axes"
-          },
-          "class": {
-            "dtype": "String",
-            "group": "type",
-            "label": "Class",
-            "value": "martial"
-          }
-        },
-        "reach": {
+        "category": {
           "dtype": "String",
-          "group": "",
-          "label": "Reach",
-          "value": ""
+          "group": "type",
+          "label": "Category",
+          "value": "axes"
         },
-        "size": {
+        "class": {
           "dtype": "String",
-          "group": "",
-          "label": "Size",
-          "value": "M"
+          "group": "type",
+          "label": "Class",
+          "value": "martial"
+        },
+        "bleed": {
+          "dtype": "Number",
+          "group": "thrust",
+          "label": "Bleed",
+          "value": 0
+        },
+        "pen": {
+          "dtype": "Number",
+          "group": "thrust",
+          "label": "Penetration",
+          "value": 0
+        },
+        "impact": {
+          "dtype": "Number",
+          "group": "thrust",
+          "label": "Impact",
+          "value": 0
+        },
+        "speed": {
+          "dtype": "Number",
+          "group": "thrust",
+          "label": "Speed",
+          "value": 0
         },
         "parry": {
           "dtype": "Number",
           "group": "",
           "label": "Parry",
           "value": 0
+        },
+        "reach": {
+          "dtype": "String",
+          "group": "",
+          "label": "Reach",
+          "value": "1"
+        },
+        "size": {
+          "dtype": "String",
+          "group": "",
+          "label": "Size",
+          "value": "M"
         },
         "flex": {
           "dtype": "Boolean",
@@ -746,54 +703,6 @@
             "group": "magic_mods",
             "label": "SV Mod.",
             "value": 0
-          }
-        }
-      }
-    },
-    "item": {
-      "worn": false,
-      "held_mainhand": false,
-      "held_offhand": false,
-      "value": 0,
-      "quantity": 1,
-      "weight": 0,
-      "groups": {
-        "admin": {
-          "dtype": "Boolean",
-          "label": "Admin"
-        }
-      },
-      "attributes": {
-        "admin": {
-          "identified": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Identified",
-            "value": true
-          },
-          "magic": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Magic",
-            "value": false
-          },
-          "treasure": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Treasure",
-            "value": false
-          },
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": false
-          },
-          "wearable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Wearable",
-            "value": false
           }
         }
       }
@@ -980,7 +889,7 @@
         "dtype": "String",
         "group": "",
         "label": "Coverage",
-        "value": "chest"
+        "value": "chest,gut"
       },
       "size": {
         "dtype": "String",
@@ -1000,10 +909,10 @@
         "label": "Coverage",
         "value": "skull"
       },
-      "attached": {
+      "fixed": {
         "dtype": "Boolean",
         "group": "",
-        "label": "Attached",
+        "label": "Fixed",
         "value": false
       },
       "closed": {
@@ -1027,7 +936,7 @@
         "dtype": "String",
         "group": "",
         "label": "Coverage",
-        "value": "chest"
+        "value": "chest,gut"
       },
       "size": {
         "dtype": "String",
@@ -1165,7 +1074,7 @@
       "req_str": {
         "dtype": "Number",
         "group": "",
-        "label": "Strength Required",
+        "label": "Strength Req.",
         "value": 12
       }
     }
