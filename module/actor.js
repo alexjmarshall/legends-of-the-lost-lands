@@ -19,7 +19,7 @@ export class SimpleActor extends Actor {
     const actorData = this.data;
 
     this._prepareCharacterData(actorData);
-    this._prepareHumanoidAndUndeadData(actorData);
+    this._prepareHumanoidData(actorData);
     this._prepareMonsterData(actorData);
     this._prepareContainerData(actorData);
   }
@@ -142,9 +142,9 @@ export class SimpleActor extends Actor {
     return items.length ? Math.max(...items.map(c => (+c.data.data.attributes.magic_mods?.[key].value || 0))) : 0;
   }
 
-  _prepareHumanoidAndUndeadData(actorData) {
+  _prepareHumanoidData(actorData) {
     const type = actorData.type;
-    if (type !== 'humanoid' && type !== 'undead') return;
+    if (type !== 'humanoid') return;
     const data = actorData.data;
     const items = actorData.items;
     const wornItems = items.filter(i => i.data.data.worn);

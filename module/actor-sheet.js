@@ -39,7 +39,7 @@ export class SimpleActorSheet extends ActorSheet {
     context.isGM = game.user.isGM;
     context.isPlayer = !context.isGM;
     context.isCharacter = type === 'character';
-    context.wearsGarments = type === 'character' || type === 'humanoid' || type === 'undead';
+    context.wearsGarments = type === 'character' || type === 'humanoid'; // show AC values by location, not just garments
     context.showVoice = context.wearsGarments || type === 'monster';
 
     // item types for create item dropdown
@@ -53,7 +53,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sv / msv
     const sv = +context.systemData.sv || 0;
-    const msvTypes = ["monster","undead","humanoid"];
+    const msvTypes = ["monster","humanoid"];
     const msv = +context.systemData.msv || 0;
     const showMsv = msvTypes.includes(type) && sv !== msv;
     context.sv = {
