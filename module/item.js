@@ -224,7 +224,7 @@ export class SimpleItem extends Item {
     const getLocationWgt = index => data.coverage.reduce((sum, l) => sum + Constant.HIT_LOCATIONS[l].weights[index], 0);
     const locUnwornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN);
     const baseLocWornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN);
-    let locWornWgt = attrs.attached?.value ? Math.round(baseLocWornWgt / 2) : baseLocWornWgt;
+    let locWornWgt = attrs.fixed?.value ? Math.round(baseLocWornWgt / 2) : baseLocWornWgt;
     const materialBaseWgt = materialProps.weight || 1;
     
     if (isShield) {

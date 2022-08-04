@@ -804,8 +804,8 @@ export async function attack(attacker, target, options) { // TODO to break attac
           // knockdown can disarm weapon, knock off helmet, or disarm shield if held in fluid stance
           (() => {
             if ( !!armor && !isShield && helmetAreas.includes(coverageArea)) {
-              const attachedHelm = armor?.data.data.attributes.coverage?.value.includes('neck') && !!armor?.data.data.attributes.material?.value.includes('plate');
-              if (!attachedHelm && (2 * Math.random() > 1)) {
+              const fixedHelm = armor?.data.data.attributes.coverage?.value.includes('neck') && !!armor?.data.data.attributes.material?.value.includes('plate');
+              if (!fixedHelm && (2 * Math.random() > 1)) {
                 dmgEffect = ` and knocks ${armor.name} off ${targetName}'s head` + dmgEffect;
                 return;
               }
