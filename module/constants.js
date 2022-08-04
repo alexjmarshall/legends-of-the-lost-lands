@@ -2039,7 +2039,7 @@ export const WEAPONS = { // TODO weapons?
   }
 }
 export const ATK_HEIGHTS =['high','mid','low'];
-export const AMMO_TYPES = [
+export const AMMO_TYPES = [ // TODO add blunt arrow/bolt? plate cutter
   "bodkin arrow",
   "broadhead arrow",
   "bolt",
@@ -2178,7 +2178,6 @@ export const FEATURE_TYPES = [
 export const HUMANOID_TYPES = [
   "character",
   "humanoid",
-  "undead",
 ];
 export const NONCOMBATANT_TYPES = [
   "container",
