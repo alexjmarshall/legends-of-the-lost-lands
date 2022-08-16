@@ -8,6 +8,8 @@ export const DEFAULT_HUMANOID_MV = 9;
 export const DEFAULT_MONSTER_MV = 15;
 export const DEFAULT_BASE_SV = 17;
 export const MIN_SAVE_TARGET = 2;
+export const MIN_BLEED_DMG = 6; // TODO need?
+export const BASE_IMPALE_CHANCE = 30;  // TODO need?
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
   SPELL_MAGIC: "spell_magic",
@@ -55,8 +57,8 @@ export const MAGIC_DMG_TYPES = [
 export const SHIELD_TYPES = {
   round: {
     L: {
-      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guards actually cover head, but -4 atk for being blind
-      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // also add a kite shield
+      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guard -4 atk for being blind
+      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // TODO add kite and tower shape
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
     },
     M: {
@@ -66,10 +68,15 @@ export const SHIELD_TYPES = {
     },
   },
 };
-export const MATERIAL_PROPS = {
+export const GARMENT_MATERIAL_PROPS = {
+  bone: {
+    weight:40,
+    clo:10,
+    value:180,
+  },
   wood: {
     weight:40,
-    clo:0,
+    clo:10,
     value:120,
   },
   burlap: {
@@ -132,14 +139,14 @@ export const MATERIAL_PROPS = {
     metal:true,
     bulky:false,
   },
-  chain: {
+  mail: {
     weight:48,
     clo:2,
     value:1800,
     metal:true,
     bulky:false,
   },
-  "elven chain": {
+  "elven mail": {
     weight:24,
     clo:1,
     value: 18000,
@@ -297,6 +304,25 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:2,
     },
   },
+  bone: {
+    base_AC: 2,
+    blunt: {
+      ac:1,
+      dr:1,
+    },
+    piercing: {
+      ac:1,
+      dr:0,
+    },
+    slashing: {
+      ac:0,
+      dr:0,
+    },
+    rending: {
+      ac:-2,
+      dr:2,
+    },
+  },
   scale: {
     base_AC: 2,
     blunt: {
@@ -335,7 +361,7 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:2,
     },
   },
-  chain: {
+  mail: {
     base_AC: 3,
     blunt: {
       ac:0,
@@ -354,7 +380,7 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:3,
     },
   },
-  "elven chain": {
+  "elven mail": {
     base_AC: 3,
     blunt: {
       ac:0,
@@ -469,113 +495,87 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
 }
-export const MIN_BLEED_DMG = 6;
-export const BASE_IMPALE_CHANCE = 30;
 export const ATK_MODES = {
-  "swing(b)": {
+  "swing(blunt)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
-    HIT_SOUND: "bludgeon_hit",
-    MISS_SOUND: "bludgeon_miss",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swing(s)": {
+  "swing(slashing)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
-    HIT_SOUND: "cut_hit",
-    MISS_SOUND: "cut_miss",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swing(p)": {
+  "swing(piercing)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
-    HIT_SOUND: "hew_hit",
-    MISS_SOUND: "hew_miss",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "thrust(b)": {
+  "thrust(blunt)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "bludgeon_hit",
-    MISS_SOUND: "bludgeon_miss",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thrust(s)": {
+  "thrust(slashing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "hew_hit",
-    MISS_SOUND: "hew_miss",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thrust(p)": {
+  "thrust(piercing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "thrust_hit",
-    MISS_SOUND: "thrust_miss",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "shoot(b)": {
+  "shoot(blunt)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
-    HIT_SOUND: "slingstone_hit",
-    MISS_SOUND: "slingstone_miss",
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "shoot(s)": {
+  "shoot(slashing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
-    HIT_SOUND: "arrow_hit",
-    MISS_SOUND: "arrow_miss",
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "shoot(p)": {
+  "shoot(piercing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
-    HIT_SOUND: "bolt_hit",
-    MISS_SOUND: "bolt_miss",
     DMG_TYPE: "piercing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "throw(b)": {
+  "throw(blunt)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "throw_hit",
-    MISS_SOUND: "throw_miss",
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "throw(s)": {
+  "throw(slashing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "throw_hit",
-    MISS_SOUND: "throw_miss",
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "throw(p)": {
+  "throw(piercing)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
-    HIT_SOUND: "throw_hit",
-    MISS_SOUND: "throw_miss",
     DMG_TYPE: "piercing",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
@@ -667,34 +667,34 @@ export const VOICE_SOUNDS = {};
   }
   console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
 })();
-export const PRECIOUS_MATERIALS_VALUE_PER_POUND = {
-  "copper": 40,
-  "silver": 240, // weight 0.5 for Silver Mark ingot worth 120
-  "electrum": 1600, // weight 0.075 for ep ("Stater") coin worth 120
-  "gold": 2400, // weight 0.5 for Gold Mark ingot worth 1200
-  "platinum": 12000, // weight 0.1 for pp ("Medallion") coin worth 1200
+export const CURRENCY_MATERIAL_VALUE_PER_POUND = {
+  "copper": 20,
+  "brass": 40, // weight 0.075 (13 1/3 per pound) for Brass Piece worth 3
+  "silver": 960, // weight 0.5 for Silver Mark ingot worth 500
+  "electrum": 8400, // weight 0.0143 (70 per pound) for Electrum Piece worth 120
+  "gold": 12000, // weight 0.5 for Gold Mark ingot worth 6000
 };
 export const TRADE_GOODS_VALUE_PER_POUND = {
-  // TODO add clothing types to material dict below as well
+  // TODO add clothing types to GARMENT_MATERIAL_PROPS as well
 };
-export const UNITS_OF_ACCOUNT = {
+export const COINS_OF_ACCOUNT = {
   "cp": {
-    weight: 0.025,
+    weight: 0.05, // 20 per pound
     value: 1,
-    name: "Pfennig",
-    abbr: "pf",
+    name: "Copper Piece",
+    abbr: "cp",
   },
   "sp": {
-    weight: 0.05,
+    weight: 0.0125, // 80 per pound
     value: 12,
-    name: "Groschen",
-    abbr: "gr",
+    name: "Silver Piece",
+    abbr: "sp",
   },
   "gp": {
-    weight: 0.1,
+    weight: 0.02, // 50 per pound
     value: 240,
-    name: "Florin",
-    abbr: "fl",
+    name: "Gold Piece",
+    abbr: "gp",
   },
 };
 export const LIMB_GROUPS = {
@@ -722,8 +722,6 @@ const ranChoice = (choices) => {
   const ranInd = Math.floor(Math.random() * choices.length);
   return choices[ranInd];
 }
-
-
 export const ranAnnoyedMerchant = () => ranChoice([
   'The merchant purses their lips.',
   'The merchant rubs the bridge of their nose.',
@@ -2010,40 +2008,15 @@ export const PREP_MODS = {
   },
 };
 export const WEAP_BREAK_CHANCE = 5;
-export const SQUARE_SIZE = 5;
-export const WEAPONS = { // TODO weapons?
-  fist: {
-    name: 'Fist',
-    data:{
-      data: {
-        held_offhand: true,
-        held_mainhand: true,
-        atk_style: 'stable',
-        atk_height: 'high',
-        atk_init: 'immediate',
-        atk_mode: 'swi(b)',
-        attributes: {
-          dmg: { value: '1d2/1d2' },
-          atk_modes: { value: 'Swi (B)' },
-          double_weapon: { value: true },
-          reach: { value: '0'},
-          size: { value: 'T'},
-          speed: { value: 5},
-          parry: { value: 0},
-          impact: { value: 1},
-          weap_prof: { value: 'hand-to-hand' },
-        },
-        quantity: 2
-      }
-    }
-  }
-}
+export const GRID_SIZE = 5;
 export const ATK_HEIGHTS =['high','mid','low'];
-export const AMMO_TYPES = [ // TODO add blunt arrow/bolt? plate cutter
+export const AMMO_NAMES = [ // TODO add blunt arrow/bolt? plate cutter
   "bodkin arrow",
+  "plate cutter arrow",
   "broadhead arrow",
-  "bolt",
-  "quarrel",
+  "bodkin bolt",
+  "plate cutter bolt",
+  "bullet",
 ];
 export const AIM_AREAS = {
   head: ['skull','left eye','right eye','nose','jaw','neck'],
@@ -2116,24 +2089,43 @@ export const HEIGHT_AREAS = {
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
   high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
 };
-export const WEAPON_CATEGORIES = [
-  "axes",
-  "bludgeons",
-  "bows",
-  "crossbows",
-  "curved swords",
-  "daggers",
-  "hammers",
+export const WEAPON_CLASSES = ["martial","simple"];
+export const WEAPON_SPECIAL_PROPS = [
+  "balanced",
+  "barbed",
+  "concealable",
+  "curved",
+  "flexible",
+  "fragile",
+  "hook",
+  "mounted charge",
+  "quick draw",
+  "quick slash",
+  "set vs. charge",
+  "silent",
+  "silvered",
+  "spiked",
+  "sweep"
+];
+export const WEAPON_CATEGORIES = [ // 2-3 basic weapons each
+  "axe",              // hand axe, battle axe, bardiche (rare)
+  "bludgeon",         // club, mace, goedendag (rare)
+  "bow",              // short bow (recurve), long bow, pixie bow
+  "crossbow",         // light crossbow, heavy crossbow, hand crossbow (rare)
+  "chopping sword",   // falchion, broadsword
+  "curved sword",
+  "dagger",
+  "hammer",
   "hand-to-hand",
-  "large swords",
-  "piercing swords",
-  "polearms",
-  "slings",
-  "spears",
-  "spiked bludgeons",
-  "staves",
-  "straight swords",
-  "whips",
+  "large sword",
+  "piercing sword",
+  "polearm",          // 
+  "sling",
+  "spear",
+  "spiked bludgeon",  // spiked club, morningstar, flail
+  "staff",
+  "straight sword",
+  "whip",
 ];
 export const MONSTER_TYPES = [
   "beast",
