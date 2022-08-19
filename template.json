@@ -1,6 +1,6 @@
 {
 "Actor": {
-  "types": ["character", "humanoid", "monster", "container", "merchant"],
+  "types": ["character", "humanoid", "monster", "container", "merchant", "party"],
   "templates": {
     "props": {
       "description": "",
@@ -32,6 +32,18 @@
           "group": "",
           "label": "MV",
           "value": 15
+        },
+        "req_mag": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Requires Magic Weapon",
+          "value": false
+        },
+        "mr": {
+          "dtype": "String",
+          "group": "",
+          "label": "Magic Resistance",
+          "value": "0%"
         },
         "hide": {
           "dtype": "String",
@@ -107,11 +119,11 @@
       "groups": {
         "dmg_mods": {
           "dtype": "String",
-          "label": "Damage Modifiers"
+          "label": "Damage Type Modifiers"
         },
         "immunities": {
           "dtype": "Boolean",
-          "label": "Effect Immunities"
+          "label": "Damage Effect Immunities"
         }
       },
       "attributes": {
@@ -152,33 +164,44 @@
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Type Vul.",
-            "value": "none"
+            "value": ""
           },
           "d_res": {
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Type Res.",
-            "value": "none"
+            "value": ""
           },
           "d_immune": {
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Type Immun.",
-            "value": "none"
-          },
-          "mr": {
-            "dtype": "Number",
-            "group": "dmg_mods",
-            "label": "Magic Resistance",
-            "value": 0
-          },
-          "req_magic": {
-            "dtype": "Number",
-            "group": "dmg_mods",
-            "label": "Req. Magic Weapon",
-            "value": 0
+            "value": ""
           }
         }
+      }
+    }
+  },
+  "party": {
+    "templates": ["props"],
+    "attributes": {
+      "mv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "MV",
+        "value": 9
+      },
+      "members": {
+        "dtype": "String",
+        "group": "",
+        "label": "Members",
+        "value": ""
+      },
+      "advance_time": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Advance Time on Move",
+        "value": true
       }
     }
   },
@@ -205,6 +228,10 @@
       "weapons": {
         "dtype": "String",
         "label": "Weapons"
+      },
+      "admin": {
+        "dtype": "Boolean",
+        "label": "Admin"
       }
     },
     "attributes": {
@@ -255,6 +282,20 @@
         "group": "",
         "label": "Base MV",
         "value": 12
+      },
+      "admin": {
+        "apply_fatigue": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Apply Fatigue",
+          "value": true
+        },
+        "auto_eat_drink": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Auto Eat/Drink",
+          "value": false
+        }
       },
       "ability_scores": {
         "str": {
@@ -311,7 +352,7 @@
           "dtype": "String",
           "group": "weapons",
           "label": "Proficiencies",
-          "value": "none"
+          "value": ""
         }
       }
     },
@@ -438,6 +479,7 @@
     "feature",
     "skill",
     "natural_weapon",
+    "natural_missile_weapon",
     "grapple_maneuver"
   ],
   "templates": {
@@ -458,9 +500,27 @@
         "admin": {
           "dtype": "Boolean",
           "label": "Admin"
+        },
+        "macro": {
+          "dtype": "String",
+          "label": "Macro"
         }
       },
       "attributes": {
+        "macro": {
+          "verb": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Verb",
+            "value": ""
+          },
+          "sound": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Sound",
+            "value": ""
+          }
+        },
         "admin": {
           "identified": {
             "dtype": "Boolean",
@@ -495,6 +555,84 @@
         }
       }
     },
+    "weapon": {
+      "groups": {
+        "macro": {
+          "dtype": "String",
+          "label": "Macro"
+        }
+      },
+      "attributes": {
+        "macro": {
+          "sound": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Hit Sound",
+            "value": ""
+          },
+          "miss_sound": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Miss Sound",
+            "value": ""
+          }
+        },
+        "special_props": {
+          "dtype": "String",
+          "group": "",
+          "label": "Special Properties",
+          "value": ""
+        }
+      }
+    },
+    "natural_weapon": {
+      "attributes": {
+        "macro": {
+          "verb": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Verb",
+            "value": ""
+          }
+        },
+        "dmg": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage",
+          "value": "d6"
+        },
+        "reach": {
+          "dtype": "String",
+          "group": "",
+          "label": "Reach",
+          "value": ""
+        },
+        "cut": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Cutting",
+          "value": 0
+        },
+        "pen": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Penetration",
+          "value": 0
+        },
+        "speed": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Speed",
+          "value": 0
+        },
+        "impact": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impact",
+          "value": 0
+        }
+      }
+    },
     "melee_weapon": {
       "atk_mode": "",
       "atk_height": "mid",
@@ -509,45 +647,57 @@
             "value": true
           }
         },
+        "atk_modes": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Modes",
+          "value": "swing (slashing)"
+        },
         "atk_mod": {
           "dtype": "Number",
-          "group": "thrust",
+          "group": "",
           "label": "To-Hit Mod.",
           "value": 0
         },
+        "dmg": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage",
+          "value": "d6"
+        },
         "category": {
           "dtype": "String",
-          "group": "type",
+          "group": "",
           "label": "Category",
-          "value": "axes"
+          "value": "axe"
         },
         "class": {
           "dtype": "String",
-          "group": "type",
+          "group": "",
           "label": "Class",
           "value": "martial"
         },
-        "bleed": {
+        "cut": {
           "dtype": "Number",
-          "group": "thrust",
-          "label": "Bleed",
+          "group": "",
+          "label": "Cutting",
           "value": 0
         },
         "pen": {
           "dtype": "Number",
-          "group": "thrust",
+          "group": "",
           "label": "Penetration",
           "value": 0
         },
         "impact": {
           "dtype": "Number",
-          "group": "thrust",
+          "group": "",
           "label": "Impact",
           "value": 0
         },
         "speed": {
           "dtype": "Number",
-          "group": "thrust",
+          "group": "",
           "label": "Speed",
           "value": 0
         },
@@ -568,36 +718,12 @@
           "group": "",
           "label": "Size",
           "value": "M"
-        },
-        "flex": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Flexible",
-          "value": false
-        },
-        "balanced": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Balanced",
-          "value": false
-        },
-        "fragile": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Fragile",
-          "value": false
         }
       }
     },
     "missile_weapon": {
       "ammo": "",
       "reload": 0,
-      "groups": {
-        "type": {
-          "dtype": "String",
-          "label": "Type"
-        }
-      },
       "attributes": {
         "admin": {
           "holdable": {
@@ -607,19 +733,23 @@
             "value": true
           }
         },
-        "type": {
-          "category": {
-            "dtype": "String",
-            "group": "type",
-            "label": "Category",
-            "value": "crossbows"
-          },
-          "class": {
-            "dtype": "String",
-            "group": "type",
-            "label": "Class",
-            "value": "martial"
-          }
+        "atk_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "To-Hit Mod.",
+          "value": 0
+        },
+        "category": {
+          "dtype": "String",
+          "group": "",
+          "label": "Category",
+          "value": "bow"
+        },
+        "class": {
+          "dtype": "String",
+          "group": "",
+          "label": "Class",
+          "value": "simple"
         },
         "ammo_type": {
           "dtype": "String",
@@ -640,21 +770,15 @@
           "value": "1"
         },
         "range": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
-          "label": "Range (ft.)",
-          "value": 120
+          "label": "Range",
+          "value": "120'"
         },
         "impact": {
           "dtype": "Number",
           "group": "",
           "label": "Impact",
-          "value": 0
-        },
-        "atk_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "To-Hit Mod.",
           "value": 0
         }
       }
@@ -672,13 +796,13 @@
             "dtype": "String",
             "group": "magic_dmg",
             "label": "Damage Type",
-            "value": "fire"
+            "value": ""
           },
           "dmg": {
             "dtype": "String",
             "group": "magic_dmg",
             "label": "Damage",
-            "value": "0"
+            "value": ""
           }
         }
       }
@@ -743,10 +867,10 @@
           "value": 1
         },
         "range": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
-          "label": "Range (ft.)",
-          "value": 60
+          "label": "Range",
+          "value": "60'"
         },
         "duration": {
           "dtype": "String",
@@ -1030,46 +1154,30 @@
     }
   },
   "melee_weapon": {
-    "templates": ["props","item","melee_weapon","magic_dmg"]
+    "templates": ["props","item","weapon","melee_weapon","magic_dmg"]
   },
   "throw_weapon": {
-    "templates": ["props","item","melee_weapon","magic_dmg"],
-    "groups": {
-      "throw": {
-        "dtype": "String",
-        "label": "Throw"
-      }
-    },
+    "templates": ["props","item","weapon","melee_weapon","magic_dmg"],
     "attributes": {
-      "throw": {
-        "range": {
-          "dtype": "Number",
-          "group": "throw",
-          "label": "Range (ft.)",
-          "value": 30
-        },
-        "atk_form": {
-          "dtype": "String",
-          "group": "throw",
-          "label": "Attack Form",
-          "value": "swing"
-        }
+      "range": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Throwing Range",
+        "value": "30'"
       }
     }
   },
   "missile_weapon": {
-    "templates": ["props","item","missile_weapon"]
+    "templates": ["props","item","weapon","missile_weapon"]
   },
   "bow": {
-    "templates": ["props","item","missile_weapon"],
+    "templates": ["props","item","weapon","missile_weapon"],
     "attributes": {
-      "type": {
-        "category": {
-          "dtype": "String",
-          "group": "type",
-          "label": "Category",
-          "value": "bows"
-        }
+      "category": {
+        "dtype": "String",
+        "group": "",
+        "label": "Category",
+        "value": "bow"
       },
       "req_str": {
         "dtype": "Number",
@@ -1108,10 +1216,10 @@
         "label": "Damage Type",
         "value": "piercing"
       },
-      "bleed": {
+      "cut": {
         "dtype": "Number",
         "group": "",
-        "label": "Bleed",
+        "label": "Cutting",
         "value": 0
       },
       "pen": {
@@ -1125,6 +1233,12 @@
         "group": "",
         "label": "Base Weight",
         "value": 1
+      },
+      "special_props": {
+        "dtype": "String",
+        "group": "",
+        "label": "Special Properties",
+        "value": ""
       }
     }
   },
@@ -1177,61 +1291,16 @@
     }
   },
   "natural_weapon": {
-    "templates": ["props","magic_dmg"],
+    "templates": ["props","weapon","natural_weapon","magic_dmg"]
+  },
+  "natural_missile_weapon": {
+    "templates": ["props","weapon","natural_weapon","magic_dmg"],
     "attributes": {
-      "dmg": {
-        "dtype": "String",
-        "group": "",
-        "label": "Damage",
-        "value": "d6"
-      },
-      "dmg_type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Damage Type",
-        "value": "slashing"
-      },
-      "reach": {
-        "dtype": "String",
-        "group": "",
-        "label": "Reach",
-        "value": ""
-      },
       "range": {
         "dtype": "Number",
         "group": "",
-        "label": "Range (ft.)",
-        "value": 0
-      },
-      "bleed": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Bleed",
-        "value": 0
-      },
-      "pen": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Penetration",
-        "value": 0
-      },
-      "speed": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Speed",
-        "value": 0
-      },
-      "impact": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Impact",
-        "value": 0
-      },
-      "atk_mod": {
-        "dtype": "Number",
-        "group": "",
-        "label": "To-Hit Mod.",
-        "value": 0
+        "label": "Range",
+        "value": "60'"
       }
     }
   },
