@@ -185,12 +185,6 @@
   "party": {
     "templates": ["props"],
     "attributes": {
-      "mv": {
-        "dtype": "Number",
-        "group": "",
-        "label": "MV",
-        "value": 9
-      },
       "members": {
         "dtype": "String",
         "group": "",
@@ -336,13 +330,13 @@
         }
       },
       "weapons": {
-        "weap_cats": {
+        "allowed_weap_profs": {
           "dtype": "String",
           "group": "weapons",
-          "label": "Allowed Categories",
+          "label": "Allowed Proficiencies",
           "value": "all"
         },
-        "weap_classes": {
+        "allowed_weap_classes": {
           "dtype": "String",
           "group": "weapons",
           "label": "Allowed Classes",
@@ -651,7 +645,7 @@
           "dtype": "String",
           "group": "",
           "label": "Attack Modes",
-          "value": "swing (slashing)"
+          "value": "swi(S)"
         },
         "atk_mod": {
           "dtype": "Number",
@@ -665,10 +659,10 @@
           "label": "Damage",
           "value": "d6"
         },
-        "category": {
+        "prof": {
           "dtype": "String",
           "group": "",
-          "label": "Category",
+          "label": "Proficiency",
           "value": "axe"
         },
         "class": {
@@ -739,10 +733,10 @@
           "label": "To-Hit Mod.",
           "value": 0
         },
-        "category": {
+        "prof": {
           "dtype": "String",
           "group": "",
-          "label": "Category",
+          "label": "Proficiency",
           "value": "bow"
         },
         "class": {
@@ -1084,6 +1078,14 @@
         "group": "",
         "label": "Quality",
         "value": "B"
+      },
+      "admin": {
+        "derive_attr_from_value": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Derive attributes from value",
+          "value": true
+        }
       }
     }
   },
@@ -1173,10 +1175,10 @@
   "bow": {
     "templates": ["props","item","weapon","missile_weapon"],
     "attributes": {
-      "category": {
+      "prof": {
         "dtype": "String",
         "group": "",
-        "label": "Category",
+        "label": "Proficiency",
         "value": "bow"
       },
       "req_str": {
