@@ -545,32 +545,22 @@
             "group": "admin",
             "label": "Wearable",
             "value": false
+          },
+          "consumable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Consumable",
+            "value": false
           }
         }
       }
     },
+    "container": {
+      "sub_quantity": 0,
+      "sub_weight": 0
+    },
     "weapon": {
-      "groups": {
-        "macro": {
-          "dtype": "String",
-          "label": "Macro"
-        }
-      },
       "attributes": {
-        "macro": {
-          "sound": {
-            "dtype": "String",
-            "group": "macro",
-            "label": "Hit Sound",
-            "value": ""
-          },
-          "miss_sound": {
-            "dtype": "String",
-            "group": "macro",
-            "label": "Miss Sound",
-            "value": ""
-          }
-        },
         "special_props": {
           "dtype": "String",
           "group": "",
@@ -580,12 +570,30 @@
       }
     },
     "natural_weapon": {
+      "groups": {
+        "macro": {
+          "dtype": "String",
+          "label": "Macro"
+        }
+      },
       "attributes": {
         "macro": {
           "verb": {
             "dtype": "String",
             "group": "macro",
             "label": "Verb",
+            "value": ""
+          },
+          "hit_sound": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Hit Sound",
+            "value": ""
+          },
+          "miss_sound": {
+            "dtype": "String",
+            "group": "macro",
+            "label": "Miss Sound",
             "value": ""
           }
         },
@@ -712,6 +720,12 @@
           "group": "",
           "label": "Size",
           "value": "M"
+        },
+        "max_impales": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Max Impales",
+          "value": 0
         }
       }
     },
@@ -891,42 +905,48 @@
           "value": 3
         }
       }
+    },
+    "potion": {
+      "attributes": {
+        "admin": {
+          "identified": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Identified",
+            "value": false
+          },
+          "magic": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Magic",
+            "value": true
+          },
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": true
+          },
+          "consumable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Consumable",
+            "value": true
+          }
+        }
+      }
     }
   },
   "item": {
     "templates": ["props","item"]
   },
   "potion": {
-    "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)",
-    "attributes": {
-      "desc": {
-        "dtype": "String",
-        "group": "",
-        "label": "Description",
-        "value": "red, viscous"
-      },
-      "admin": {
-        "identified": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Identified",
-          "value": false
-        },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Magic",
-          "value": true
-        },
-        "holdable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Holdable",
-          "value": true
-        }
-      }
-    }
+    "templates": ["props","item","potion","container"],
+    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)"
+  },
+  "healing_potion": {
+    "templates": ["props","item","potion","container"],
+    "macro": "game.lostlands.Macro.drinkHealingPotion(itemId,options)"
   },
   "scroll": {
     "templates": ["props","item","spell"],
@@ -956,19 +976,19 @@
           "group": "admin",
           "label": "Holdable",
           "value": true
+        },
+        "consumable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Consumable",
+          "value": true
         }
       }
     }
   },
   "container": {
-    "templates": ["props","item"],
+    "templates": ["props","item","container"],
     "attributes": {
-      "base_weight": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Base Weight",
-        "value": 1
-      },
       "handheld": {
         "dtype": "Boolean",
         "group": "",
@@ -1110,12 +1130,18 @@
           "group": "admin",
           "label": "Spoiled",
           "value": false
+        },
+        "consumable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Consumable",
+          "value": true
         }
       }
     }
   },
   "drink": {
-    "templates": ["props","item"],
+    "templates": ["props","item","container"],
     "macro": "game.lostlands.Macro.drinkWater(itemId,options)",
     "attributes": {
       "admin": {
@@ -1124,6 +1150,12 @@
           "group": "admin",
           "label": "Alcoholic",
           "value": false
+        },
+        "consumable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Consumable",
+          "value": true
         }
       }
     }
@@ -1190,13 +1222,19 @@
     }
   },
   "ammo": {
-    "templates": ["props","item","magic_dmg"],
+    "templates": ["props","item","magic_dmg","container"],
     "attributes": {
       "admin": {
         "wearable": {
           "dtype": "Boolean",
           "group": "admin",
           "label": "Wearable",
+          "value": true
+        },
+        "consumable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Consumable",
           "value": true
         }
       },
@@ -1216,7 +1254,7 @@
         "dtype": "String",
         "group": "",
         "label": "Damage Type",
-        "value": "piercing"
+        "value": "P"
       },
       "cut": {
         "dtype": "Number",
@@ -1229,12 +1267,6 @@
         "group": "",
         "label": "Penetration",
         "value": 0
-      },
-      "base_weight": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Base Weight",
-        "value": 1
       },
       "special_props": {
         "dtype": "String",
