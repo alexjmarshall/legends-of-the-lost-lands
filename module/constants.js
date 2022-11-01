@@ -58,15 +58,39 @@ export const SHIELD_TYPES = {
   round: {
     L: {
       high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guard -4 atk for being blind
-      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip", // TODO add kite and tower shape
+      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh",  // TODO make sure weight is always computed from M coverage
       low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
     },
     M: {
-      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand,chest",
+      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand",
       mid:"armpit,upper arm,elbow,forearm,hand,chest,gut",
-      low:"elbow,forearm,hand,gut,groin,hip",
+      low:"elbow,forearm,hand,gut,groin,hip,thigh",
     },
   },
+  kite: {
+    L: {
+      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin",
+      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,thigh,knee",
+      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot",
+    },
+    M: {
+      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand,chest",
+      mid:"shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin",
+      low:"elbow,forearm,hand,gut,groin,thigh",
+    },
+  },
+  tower: {
+    L: { // TODO can't be used on horseback
+      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip",
+      mid:"neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh,knee",
+      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot",
+    },
+    M: {
+      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut",
+      mid:"shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip",
+      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee",
+    }
+  }
 };
 export const GARMENT_MATERIAL_PROPS = {
   bone: {
@@ -100,12 +124,12 @@ export const GARMENT_MATERIAL_PROPS = {
     value:1080,
   },
   fur: {
-    weight:16,
+    weight:20,
     clo:32,
     value:600,
   },
   leather: {
-    weight:20,
+    weight:16,
     clo:10,
     value:300,
     metal:false,
@@ -153,7 +177,7 @@ export const GARMENT_MATERIAL_PROPS = {
     metal:true,
     bulky:false,
   },
-  "banded mail": {
+  "plated mail": {
     weight:60,
     clo:4,
     value:2400,
@@ -418,7 +442,7 @@ export const ARMOR_VS_DMG_TYPE = {
       dr:3,
     },
   },
-  "banded mail": {
+  "plated mail": {
     base_AC: 4,
     blunt: {
       ac:0,
@@ -496,84 +520,84 @@ export const ARMOR_VS_DMG_TYPE = {
   },
 }
 export const ATK_MODES = {
-  "swing(blunt)": {
+  "swi(b)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swing(slashing)": {
+  "swi(s)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swing(piercing)": {
+  "swi(p)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "thrust(blunt)": {
+  "thr(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thrust(slashing)": {
+  "thr(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thrust(piercing)": {
+  "thr(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "shoot(blunt)": {
+  "sho(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "shoot(slashing)": {
+  "sho(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "shoot(piercing)": {
+  "sho(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "piercing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "throw(blunt)": {
+  "thrw(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "throw(slashing)": {
+  "thrw(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "throw(piercing)": {
+  "thrw(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
@@ -670,7 +694,7 @@ export const VOICE_SOUNDS = {};
 export const CURRENCY_MATERIAL_VALUE_PER_POUND = {
   "copper": 20,
   "brass": 40, // weight 0.075 (13 1/3 per pound) for Brass Piece worth 3
-  "silver": 960, // weight 0.5 for Silver Mark ingot worth 500
+  "silver": 960, // weight 0.5 for Silver Mark ingot worth 480
   "electrum": 8400, // weight 0.0143 (70 per pound) for Electrum Piece worth 120
   "gold": 12000, // weight 0.5 for Gold Mark ingot worth 6000
 };
@@ -756,7 +780,7 @@ const compFract = (chance, intBleed=false, area=null) => {
 };
 const highCompFract = (intBleed=false, area=null) => compFract(0.75, intBleed, area);
 const lowCompFract = (intBleed=false, area=null) => compFract(0.25, intBleed, area);
-export const HIT_LOC_WEIGHT_INDEXES = {
+export const HIT_LOC_WEIGHT_INDEXES = { // TODO make weights object instead of array in hit locations and remove this
   SWING: 0,
   THRUST: 1,
   SWING_HIGH: 2,
@@ -1994,8 +2018,8 @@ export const STANCE_MODS = { // TODO move this to combat file
     impact_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
     speed_mod: weap => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
     shield_dr_mod: 1,
-    shield_ac_mod: 1,
-    shield_atk_mod: -2,
+    shield_ac_mod: 1, // TODO remove?
+    shield_atk_mod: -1,
   },
   counter: {
     ac_mod: -2,
@@ -2010,14 +2034,6 @@ export const PREP_MODS = {
 export const WEAP_BREAK_CHANCE = 5;
 export const GRID_SIZE = 5;
 export const ATK_HEIGHTS =['high','mid','low'];
-export const AMMO_NAMES = [ // TODO add blunt arrow/bolt? plate cutter
-  "bodkin arrow",
-  "plate cutter arrow",
-  "broadhead arrow",
-  "bodkin bolt",
-  "plate cutter bolt",
-  "bullet",
-];
 export const AIM_AREAS = {
   head: ['skull','left eye','right eye','nose','jaw','neck'],
   shoulders: ['left shoulder','left armpit','right shoulder','right armpit',],
@@ -2036,7 +2052,10 @@ export const AIM_AREAS_UNILATERAL = {
 };
 export const SHIELD_WEIGHT_MULTI = {
   worn: 1.2,
-  large: 1.33,
+  medium_kite: 0.9,
+  medium_round: 1,
+  large_kite: 1.2,
+  large_round: 1.33
 };
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {
@@ -2091,51 +2110,59 @@ export const HEIGHT_AREAS = {
 };
 export const WEAPON_CLASSES = ["martial","simple"];
 export const WEAPON_SPECIAL_PROPS = [
-  "balanced",
-  "barbed",
+  "back rank", // TODO needed? or only spears
+  "balanced", // TODO needed?
   "concealable",
-  "curved",
+  "curved", // TODO needed?
   "flexible",
   "fragile",
   "hook",
+  "loud",
   "mounted charge",
   "quick draw",
-  "quick slash",
+  "quick slash", // TODO remove
   "set vs. charge",
   "silent",
   "silvered",
-  "spiked",
-  "sweep"
+  "sweep",
+  "unwieldy",
+  "volatile"
 ];
-export const WEAPON_CATEGORIES = [ // 2-3 basic weapons each
-  "axe",              // hand axe, battle axe, bardiche (rare)
-  "bludgeon",         // club, mace, goedendag (rare)
-  "bow",              // short bow (recurve), long bow, pixie bow
-  "crossbow",         // light crossbow, heavy crossbow, hand crossbow (rare)
-  "chopping sword",   // falchion, broadsword
+export const WEAPON_CATEGORIES = [
+  "axe",
+  "bludgeon",
+  "bow",
+  "crossbow",
   "curved sword",
   "dagger",
   "hammer",
   "hand-to-hand",
-  "large sword",
+  "greatsword",
   "piercing sword",
-  "polearm",          // 
-  "sling",
+  "polearm",
   "spear",
-  "spiked bludgeon",  // spiked club, morningstar, flail
+  "spiked bludgeon",
+  "sling",
   "staff",
   "straight sword",
   "whip",
 ];
+export const AMMO_TYPES = [
+  "small stone",
+  "large stone",
+  "ball",
+  "shot",
+  "quarrel",
+  "arrow"
+];
 export const MONSTER_TYPES = [
-  "beast",
+  "animal",
   "celestial",
   "construct",
-  "demon",
-  "devil",
   "dragon",
   "elemental",
   "fey",
+  "fiend",
   "humanoid",
   "magical beast",
   "ooze",
