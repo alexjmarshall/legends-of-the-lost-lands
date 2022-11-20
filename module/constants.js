@@ -2108,7 +2108,7 @@ export const HEIGHT_AREAS = {
   mid: ['gut','chest','hand','forearm','elbow','upper arm'],
   high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
 };
-export const WEAPON_CLASSES = ["martial","simple"];
+export const WEAPON_TIERS = ["martial","simple"];
 export const WEAPON_SPECIAL_PROPS = [
   "back rank", // TODO needed? or only spears
   "balanced", // TODO needed?
@@ -2126,7 +2126,7 @@ export const WEAPON_SPECIAL_PROPS = [
   "silvered",
   "sweep",
   "unwieldy",
-  "volatile"
+  "volatile" // needed?
 ];
 export const WEAPON_CATEGORIES = [
   "axe",
@@ -2148,26 +2148,21 @@ export const WEAPON_CATEGORIES = [
   "whip",
 ];
 export const AMMO_TYPES = [
-  "small stone",
-  "large stone",
+  "stone",
+  "bullet",
   "ball",
   "shot",
   "quarrel",
   "arrow"
 ];
-export const MONSTER_TYPES = [
-  "animal",
-  "celestial",
-  "construct",
-  "dragon",
-  "elemental",
-  "fey",
-  "fiend",
-  "humanoid",
-  "magical beast",
-  "ooze",
-  "plant",
-  "undead",
+export const BOW_AMMO_TYPES = [
+  "quarrel",
+  "arrow"
+];
+export const GUN_AMMO_TYPES = [
+  "bullet",
+  "ball",
+  "shot"
 ];
 export const ALIGNMENTS = [
   "CE", // chaotic evil
@@ -2176,7 +2171,7 @@ export const ALIGNMENTS = [
   "CG", // chaotic good
   "LG", // lawful good
 ];
-export const MERCHANT_SUBTYPES = {
+export const MERCHANT_SUBTYPES = { // item types are used to determine 
   "apothecary": ["potion"],
   "magic": ["charged_item","scroll"],
   "armorer": ["armor","helmet","shield"],
@@ -2187,12 +2182,13 @@ export const MERCHANT_SUBTYPES = {
   "trader": ["trade_good"],
   "weaponsmith": ["melee_weapon","throw_weapon"],
   "bowyer": ["missile_weapon","bow","ammo"],
+  "gunsmith": ["gun","ammo"]
 };
 export const FEATURE_TYPES = [
   "feature",
   "skill",
   "natural_weapon",
-  "grapple_maneuver",
+  "unarmed_maneuver",
 ];
 export const HUMANOID_TYPES = [
   "character",
@@ -2255,12 +2251,6 @@ export const STATUS_EFFECTS = [
 {id: "coldShield", label: "EFFECT.StatusIceShield", icon: "icons/svg/ice-shield.svg"},
 {id: "magicShield", label: "EFFECT.StatusMagicShield", icon: "icons/svg/mage-shield.svg"},
 {id: "holyShield", label: "EFFECT.StatusHolyShield", icon: "icons/svg/holy-shield.svg"},
-];
-export const NON_PHYSICAL_ITEM_TYPES = [
-  "feature",
-  "skill",
-  "natural_weapon",
-  "grapple_maneuver",
 ];
  export const SPELL_SCHOOLS = [
   "abjuration",
