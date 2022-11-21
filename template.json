@@ -1,116 +1,19 @@
 {
 "Actor": {
-  "types": ["character","companion","humanoid","undead","monster","container","merchant","party"],
+  "types": ["character","retainer","humanoid","monster","container","merchant","party"],
   "templates": {
     "props": {
       "description": "",
       "attributes": {},
       "groups": {}
     },
-    "monster": {
+    "hit_locs": {
       "attributes": {
-        "hd": {
+        "hit_locs": {
           "dtype": "String",
           "group": "",
-          "label": "HD",
-          "value": "5+2"
-        },
-        "type": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Type",
-          "value": "magical beast"
-        },
-        "size": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Size",
-          "value": "L"
-        },
-        "mv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "MV",
-          "value": 15
-        },
-        "req_mag": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Requires Magic Weapon",
-          "value": false
-        },
-        "mr": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Magic Resistance",
-          "value": 0
-        },
-        "hide": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Hide",
-          "value": "leather"
-        },
-        "intelligent": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Intelligent",
-          "value": false
-        },
-        "xp_multi": {
-          "dtype": "Number",
-          "group": "",
-          "label": "XP Multiplier",
-          "value": 1
-        }
-      },
-      "hp": {
-        "value": 8,
-        "min": 0,
-        "max": 8
-      },
-      "xp": 0,
-      "ac": {}
-    },
-    "humanoid": {
-      "groups": {
-        "ability_scores": {
-          "dtype": "Number",
-          "label": "Ability Scores"
-        }
-      },
-      "attributes": {
-        "base_ac": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base AC",
-          "value": 10
-        },
-        "size": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Size",
-          "value": "M"
-        },
-        "mv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "MV",
-          "value": 9
-        },
-        "intelligent": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Intelligent",
-          "value": true
-        },
-        "ability_scores": {
-          "str": {
-            "dtype": "Number",
-            "group": "ability_scores",
-            "label": "Strength",
-            "value": 10
-          }
+          "label": "Hit Locations",
+          "value": ""
         }
       }
     },
@@ -159,19 +62,19 @@
           }
         },
         "dmg_mods": {
-          "d_vul": {
+          "dmg_vul": {
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Vulnerabilities",
             "value": ""
           },
-          "d_res": {
+          "dmg_res": {
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Resistances",
             "value": ""
           },
-          "d_immune": {
+          "dmg_immune": {
             "dtype": "String",
             "group": "dmg_mods",
             "label": "Damage Immunities",
@@ -180,10 +83,59 @@
         }
       }
     },
+    "monster": {
+      "hp": {
+        "value": 8,
+        "min": 0,
+        "max": 8
+      },
+      "xp": 0,
+      "attributes": {
+        "saves_as": {
+          "dtype": "String",
+          "group": "",
+          "label": "Saves As",
+          "value": "fighter"  // TODO select type
+        },
+        "hd": {
+          "dtype": "String",
+          "group": "",
+          "label": "Hit Dice",
+          "value": "5+2"
+        },
+        "size": {
+          "dtype": "String", // TODO select type
+          "group": "",
+          "label": "Size",
+          "value": "L"
+        },
+        "mv": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Movement Rate",
+          "value": 15
+        },
+        "xp_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "XP Multiplier",
+          "value": 1
+        }
+      }
+    },
     "character": {
       "attitude_map": {},
-      "ac": {},
       "voice": "",
+      "hp": {
+        "value": 8,
+        "min": 0,
+        "max": 8
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 1000
+      },
       "groups": {
         "ability_scores": {
           "dtype": "Number",
@@ -208,14 +160,38 @@
         "admin": {
           "dtype": "Boolean",
           "label": "Admin"
+        },
+        "saves": {
+          "dtype": "Number",
+          "label": "Saves"
         }
       },
       "attributes": {
+        "saves": {
+          "ref": {
+            "dtype": "Number",
+            "group": "Saves",
+            "label": "Reflex Save Bonus",
+            "value": 0
+          },
+          "fort": {
+            "dtype": "Number",
+            "group": "Saves",
+            "label": "Fortitude Save Bonus",
+            "value": 0
+          },
+          "will": {
+            "dtype": "Number",
+            "group": "Saves",
+            "label": "Will Save Bonus",
+            "value": 0
+          }
+        },
         "bab": {
           "dtype": "Number",
           "group": "",
-          "label": "Base AB",
-          "value": 0 
+          "label": "Base Attack Bonus",
+          "value": 0
         },
         "class": {
           "dtype": "String", // TODO select type
@@ -244,19 +220,13 @@
         "base_ac": {
           "dtype": "Number",
           "group": "",
-          "label": "Base AC",
+          "label": "Base Armor Class",
           "value": 10
-        },
-        "base_sv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base SV",
-          "value": 16
         },
         "base_mv": {
           "dtype": "Number",
           "group": "",
-          "label": "Base MV",
+          "label": "Base Movement",
           "value": 12
         },
         "admin": {
@@ -315,14 +285,14 @@
           "allowed_weap_profs": {
             "dtype": "String",
             "group": "weapons",
-            "label": "Allowed Categories",
+            "label": "Available Proficiencies",
             "value": "all"
           },
-          "allowed_weap_tiers": {
+          "allowed_weap_tiers": { // TODO select type
             "dtype": "String",
             "group": "weapons",
-            "label": "Allowed Tiers",
-            "value": "all"
+            "label": "Tier",
+            "value": "martial"
           },
           "weap_profs": {
             "dtype": "String",
@@ -343,66 +313,16 @@
             "value": ""
           }
         }
-      },
-      "hp": {
-        "value": 8,
-        "min": 0,
-        "max": 8
-      },
-      "xp": {
-        "value": 0,
-        "min": 0,
-        "max": 1000
-      }
-    }
-  },
-  "party": {
-    "templates": ["props"],
-    "attributes": {
-      "members": {
-        "dtype": "String",
-        "group": "",
-        "label": "Members", // TODO button to select all
-        "value": ""
-      },
-      "advance_time": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Advance Time on Move",
-        "value": false
-      },
-      "mv": {
-        "dtype": "Number",
-        "group": "",
-        "label": "MV",
-        "value": 9
       }
     }
   },
   "character": {
-    "templates": ["props","resistances","character"]
-  },
-  "monster": {
-    "templates": ["props","monster","resistances"],
-    "attributes": {
-      "ac": {
-        "dtype": "Number",
-        "group": "",
-        "label": "AC",
-        "value": 15
-      },
-      "atk_routine": {
-        "dtype": "String",
-        "group": "",
-        "label": "Attack Routine",
-        "value": "claw, claw, bite"
-      }
-    }
+    "templates": ["props","character"]
   },
   "retainer": {
-    "templates": ["props","resistances","character"],
+    "templates": ["props","character"],
     "groups": {
-      "retainer" {
+      "retainer": {
         "dtype": "String",
         "label": "Retainer"
       }
@@ -425,29 +345,85 @@
     }
   },
   "humanoid": {
-    "templates": ["props","monster","humanoid","resistances"],
+    "templates": ["props","monster","resistances","humanoid"],
+    "groups": {
+      "ability_scores": {
+        "dtype": "Number",
+        "label": "Ability Scores"
+      }
+    },
     "attributes": {
-      "type": {
-        "dtype": "String",
+      "base_ac": {
+        "dtype": "Number",
         "group": "",
-        "label": "Type",
-        "value": "humanoid"
+        "label": "Base Armor Class",
+        "value": 10
+      },
+      "size": {
+        "dtype": "String", // TODO select type
+        "group": "",
+        "label": "Size",
+        "value": "M"
+      },
+      "mv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Movement Rate",
+        "value": 9
+      },
+      "intelligent": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Intelligent",
+        "value": true
+      },
+      "ability_scores": {
+        "str": {
+          "dtype": "Number",
+          "group": "ability_scores",
+          "label": "Strength",
+          "value": 10
+        }
       }
     }
   },
-  "undead": {
-    "templates": ["props","monster","humanoid","resistances"],
+  "monster": {
+    "templates": ["props","monster","resistances","hit_locs"],
     "attributes": {
-      "type": {
+      "base_ac": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Armor Class",
+        "value": 15
+      },
+      "atk_routine": {
         "dtype": "String",
         "group": "",
-        "label": "Type",
-        "value": "undead"
+        "label": "Attack Routine",
+        "value": "claw, claw, bite"
       },
-      "energy_drain": {
+      "req_mag": {
         "dtype": "Boolean",
         "group": "",
-        "label": "Energy Drain",
+        "label": "Requires Magic Weapon",
+        "value": false
+      },
+      "mr": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Magic Resistance",
+        "value": 0
+      },
+      "hide": {
+        "dtype": "String", // TODO select type
+        "group": "",
+        "label": "Hide",
+        "value": "leather"
+      },
+      "intelligent": {
+        "dtype": "Boolean",
+        "group": "",
+        "label": "Intelligent",
         "value": false
       }
     }
@@ -472,7 +448,27 @@
   "merchant": {
     "templates": ["props"],
     "attitude_map": {},
+    "groups": {
+      "trade_goods": {
+        "dtype": "String",
+        "label": "Trade Goods"
+      }
+    },
     "attributes": {
+      "trade_goods": {
+        "demand": {
+          "dtype": "String",
+          "group": "trade_goods",
+          "label": "Demand", // TODO select type trade good
+          "value": ""
+        },
+        "surplus": {
+          "dtype": "String",
+          "group": "trade_goods",
+          "label": "Surplus", // TODO select type trade good
+          "value": ""
+        }
+      },
       "type": {
         "dtype": "String",
         "group": "",
@@ -494,20 +490,31 @@
       "money": {
         "dtype": "Number",
         "group": "",
-        "label": "Money",
+        "label": "Money (CPs)",
         "value": 24000
-      },
-      "demand": {
+      }
+    }
+  },
+  "party": {
+    "templates": ["props"],
+    "attributes": {
+      "members": {
         "dtype": "String",
         "group": "",
-        "label": "Demand", // TODO select type trade good
+        "label": "Members",
         "value": ""
       },
-      "surplus": {
-        "dtype": "String",
+      "advance_time": {
+        "dtype": "Boolean",
         "group": "",
-        "label": "Surplus", // TODO select type trade good
-        "value": ""
+        "label": "Advance Time on Move",
+        "value": false
+      },
+      "mv": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Movement Rate",
+        "value": 9
       }
     }
   }
@@ -540,7 +547,7 @@
     "skill",
     "natural_weapon",
     "natural_missile_weapon",
-    "unarmed_maneuver"
+    "grappling_maneuver"
   ],
   "templates": {
     "props": {
@@ -599,6 +606,12 @@
             "group": "admin",
             "label": "Consumable",
             "value": false
+          },
+          "merchant_type": {
+            "dtype": "String", // TODO select merchant type
+            "group": "admin",
+            "label": "Merchant Type",
+            "value": "general"
           }
         }
       }
@@ -632,47 +645,16 @@
       }
     },
     "natural_weapon": {
-      "vs_armor_mods": {},
       "attributes": {
         "dmg": {
           "dtype": "String",
           "group": "",
           "label": "Damage",
           "value": "d6"
-        },
-        "reach": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Reach",
-          "value": 1
-        },
-        "cut": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Cutting Power",
-          "value": 2
-        },
-        "pen": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Penetration",
-          "value": 3
-        },
-        "speed": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Speed",
-          "value": 8
-        },
-        "impact": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Impact",
-          "value": 2
         }
       }
     },
-    "melee_weapon": {
+    "melee_weapon": { // TODO hit locations field for monsters, like this: body(99/AC18), eye(1/AC10)
       "vs_armor_mods": {},
       "atk_mode": "",
       "atk_height": "mid",
@@ -883,13 +865,13 @@
           "ac_mod": {
             "dtype": "Number",
             "group": "magic_mods",
-            "label": "AC Mod.",
+            "label": "Armor Class Mod.",
             "value": 0
           },
           "sv_mod": {
             "dtype": "Number",
             "group": "magic_mods",
-            "label": "SV Mod.",
+            "label": "Save Mod.",
             "value": 0
           }
         }
@@ -1387,7 +1369,7 @@
       }
     }
   },
-  "unarmed_maneuver": { // TODO flesh out system, make notes, pummel/kick?
+  "grappling_maneuver": { // TODO flesh out system, make notes, pummel/kick?
     "templates": ["props"],
     "attributes": {
       "req_atk_status": {
