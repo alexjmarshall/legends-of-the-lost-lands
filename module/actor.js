@@ -9,9 +9,7 @@ import * as Constant from "./constants.js";
 export class SimpleActor extends Actor {
 
   /** @inheritdoc */
-  prepareDerivedData() {console.log(`updatin actor ${this.data.name}`)
-
-    // actor types: character, humanoid, undead, monster, container, merchant
+  prepareDerivedData() {
 
     super.prepareDerivedData();
     this.data.data.groups = this.data.data.groups || {};
@@ -19,9 +17,134 @@ export class SimpleActor extends Actor {
     const actorData = this.data;
 
     this._prepareCharacterData(actorData);
+    this._prepareRetainerData(actorData);
     this._prepareHumanoidData(actorData);
     this._prepareMonsterData(actorData);
     this._prepareContainerData(actorData);
+    this._preparePartyData(actorData);
+    // TODO fix shield shape/size coverage
+  }
+
+  _prepareCharacterData(actorData) {
+    const type = actorData.type;
+    if (type !== 'character' && type !== 'retainer')
+      return;
+
+    const charData = actorData.data;
+    const items = actorData.items;
+    const wornItems = items.filter(i => i.data.data.worn);
+    const attrs = charData.attributes;
+    const abilities = attrs.ability_scores || {};
+    const size = attrs.size.value.toUpperCase().trim();
+    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
+    const AGILITY_PENALTY_THRESHOLD = 5;
+    const AGILITY_PENALTY_FACTOR = 3;
+    const SKILL_PENALTY_THRESHOLD = 2;
+    const SPELL_FAILURE_FACTOR = 5/2;
+    const DEFAULT_STR = 10;
+    const ENC_BASE = 20/3;
+    const ENC_FACTOR = 2/3;
+
+    // encumbrance
+    charData.enc = this._getEnc(items);
+
+    // mv & speed
+    const str = abilities.str.value ?? DEFAULT_STR;
+    const encStr = Math.round( Util.sizeMulti(str, sizeVal) );
+    const baseMv = attrs.base_mv.value ?? Constant.DEFAULT_BASE_MV;
+    const mvPenalty = Math.floor( charData.enc / (ENC_BASE + encStr * ENC_FACTOR) * baseMv / Constant.DEFAULT_BASE_MV );
+    const mv = Math.max(0, baseMv - mvPenalty);
+    charData.mv = mv;
+    charData.speed = mv * Constant.GRID_SIZE;
+
+    // ability score mods
+    this._prepareAbilityScoreMods(abilities);
+
+    // set remove body part locations
+    this._updateRemovedLocations(charData);
+
+    // spell failure, skill check penalty & max dex mod
+    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
+    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE_FACTOR);
+    charData.skill_penalty = Math.max(0, Math.floor(totalPenaltyWgt - SKILL_PENALTY_THRESHOLD));
+    charData.agility_penalty = Math.floor( Math.max(0, (totalPenaltyWgt - AGILITY_PENALTY_THRESHOLD)) / AGILITY_PENALTY_FACTOR );
+
+    // save bonuses
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
+    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
+    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
+    const refBase = +attrs.saves.ref.value || 0;
+    const fortBase = +attrs.saves.fort.value || 0;
+    const willBase = +attrs.saves.will.value || 0;
+    charData.refBonus = refBase + magicClothingSvMod + magicJewelrySvMod;
+    charData.fortBonus = fortBase + magicClothingSvMod + magicJewelrySvMod;
+    charData.willBonus = willBase + magicClothingSvMod + magicJewelrySvMod;
+
+    // attack bonuses by attack form
+    const bab = +attrs.bab.value || 0;
+    charData.swingAtkBonus = (bab + abilities.str?.mod) || 0;
+    charData.thrustAtkBonus = (bab + abilities.dex?.mod) || 0;
+    charData.shootAtkBonus = (bab + abilities.dex?.mod) || 0;
+    charData.throwAtkBonus = (bab + abilities.dex?.mod) || 0;
+
+    // size
+    charData.size = sizeVal;
+
+    // worn AC and clo
+    this._prepareWornAc(actorData);
+    this._prepareWornClo(actorData);
+    
+    // weapons
+    charData.weap_profs = Util.getArrFromCSL(attrs.weapons.weap_profs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+    charData.weap_specs = Util.getArrFromCSL(attrs.weapons.weap_specs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+    charData.weap_masteries = Util.getArrFromCSL(attrs.weapons.weap_masteries.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+  }
+//TODO test
+  _updateRemovedLocations(charData) {
+    const injuryArr = Util.getArrFromCSL(charData.injuries || '');
+    const removedLocations = injuryArr.map(i => {
+      let loc = i.toLowerCase();
+      if (!loc.includes('severed'))
+        return null;
+      loc = loc.replace('severed', '').trim();
+      if (Object.keys(Constant.HIT_LOCATIONS).includes(loc))
+        return loc;
+      const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
+      if (!side)
+        return null;
+      let limbGroup = Constant.LIMB_GROUPS[loc.replace(side,'').trim()];
+      return limbGroup
+        ? limbGroup.map(l => `${side} ${l}`)
+        : loc;
+    }).flat();
+
+    charData.removedLocs = removedLocations;
+  }
+
+  _getScoreMod(score) {
+    if (!score) return 0;
+    if (score <= 2) return score - 3 + -3;
+    if (score <= 3) return -3;
+    if (score <= 5) return -2;
+    if (score <= 8) return -1;
+    if (score <= 12) return 0;
+    if (score <= 15) return 1;
+    if (score <= 17) return 2;
+    if (score <= 18) return 3;
+    return score - 18 + 3;
+  }
+
+  _prepareRetainerData(actorData) {
+    const type = actorData.type;
+    if (type !== 'retainer')
+      return;
+    const charData = actorData.data;
+    const attrs = charData.attributes;
+    const loyalty = attrs.retainer.loyalty || {};
+
+      // loyalty score mod.
+    if (loyalty.value) loyalty.mod = _getScoreMod(loyalty.value);
   }
 
   _getEnc(items) {
@@ -32,6 +155,7 @@ export class SimpleActor extends Actor {
   }
 
   _prepareContainerData(actorData) {
+    // TODO non-magical containers like backpacks & sacks don't give "bonus" weight, but are required to carry more than 2lb of "loose" items
     const type = actorData.type;
     if (type !== 'container') return;
 
@@ -54,7 +178,7 @@ export class SimpleActor extends Actor {
     const container = character.items.find(item => item.name === containerName);
     if (!container?._id) return;
 
-    const containerFactor = +attrs.load_factor.value || 1;
+    const containerFactor = +attrs.load_red_factor.value || 1;
     const containerWeight = (Math.round(enc / containerFactor * 10) / 10) || 1;
     const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
     if (containerWeight !== container.data.data.weight) {
@@ -87,7 +211,7 @@ export class SimpleActor extends Actor {
     // mv & speed
     const mv = +attrs.mv.value || Constant.DEFAULT_MONSTER_MV;
     data.mv = mv;
-    data.speed = mv * Constant.SQUARE_SIZE;
+    data.speed = mv * Constant.GRID_SIZE;
 
     const intelligent = attrs.intelligent.value;
     const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
@@ -130,12 +254,12 @@ export class SimpleActor extends Actor {
   }
 
   _prepareAbilityScoreMods(abilities) {
-    if (abilities.str) abilities.str.mod = Math.floor(abilities.str.value / 3 - 3);
-    if (abilities.int) abilities.int.mod = Math.floor(abilities.int.value / 3 - 3);
-    if (abilities.wis) abilities.wis.mod = Math.floor(abilities.wis.value / 3 - 3);
-    if (abilities.dex) abilities.dex.mod = Math.floor(abilities.dex.value / 3 - 3);
-    if (abilities.con) abilities.con.mod = Math.floor(abilities.con.value / 3 - 3);
-    if (abilities.cha) abilities.cha.mod = Math.floor(abilities.cha.value / 3 - 3);
+    if (abilities.str) abilities.str.mod = this._getScoreMod(+abilities.str.value);
+    if (abilities.int) abilities.int.mod = this._getScoreMod(+abilities.int.value);
+    if (abilities.wis) abilities.wis.mod = this._getScoreMod(+abilities.wis.value);
+    if (abilities.dex) abilities.dex.mod = this._getScoreMod(+abilities.dex.value);
+    if (abilities.con) abilities.con.mod = this._getScoreMod(+abilities.con.value);
+    if (abilities.cha) abilities.cha.mod = this._getScoreMod(+abilities.cha.value);
   }
 
   _getHighestMagicVal(items, key) {
@@ -165,7 +289,7 @@ export class SimpleActor extends Actor {
     // mv & speed
     const mv = +attrs.mv.value || Constant.DEFAULT_HUMANOID_MV;
     data.mv = mv;
-    data.speed = mv * Constant.SQUARE_SIZE;
+    data.speed = mv * Constant.GRID_SIZE;
 
     // sv
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
@@ -184,91 +308,6 @@ export class SimpleActor extends Actor {
     this._prepareAbilityScoreMods(abilities);
     
     this._prepareWornAc(actorData);
-  }
-
-  _prepareCharacterData(actorData) {
-    const type = actorData.type;
-    if (type !== 'character') return;
-    const charData = actorData.data;
-    const items = actorData.items;
-    const wornItems = items.filter(i => i.data.data.worn);
-    const attrs = charData.attributes;
-    const abilities = attrs.ability_scores || {};
-    const size = attrs.size.value.toUpperCase().trim();
-    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-    const AGILITY_PENALTY = {threshold: 5, factor: 3};
-    const SKILL_PENALTY = {threshold: 2};
-    const SPELL_FAILURE = {factor: 5/2};
-
-    // encumbrance
-    charData.enc = this._getEnc(items);
-
-    // mv & speed
-    const str = abilities.str?.value || 10;
-    const encStr = Math.round( Util.sizeMulti(str, sizeVal) );
-    const baseMv = attrs.base_mv?.value || Constant.DEFAULT_BASE_MV;
-    const encBase = 20/3;
-    const encFactor = 2/3;
-    const mvPenalty = Math.floor( charData.enc / (encBase + encStr * encFactor) * baseMv / Constant.DEFAULT_BASE_MV );
-    const mv = Math.max(0, baseMv - mvPenalty);
-    charData.mv = mv;
-    charData.speed = mv * Constant.SQUARE_SIZE;
-
-
-    // ability score mods
-    this._prepareAbilityScoreMods(abilities);
-
-
-    // set remove body part locations
-    // const injuryArr = Util.getArrFromCSL(actorData.injuries || '');
-    // const removedLocations = injuryArr.map(i => i.toLowerCase().replace(/  +/g, ' ').trim())
-    //   .map(loc => {
-    //     if (!loc.includes('severed')) return null;
-    //     loc = loc.replace('severed', '');
-    //     if (Constant.HIT_LOC_ARRS.THRUST.includes(loc)) return loc;
-    //     const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
-    //     loc = loc.replace(side,'').trim();
-    //     if (side) {
-    //       return Constant.LIMB_GROUPS[loc]?.map(l => `${side} ${l}`);
-    //     } 
-    //   }).flat().filter(l => Constant.HIT_LOC_ARRS.THRUST.includes(l));
-    // // actorData.removedLocs = removedLocations;
-    // const currRemovedLocs = this.getFlag("lostlands", "removedLocs") || [];
-    // let updateRemovedLocs = false;
-    // removedLocations.forEach(l => {
-    //   if (!currRemovedLocs.includes(l)) {
-    //     currRemovedLocs.push(l);
-    //     updateRemovedLocs = true;
-    //   }
-    // });
-    // updateRemovedLocs && this.setFlag("lostlands", "removedLocs", currRemovedLocs);
-    
-
-    
-    // spell failure, skill check penalty & max dex mod
-    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
-    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE.factor);
-    charData.skill_penalty = Math.max(0, Math.floor(totalPenaltyWgt - SKILL_PENALTY.threshold));
-    charData.agility_penalty = Math.floor( Math.max(0, (totalPenaltyWgt - AGILITY_PENALTY.threshold)) / AGILITY_PENALTY.factor );
-
-    // sv
-    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
-    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
-    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
-    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
-    const svBase = +attrs.base_sv.value || Constant.DEFAULT_BASE_SV;
-    const sv = Math.max(Constant.MIN_SAVE_TARGET, (svBase - magicClothingSvMod - magicJewelrySvMod));
-    charData.sv = sv;    
-
-    charData.bab = +attrs.bab.value || 0;
-
-    charData.size = sizeVal;
-
-    this._prepareWornAc(actorData);
-
-    this._prepareWornClo(actorData);
-    
-    charData.weap_profs = Util.getArrFromCSL(attrs.weapons.weap_profs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
   }
 
   _prepareWornClo(actorData) { // TODO cannot wear clothing/armor too small
@@ -297,7 +336,7 @@ export class SimpleActor extends Actor {
     data.clo = Math.floor(clo);
   }
 
-  _prepareWornAc(actorData) {
+  _prepareWornAc(actorData) { // TODO continue
     const data = actorData.data;
     const items = actorData.items;
     const heldItems = items.filter(i => (i.data.data.held_offhand || i.data.data.held_mainhand));
@@ -425,7 +464,24 @@ export class SimpleActor extends Actor {
     data.ac = ac;
   }
 
+  _preparePartyData(actorData) {
+    const type = actorData.type;
+    if (type !== 'party') return;
 
+    const data = actorData.data;
+    const attrs = data.attributes;
+
+    // party MV = slowest member TODO allow DM to hardcode in attrs?
+    const membersVal = attrs.members.value || "";
+    if (game.actors?.getName) {
+      const members = Util.getArrFromCSL(membersVal).map(name => game.actors.getName(name)).filter(a => a);
+      const memberMVs = members.map(a => +a.data.data.mv).filter(m => m != null && !isNaN(m));
+      const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
+      const mv = slowestMV || Constant.DEFAULT_BASE_MV;
+      console.log(`Updating party ${actorData.name} MV to ${mv}`, members);
+      data.mv = mv;
+    }
+  }
 
   /* -------------------------------------------- */
 
