@@ -6,9 +6,7 @@ export const DEFAULT_BASE_AC = 10;
 export const DEFAULT_BASE_MV = 12;
 export const DEFAULT_HUMANOID_MV = 9;
 export const DEFAULT_MONSTER_MV = 15;
-export const DEFAULT_BASE_SV = 17;
-export const MIN_SAVE_TARGET = 2;
-export const MIN_BLEED_DMG = 6; // TODO need?
+export const MIN_BLEED_DMG = 6; // TODO need? min knockdown dmg?
 export const BASE_IMPALE_CHANCE = 30;  // TODO need?
 export const SPELL_TYPES = {
   SPELL_CLERIC: "spell_cleric",
@@ -519,85 +517,87 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
 }
+// TODO ask players whether all melee should use STR, and have finesse weaps
+// finesse weapons could be daggers and thrusting swords
 export const ATK_MODES = {
-  "swi(b)": {
+  "swing(b)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swi(s)": {
+  "swing(s)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "swi(p)": {
+  "swing(p)": {
     ATK_ATTR: "str",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "swing",
   },
-  "thr(b)": {
+  "thrust(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thr(s)": {
+  "thrust(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "thr(p)": {
+  "thrust(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
     ATK_TYPE: "melee",
     ATK_FORM: "thrust",
   },
-  "sho(b)": {
+  "shoot(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "sho(s)": {
+  "shoot(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "sho(p)": {
+  "shoot(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: null,
     DMG_TYPE: "piercing",
     ATK_TYPE: "missile",
     ATK_FORM: "shoot",
   },
-  "thrw(b)": {
+  "throw(b)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "blunt",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "thrw(s)": {
+  "throw(s)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "slashing",
     ATK_TYPE: "missile",
     ATK_FORM: "throw",
   },
-  "thrw(p)": {
+  "throw(p)": {
     ATK_ATTR: "dex",
     DMG_ATTR: "str",
     DMG_TYPE: "piercing",
@@ -2164,6 +2164,12 @@ export const GUN_AMMO_TYPES = [
   "ball",
   "shot"
 ];
+export const SAVES_AS_CLASSES = [
+  "fighter",
+  "cleric",
+  "thief",
+  "magic-user"
+];
 export const ALIGNMENTS = [
   "CE", // chaotic evil
   "LE", // lawful evil
@@ -2171,24 +2177,24 @@ export const ALIGNMENTS = [
   "CG", // chaotic good
   "LG", // lawful good
 ];
-export const MERCHANT_SUBTYPES = { // item types are used to determine 
-  "apothecary": ["potion"],
-  "magic": ["charged_item","scroll"],
-  "armorer": ["armor","helmet","shield"],
-  "clothier": ["clothing"],
-  "jeweller": ["jewelry","gem"],
-  "innkeeper": ["drink","food"],
-  "general": ["item","container"],
-  "trader": ["trade_good"],
-  "weaponsmith": ["melee_weapon","throw_weapon"],
-  "bowyer": ["missile_weapon","bow","ammo"],
-  "gunsmith": ["gun","ammo"]
-};
+export const MERCHANT_SUBTYPES = [
+  "apothecary",
+  "magic",
+  "armorer",
+  "clothier",
+  "jeweller",
+  "innkeeper",
+  "general",
+  "trader",
+  "weaponsmith",
+  "bowyer",
+  "gunsmith"
+];
 export const FEATURE_TYPES = [
   "feature",
   "skill",
   "natural_weapon",
-  "unarmed_maneuver",
+  "grappling_maneuver",
 ];
 export const HUMANOID_TYPES = [
   "character",
