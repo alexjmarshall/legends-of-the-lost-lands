@@ -1,6 +1,6 @@
 {
 "Actor": {
-  "types": ["character","retainer","humanoid","monster","container","merchant","party"],
+  "types": ["character","retainer","humanoid","monster","storage","merchant","party"],
   "templates": {
     "props": {
       "description": "",
@@ -109,7 +109,7 @@
           "label": "Size",
           "value": "L"
         },
-        "mv": {
+        "base_mv": {
           "dtype": "Number",
           "group": "",
           "label": "Movement Rate",
@@ -126,6 +126,7 @@
     "character": {
       "attitude_map": {},
       "voice": "",
+      "injuries": "",
       "hp": {
         "value": 8,
         "min": 0,
@@ -345,7 +346,7 @@
     }
   },
   "humanoid": {
-    "templates": ["props","monster","resistances","humanoid"],
+    "templates": ["props","monster","resistances"],
     "groups": {
       "ability_scores": {
         "dtype": "Number",
@@ -365,7 +366,7 @@
         "label": "Size",
         "value": "M"
       },
-      "mv": {
+      "base_mv": {
         "dtype": "Number",
         "group": "",
         "label": "Movement Rate",
@@ -428,7 +429,7 @@
       }
     }
   },
-  "container": {
+  "storage": {
     "templates": ["props"],
     "attributes": {
       "load_red_factor": {
@@ -437,11 +438,17 @@
         "label": "Load Reduction Factor",
         "value": 1
       },
-      "capacity": {
+      "wgt_limt": {
         "dtype": "Number",
         "group": "",
-        "label": "Capacity",
+        "label": "Weight Limit",
         "value": 50
+      },
+      "item_type": {
+        "dtype": "String",
+        "group": "",
+        "label": "Item Type",
+        "value": "any" // TODO select Item Type
       }
     }
   },
@@ -519,11 +526,12 @@
     }
   }
 },
-"Item": {
-  "types": [
+"Item": { // TODO 4 quick items can be worn at belt
+  "types": [ // same restrictions as what can be held in hand
     "item",
     "potion",
     "scroll",
+    "storage",
     "charged_item",
     "armor",
     "helmet",
@@ -538,7 +546,7 @@
     "throw_weapon",
     "missile_weapon",
     "ammo",
-    "container",
+    "storage",
     "currency",
     "spell_magic",
     "spell_cleric",
@@ -630,6 +638,12 @@
             "group": "container",
             "label": "Base Weight",
             "value": 0
+          },
+          "qty_limit": {
+            "dtype": "Number",
+            "group": "container",
+            "label": "Quantity Limit",
+            "value": 20
           }
         }
       }
@@ -988,10 +1002,6 @@
     "templates": ["props","item","potion","container"],
     "macro": "game.lostlands.Macro.drinkPotion(itemId,options)"
   },
-  "healing_potion": {
-    "templates": ["props","item","potion","container"],
-    "macro": "game.lostlands.Macro.drinkHealingPotion(itemId,options)"
-  },
   "scroll": {
     "templates": ["props","item","spell"],
     "macro": "game.lostlands.Macro.readScroll(itemId,options)",
@@ -1030,8 +1040,16 @@
       }
     }
   },
-  "container": {
-    "templates": ["props","item","container"]
+  "storage": {
+    "templates": ["props","item"],
+    "attributes": {
+      "linked_actor": {
+        "dtype": "String",
+        "group": "",
+        "label": "Linked Actor",
+        "value": "" // TODO select actor with storage type
+      }
+    }
   },
   "charged_item": {
     "templates": ["props","item"],
