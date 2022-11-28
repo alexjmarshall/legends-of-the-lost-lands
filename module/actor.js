@@ -20,7 +20,7 @@ export class SimpleActor extends Actor {
     this._prepareRetainerData(actorData);
     this._prepareHumanoidData(actorData);
     this._prepareMonsterData(actorData);
-    this._prepareContainerData(actorData);
+    this._prepareStorageData(actorData);
     this._preparePartyData(actorData);
     // TODO fix shield shape/size coverage
   }
@@ -58,7 +58,7 @@ export class SimpleActor extends Actor {
     charData.speed = mv * Constant.GRID_SIZE;
 
     // ability score mods
-    this._prepareAbilityScoreMods(abilities);
+    this._addAbilityScoreMods(abilities);
 
     // set remove body part locations
     this._updateRemovedLocations(charData);
@@ -92,47 +92,14 @@ export class SimpleActor extends Actor {
     charData.size = sizeVal;
 
     // worn AC and clo
-    this._prepareWornAc(actorData);
-    this._prepareWornClo(actorData);
+    this._addWornAc(actorData);
+    this._addWornClo(actorData);
     
     // weapons
-    charData.weap_profs = Util.getArrFromCSL(attrs.weapons.weap_profs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
-    charData.weap_specs = Util.getArrFromCSL(attrs.weapons.weap_specs.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
-    charData.weap_masteries = Util.getArrFromCSL(attrs.weapons.weap_masteries.value || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
-  }
-//TODO test
-  _updateRemovedLocations(charData) {
-    const injuryArr = Util.getArrFromCSL(charData.injuries || '');
-    const removedLocations = injuryArr.map(i => {
-      let loc = i.toLowerCase();
-      if (!loc.includes('severed'))
-        return null;
-      loc = loc.replace('severed', '').trim();
-      if (Object.keys(Constant.HIT_LOCATIONS).includes(loc))
-        return loc;
-      const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
-      if (!side)
-        return null;
-      let limbGroup = Constant.LIMB_GROUPS[loc.replace(side,'').trim()];
-      return limbGroup
-        ? limbGroup.map(l => `${side} ${l}`)
-        : loc;
-    }).flat();
-
-    charData.removedLocs = removedLocations;
-  }
-
-  _getScoreMod(score) {
-    if (!score) return 0;
-    if (score <= 2) return score - 3 + -3;
-    if (score <= 3) return -3;
-    if (score <= 5) return -2;
-    if (score <= 8) return -1;
-    if (score <= 12) return 0;
-    if (score <= 15) return 1;
-    if (score <= 17) return 2;
-    if (score <= 18) return 3;
-    return score - 18 + 3;
+    const getWeapProfs = weapCatList => Util.getArrFromCSL(weapCatList || '').map(p => p.toLowerCase()).filter(p => Constant.WEAPON_CATEGORIES.includes(p));
+    charData.weap_profs = getWeapProfs(attrs.weapons.weap_profs.value);
+    charData.weap_specs = getWeapProfs(attrs.weapons.weap_specs.value);
+    charData.weap_masteries = getWeapProfs(attrs.weapons.weap_masteries.value);
   }
 
   _prepareRetainerData(actorData) {
@@ -147,48 +114,48 @@ export class SimpleActor extends Actor {
     if (loyalty.value) loyalty.mod = _getScoreMod(loyalty.value);
   }
 
-  _getEnc(items) {
-    const wgtItems = items.filter(i => +i.data.data.total_weight > 0);
-    const sumItemWeight = (a, b) => a + b.data.data.total_weight;
-    const enc = Math.round( wgtItems.reduce(sumItemWeight, 0) * 10 ) / 10;
-    return enc;
-  }
-
-  _prepareContainerData(actorData) {
-    // TODO non-magical containers like backpacks & sacks don't give "bonus" weight, but are required to carry more than 2lb of "loose" items
+  _prepareHumanoidData(actorData) {
     const type = actorData.type;
-    if (type !== 'container') return;
-
-    const containerName = actorData.name;
-    const items = actorData.items;
+    if (type !== 'humanoid') return;
     const data = actorData.data;
+    const items = actorData.items;
+    const wornItems = items.filter(i => i.data.data.worn);
     const attrs = data.attributes;
-    const enc = this._getEnc(items);
-    data.enc = enc;
+    const abilities = attrs.ability_scores || {};
+    const size = attrs.size.value.toUpperCase().trim();
+    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
 
-    // find item with same name as this container owned by another character
-    if (!game.actors) return;
-    const characters = game.actors.filter(a => a.type === "character" 
-      && a.items.some(i => i.type === "container" && i.name === containerName));
-    if (!characters.length) return;
+    // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
+    const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
+    const hdVal = Number(hdValArr[0] + hdValArr.length - 1) || 0;
 
-    if (characters.length > 1) ui.notifications.error(`More than one character with container ${containerName}!`);
+    // xp
+    const xpMulti = Math.max(1, (+attrs.xp_multi.value || 1));
+    const hpMax = +data.hp.max || 0;
+    data.xp = this._getMonsterXP(hdVal, hpMax, xpMulti);
 
-    const character = characters[0];
-    const container = character.items.find(item => item.name === containerName);
-    if (!container?._id) return;
+    // mv & speed
+    const mv = +attrs.mv.value || Constant.DEFAULT_HUMANOID_MV;
+    data.mv = mv;
+    data.speed = mv * Constant.GRID_SIZE;
 
-    const containerFactor = +attrs.load_red_factor.value || 1;
-    const containerWeight = (Math.round(enc / containerFactor * 10) / 10) || 1;
-    const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
-    if (containerWeight !== container.data.data.weight) {
-      character.updateEmbeddedDocuments("Item", [containerUpdateData]);
-    }
-  }
+    // sv
+    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
+    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
+    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
+    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
+    const intelligent = attrs.intelligent.value;
+    const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
+    data.sv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
+    data.msv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - msvVal - magicClothingSvMod - magicJewelrySvMod));
 
-  _getMonsterXP(hdVal, hpMax, xpMulti) {
-    // hd x hd x 10 x multiplier + 1/hp
-    return hdVal * hdVal * 10 * xpMulti + hpMax;
+    data.bab = hdVal;
+
+    data.size = sizeVal;
+
+    this._addAbilityScoreMods(abilities);
+    
+    this._addWornAc(actorData);
   }
 
   _prepareMonsterData(actorData) {
@@ -253,7 +220,104 @@ export class SimpleActor extends Actor {
     data.ac = ac;
   }
 
-  _prepareAbilityScoreMods(abilities) {
+  _prepareStorageData(actorData) {
+    // TODO non-magical containers like backpacks & sacks don't give "bonus" weight, but are required to carry more than 2lb of "loose" items
+    const type = actorData.type;
+    if (type !== 'container') return;
+
+    const containerName = actorData.name;
+    const items = actorData.items;
+    const data = actorData.data;
+    const attrs = data.attributes;
+    const enc = this._getEnc(items);
+    data.enc = enc;
+
+    // find item with same name as this container owned by another character
+    if (!game.actors) return;
+    const characters = game.actors.filter(a => a.type === "character" 
+      && a.items.some(i => i.type === "container" && i.name === containerName));
+    if (!characters.length) return;
+
+    if (characters.length > 1) ui.notifications.error(`More than one character with container ${containerName}!`);
+
+    const character = characters[0];
+    const container = character.items.find(item => item.name === containerName);
+    if (!container?._id) return;
+
+    const containerFactor = +attrs.load_red_factor.value || 1;
+    const containerWeight = (Math.round(enc / containerFactor * 10) / 10) || 1;
+    const containerUpdateData = { _id: container._id, "data.weight": containerWeight };
+    if (containerWeight !== container.data.data.weight) {
+      character.updateEmbeddedDocuments("Item", [containerUpdateData]);
+    }
+  }
+
+  _preparePartyData(actorData) {
+    const type = actorData.type;
+    if (type !== 'party') return;
+
+    const data = actorData.data;
+    const attrs = data.attributes;
+
+    // party MV = slowest member TODO allow DM to hardcode in attrs?
+    const membersVal = attrs.members.value || "";
+    if (game.actors?.getName) {
+      const members = Util.getArrFromCSL(membersVal).map(name => game.actors.getName(name)).filter(a => a);
+      const memberMVs = members.map(a => +a.data.data.mv).filter(m => m != null && !isNaN(m));
+      const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
+      const mv = slowestMV || Constant.DEFAULT_BASE_MV;
+      console.log(`Updating party ${actorData.name} MV to ${mv}`, members);
+      data.mv = mv;
+    }
+  }
+//TODO test
+  _updateRemovedLocations(charData) {
+    const injuryArr = Util.getArrFromCSL(charData.injuries || '');
+    const removedLocations = injuryArr.map(i => {
+      let loc = i.toLowerCase();
+      if (!loc.includes('severed'))
+        return null;
+      loc = loc.replace('severed', '').trim();
+      if (Object.keys(Constant.HIT_LOCATIONS).includes(loc))
+        return loc;
+      const side = loc.includes("right") ? "right" : loc.includes("left") ? "left" : null;
+      if (!side)
+        return null;
+      let limbGroup = Constant.LIMB_GROUPS[loc.replace(side,'').trim()];
+      return limbGroup
+        ? limbGroup.map(l => `${side} ${l}`)
+        : loc;
+    }).flat();
+
+    charData.removedLocs = removedLocations;
+  }
+
+  _getScoreMod(score) {
+    if (!score) return 0;
+    if (score <= 2) return score - 3 + -3;
+    if (score <= 3) return -3;
+    if (score <= 5) return -2;
+    if (score <= 8) return -1;
+    if (score <= 12) return 0;
+    if (score <= 15) return 1;
+    if (score <= 17) return 2;
+    if (score <= 18) return 3;
+    return score - 18 + 3;
+  }
+
+  _getEnc(items) {
+    const wgtItems = items.filter(i => +i.data.data.total_weight > 0);
+    const sumItemWeight = (a, b) => a + b.data.data.total_weight;
+    const enc = Math.round( wgtItems.reduce(sumItemWeight, 0) * 10 ) / 10;
+    return enc;
+  }
+
+  _getMonsterXP(hdVal, hpMax, xpMulti) {
+    // hd x hd x 10 x multiplier + 1/hp
+    return hdVal * hdVal * 10 * xpMulti + hpMax;
+  }
+
+  _addAbilityScoreMods(abilities) {
     if (abilities.str) abilities.str.mod = this._getScoreMod(+abilities.str.value);
     if (abilities.int) abilities.int.mod = this._getScoreMod(+abilities.int.value);
     if (abilities.wis) abilities.wis.mod = this._getScoreMod(+abilities.wis.value);
@@ -266,51 +330,7 @@ export class SimpleActor extends Actor {
     return items.length ? Math.max(...items.map(c => (+c.data.data.attributes.magic_mods?.[key].value || 0))) : 0;
   }
 
-  _prepareHumanoidData(actorData) {
-    const type = actorData.type;
-    if (type !== 'humanoid') return;
-    const data = actorData.data;
-    const items = actorData.items;
-    const wornItems = items.filter(i => i.data.data.worn);
-    const attrs = data.attributes;
-    const abilities = attrs.ability_scores || {};
-    const size = attrs.size.value.toUpperCase().trim();
-    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-
-    // HD is given in the format "1/2" (which should produce an hdVal of 0) or "8+2" (which should produce 9)
-    const hdValArr = attrs.hd.value.split("+").splice(0,2).map(x => Number(x)).filter(x => !isNaN(x));
-    const hdVal = Number(hdValArr[0] + hdValArr.length - 1) || 0;
-
-    // xp
-    const xpMulti = Math.max(1, (+attrs.xp_multi.value || 1));
-    const hpMax = +data.hp.max || 0;
-    data.xp = this._getMonsterXP(hdVal, hpMax, xpMulti);
-
-    // mv & speed
-    const mv = +attrs.mv.value || Constant.DEFAULT_HUMANOID_MV;
-    data.mv = mv;
-    data.speed = mv * Constant.GRID_SIZE;
-
-    // sv
-    const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
-    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, "sv_mod");
-    const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
-    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, "sv_mod");
-    const intelligent = attrs.intelligent.value;
-    const msvVal = intelligent ? hdVal : Math.floor(hdVal / 2);
-    data.sv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - hdVal - magicClothingSvMod - magicJewelrySvMod));
-    data.msv = Math.max(Constant.MIN_SAVE_TARGET, (Constant.DEFAULT_BASE_SV - msvVal - magicClothingSvMod - magicJewelrySvMod));
-
-    data.bab = hdVal;
-
-    data.size = sizeVal;
-
-    this._prepareAbilityScoreMods(abilities);
-    
-    this._prepareWornAc(actorData);
-  }
-
-  _prepareWornClo(actorData) { // TODO cannot wear clothing/armor too small
+  _addWornClo(actorData) {
     const data = actorData.data;
     const items = actorData.items;
     const wornItems = items.filter(i => i.data.data.worn);
@@ -336,14 +356,12 @@ export class SimpleActor extends Actor {
     data.clo = Math.floor(clo);
   }
 
-  _prepareWornAc(actorData) { // TODO continue
+  _addWornAc(actorData) { // TODO shield bonus x 2 if fluid, parry bonus / 2 if stable
     const data = actorData.data;
     const items = actorData.items;
     const heldItems = items.filter(i => (i.data.data.held_offhand || i.data.data.held_mainhand));
     const wornItems = items.filter(i => i.data.data.worn);
-    const attrs = data.attributes;
     const charSize = data.size;
-    const getSizePenalty = itemSize => Math.max(0, charSize - (+itemSize || 0));
 
     const naturalArmorMaterial = Constant.ARMOR_VS_DMG_TYPE[attrs.hide?.value] ? attrs.hide.value : "none";
     const naturalAc = attrs.base_ac.value ?? Constant.DEFAULT_BASE_AC;
@@ -464,23 +482,8 @@ export class SimpleActor extends Actor {
     data.ac = ac;
   }
 
-  _preparePartyData(actorData) {
-    const type = actorData.type;
-    if (type !== 'party') return;
-
-    const data = actorData.data;
-    const attrs = data.attributes;
-
-    // party MV = slowest member TODO allow DM to hardcode in attrs?
-    const membersVal = attrs.members.value || "";
-    if (game.actors?.getName) {
-      const members = Util.getArrFromCSL(membersVal).map(name => game.actors.getName(name)).filter(a => a);
-      const memberMVs = members.map(a => +a.data.data.mv).filter(m => m != null && !isNaN(m));
-      const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
-      const mv = slowestMV || Constant.DEFAULT_BASE_MV;
-      console.log(`Updating party ${actorData.name} MV to ${mv}`, members);
-      data.mv = mv;
-    }
+  _oversizedGarmentPenalty(charSize, itemSize) {
+    return  Math.max(0, charSize - (+itemSize || 0));
   }
 
   /* -------------------------------------------- */
