@@ -286,7 +286,7 @@ export class SimpleActorSheet extends ActorSheet {
     if (raceArr.length) sortedFeatures['Race'] = raceArr;
     const weapArr = features.filter( f => f.type === 'natural_weapon');
     if (weapArr.length) sortedFeatures['Natural Weapons'] = weapArr;
-    const grappArr = features.filter( f => f.type === 'grapple_maneuver');
+    const grappArr = features.filter( f => f.type === 'grappling_maneuver');
     if (grappArr.length) sortedFeatures['Grappling'] = grappArr;
 
     return sortedFeatures;
@@ -476,18 +476,23 @@ export class SimpleActorSheet extends ActorSheet {
     const isWorn = !!data.worn;
     const isBulky = !!data.bulky;
     const isArmor = item.type === 'armor' || item.type === 'helmet';
-    const isAmmo = item.type === 'ammo';
+    const isClothing = item.type === 'clothing'; // TODO use enum of game item types
+    const isContainer = !!attrs.container;
     const wornItems = actorData.items.filter(i => i.data.data.worn);
     const charSize = Constant.SIZE_VALUES[actorData.data.attributes.size?.value] ?? 2;
     const itemSize = Constant.SIZE_VALUES[attrs.size?.value];
     const itemLocations = item.data.data.coverage;
 
     if (!isWorn) {
-      // can't wear if quantity greater or less than 1 unless ammunition
-      const wearLimit = isAmmo ? 2 : 1;
+      // can't wear if quantity greater or less than 1 unless ammo
+      const wearLimit = isContainer ? Infinity : 1;
       const itemQty = +item?.data.data.quantity || 0;
       if (itemQty < 1 || itemQty > wearLimit) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
 
+      // can't wear armor, helmet or clothing that is too small
+      if (isArmor || isClothing) {
+        if (itemSize < charSize) return ui.notifications.error(`Item is too small to wear`);
+      }
 
       // can't wear a bulky item if any of this item's locations are already covered by a bulky item
       if (isBulky) {
@@ -503,7 +508,7 @@ export class SimpleActorSheet extends ActorSheet {
         const wornArmorLocations = wornArmors.flatMap(a => a.data.data.coverage);
         for (const itemLoc of itemLocations) {
           const count = wornArmorLocations.filter(l => l === itemLoc).length;
-          if (count > 2) return ui.notifications.error(`Already wearing three armors over ${itemLoc}`);
+          if (count > 2) return ui.notifications.error(`Cannot wear any more armor layers over ${itemLoc}`);
         }
       }
       
@@ -514,17 +519,10 @@ export class SimpleActorSheet extends ActorSheet {
       const wearingShield = wornItems.some(i => i.type === 'shield');
       const holdingTwoHands = actorData.items.some(i => i.data.data.held_offhand && i.data.data.held_mainhand);
       if (isShield) {
-        if (itemSize > charSize + 1) return ui.notifications.error(`Character is too small to wear a shield of this size`);
+        if (itemSize > charSize + 1) return ui.notifications.error(`Too small to wear a shield of this size`);
         if (wearingShield) return ui.notifications.error("Can only wear one shield");
         if (holdingTwoHands) return ui.notifications.error("Cannot wear a shield while holding a weapon with both hands");
       }
-
-      // // can't stack rings of protection
-      // const stackingRingofProt = item.data.name.toLowerCase().includes('ring of protection') &&
-      //                           wornItems.some(i => i.data.name.toLowerCase().includes('ring of protection'));
-      // if (stackingRingofProt ) {
-      //   return ui.notifications.error("Cannot wear more than one ring of protection");
-      // }
     }
     
     let verb = isWorn ? 'doffs' : 'dons';
