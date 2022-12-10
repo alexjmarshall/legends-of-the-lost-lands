@@ -606,6 +606,7 @@ export class EntitySheetHelper {
         // Set sheet for non-default types
         const sheetClass =
           documentName === 'Actor' && createData.type === types.container ? "lostlands.ContainerActorSheet"
+          : documentName === 'Actor' && createData.type === types.party ? "lostlands.PartyActorSheet"
           : createData.type === types.merchant ? "lostlands.MerchantActorSheet"
           : Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type) ? "lostlands.FeatureItemSheet"
           : Object.values(Constant.SPELL_TYPES).includes(createData.type) ? "lostlands.SpellItemSheet" : null;
