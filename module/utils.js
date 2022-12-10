@@ -34,10 +34,10 @@ export function cloneItem(item) {
 
 export function expandPrice(priceInCps) {
   if (!priceInCps) return;
-  const gp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.gp.value);
-  priceInCps -= gp * Constant.UNITS_OF_ACCOUNT.gp.value;
-  const sp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.sp.value);
-  const cp = priceInCps - sp * Constant.UNITS_OF_ACCOUNT.sp.value;
+  const gp = Math.floor(priceInCps / Constant.COINS_OF_ACCOUNT.gp.value);
+  priceInCps -= gp * Constant.COINS_OF_ACCOUNT.gp.value;
+  const sp = Math.floor(priceInCps / Constant.COINS_OF_ACCOUNT.sp.value);
+  const cp = priceInCps - sp * Constant.COINS_OF_ACCOUNT.sp.value;
   return {gp, sp, cp};
 }
 
@@ -46,7 +46,7 @@ export function getPriceString(priceInCps) {
   const priceObj = expandPrice(priceInCps);
   let priceString = '';
   for (const [unit, value] of Object.entries(priceObj)) {
-    if (value) priceString += `${value} ${Constant.UNITS_OF_ACCOUNT[unit].abbr}, `;
+    if (value) priceString += `${value} ${Constant.COINS_OF_ACCOUNT[unit].abbr}, `;
   };
   return priceString.replace(/,\s*$/, '');
 }
@@ -335,25 +335,6 @@ export async function playTokenAnimation(token, name, partialPath) { // TODO mak
 }
 
 export function sortEquipmentByType(items) {
-  /*
-  Item Types:
-  "item",
-  "potion",
-  "charged_item",
-  "armor",
-  "helmet",
-  "clothing",
-  "jewelry",
-  "trade_good",
-  "shield",
-  "melee_weapon",
-  "throw_weapon",
-  "missile_weapon",
-  "bow",
-  "ammo",
-  "container",
-  "currency",
-  */
   const equipment = {};
   const types = [
     {
