@@ -77,7 +77,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const weapName = weaponItem.name;
   const weapAttrs = weaponItem.data.data.attributes;
   let weapSpeed = +weapAttrs.speed?.value || 10 - attackerSize * 2;
-  const weapBleed = +weapAttrs.bleed?.value || 0;
+  const weapCutting = +weapAttrs.cut?.value || 0;
   let weapImp = +weapAttrs.impact?.value || 0;
   let weapPen = +weapAttrs.pen?.value || 0;
   const weapSize = Constant.SIZE_VALUES[weapAttrs.size?.value];
@@ -86,8 +86,8 @@ export async function attack(attacker, target, options) { // TODO to break attac
     weapons.shift();
     return attack(attacker, target, options); 
   }
-  const weapCategory = weapAttrs.weap_prof?.value || '';
-  const isCurvedSword = Util.stringMatch(weapCategory,"curved swords");
+  const weapProficiency = weapAttrs.weap_prof?.value || '';
+  const isCurvedSword = Util.stringMatch(weapProficiency,"curved swords");
   const weapDmgVsLrg = weapAttrs.dmg_vs_large?.value || 0;
   let weapDmg = weapAttrs.dmg?.value;
   const weaponHeldTwoHands = !!weaponItem.data.data.held_offhand && !!weaponItem.data.data.held_mainhand;
@@ -122,7 +122,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   // atk modes TODO weight base adds to weight calculation, use for containers quivers etc. allows user to choose between different ammo quivers worn
   const isBow = !!weapAttrs.bow?.value;
   const quiver = attackingActor.items.find(i => i.data.data.worn && i.data.data.attributes.quiver?.value);
-  const ammoName = Constant.AMMO_TYPES.find(t => quiver?.name.toLowerCase().includes(t));
+  const ammoName = Constant.AMMO_NAMES.find(t => quiver?.name.toLowerCase().includes(t));
   const atkModes = isBow ? quiver.data.data.attributes.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || []
     : weapAttrs.atk_modes?.value.split(',').map(t => t.toLowerCase().replace(/\s/g, "")).filter(t => t) || [];
  
@@ -136,8 +136,8 @@ export async function attack(attacker, target, options) { // TODO to break attac
 
   // attacker reach
   const reachValues = [...new Set(weapAttrs.reach?.value.split(',').map(n => Number(n)).filter(t => !isNaN(t)))];
-  const defaultReach = Math.floor(attackerSize / 2) * Constant.SQUARE_SIZE || -1; // TODO decide on square size - 1 yard?
-  let maxReach = reachValues.length ? Math.max(...reachValues) * Constant.SQUARE_SIZE : defaultReach;
+  const defaultReach = Math.floor(attackerSize / 2) * Constant.GRID_SIZE || -1; // TODO decide on square size - 1 yard?
+  let maxReach = reachValues.length ? Math.max(...reachValues) * Constant.GRID_SIZE : defaultReach;
   // subtract 1 from max reach if not holding the weapon with both hands
   if (!weaponHeldTwoHands && reachValues.length > 1) {
     maxReach -= 1;
@@ -245,7 +245,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     : Util.getArrFromCSL(attackerRollData.weap_profs || '').map(p => p.toLowerCase()))
     .filter(p => allowedWeapProfs.includes(p));
 
-  const isProficient = weapProfs.some(a => Util.stringMatch(a,weapCategory));
+  const isProficient = weapProfs.some(a => Util.stringMatch(a,weapProficiency));
   let stanceAtkMod = 0;
   let stanceDmgMod = 0;
   let prepAtkMod = 0;
@@ -261,6 +261,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       if (nonRemovedLocs.length) validAreas.push(k);
     }
     
+    // TODO aim penalties should be lessened for faster/handier weapons -- aim penalty = base penalty - (speed - avg speed), min. 0
     const aimPenalties = Object.fromEntries(validAreas.map(a => { // TODO only show aim penalties for Util.stringMatch(targetActor?.type, 'character') || Util.stringMatch(targetRollData.type, 'humanoid')
       let hitLocTableName = (Util.stringMatch(atkForm, 'swing') || Util.stringMatch(atkForm, 'attack')) ? 'SWING' : 'THRUST';
       if (atkHeight === 'high' || atkHeight === 'low') {
@@ -296,7 +297,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   const missileAtk = Util.stringMatch(atkType, 'missile');
   const isShooting = Util.stringMatch(atkForm,"shoot");
   const isSwing = Util.stringMatch(atkForm, 'swing');
-  const isSpiked = weapCategory.includes('spiked');
+  const isSpiked = weapProficiency.includes('spiked');
 
   if (missileAtk && !weaponRange) {
     ui.notifications.error("Invalid range specified");
@@ -310,7 +311,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
   }
   const maxRange = missileAtk ? weaponRange : maxReach;
   if (range > +maxRange) {
-    if (range <= Math.max(...reachValues.map(v => Number(v) * Constant.SQUARE_SIZE))) {
+    if (range <= Math.max(...reachValues.map(v => Number(v) * Constant.GRID_SIZE))) {
       ui.notifications.warn(`Must hold ${weapName} in two hands to use its max reach`);
     } else {
       ui.notifications.error(`Target is beyond the ${missileAtk ? 'range' : 'reach'} of ${weapName}`);
@@ -318,7 +319,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
     weapons.shift();
     return attack(attacker, target, options);
   }
-  const minReach = missileAtk ? Constant.SQUARE_SIZE : (Math.min(...reachValues) * Constant.SQUARE_SIZE || -1);
+  const minReach = missileAtk ? Constant.GRID_SIZE : (Math.min(...reachValues) * Constant.GRID_SIZE || -1);
   if ( range < +minReach) {
     if (meleeAtk) {
       weapDmg = '1d3';
@@ -391,8 +392,8 @@ export async function attack(attacker, target, options) { // TODO to break attac
   let targetWeapSpeed = !targetWeapSpeedItem ? 10 - targetSize : (+targetWeapSpeedItem.data.data.attributes.speed?.value || 0); // TODO max speed 10? or 8
   targetWeapSpeed += targetWeapSpeedItem ? Constant.STANCE_MODS[targetWeapSpeedItemAtkStyle]?.speed_mod(targetWeapSpeedItem) || 0 : 0;
   const targetReachValues = [...new Set(targetHeldItems?.map(i => i.data.data.attributes.reach?.value.split(',').map(n => Number(n)).filter(t => !isNaN(t))).flat())];
-  const targetDefaultReach = Math.floor(targetSize / 2) * Constant.SQUARE_SIZE || -1;
-  const targetMaxReach = targetReachValues.length ? Math.max(...targetReachValues) * Constant.SQUARE_SIZE : targetDefaultReach;
+  const targetDefaultReach = Math.floor(targetSize / 2) * Constant.GRID_SIZE || -1;
+  const targetMaxReach = targetReachValues.length ? Math.max(...targetReachValues) * Constant.GRID_SIZE : targetDefaultReach;
   const targetHasReach = range <= targetMaxReach;
 
   // situational mods
@@ -414,9 +415,9 @@ export async function attack(attacker, target, options) { // TODO to break attac
   if (weapons.length === 1 && speedDiff > 0 && await Util.rollDice('d100') <= followAttackChance) {
     attacker.followAttack = true;
   }
-  // -2 if weapon category defined but not in attacker's weapon proficiencies
+  // -2 if weapon proficiency defined but not in attacker's weapon proficiencies
   // TODO weap specialization and mastery
-  if (weapCategory != null && !isProficient) {
+  if (weapProficiency != null && !isProficient) {
     sitAtkMod = sitAtkMod - 2;
   }
   // -2 if thrusting with curved sword
@@ -516,7 +517,7 @@ export async function attack(attacker, target, options) { // TODO to break attac
       (disposition ? t.data.disposition === disposition : true) &&
       t.actor._id !== targetActor?._id &&
       t.actor._id !== attackingActor._id &&
-      measureRange(token, t) < Constant.SQUARE_SIZE * 2);
+      measureRange(token, t) < Constant.GRID_SIZE * 2);
   }
 
   let atkText = Util.stringMatch(atkForm, 'attack') ? ` ${pluralize(weapName)}`:
@@ -855,9 +856,9 @@ export async function attack(attacker, target, options) { // TODO to break attac
         }
   
         // bleeding
-        const attrBleedChance = isSlash && isSwing ? weapBleed * 2
-          : isSpiked && isSwing ? weapBleed
-          : totalImpaleDmg ? weapBleed
+        const attrBleedChance = isSlash && isSwing ? weapCutting * 2
+          : isSpiked && isSwing ? weapCutting
+          : totalImpaleDmg ? weapCutting
           : 0;
         const impaleDmgBleedChance = (isPierce || isShooting) ? totalImpaleDmg : totalImpaleDmg * 2;
         let bleedChance = impaleDmgBleedChance + attrBleedChance;
@@ -1335,6 +1336,6 @@ function measureRange(token1, token2) {
   canvas.grid.measureDistanceGrid(token1.position, token2.position) :
   canvas.grid.measureDistance(token1.position, token2.position)) : undefined;
   // return range rounded to 5'
-  return Math.floor(+canvasDistance / Constant.SQUARE_SIZE) * Constant.SQUARE_SIZE;
+  return Math.floor(+canvasDistance / Constant.GRID_SIZE) * Constant.GRID_SIZE;
 }
 // TODO do one chat msg for each weapon attack
