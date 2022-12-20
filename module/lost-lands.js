@@ -6,6 +6,7 @@ import { FeatureItemSheet } from "./feature-item-sheet.js";
 import { SimpleActorSheet } from "./actor-sheet.js";
 import { ContainerActorSheet } from "./container-actor-sheet.js";
 import { MerchantActorSheet } from "./merchant-actor-sheet.js";
+import { PartyActorSheet } from "./party-actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
 import * as Macro from "./macro.js";
 import * as Constant from "./constants.js";
@@ -44,6 +45,7 @@ Hooks.once("init", async function() {
   Actors.registerSheet("lostlands", SimpleActorSheet, { makeDefault: true });
   Actors.registerSheet("lostlands", ContainerActorSheet, { makeDefault: false });
   Actors.registerSheet("lostlands", MerchantActorSheet, { makeDefault: false });
+  Actors.registerSheet("lostlands", PartyActorSheet, { makeDefault: false });
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("lostlands", SimpleItemSheet, { makeDefault: true });
   Items.registerSheet("lostlands", SpellItemSheet, { makeDefault: false });
@@ -150,6 +152,22 @@ Hooks.once("init", async function() {
 
 
 Hooks.on("ready", () => {
+
+  // update party actors' MV
+  // TODO need to do this here? or on update an actor's MV
+  // TODO maybe scrap this -- make macro to update party's MV rate
+  const partyActors = game.actors.filter(a => a.type === 'party');
+  partyActors.forEach(p => {
+    const data = p.data.data;
+    const attrs = data.attributes;
+    const membersVal = attrs.members.value || "";
+    const members = Util.getArrFromCSL(membersVal).map(name => game.actors.getName(name)).filter(a => a);
+    const memberMVs = members.map(a => +a.data.data.mv).filter(m => m != null && !isNaN(m));
+    const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
+    const mv = slowestMV || Constant.DEFAULT_BASE_MV;
+    console.log(`Updating party ${p.data.name} MV to ${mv}`, members);
+    data.mv = mv;
+  });
 
   const removeInvalidEffects = async (time) => {
     const allActors = game.actors;
@@ -338,7 +356,7 @@ Hooks.on("preUpdateActor", (actor, change) => {
   if ( hpUpdate <= 0 && targetHp > 0 ) {
     Util.macroChatMessage(actor, {
       flavor: 'Incapacitated', 
-      content: `${actor.name} collapses in pain.`,
+      content: `${actor.name} collapses.`,
     }, false);
   }
 
@@ -358,7 +376,7 @@ Hooks.on("preUpdateItem", (item, change) => {
   const charSize = Constant.SIZE_VALUES[item.actor?.data.data.attributes.size?.value] ?? 2;
   const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
   if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
-  else if (itemSize === 0 && charSize > itemSize) heldQtyLimit = 2;
+  else if (itemSize < 1 && charSize > itemSize) heldQtyLimit = 2;
 
   const invalidHold = (item.data.data.held_offhand || item.data.data.held_mainhand) &&
     (change.data?.quantity < 1 || change.data?.quantity > heldQtyLimit);
@@ -366,11 +384,13 @@ Hooks.on("preUpdateItem", (item, change) => {
     change.data.held_offhand = false;
     change.data.held_mainhand = false;
   }
-  const wearQtyLimit = 1;
+  const wearQtyLimit = 1; // TODO for invalid hold and invalid wear, need to use same function as in actor.js
   const invalidWear = item.data.data.worn && (change.data?.quantity < 1 || change.data?.quantity > wearQtyLimit);
   if (invalidWear) {
     change.data.worn = false;
   }
+
+  // TODO cleanup and use default values
   if (change.data?.held_offhand != null || change.data?.held_mainhand != null) {// || change.data?.data?.attributes?.atk_modes
     const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',')
       .map(t => t.toLowerCase().replace(/\s/g, ""))
@@ -388,6 +408,7 @@ Hooks.on("preUpdateItem", (item, change) => {
       change.data.atk_init = null;
     }
   }
+  // TODO check for shield type
   if (change.data?.worn != null && !!item.data?.data?.attributes?.shield_shape) {
     change.data.shield_height = 'mid';
     change.data.shield_style = 'stable';
