@@ -51,7 +51,7 @@ export class MerchantActorSheet extends ActorSheet {
       for (const [k,v] of Object.entries(expandedPrice)) {
         expandedPrice[k] = {};
         expandedPrice[k].value = v;
-        expandedPrice[k].label = Constant.UNITS_OF_ACCOUNT[k].abbr;
+        expandedPrice[k].label = Constant.COINS_OF_ACCOUNT[k].abbr;
       }
       item.price = expandedPrice;
     });
@@ -107,7 +107,7 @@ export class MerchantActorSheet extends ActorSheet {
         if ( isNaN(goldPrice) || isNaN(silverPrice) || isNaN(copperPrice) ) {
           return ui.notifications.error("There was a problem reading the price of this item");
         }
-        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.UNITS_OF_ACCOUNT.sp.value + goldPrice * Constant.UNITS_OF_ACCOUNT.gp.value));
+        const totalPriceInCp = Math.round((copperPrice + silverPrice * Constant.COINS_OF_ACCOUNT.sp.value + goldPrice * Constant.COINS_OF_ACCOUNT.gp.value));
         return buyMacro(item, totalPriceInCp, this.actor);
       case "create":
         if (!game.user.isGM) return;
