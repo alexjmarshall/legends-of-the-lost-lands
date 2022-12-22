@@ -693,9 +693,9 @@ export const VOICE_SOUNDS = {};
 })();
 export const CURRENCY_MATERIAL_VALUE_PER_POUND = {
   "copper": 20,
-  "brass": 40, // weight 0.075 (13 1/3 per pound) for Brass Piece worth 3
+  "brass": 40, // weight 0.1 (10 per pound) for Brass Piece worth 4
   "silver": 960, // weight 0.5 for Silver Mark ingot worth 480
-  "electrum": 8400, // weight 0.0143 (70 per pound) for Electrum Piece worth 120
+  "electrum": 8400, // weight 0.0154 (65 per pound) for Electrum Piece worth 96
   "gold": 12000, // weight 0.5 for Gold Mark ingot worth 6000
 };
 export const TRADE_GOODS_VALUE_PER_POUND = {
