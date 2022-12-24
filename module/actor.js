@@ -335,7 +335,6 @@ export class SimpleActor extends Actor {
     const items = actorData.items;
     const wornItems = items.filter(i => i.data.data.worn);
     const charSize = +data.size ?? Constant.SIZE_VALUES.default;
-    const getSizePenalty = itemSize => Math.max(0, charSize - (+itemSize || 0));
 
     let clo = 0;
 
@@ -347,7 +346,7 @@ export class SimpleActor extends Actor {
       //    second layer adds 1/2 its full clo, third layer 1/4, and so on
       const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
       const locationWeight = v.weights[unwornIndex] / 100;
-      const cloVals = garments.map(i => (i.data.data.clo - getSizePenalty(i.data.data.size)) * locationWeight);
+      const cloVals = garments.map(i => (i.data.data.clo - this._getSizePenalty(+i.data.data.size, charSize)) * locationWeight);
       cloVals.sort((a,b) => b - a);
       const locWarmth = cloVals.reduce((sum, val, index) => sum + val/Math.pow(2, index), 0);
       clo += locWarmth;
@@ -356,7 +355,11 @@ export class SimpleActor extends Actor {
     data.clo = Math.floor(clo);
   }
 
-  _addWornAc(actorData) { // TODO shield bonus x 2 if fluid, parry bonus / 2 if stable
+  _getSizePenalty(itemSize, charSize) {
+    return Math.max(0, +itemSize - +charSize) || 0;
+  }
+
+  _addWornAc(actorData) {
     const data = actorData.data;
     const items = actorData.items;
     const heldItems = items.filter(i => (i.data.data.held_offhand || i.data.data.held_mainhand));
@@ -380,8 +383,8 @@ export class SimpleActor extends Actor {
     const fluidParryBonus = +fluidWeap?.data.data.attributes.parry?.value || 0;
     const parryHeight = riposteWeap?.data.data.atk_height || fluidWeap?.data.data.atk_height || null;
     const parry = { 
-      parry_item_id: riposteWeap?._id || fluidWeap?._id || null,
-      parry_bonus: riposteParryBonus || fluidParryBonus || 0,
+      parry_item_id: riposteWeap?._id ?? fluidWeap?._id ?? null,
+      parry_bonus: riposteParryBonus ?? fluidParryBonus ?? 0,
       parry_type: riposteParryBonus ? 'riposte' : fluidParryBonus ? 'fluid' : '',
       parry_height: parryHeight,
     };
@@ -394,7 +397,6 @@ export class SimpleActor extends Actor {
     const counterWeapPenalty = counterWeap ? Constant.STANCE_MODS.counter.ac_mod : 0;
     const stancePenalty = powerWeapPenalty + counterWeapPenalty;
 
-
     // get best clothing magical AC bonus
     const magicWornClothing = wornItems.filter(i => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value);
     const magicClothingACBonus = this._getHighestMagicVal(magicWornClothing, "ac_mod");
@@ -403,24 +405,20 @@ export class SimpleActor extends Actor {
     const magicWornJewelry = wornItems.filter(i => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
     const magicJewelryACBonus = this._getHighestMagicVal(magicWornJewelry, "ac_mod");
 
-
     // ac by hit location
     // initialize total AC/DR values
     const touchAc = Math.max(1, naturalAc + dexAcBonus + stancePenalty - agilityPenalty);
-    const ac = { touch_ac: touchAc, mdr: 0, parry, total: {}, stance_penalty: stancePenalty, timing };
+    const ac = { touch_ac: touchAc, mdr: 0, parry, total: { ac: 0, dr: {} }, stance_penalty: stancePenalty, timing };
     for (const dmgType of Constant.DMG_TYPES) {
-      ac.total[dmgType] = {
-        ac: 0,
-        dr: 0,
-      }
+      ac.total.dr[dmgType] = 0;
     }
 
     for (const [k,v] of Object.entries(Constant.HIT_LOCATIONS)) {
-      ac[k] = {};
+      ac[k] = { ac: 0, dr: {} };
       const locationWeight = (v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.SWING] + v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.THRUST]) / 200;
       const coveringItems = wornItems.filter(i => i.data.data.coverage?.includes(k));
       // can only wear three total armor layers
-      const armor = coveringItems.filter(i => (i.type === 'armor' || i.type === 'helmet') && i.data.data.ac).slice(0,3);
+      const armor = coveringItems.filter(i => (i.type === 'armor' || i.type === 'helmet') && i.data.data.ac?.ac).slice(0,3);
       const bulkyArmor = armor.filter(i => i.data.data.bulky);
       const nonBulkyArmor = armor.filter(i => !i.data.data.bulky);
       
@@ -432,52 +430,62 @@ export class SimpleActor extends Actor {
       const shield = coveringItems.find(i => i.type === 'shield');
       const shieldStyle = shield?.data.data.shield_style;
       const fluidShieldAcMod = shieldStyle === 'fluid' ? Constant.STANCE_MODS.fluid.shield_ac_mod : 0;
-      const shieldAcBonus = (shield?.data.data.ac?.[dmgType]?.ac || 0) + fluidShieldAcMod;
+      const shieldAcBonus = (+shield?.data.data.ac || 0) + fluidShieldAcMod;
       const fluidShieldDrBonus = shieldStyle === 'fluid' ? Constant.STANCE_MODS.fluid.shield_dr_mod : 0;
-      const shieldDrBonus = (shield?.data.data.ac?.[dmgType]?.dr || 0) + fluidShieldDrBonus;
+      const shieldDrBonus = (+shield?.data.data.dr?.[dmgType] || 0) + fluidShieldDrBonus;
 
-      // sort non-bulky armors by piercing AC and record Ids
+      // sort non-bulky armors by AC and record Ids
       //    shield goes on top of bulky goes on top of non-bulky
-      const getPierceAc = item => +item.data.data.ac.piercing.ac || 0;
-      let sorted_armor_ids = nonBulkyArmor.sort((a,b) => getPierceAc(b) - getPierceAc(a)).map(i => i._id);
-      const bulkyArmorIds = bulkyArmor.sort((a,b) => getPierceAc(b) - getPierceAc(a)).map(i => i._id);
+      const getAc = item => +item.data.data.ac || 0;
+      let sorted_armor_ids = nonBulkyArmor.sort((a,b) => getAc(b) - getAc(a)).map(i => i._id);
+      const bulkyArmorIds = bulkyArmor.sort((a,b) => getAc(b) - getAc(a)).map(i => i._id);
       sorted_armor_ids = [...bulkyArmorIds, ...sorted_armor_ids];
       if (shield?._id) sorted_armor_ids = [shield._id, ...sorted_armor_ids];
       ac[k].sorted_armor_ids = sorted_armor_ids;
 
       // parry bonus applies if riposting, or if parryHeight includes this area
-      const appliedParryBonus = (!!riposteWeap || Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) ? parry.parry_bonus : 0;
+      const appliedParryBonus = 
+        (!!riposteWeap || Constant.HEIGHT_AREAS[parryHeight]?.includes(k)) 
+          ? parry.parry_bonus 
+          : 0;
 
-      // ac & dr by damage type
+      // location ac
+      // use highest of worn ACs if wearing armor, else use unarmored AC
+      const unarmoredAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial].base_AC;
+      const wornAc = Math.max(0, ...armor.map(i => (+i.data.data.ac?.ac || 0) - this._getSizePenalty(+i.data.data.size, charSize)));
+      const acMod = armor.length ? wornAc : unarmoredAc;
+      const locAc = touchAc + acMod + shieldAcBonus + appliedParryBonus + magicClothingACBonus + magicJewelryACBonus;
+      ac[k].ac = locAc;
+      ac.total.ac += locAc * locationWeight; 
+      ac[k].shield_bonus = shieldAcBonus;
+
+      // location dr by damage type
       for (const dmgType of Constant.DMG_TYPES) {
-
         // no shield dr vs. piercing on forearm or hand
         const appliedShieldDrBonus = ['forearm','hand'].includes(k) && dmgType === 'piercing' ? 0 : shieldDrBonus;
         
-        // ac -- use highest of worn ACs if wearing armor, else use unarmored AC
-        const unarmoredAc = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].ac;
-        const wornAc = Math.max(0, ...armor.map(i => (+i.data.data.ac?.[dmgType]?.ac || 0) - getSizePenalty(i.data.data.size)));
-        const acMod = armor.length ? wornAc : unarmoredAc;
-        const locAc = touchAc + acMod + shieldAcBonus + appliedParryBonus + magicClothingACBonus + magicJewelryACBonus;
-        
-        // dr -- all source of DR are cumulative
+        // dr -- all sources of DR are cumulative
         const unarmoredDr = Constant.ARMOR_VS_DMG_TYPE[naturalArmorMaterial][dmgType].dr;
-        const wornDr = armor.reduce((sum, i) => sum + (+i.data.data.ac?.[dmgType]?.dr || 0), 0);
+        const wornDr = armor.reduce((sum, i) => sum + (+i.data.data.ac?.dr?.[dmgType] || 0), 0);
         const locDr = naturalDr + unarmoredDr + wornDr + appliedShieldDrBonus;
 
         // record values
-        ac[k][dmgType] = { ac: locAc, dr: locDr, shield_bonus: shieldAcBonus };
-        ac.total[dmgType].ac += locAc * locationWeight;
-        ac.total[dmgType].dr += locDr * locationWeight;
+        ac[k].dr[dmgType] = locDr;
+        ac.total.dr[dmgType] += locDr * locationWeight;
       }
     }
 
     // round total ac & dr values
-    for (const v of Object.values(ac.total)) { // TODO helmet must be closed to cover nose/jaw for pierce
-      v.ac = Math.round(v.ac); // crit slash dmg armor must not be shield or helmet
-      v.dr = Math.round(v.dr); // if closed, must remove to listen/speak
+    for (const dmgType of Constant.DMG_TYPES) {
+      ac.total.dr[dmgType] = Math.round(ac.total.dr[dmgType]);
     }
-    ac.mdr = Math.round(ac.mdr); // hinged helmet has a macro to change between open/closed...automatically muffle in character speaking with closed helmet?
+    // TODO helmet must be closed to cover nose/jaw for pierce
+    // crit slash dmg armor must not be shield or helmet
+    // if closed, must remove to listen/speak
+    // hinged helmet has a macro to change between open/closed...automatically muffle in character speaking with closed helmet?
+
+    ac.total.ac = Math.round(ac.total.ac);
+    ac.mdr = Math.round(ac.mdr);
 
     data.ac = ac;
   }
