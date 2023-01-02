@@ -2,10 +2,6 @@ export const ASSETS_PATH = 'systems/lostlands/assets';
 export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
-export const DEFAULT_BASE_AC = 10;
-export const DEFAULT_BASE_MV = 12;
-export const DEFAULT_HUMANOID_MV = 9;
-export const DEFAULT_MONSTER_MV = 15;
 export const MIN_BLEED_DMG = 6; // TODO need? min knockdown dmg?
 export const BASE_IMPALE_CHANCE = 30;  // TODO need?
 export const SPELL_TYPES = {
@@ -848,7 +844,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
         gruesome: {
-          text: ' and severs the foot at the ankle!',
+          text: ' and severs the foot at the ankle',
           dmgEffect: highMinBleed() + lowMinBleed(),
           removal: true,
         },
@@ -910,7 +906,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the leg below the knee!',
+          text: ' and severs the leg below the knee',
           dmgEffect: lowMajBleed() || highMinBleed(),
           removal: true,
         },
@@ -1094,7 +1090,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the leg at the hip!',
+          text: ' and severs the leg at the hip',
           removal: true,
           dmgEffect: highMajBleed(),
         },
@@ -1151,7 +1147,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
-          text: ' and severs the genitals!',
+          text: ' and severs the genitals',
           dmgEffect: highMinBleed(),
           removal: true,
         },
@@ -1183,44 +1179,44 @@ export const HIT_LOCATIONS = {
           dmgEffect: highIntBleed('gut'),
         },
         gruesome: {
-          text: ' and breaks the back severing the spine!',// TODO paralysis desc
+          text: ' and breaks the back severing the spine',// TODO paralysis desc
         },
       },
       piercing: {
         light: {
-          text: ' and gouges the abdomen',
+          text: ' and gouges the belly',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and penetrates the abdomen and gouges the bowels`,
+          text: ` and penetrates the belly and gouges the bowels`,
           dmgEffect: lowMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and penetrates the abdomen and pierces ${ranOrgan()}`,
+          text: ` and penetrates the belly and pierces ${ranOrgan()}`,
           dmgEffect: lowWeapStuck() + highIntBleed('gut'),
         },
         gruesome: {
-          text: ` and impales them through the abdomen and through ${ranOrgan()} and through the back`,
+          text: ` and transfixes them from the belly through ${ranOrgan()} and out the back`,
           fatal: true,
           dmgEffect: highWeapStuck() + highIntBleed('gut'),
         },
       },
       slashing: {
         light: {
-          text: ' and gashes the abdominal muscle',
+          text: ' and gashes the belly',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and tears through the abdominal muscle gashing the bowels',
+          text: ' and tears through the belly gashing the bowels',
           dmgEffect: highMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and cleaves into the abdomen and eviscerates ${ranOrgan()}`,
+          text: ` and cleaves into the belly and eviscerates ${ranOrgan()}`,
           fatal: true,
           dmgEffect: lowIntBleed('gut') || highMinBleed(),
         },
         gruesome: {
-          text: ' and cleaves the body in two at the waist!',
+          text: ' and cleaves the body in two at the waist',
           fatal: true,
           removal: true,
           dmgEffect: highMajBleed(),
@@ -1266,7 +1262,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ` and impales them through the chest and through ${ranChestOrgan()} and through the back!`,
+          text: ` and transfixes them from the chest through ${ranChestOrgan()} and out the back`,
           fatal: true,
           dmgEffect: highWeapStuck() + highIntBleed('chest'),
         },
@@ -1285,7 +1281,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed(),
         },
         gruesome: {
-          text: ' and cleaves through the torso from chest to navel!',
+          text: ' and cleaves through the torso from chest to navel',
           fatal: true,
           dmgEffect: highMajBleed(),
         },
@@ -1311,7 +1307,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'wrist'),
         },
         gruesome: {
-          text: ' and crushes the hand into red pulp!',
+          text: ' and crushes the hand into red pulp',
           dmgEffect: highMinBleed(),
         },
       },
@@ -1347,7 +1343,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the hand at the wrist!',
+          text: ' and severs the hand at the wrist',
           dmgEffect: highMinBleed(),
           removal: true,
         },
@@ -1408,7 +1404,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm below the elbow!',
+          text: ' and severs the arm below the elbow',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1434,7 +1430,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'elbow'),
         },
         gruesome: {
-          text: ' and mangles the elbow tearing the ligaments!',
+          text: ' and mangles the elbow tearing the ligaments',
           // dmgEffect: highCompFract(true,'elbow'),
         },
       },
@@ -1495,7 +1491,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowCompFract(true,'upper arm'),
         },
         gruesome: {
-          text: ' and shatters the humerus!',
+          text: ' and shatters the humerus',
           dmgEffect: highCompFract(true,'upper arm'),
         },
       },
@@ -1513,7 +1509,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and shatters the humerus!',
+          text: ' and shatters the humerus',
           dmgEffect: lowWeapStuck() + lowIntBleed('upper arm'),
         },
       },
@@ -1531,7 +1527,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm below the shoulder!',
+          text: ' and severs the arm below the shoulder',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1593,7 +1589,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm at the shoulder!',
+          text: ' and severs the arm at the shoulder',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1637,7 +1633,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and impales them through the shoulder and through the upper back',
+          text: ' and transfixes them from the shoulder through the upper back',
           dmgEffect: highWeapStuck() + lowIntBleed('shoulder'),
         },
       },
@@ -1655,7 +1651,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm at the shoulder!',
+          text: ' and severs the arm at the shoulder',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1666,7 +1662,7 @@ export const HIT_LOCATIONS = {
     weights: [3,2,6,4,2,1,3,3],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
-    max_impale: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1718,7 +1714,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the head!',
+          text: ' and severs the head',
           dmgEffect: highMajBleed(),
           fatal: true,
           removal: true,
@@ -1729,7 +1725,7 @@ export const HIT_LOCATIONS = {
   jaw: {
     weights: [3,2,6,3,2,1,2,2],
     crit_chance_multi: 2,
-    max_impale: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1766,7 +1762,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and impales them below the chin and through the brainstem and through the back of the skull',
+          text: ' and transfixes them from the jaw through the brainstem and out the back of the skull',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
@@ -1798,7 +1794,7 @@ export const HIT_LOCATIONS = {
     weights: [1,2,2,3,1,0,2,1],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
-    max_impale: 1,
+    max_impale: 2,
     injury: {
       blunt: {
         light: {
@@ -1810,7 +1806,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: knockoutDesc,
         },
         critical: {
-          text: ' and caves the nose into the brain',
+          text: ' and smashes the face into the brain',
           dmgEffect: lowCompFract(),
           fatal: true,
         },
@@ -1835,7 +1831,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and impales them through the nose and through the brain and through the back of the skull',
+          text: ' and impales through the nose and through the brain and through the back of the skull',
           dmgEffect: highWeapStuck() + lowBrainBleed('mouth'),
           fatal: true,
         },
@@ -1863,11 +1859,11 @@ export const HIT_LOCATIONS = {
       },
     },
   },
-  eye: {
+  eye: { // TODO add ear hit location -- add everywhere eye is referenced!
     weights: [2,2,4,4,0,2,2,2],
     crit_chance_multi: 5,
     crit_dmg_multi: 2,
-    max_impale: 1,
+    max_impale: 3,
     bilateral: true,
     injury: {
       blunt: {
@@ -1905,7 +1901,7 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ' and impales them through the eye and through the brain and through the back of the skull',
+          text: ' and transfixes them from the eye through the brain and out the back of the skull',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
@@ -1933,16 +1929,86 @@ export const HIT_LOCATIONS = {
       },
     },
   },
+  ear: {
+    weights: [2,2,4,4,2,0,2,2],
+    crit_chance_multi: 3,
+    crit_dmg_multi: 2,
+    max_impale: 3,
+    bilateral: true,
+    injury: {
+      blunt: {
+        light: {
+          text: ' and pulps the ear',
+          dmgEffect: knockoutDesc,
+        },
+        serious: {
+          text: ' and ruptures the ear drum',
+          dmgEffect: knockoutDesc,
+        },
+        critical: {
+          text: ' and caves the side of the head into the brain',
+          dmgEffect: lowCompFract(),
+          fatal: true,
+        },
+        gruesome: {
+          text: gruesBluntHeadDesc,
+          fatal: true,
+          removal: true,
+        },
+      },
+      piercing: {
+        light: {
+          text: ' and gouges the ear',
+          dmgEffect: lowMinBleed(),
+        },
+        serious: {
+          text: ' and splits the ear',
+          dmgEffect: highMinBleed(),
+        },
+        critical: {
+          text: ' and impales the ear and pierces the brain',
+          dmgEffect: lowWeapStuck() + highBrainBleed(),
+          fatal: true,
+        },
+        gruesome: {
+          text: ' and transfixes them from the ear through the brain and out the other side of the head',
+          fatal: true,
+          dmgEffect: highWeapStuck() + lowBrainBleed(),
+        },
+      },
+      slashing: {
+        light: {
+          text: ' and gashes the ear',
+          dmgEffect: highMinBleed(),
+        },
+        serious: {
+          text: ' and severs the ear',
+          dmgEffect: highMinBleed(),
+        },
+        critical: {
+          text: ' and cleaves through the side of the head and into the brain',
+          dmgEffect: lowBrainBleed(),
+          fatal: true,
+        },
+        gruesome: {
+          text: gruesSlashHeadDesc,
+          dmgEffect: lowMinBleed(),
+          fatal: true,
+          removal: true,
+        },
+      },
+    },
+  },
   skull: {
-    weights: [7,4,16,8,4,3,9,6],
+    weights: [5,2,12,4,2,3,7,4],
     crit_chance_multi: 2,
     crit_dmg_multi: 3,
-    max_impale: 2,
+    max_impale: 3,
     injury: {
       blunt: {
         light: {
           text: ' and bruises the brain',
-          dmgEffect: knockoutDesc,
+          dmgEffect: knockoutDesc, // TODO use flags instead of the whole description
         },
         serious: {
           text: ' and cracks the skull',
@@ -1968,12 +2034,12 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and cracks the skull and pierces the brain',
+          text: ' and penetrates the skull and pierces the brain',
           dmgEffect: lowWeapStuck() + highBrainBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and impales them through the ear and through the brain and through the back of the skull',
+          text: ' and transfixes them from the forehead through the brain and out the back of the skull',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed('nose'),
         },
@@ -1984,7 +2050,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and severs an ear',
+          text: ' and chips the skull',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -2004,7 +2070,7 @@ export const HIT_LOCATIONS = {
 };
 export const STANCE_MODS = { // TODO move this to combat file
   power: {
-    ac_mod: -3,
+    ac_mod: -2,
     atk_mod: -2,
     dmg_mod: weap => Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
     str_dmg_mod: char => Math.floor(Math.max(0, char.data.data.str_mod) / 2) || 0,
@@ -2012,14 +2078,15 @@ export const STANCE_MODS = { // TODO move this to combat file
     speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
   fluid: {
-    atk_mod: 3,
+    ac_mod: 1,
+    atk_mod: 2,
     dmg_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
     str_dmg_mod: char => 0 - Math.ceil(Math.max(0, char.data.data.str_mod) / 2) || 0,
     impact_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
     speed_mod: weap => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
     shield_dr_mod: 1,
-    shield_ac_mod: 1, // TODO remove?
-    shield_atk_mod: -1,
+    shield_ac_mod: 1,
+    shield_atk_mod: -2,
   },
   counter: {
     ac_mod: -2,
@@ -2194,7 +2261,7 @@ export const FEATURE_TYPES = [
   "feature",
   "skill",
   "natural_weapon",
-  "grappling_maneuver",
+  "grapple_maneuver",
 ];
 export const HUMANOID_TYPES = [
   "character",
