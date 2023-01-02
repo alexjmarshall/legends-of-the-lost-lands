@@ -130,13 +130,13 @@ export const DISEASES = {
     damageInterval: { day: 1 },
   },
   "dysentery": {
-    symptoms: ["diarrhea", "abdominal pain", "fatigue"],
+    symptoms: ["diarrhea", "gut pain", "fatigue"],
     virulence: "d4",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
   },
   "typhoid": {
-    symptoms: ["fever", "abdominal pain", "rash"],
+    symptoms: ["fever", "gut pain", "rash"],
     virulence: "d4",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
@@ -160,7 +160,7 @@ export const DISEASES = {
     damageInterval: { day: 1 },
   },
   "sepsis": {
-    symptoms: ["fever", "rapid breathing", "abdominal pain"],
+    symptoms: ["fever", "rapid breathing", "gut pain"],
     virulence: "d8",
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
@@ -202,7 +202,7 @@ export async function resetFatigueClock(actor, type, time=Util.now()) {
   await actor.setFlag("lostlands", type, data);
 }
 
-export async function resetFatigueType(actor, type, time=Util.now()) {
+export async function resetFatigueType(actor, type, time=Util.now()) { // TODO combine flag updates into one call
   await resetFatigueClock(actor, type, time);
   await resetFatigueDamage(actor, type);
 }
@@ -297,7 +297,7 @@ async function resetDamageAndWarn(char, time) {
     const token = Util.getTokenFromActor(char);
     if (!token || !warningSound) return;
 
-    if ( Object.values(Constant.VOICE_MOODS).includes(warningSound) ) {
+    if ( Object.keys(Constant.VOICE_MOODS).includes(warningSound) ) {
       return Util.playVoiceSound(warningSound, char, token, {push: true, bubble: true, chance: 1});
     }
       
