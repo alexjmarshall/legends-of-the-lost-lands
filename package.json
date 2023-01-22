@@ -17,5 +17,9 @@
     "gulp": "^4.0.2",
     "gulp-less": "^4.0.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^8.32.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.27.5"
+  }
 }
