@@ -1,29 +1,7 @@
 // base_mv (race), size (race)
-import { WEAPON_CATEGORIES } from './weapons';
-import { ARMOR_MATERIALS } from './armors';
-
-export const ALLOWED_ARMORS = {
-  ANY: Object.keys(ARMOR_MATERIALS),
-  NON_METAL: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal),
-  NON_BULKY: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].bulky),
-};
-export const ALLOWED_WEAP_TIERS = {
-  SIMPLE: ['simple'],
-  MARTIAL: ['simple', 'martial'],
-};
-export const ALLOWED_WEAP_PROFS = {
-  ANY: Object.values(WEAPON_CATEGORIES),
-};
-export const SPELL_TYPES = {
-  SPELL_CLERIC: 'spell_cleric',
-  SPELL_MAGIC: 'spell_magic',
-  SPELL_WITCH: 'spell_witch',
-};
-export const MAX_SPELL_LEVELS = {
-  [SPELL_TYPES.SPELL_CLERIC]: 6,
-  [SPELL_TYPES.SPELL_MAGIC]: 7,
-  [SPELL_TYPES.SPELL_WITCH]: 6,
-};
+import { ALLOWED_WEAP_PROFS, ALLOWED_WEAP_TIERS } from './weapons';
+import { ARMOR_MATERIALS, ALLOWED_ARMORS } from './armors';
+import { SPELL_TYPES, MAX_SPELL_LEVELS } from './magic';
 
 export default {
   fighter: {
@@ -66,5 +44,13 @@ export default {
     allowed_weap_profs: ALLOWED_WEAP_PROFS.ANY, // TODO -2 penalty
     allowed_weap_tiers: ALLOWED_WEAP_TIERS.MARTIAL, // TODO -3 penalty
     allowed_armors: ALLOWED_ARMORS.ANY,
+    variants: {
+      FIGHTER: 'fighter',
+      BERSERKER: 'berserker',
+      DUELLIST: 'duellist',
+    },
+  },
+  cleric: {
+
   },
 };

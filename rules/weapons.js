@@ -55,3 +55,10 @@ export const GUN_AMMO_TYPES = [
   AMMO_TYPES.BALL,
   AMMO_TYPES.SHOT,
 ];
+export const ALLOWED_WEAP_TIERS = {
+  SIMPLE: ['simple'],
+  MARTIAL: ['simple', 'martial'],
+};
+export const ALLOWED_WEAP_PROFS = {
+  ANY: Object.values(WEAPON_CATEGORIES),
+};

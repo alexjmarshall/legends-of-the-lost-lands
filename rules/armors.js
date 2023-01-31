@@ -105,7 +105,6 @@ export const ARMOR_MATERIALS = {
     bulky: true,
   },
 };
-
 export const ARMOR_VS_DMG_TYPE = {
   none: {
     base_AC: 0,
@@ -411,4 +410,9 @@ export const ARMOR_VS_DMG_TYPE = {
       dr: 2,
     },
   },
+};
+export const ALLOWED_ARMORS = {
+  ANY: Object.keys(ARMOR_MATERIALS),
+  NON_METAL: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal),
+  NON_BULKY: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].bulky),
 };
