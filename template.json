@@ -7,7 +7,7 @@
       "attributes": {},
       "groups": {}
     },
-    "hit_locs": {
+    "hit_locs": { // TODO determine precise format for this string
       "attributes": {
         "hit_locs": {
           "dtype": "String",
@@ -91,12 +91,6 @@
       },
       "xp": 0,
       "attributes": {
-        "saves_as": {
-          "dtype": "String",
-          "group": "",
-          "label": "Saves As",
-          "value": "fighter"  // TODO select type
-        },
         "hd": {
           "dtype": "String",
           "group": "",
@@ -109,7 +103,7 @@
           "label": "Size",
           "value": "L"
         },
-        "base_mv": {
+        "mv": {
           "dtype": "Number",
           "group": "",
           "label": "Movement Rate",
@@ -120,6 +114,12 @@
           "group": "",
           "label": "XP Multiplier",
           "value": 1
+        },
+        "intelligent": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Intelligent",
+          "value": false
         }
       }
     },
@@ -127,6 +127,7 @@
       "attitude_map": {},
       "voice": "",
       "injuries": "",
+      "done_chargen": false,
       "hp": {
         "value": 8,
         "min": 0,
@@ -142,107 +143,37 @@
           "dtype": "Number",
           "label": "Ability Scores"
         },
-        "spell_magic": {
-          "dtype": "Resource",
-          "label": "Magic Spells"
-        },
-        "spell_cleric": {
+        "spellcasting_cleric": {
           "dtype": "Resource",
           "label": "Cleric Spells"
         },
-        "spell_witch": {
+        "spellcasting_magic": {
+          "dtype": "Resource",
+          "label": "Magic Spells"
+        },
+        "spellcasting_witch": {
           "dtype": "Resource",
           "label": "Witch Spells"
-        },
-        "weapons": {
-          "dtype": "String",
-          "label": "Weapons"
-        },
-        "admin": {
-          "dtype": "Boolean",
-          "label": "Admin"
-        },
-        "saves": {
-          "dtype": "Number",
-          "label": "Saves"
         }
       },
-      "attributes": {
-        "saves": {
-          "ref": {
-            "dtype": "Number",
-            "group": "Saves",
-            "label": "Reflex Save Bonus",
-            "value": 0
-          },
-          "fort": {
-            "dtype": "Number",
-            "group": "Saves",
-            "label": "Fortitude Save Bonus",
-            "value": 0
-          },
-          "will": {
-            "dtype": "Number",
-            "group": "Saves",
-            "label": "Will Save Bonus",
-            "value": 0
-          }
-        },
-        "bab": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base Attack Bonus",
-          "value": 0
-        },
-        "class": {
-          "dtype": "String", // TODO select type
+      "attributes": { //TODO separate tabs for attributes and derived stats, and use physical, mental, evasion and luck saves
+        "class": { // stats tab has all values derived from class/race, and adjusts dynamically from effects
+          "dtype": "String", //TODO basic code organization/splitting as well. Will be easy to fix imports
           "group": "",
           "label": "Class",
           "value": "fighter"
         },
-        "lvl": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Level",
-          "value": 1 
-        },
-        "size": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Size",
-          "value": "M"
-        },
-        "hit_die": {
+        "race": {
           "dtype": "String",
           "group": "",
-          "label": "Hit Die",
-          "value": "d8"
+          "label": "Race",
+          "value": "human"
         },
-        "base_ac": {
-          "dtype": "Number",
+        "weap_profs": {
+          "dtype": "String",
           "group": "",
-          "label": "Base Armor Class",
-          "value": 10
-        },
-        "base_mv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base Movement",
-          "value": 12
-        },
-        "admin": {
-          "apply_fatigue": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Apply Fatigue",
-            "value": true
-          },
-          "auto_eat_drink": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Auto Eat/Drink",
-            "value": false
-          }
+          "label": "Proficiencies",
+          "value": ""
         },
         "ability_scores": {
           "str": {
@@ -282,46 +213,172 @@
             "value": 10
           }
         },
-        "weapons": {
-          "allowed_weap_profs": {
-            "dtype": "String",
-            "group": "weapons",
-            "label": "Available Proficiencies",
-            "value": "all"
+        "spellcasting_cleric": {
+          "lvl_1": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 1",
+            "min": 0,
+            "value": 0,
+            "max": 0
           },
-          "allowed_weap_tiers": { // TODO select type
-            "dtype": "String",
-            "group": "weapons",
-            "label": "Tier",
-            "value": "martial"
+          "lvl_2": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 2",
+            "min": 0,
+            "value": 0,
+            "max": 0
           },
-          "weap_profs": {
-            "dtype": "String",
-            "group": "weapons",
-            "label": "Proficiencies",
-            "value": ""
+          "lvl_3": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 3",
+            "min": 0,
+            "value": 0,
+            "max": 0
           },
-          "weap_specs": {
-            "dtype": "String",
-            "group": "weapons",
-            "label": "Specializations",
-            "value": ""
+          "lvl_4": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 4",
+            "min": 0,
+            "value": 0,
+            "max": 0
           },
-          "weap_masteries": {
-            "dtype": "String",
-            "group": "weapons",
-            "label": "Masteries",
-            "value": ""
+          "lvl_5": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 5",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_6": {
+            "dtype": "Resource",
+            "group": "spellcasting_cleric",
+            "label": "Level 6",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          }
+        },
+        "spellcasting_magic": {
+          "lvl_1": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 1",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_2": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 2",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_3": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 3",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_4": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 4",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_5": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 5",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_6": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 6",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_7": {
+            "dtype": "Resource",
+            "group": "spellcasting_magic",
+            "label": "Level 7",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          }
+        },
+        "spellcasting_witch": {
+          "lvl_1": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 1",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_2": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 2",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_3": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 3",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_4": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 4",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_5": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 5",
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "lvl_6": {
+            "dtype": "Resource",
+            "group": "spellcasting_witch",
+            "label": "Level 6",
+            "min": 0,
+            "value": 0,
+            "max": 0
           }
         }
       }
     }
   },
   "character": {
-    "templates": ["props","character"]
+    "templates": ["props","character","resistances"]
   },
   "retainer": {
-    "templates": ["props","character"],
+    "templates": ["props","character","resistances"],
     "groups": {
       "retainer": {
         "dtype": "String",
@@ -347,12 +404,6 @@
   },
   "humanoid": {
     "templates": ["props","monster","resistances"],
-    "groups": {
-      "ability_scores": {
-        "dtype": "Number",
-        "label": "Ability Scores"
-      }
-    },
     "attributes": {
       "base_ac": {
         "dtype": "Number",
@@ -366,7 +417,7 @@
         "label": "Size",
         "value": "M"
       },
-      "base_mv": {
+      "mv": {
         "dtype": "Number",
         "group": "",
         "label": "Movement Rate",
@@ -377,21 +428,13 @@
         "group": "",
         "label": "Intelligent",
         "value": true
-      },
-      "ability_scores": {
-        "str": {
-          "dtype": "Number",
-          "group": "ability_scores",
-          "label": "Strength",
-          "value": 10
-        }
       }
     }
   },
   "monster": {
     "templates": ["props","monster","resistances","hit_locs"],
     "attributes": {
-      "base_ac": {
+      "ac": {
         "dtype": "Number",
         "group": "",
         "label": "Armor Class",
@@ -403,11 +446,11 @@
         "label": "Attack Routine",
         "value": "claw, claw, bite"
       },
-      "req_mag": {
+      "req_magic_weap": {
         "dtype": "Boolean",
         "group": "",
-        "label": "Requires Magic Weapon",
-        "value": false
+        "label": "Requires Silver/Magic Weapon",
+        "value": true
       },
       "mr": {
         "dtype": "Number",
@@ -420,18 +463,24 @@
         "group": "",
         "label": "Hide",
         "value": "leather"
-      },
-      "intelligent": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Intelligent",
-        "value": false
       }
     }
   },
   "storage": {
     "templates": ["props"],
     "attributes": {
+      "base_weight": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Base Weight",
+        "value": 1
+      },
+      "material": {
+        "dtype": "String",
+        "group": "",
+        "label": "Material",
+        "value": "wood" // TODO select storage material Type
+      },
       "load_red_factor": {
         "dtype": "Number",
         "group": "",
@@ -448,7 +497,7 @@
         "dtype": "String",
         "group": "",
         "label": "Item Type",
-        "value": "any" // TODO select Item Type
+        "value": "any" // TODO select Item Type, incl. any
       }
     }
   },
@@ -522,10 +571,16 @@
         "group": "",
         "label": "Movement Rate",
         "value": 9
+      },
+      "reputation": {
+        "dtype": "Number",
+        "group": "",
+        "label": "Reputation",
+        "value": 10
       }
     }
   }
-},
+}, // TODO doublecheck all actor and item types are included in types prop
 "Item": { // TODO 4 quick items can be worn at belt
   "types": [ // same restrictions as what can be held in hand
     "item",
@@ -546,7 +601,6 @@
     "throw_weapon",
     "missile_weapon",
     "ammo",
-    "storage",
     "currency",
     "spell_magic",
     "spell_cleric",
@@ -555,7 +609,7 @@
     "skill",
     "natural_weapon",
     "natural_missile_weapon",
-    "grappling_maneuver"
+    "grapple_maneuver"
   ],
   "templates": {
     "props": {
@@ -637,7 +691,7 @@
             "dtype": "Number",
             "group": "container",
             "label": "Base Weight",
-            "value": 0
+            "value": 1
           },
           "qty_limit": {
             "dtype": "Number",
@@ -681,7 +735,13 @@
             "group": "admin",
             "label": "Holdable",
             "value": true
-          }
+          },
+          "silver": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Silver",
+            "value": false
+          },
         },
         "atk_modes": {
           "dtype": "String",
@@ -754,13 +814,7 @@
           "group": "",
           "label": "Size",
           "value": "M"
-        },
-        "max_impales": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Max. Impales",
-          "value": 1
-        }
+        } // TODO for max impales, blunt = 0, axes  = 1 -- impale dmg = % chance weapon gets stuck?
       }
     },
     "missile_weapon": {
@@ -950,11 +1004,11 @@
           "label": "School",  // TODO select school
           "value": "necromancy"
         },
-        "casting_time": {
+        "complexity": {
           "dtype": "String",
           "group": "",
-          "label": "Casting Time",
-          "value": "instantaneous"
+          "label": "Complexity",
+          "value": "1"
         },
         "components": {
           "dtype": "String",
@@ -963,48 +1017,47 @@
           "value": "V,S"
         }
       }
-    },
-    "potion": {
-      "attributes": {
-        "admin": {
-          "identified": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Identified",
-            "value": false
-          },
-          "magic": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Magic",
-            "value": true
-          },
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": true
-          },
-          "consumable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Consumable",
-            "value": true
-          }
-        }
-      }
     }
   },
   "item": {
     "templates": ["props","item"]
   },
   "potion": {
-    "templates": ["props","item","potion","container"],
-    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)"
+    "templates": ["props","item","potion"],
+    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)",
+    "attributes": {
+      "admin": {
+        "identified": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Identified",
+          "value": false
+        },
+        "magic": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Magic",
+          "value": true
+        },
+        "holdable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Holdable",
+          "value": true
+        },
+        "consumable": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Consumable",
+          "value": true
+        }
+      }
+    }
   },
   "scroll": {
     "templates": ["props","item","spell"],
     "macro": "game.lostlands.Macro.readScroll(itemId,options)",
+    "blank": true,
     "attributes": {
       "type": {
         "dtype": "String",
@@ -1285,6 +1338,12 @@
           "group": "admin",
           "label": "Wearable",
           "value": true
+        },
+        "silver": {
+          "dtype": "Boolean",
+          "group": "admin",
+          "label": "Silver",
+          "value": false
         }
       },
       "type": {
@@ -1387,7 +1446,7 @@
       }
     }
   },
-  "grappling_maneuver": { // TODO flesh out system, make notes, pummel/kick?
+  "grapple_maneuver": { // TODO flesh out system, make notes, pummel/kick?
     "templates": ["props"],
     "attributes": {
       "req_atk_status": {
