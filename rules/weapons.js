@@ -1,4 +1,3 @@
-export const WEAPON_TIERS = ['martial', 'simple'];
 export const WEAPON_SPECIAL_PROPS = Object.freeze({
   BACK_RANK: 'back rank', // TODO needed? or only spears
   BALANCED: 'balanced', // TODO needed?
@@ -25,7 +24,6 @@ export const WEAPON_CATEGORIES = Object.freeze({
   CROSSBOW: 'crossbow',
   CURVED_SWORD: 'curved sword',
   DAGGER: 'dagger',
-  DOUBLE_ENDED_POLEARM: 'double-ended polearm', // good clerics limited to weapons with Bleed 0 (not necessarily blunt)
   HAMMER: 'hammer',
   HAND_TO_HAND: 'hand-to-hand',
   GREATSWORD: 'greatsword',
@@ -33,6 +31,8 @@ export const WEAPON_CATEGORIES = Object.freeze({
   POLEARM: 'polearm',
   SLING: 'sling', // TODO combine with whip?
   SPEAR: 'spear',
+  SPIKED_BLUDGEON: 'spiked bludgeon',
+  STAFF: 'staff',
   STRAIGHT_SWORD: 'straight sword',
   WHIP: 'whip', // TODO spiked scourge, regular scourge has Bleed 0
 });
@@ -55,10 +55,7 @@ export const GUN_AMMO_TYPES = [
   AMMO_TYPES.BALL,
   AMMO_TYPES.SHOT,
 ];
-export const ALLOWED_WEAP_TIERS = {
-  SIMPLE: ['simple'],
-  MARTIAL: ['simple', 'martial'],
-};
-export const ALLOWED_WEAP_PROFS = {
-  ANY: Object.values(WEAPON_CATEGORIES),
+export const WEAPON_TIERS = {
+  SIMPLE: 'simple',
+  MARTIAL: 'martial',
 };
