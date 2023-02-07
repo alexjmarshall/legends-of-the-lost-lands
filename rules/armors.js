@@ -411,8 +411,3 @@ export const ARMOR_VS_DMG_TYPE = {
     },
   },
 };
-export const ALLOWED_ARMORS = {
-  ANY: Object.keys(ARMOR_MATERIALS),
-  NON_METAL: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal),
-  NON_BULKY: Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].bulky),
-};
