@@ -45,7 +45,7 @@ export default { // TODO aura of threat around character
     ],
     bab: (lvl) => Number(lvl),
     base_ac: 10,
-    base_sv: (lvl) => Number(lvl),
+    base_sv: (lvl) => Number(lvl) + 1,
     base_mv_adj: 0,
     allowed_weap_profs: ALL_WEAP_CATS, // TODO -2 penalty
     allowed_weap_tiers: ALL_WEAP_TIERS, // TODO -3 penalty
@@ -110,14 +110,15 @@ export default { // TODO aura of threat around character
     base_sv: (lvl) => Number(lvl) + 1,
     base_mv_adj: 0,
     allowed_weap_profs: [
-      WEAPON_CATEGORIES.BLUDGEON, // TODO Barb gets double AC bonus from non-bulky armor?
-      WEAPON_CATEGORIES.HAMMER, // and fur is non-bulky but padded is semi-bulky?
-      WEAPON_CATEGORIES.HAND_TO_HAND, // TODO use round up for x 1.5 dmg if 2 hand
+      WEAPON_CATEGORIES.BLUDGEON,
+      WEAPON_CATEGORIES.SPIKED_BLUDGEON,
+      WEAPON_CATEGORIES.HAMMER,
+      WEAPON_CATEGORIES.HAND_TO_HAND, // TODO use round up for x 1.5 STR dmg if 2 hand
       WEAPON_CATEGORIES.SLING,
       WEAPON_CATEGORIES.STAFF,
       WEAPON_CATEGORIES.WHIP,
     ],
-    allowed_weap_tiers: WEAPON_TIERS.SIMPLE, // TODO if weapon has bleed > 0, apply blunt dmg (1d3)
+    allowed_weap_tiers: WEAPON_TIERS.SIMPLE, // TODO if weapon has bleed > 0, apply blunt dmg (1d3) IF alignment is non-evil
     allowed_armors: ALL_ARMORS,
     variants: {
       CLOISTERED_CLERIC: 'cloistered cleric',
@@ -187,4 +188,57 @@ export default { // TODO aura of threat around character
     allowed_armors: [],
     variants: {},
   },
+  thief: {
+    xp_thresholds: [
+      0,
+      600,
+      1800,
+      4200,
+      9600,
+      20000,
+      40000,
+      70000,
+      110000,
+      160000,
+      220000,
+      360000,
+      500000,
+      640000,
+    ],
+    titles: [
+      'Apprentice',
+      'Footpad',
+      'Cutpurse',
+      'Robber',
+      'Burglar',
+      'Filcher',
+      'Sharper',
+      'Pilferer',
+      'Magsman',
+      'Thief',
+      'Master Thief',
+      'Master Thief (12th)',
+      'Master Thief (13th)',
+      'Master Thief (14th)',
+    ],
+    bab: (lvl) => Math.floor((Number(lvl) * 2) / 3),
+    base_ac: 10,
+    base_sv: (lvl) => Number(lvl),
+    base_mv_adj: 0,
+    allowed_weap_profs: [
+      WEAPON_CATEGORIES.DAGGER,
+      WEAPON_CATEGORIES.BLUDGEON,
+      WEAPON_CATEGORIES.HAND_TO_HAND,
+      WEAPON_CATEGORIES.SLING,
+      WEAPON_CATEGORIES.CURVED_SWORD,
+      WEAPON_CATEGORIES.PIERCING_SWORD,
+      WEAPON_CATEGORIES.STRAIGHT_SWORD,
+    ],
+    allowed_weap_tiers: WEAPON_TIERS.SIMPLE, // TODO is simple relative to category, e.g. make all single-handed swords simple for thieves
+    allowed_armors: NON_BULKY_ARMORS,
+    variants: {
+      ASSASSIN: 'assassin',
+      SWASHBUCKLER: 'swashbuckler',
+    },
+  }, // TODO add class features here? have to do it by variant
 };
