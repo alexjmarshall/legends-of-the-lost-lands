@@ -1,10 +1,18 @@
+export const WEIGHT_TYPES = {
+  LIGHT: 'light',
+  MEDIUM: 'medium',
+  HEAVY: 'heavy',
+};
+
 export const ARMOR_MATERIALS = {
   bone: {
-    weight: 40,
+    weight: 42,
     clo: 10,
     value: 180,
     metal: false,
     bulky: true,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 56,
   },
   wood: {
     weight: 40,
@@ -12,6 +20,8 @@ export const ARMOR_MATERIALS = {
     value: 120,
     metal: false,
     bulky: true,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 48,
   },
   fur: {
     weight: 20,
@@ -19,6 +29,8 @@ export const ARMOR_MATERIALS = {
     value: 600,
     metal: false,
     bulky: false,
+    type: WEIGHT_TYPES.LIGHT,
+    durability: 74,
   },
   leather: {
     weight: 16,
@@ -26,13 +38,17 @@ export const ARMOR_MATERIALS = {
     value: 300,
     metal: false,
     bulky: false,
+    type: WEIGHT_TYPES.LIGHT,
+    durability: 80,
   },
   padded: {
-    weight: 16,
+    weight: 18,
     clo: 18,
     value: 240,
     metal: false,
     bulky: false,
+    type: WEIGHT_TYPES.LIGHT,
+    durability: 72,
   },
   'cuir bouilli': {
     weight: 24,
@@ -40,20 +56,26 @@ export const ARMOR_MATERIALS = {
     value: 360,
     metal: false,
     bulky: true,
+    type: WEIGHT_TYPES.LIGHT,
+    durability: 60,
   },
   brigandine: {
-    weight: 80,
+    weight: 64,
     clo: 16,
     value: 1200,
     metal: true,
     bulky: true,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 68,
   },
   scale: {
-    weight: 88,
+    weight: 68,
     clo: 13,
     value: 960,
     metal: true,
     bulky: false,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 76,
   },
   mail: {
     weight: 48,
@@ -61,6 +83,8 @@ export const ARMOR_MATERIALS = {
     value: 1800,
     metal: true,
     bulky: false,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 120,
   },
   'elven mail': {
     weight: 24,
@@ -68,27 +92,35 @@ export const ARMOR_MATERIALS = {
     value: 18000,
     metal: true,
     bulky: false,
+    type: WEIGHT_TYPES.LIGHT,
+    durability: 360,
   },
   'plated mail': {
-    weight: 60,
+    weight: 58,
     clo: 4,
     value: 2400,
     metal: true,
     bulky: false,
+    type: WEIGHT_TYPES.MEDIUM,
+    durability: 84,
   },
   lamellar: {
-    weight: 88,
+    weight: 70,
     clo: 11,
     value: 1440,
     metal: true,
     bulky: true,
+    type: WEIGHT_TYPES.HEAVY,
+    durability: 52,
   },
   splint: {
-    weight: 72,
+    weight: 76,
     clo: 14,
     value: 1920,
     metal: true,
     bulky: true,
+    type: WEIGHT_TYPES.HEAVY,
+    durability: 72,
   },
   'iron plate': {
     weight: 80,
@@ -96,6 +128,8 @@ export const ARMOR_MATERIALS = {
     value: 2880,
     metal: true,
     bulky: true,
+    type: WEIGHT_TYPES.HEAVY,
+    durability: 60,
   },
   'steel plate': {
     weight: 72,
@@ -103,8 +137,11 @@ export const ARMOR_MATERIALS = {
     value: 7200,
     metal: true,
     bulky: true,
+    type: WEIGHT_TYPES.HEAVY,
+    durability: 70,
   },
 };
+
 export const ARMOR_VS_DMG_TYPE = {
   none: {
     base_AC: 0,
@@ -120,28 +157,20 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: -1,
       dr: 0,
     },
-    rending: {
-      ac: 0,
-      dr: 0,
-    },
   },
   fur: {
     base_AC: 1,
     blunt: {
-      ac: 0,
-      dr: 1,
+      ac: 1,
+      dr: 0,
     },
     piercing: {
       ac: 0,
-      dr: 1,
-    },
-    slashing: {
-      ac: 0,
       dr: 0,
     },
-    rending: {
+    slashing: {
       ac: -1,
-      dr: 1,
+      dr: 0,
     },
   },
   leather: {
@@ -158,10 +187,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: -1,
       dr: 1,
     },
-    rending: {
-      ac: -2,
-      dr: 2,
-    },
   },
   padded: {
     base_AC: 2,
@@ -176,10 +201,6 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: -1,
       dr: 0,
-    },
-    rending: {
-      ac: -2,
-      dr: 1,
     },
   },
   'cuir bouilli': {
@@ -196,10 +217,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 0,
       dr: 0,
     },
-    rending: {
-      ac: -2,
-      dr: 2,
-    },
   },
   wood: {
     base_AC: 2,
@@ -215,10 +232,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 0,
       dr: 0,
     },
-    rending: {
-      ac: -2,
-      dr: 2,
-    },
   },
   bone: {
     base_AC: 2,
@@ -233,10 +246,6 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: 0,
       dr: 0,
-    },
-    rending: {
-      ac: -2,
-      dr: 2,
     },
   },
   scale: {
@@ -253,10 +262,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 3,
       dr: 0,
     },
-    rending: {
-      ac: -2,
-      dr: 2,
-    },
   },
   brigandine: {
     base_AC: 3,
@@ -271,10 +276,6 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: 1,
       dr: 0,
-    },
-    rending: {
-      ac: -3,
-      dr: 2,
     },
   },
   mail: {
@@ -291,10 +292,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 2,
       dr: 1,
     },
-    rending: {
-      ac: -3,
-      dr: 3,
-    },
   },
   'elven mail': {
     base_AC: 3,
@@ -309,10 +306,6 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: 2,
       dr: 1,
-    },
-    rending: {
-      ac: -3,
-      dr: 3,
     },
   },
   lamellar: {
@@ -329,10 +322,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 1,
       dr: 1,
     },
-    rending: {
-      ac: -3,
-      dr: 3,
-    },
   },
   'plated mail': {
     base_AC: 4,
@@ -347,10 +336,6 @@ export const ARMOR_VS_DMG_TYPE = {
     slashing: {
       ac: 1,
       dr: 1,
-    },
-    rending: {
-      ac: -4,
-      dr: 3,
     },
   },
   splint: {
@@ -367,10 +352,6 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 1,
       dr: 1,
     },
-    rending: {
-      ac: -4,
-      dr: 2,
-    },
   },
   'iron plate': {
     base_AC: 5,
@@ -384,10 +365,6 @@ export const ARMOR_VS_DMG_TYPE = {
     },
     slashing: {
       ac: 1,
-      dr: 2,
-    },
-    rending: {
-      ac: -5,
       dr: 2,
     },
   },
@@ -405,9 +382,19 @@ export const ARMOR_VS_DMG_TYPE = {
       ac: 1,
       dr: 2,
     },
-    rending: {
-      ac: -6,
-      dr: 2,
-    },
   },
 };
+
+export const ALL_ARMORS = Object.keys(ARMOR_MATERIALS);
+
+export const NON_METAL_ARMORS = Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal);
+
+export const LIGHT_ARMORS = Object.keys(ARMOR_MATERIALS).filter((k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES.LIGHT);
+
+export const SHIELD_TYPES = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+};
+
+export const ALL_SHIELD_TYPES = Object.values(SHIELD_TYPES);
