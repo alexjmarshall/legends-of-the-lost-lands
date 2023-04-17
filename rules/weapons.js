@@ -17,25 +17,6 @@ export const WEAPON_SPECIAL_PROPS = Object.freeze({
   UNWIELDY: 'unwieldy',
   VOLATILE: 'volatile', // needed?
 });
-export const WEAPON_CATEGORIES = Object.freeze({
-  AXE: 'axe',
-  BLUDGEON: 'bludgeon',
-  BOW: 'bow',
-  CROSSBOW: 'crossbow',
-  CURVED_SWORD: 'curved sword',
-  DAGGER: 'dagger',
-  HAMMER: 'hammer',
-  HAND_TO_HAND: 'hand-to-hand',
-  GREATSWORD: 'greatsword',
-  PIERCING_SWORD: 'piercing sword',
-  POLEARM: 'polearm',
-  SLING: 'sling', // TODO combine with whip?
-  SPEAR: 'spear',
-  SPIKED_BLUDGEON: 'spiked bludgeon',
-  STAFF: 'staff',
-  STRAIGHT_SWORD: 'straight sword',
-  WHIP: 'whip', // TODO spiked scourge, regular scourge has Bleed 0
-});
 export const AMMO_TYPES = Object.freeze({
   STONE: 'stone',
   BULLET: 'bullet',
@@ -55,7 +36,3 @@ export const GUN_AMMO_TYPES = [
   AMMO_TYPES.BALL,
   AMMO_TYPES.SHOT,
 ];
-export const WEAPON_TIERS = {
-  SIMPLE: 'simple',
-  MARTIAL: 'martial',
-};
