@@ -1,48 +1,60 @@
 import { ALL_ARMORS, ALL_SHIELD_TYPES } from '../armors';
-import { ALL_WEAPONS, BASIC_SKILLS_EXCL_WEAPON_SKILLS } from '../skills';
+import { ALL_WEAPONS, BASIC_SKILLS_EXCL_WEAPON_SKILLS, SKILL_PROGRESSIONS_ENUM } from '../skills';
+import { SAVES_ENUM, SAVE_PROGRESSIONS_ENUM } from '../saves';
 import FEATURES from '../features';
-import { ALL_ALIGNMENTS } from '../alignments';
-import { DEFAULT_BASE_AC } from '../class';
+import { BaseClass } from './base-class';
 
-export class Fighter {
-  constructor(lvl) {
+const xp_reqs = [0, 1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000, 360000, 480000, 600000, 720000, 840000];
+const titles = [
+  'Veteran',
+  'Warrior',
+  'Swordsman',
+  'Hero',
+  'Gladiator',
+  'Dominator',
+  'Champion',
+  'Super Hero',
+  'Lord',
+  'Lord (10th)',
+  'Lord (11th)',
+  'Lord (12th)',
+  'Lord (13th)',
+  'Lord (14th)',
+];
+
+const fighterSkillProgressions = {
+  mod: 0,
+  progressions: [
+    [SKILL_PROGRESSIONS_ENUM.SPECIALIZED, ALL_WEAPONS],
+    [SKILL_PROGRESSIONS_ENUM.BASIC, BASIC_SKILLS_EXCL_WEAPON_SKILLS],
+  ],
+};
+const fighterSaveProgressions = {
+  mod: 0,
+  progressions: [
+    [SAVE_PROGRESSIONS_ENUM.GOOD, [SAVES_ENUM.PHYSICAL, SAVES_ENUM.LUCK]],
+    [SAVE_PROGRESSIONS_ENUM.POOR, [SAVES_ENUM.EVASION, SAVES_ENUM.MENTAL]],
+  ],
+};
+
+const attacks = (lvl) => Math.floor((Number(lvl) - 1) / 6);
+
+export class Fighter extends BaseClass {
+  constructor(lvl, skillProgressions = fighterSkillProgressions, saveProgressions = fighterSaveProgressions) {
+    super(lvl, xp_reqs, titles, skillProgressions, saveProgressions);
     this.hit_die = 'd8';
-    this.xp_requirements = [
-      0, 1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000, 360000, 480000, 600000, 720000, 840000,
-    ];
-    this.titles = [
-      'Veteran',
-      'Warrior',
-      'Swordsman',
-      'Hero',
-      'Gladiator',
-      'Dominator',
-      'Champion',
-      'Super Hero',
-      'Lord',
-      'Lord (10th)',
-      'Lord (11th)',
-      'Lord (12th)',
-      'Lord (13th)',
-      'Lord (14th)',
-    ];
-    this.base_ac = DEFAULT_BASE_AC;
-    this.base_sv = Number(lvl);
     this.armors = ALL_ARMORS;
     this.shields = ALL_SHIELD_TYPES;
-    this.specialized_skills = ALL_WEAPONS;
-    this.untrained_skills = BASIC_SKILLS_EXCL_WEAPON_SKILLS;
     this.features = [
       { ...FEATURES['chain attack'], max_attacks: Number(lvl) },
-      { ...FEATURES['extra attack'], attacks: Math.floor((Number(lvl) - 1) / 6) },
+      { ...FEATURES['extra attack'], attacks: attacks(lvl) },
     ];
-    this.allowed_alignments = ALL_ALIGNMENTS;
   }
 }
 
 export class Berserker extends Fighter {
   constructor(lvl) {
     super(lvl);
-    this.features = [{ ...FEATURES['extra attack'], attacks: Math.floor((Number(lvl) - 1) / 6) }, FEATURES['berserk']];
+    this.features = [{ ...FEATURES['extra attack'], attacks: attacks(lvl) }, FEATURES['berserk']];
   }
 }
