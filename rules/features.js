@@ -1,13 +1,15 @@
 // macro: macro code associated with feature for player to activate TODO
 // active_effects: active effect definitions associated with feature TODO
+
 export default {
   'chain attack': {
     req_lvl: 1,
-    max_attacks: 1,
   },
-  'extra attack': {
+  'two attacks': {
     req_lvl: 1,
-    attacks: 1,
+  },
+  'three attacks': {
+    req_lvl: 1,
   },
   berserk: {
     req_lvl: 1,
@@ -20,33 +22,40 @@ export default {
   'divine erudition': {
     req_lvl: 1,
   },
-  'spell casting': {
-    req_lvl: 1,
-    spell_type: '',
-  },
-  'scribe scrolls': {
-    req_lvl: 1,
-    spell_type: '',
-  },
-  'read scrolls': {
-    req_lvl: 1,
-    spell_type: '',
-  },
-  'read languages': {
+  'cast magick spells': {
     req_lvl: 1,
   },
-  'carve rune': {
+  'scribe magick scrolls': {
     req_lvl: 1,
-    // TODO macro and item type for runes -- can learn runes by finding them or learn 1 per level up
+  },
+  'read magick scrolls': {
+    req_lvl: 1,
+  },
+  'cast cleric spells': {
+    req_lvl: 1,
+  },
+  'scribe cleric scrolls': {
+    req_lvl: 1,
+  },
+  'read cleric scrolls': {
+    req_lvl: 1,
+  },
+  'cast witch spells': {
+    req_lvl: 1,
+  },
+  'scribe witch scrolls': {
+    req_lvl: 1,
+  },
+  'read witch scrolls': {
+    req_lvl: 1,
   },
   backstab: {
     req_lvl: 1,
-    damage_multi: 2,
   },
   'steal spell': {
     req_lvl: 1,
   },
-  'sense magic': {
+  'sense magick': {
     req_lvl: 2,
   },
   'see ethereal creatures': {
@@ -58,7 +67,7 @@ export default {
   'immune to level drain': {
     req_lvl: 7,
   },
-  'drain magic': {
+  'drain magick': {
     req_lvl: 11,
   },
 };
