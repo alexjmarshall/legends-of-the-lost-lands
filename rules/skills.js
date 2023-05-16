@@ -86,7 +86,7 @@ export const SKILLS = {
     movement_penalty: false,
     category: CATEGORIES.THIEVERY,
   },
-  arcana: {
+  magicka: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
@@ -134,6 +134,13 @@ export const SKILLS = {
     armor_check_penalty: false,
     movement_penalty: true,
     category: CATEGORIES.OCCUPATION,
+  },
+  'carve rune': {
+    ability: ABILITIES.DEX,
+    expert: true,
+    armor_check_penalty: false,
+    movement_penalty: true,
+    category: CATEGORIES.CULTURE,
   },
   climb: {
     ability: ABILITIES.DEX,
@@ -331,13 +338,6 @@ export const SKILLS = {
     movement_penalty: false,
     category: CATEGORIES.SPELL_SCHOOL,
   },
-  intimidate: {
-    ability: ABILITIES.STR,
-    expert: false,
-    armor_check_penalty: false,
-    movement_penalty: false,
-    category: CATEGORIES.ADVENTURE,
-  },
   leathercraft: {
     ability: ABILITIES.INT,
     expert: true,
@@ -436,6 +436,13 @@ export const SKILLS = {
     armor_check_penalty: false,
     movement_penalty: true,
     category: CATEGORIES.WEAPON,
+  },
+  'read language': {
+    ability: ABILITIES.INT,
+    expert: true,
+    armor_check_penalty: false,
+    movement_penalty: false,
+    category: CATEGORIES.LORE,
   },
   religion: {
     ability: ABILITIES.WIS,
