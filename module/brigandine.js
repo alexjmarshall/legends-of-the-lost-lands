@@ -1,16 +1,16 @@
-import { SimpleActor } from "./actor.js";
-import { SimpleItem } from "./item.js";
-import { SimpleItemSheet } from "./item-sheet.js";
-import { SpellItemSheet } from "./spell-item-sheet.js";
-import { FeatureItemSheet } from "./feature-item-sheet.js";
-import { SimpleActorSheet } from "./actor-sheet.js";
-import { ContainerActorSheet } from "./container-actor-sheet.js";
-import { MerchantActorSheet } from "./merchant-actor-sheet.js";
-import { PartyActorSheet } from "./party-actor-sheet.js";
-import { preloadHandlebarsTemplates } from "./templates.js";
-import * as Macro from "./macro.js";
-import * as Constant from "./constants.js";
-import * as Util from "./utils.js";
+import { SimpleActor } from './actor.js';
+import { SimpleItem } from './item.js';
+import { SimpleItemSheet } from './item-sheet.js';
+import { SpellItemSheet } from './spell-item-sheet.js';
+import { FeatureItemSheet } from './feature-item-sheet.js';
+import { SimpleActorSheet } from './actor-sheet.js';
+import { ContainerActorSheet } from './container-actor-sheet.js';
+import { MerchantActorSheet } from './merchant-actor-sheet.js';
+import { PartyActorSheet } from './party-actor-sheet.js';
+import { preloadHandlebarsTemplates } from './templates.js';
+import * as Macro from './macro.js';
+import * as Constant from './constants.js';
+import * as Util from './utils.js';
 import { TimeQ } from './time-queue.js';
 import * as Fatigue from './fatigue.js';
 
@@ -21,16 +21,16 @@ import * as Fatigue from './fatigue.js';
 /**
  * Init hook.
  */
-Hooks.once("init", async function() {
-  console.log(`Initializing Simple Lostlands System`);
+Hooks.once('init', async function () {
+  console.log(`Initializing Brigandine System`);
 
   /**
    * Set an initiative formula for the system. This will be updated later.
    * @type {String}
    */
   CONFIG.Combat.initiative = {
-    formula: "1d6",
-    decimals: 2
+    formula: '1d6',
+    decimals: 2,
   };
 
   // Define custom Entity classes
@@ -41,49 +41,49 @@ Hooks.once("init", async function() {
   CONFIG.statusEffects = Constant.STATUS_EFFECTS;
 
   // Register sheet application classes
-  Actors.unregisterSheet("core", ActorSheet);
-  Actors.registerSheet("lostlands", SimpleActorSheet, { makeDefault: true });
-  Actors.registerSheet("lostlands", ContainerActorSheet, { makeDefault: false });
-  Actors.registerSheet("lostlands", MerchantActorSheet, { makeDefault: false });
-  Actors.registerSheet("lostlands", PartyActorSheet, { makeDefault: false });
-  Items.unregisterSheet("core", ItemSheet);
-  Items.registerSheet("lostlands", SimpleItemSheet, { makeDefault: true });
-  Items.registerSheet("lostlands", SpellItemSheet, { makeDefault: false });
-  Items.registerSheet("lostlands", FeatureItemSheet, { makeDefault: false });
+  Actors.unregisterSheet('core', ActorSheet);
+  Actors.registerSheet('brigandine', SimpleActorSheet, { makeDefault: true });
+  Actors.registerSheet('brigandine', ContainerActorSheet, { makeDefault: false });
+  Actors.registerSheet('brigandine', MerchantActorSheet, { makeDefault: false });
+  Actors.registerSheet('brigandine', PartyActorSheet, { makeDefault: false });
+  Items.unregisterSheet('core', ItemSheet);
+  Items.registerSheet('brigandine', SimpleItemSheet, { makeDefault: true });
+  Items.registerSheet('brigandine', SpellItemSheet, { makeDefault: false });
+  Items.registerSheet('brigandine', FeatureItemSheet, { makeDefault: false });
 
   // Register system settings
-  game.settings.register("lostlands", "macroShorthand", {
-    name: "SETTINGS.SimpleMacroShorthandN",
-    hint: "SETTINGS.SimpleMacroShorthandL",
-    scope: "world",
+  game.settings.register('brigandine', 'macroShorthand', {
+    name: 'SETTINGS.SimpleMacroShorthandN',
+    hint: 'SETTINGS.SimpleMacroShorthandL',
+    scope: 'world',
     type: Boolean,
     default: true,
-    config: true
+    config: true,
   });
 
   // Register initiative setting
-  game.settings.register("lostlands", "initFormula", {
-    name: "SETTINGS.SimpleInitFormulaN",
-    hint: "SETTINGS.SimpleInitFormulaL",
-    scope: "world",
+  game.settings.register('brigandine', 'initFormula', {
+    name: 'SETTINGS.SimpleInitFormulaN',
+    hint: 'SETTINGS.SimpleInitFormulaL',
+    scope: 'world',
     type: String,
-    default: "1d6",
+    default: '1d6',
     config: true,
-    onChange: formula => _simpleUpdateInit(formula, true)
+    onChange: (formula) => _simpleUpdateInit(formula, true),
   });
 
   // required Clo setting
-  game.settings.register("lostlands", "temp", {
-    name: "World Temperature",
-    hint: "Current ambient temperature in Celsius",
-    scope: "world",
+  game.settings.register('brigandine', 'temp', {
+    name: 'World Temperature',
+    hint: 'Current ambient temperature in Celsius',
+    scope: 'world',
     type: Number,
     default: 1,
     config: true,
   });
 
   // Retrieve and assign the initiative formula setting
-  const initFormula = game.settings.get("lostlands", "initFormula");
+  const initFormula = game.settings.get('brigandine', 'initFormula');
   _simpleUpdateInit(initFormula);
 
   /**
@@ -93,54 +93,54 @@ Hooks.once("init", async function() {
    */
   function _simpleUpdateInit(formula, notify = false) {
     const isValid = Roll.validate(formula);
-    if ( !isValid ) {
-      if ( notify ) ui.notifications.error(`${game.i18n.localize("SIMPLE.NotifyInitFormulaInvalid")}: ${formula}`);
+    if (!isValid) {
+      if (notify) ui.notifications.error(`${game.i18n.localize('SIMPLE.NotifyInitFormulaInvalid')}: ${formula}`);
       return;
     }
     CONFIG.Combat.initiative.formula = formula;
   }
 
   // Register time queue setting
-  game.settings.register("lostlands", "timeQ", {
-    name: "Time Queue",
+  game.settings.register('brigandine', 'timeQ', {
+    name: 'Time Queue',
     hint: "Don't touch this",
-    scope: "world",
+    scope: 'world',
     type: String,
-    default: "[]",
-    config: false
+    default: '[]',
+    config: false,
   });
 
-  game.lostlands = {
+  game.brigandine = {
     SimpleActor,
     Macro,
     Util,
     Constant,
-    TimeQ
+    TimeQ,
   };
 
   /**
    * Slugify a string
    */
-  Handlebars.registerHelper('slugify', function(value) {
-    return value.slugify({strict: true});
+  Handlebars.registerHelper('slugify', function (value) {
+    return value.slugify({ strict: true });
   });
 
   // Check if value equals arg
-  Handlebars.registerHelper('ifeq', function(arg1, arg2, options) {
-    return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+  Handlebars.registerHelper('ifeq', function (arg1, arg2, options) {
+    return arg1 == arg2 ? options.fn(this) : options.inverse(this);
   });
 
   // Check if value in array
-  Handlebars.registerHelper('ifin', function(elem, list, options) {
-    if(list.indexOf(elem) > -1) {
+  Handlebars.registerHelper('ifin', function (elem, list, options) {
+    if (list.indexOf(elem) > -1) {
       return options.fn(this);
     }
     return options.inverse(this);
   });
 
   // Check if value not in array
-  Handlebars.registerHelper('ifnotin', function(elem, list, options) {
-    if(list.indexOf(elem) < 0) {
+  Handlebars.registerHelper('ifnotin', function (elem, list, options) {
+    if (list.indexOf(elem) < 0) {
       return options.fn(this);
     }
     return options.inverse(this);
@@ -150,19 +150,19 @@ Hooks.once("init", async function() {
   await preloadHandlebarsTemplates();
 });
 
-
-Hooks.on("ready", () => {
-
+Hooks.on('ready', () => {
   // update party actors' MV
   // TODO need to do this here? or on update an actor's MV
   // TODO maybe scrap this -- make macro to update party's MV rate
-  const partyActors = game.actors.filter(a => a.type === 'party');
-  partyActors.forEach(p => {
+  const partyActors = game.actors.filter((a) => a.type === 'party');
+  partyActors.forEach((p) => {
     const data = p.data.data;
     const attrs = data.attributes;
-    const membersVal = attrs.members.value || "";
-    const members = Util.getArrFromCSL(membersVal).map(name => game.actors.getName(name)).filter(a => a);
-    const memberMVs = members.map(a => +a.data.data.mv).filter(m => m != null && !isNaN(m));
+    const membersVal = attrs.members.value || '';
+    const members = Util.getArrFromCSL(membersVal)
+      .map((name) => game.actors.getName(name))
+      .filter((a) => a);
+    const memberMVs = members.map((a) => +a.data.data.mv).filter((m) => m != null && !isNaN(m));
     const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
     const mv = slowestMV || Constant.DEFAULT_BASE_MV;
     console.log(`Updating party ${p.data.name} MV to ${mv}`, members);
@@ -182,35 +182,33 @@ Hooks.on("ready", () => {
             const invalid = duration.startTime > time || duration.startTime + (duration.seconds || 0) < time;
             if (invalid && effect._id) effectIds.push(effect._id);
           }
-          return await actor.deleteEmbeddedDocuments("ActiveEffect", effectIds);
+          return await actor.deleteEmbeddedDocuments('ActiveEffect', effectIds);
         } catch (error) {
           ui.notifications.error(`Problem removing effect from ${actor.name}. Refresh!`);
           throw error;
         }
       })
     );
-  }
+  };
 
   Hooks.on(SimpleCalendar.Hooks.Ready, async () => {
-
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
       await Fatigue.syncFatigueClocks(now, true);
       await removeInvalidEffects(now);
     }
-    
+
     console.log(`Simple Calendar | is ready!`);
 
     let locked = false;
     Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async (data) => {
-
-      if ( locked || !SimpleCalendar.api.isPrimaryGM() ) return;
+      if (locked || !SimpleCalendar.api.isPrimaryGM()) return;
       locked = true;
 
       const oldTime = game.time.worldTime;
       const timeDiff = data.diff;
-      const newTime =  oldTime + timeDiff;
+      const newTime = oldTime + timeDiff;
 
       // if going back in time, clear event queue,
       //  remove effects that started later than new time
@@ -224,10 +222,10 @@ Hooks.on("ready", () => {
       await Fatigue.syncFatigueClocks(newTime, resetClocks);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
-        let macro = game.macros.find(m => m._id === event.macroId);
+        let macro = game.macros.find((m) => m._id === event.macroId);
         // add oldTime and newTime to macro scope
-        Object.assign(event.scope, {oldTime, newTime});
-        macro && await macro.execute(event.scope);
+        Object.assign(event.scope, { oldTime, newTime });
+        macro && (await macro.execute(event.scope));
       }
 
       await removeInvalidEffects(newTime);
@@ -237,98 +235,97 @@ Hooks.on("ready", () => {
   });
 });
 
-
 /**
  * Macrobar hook
  */
-Hooks.on("hotbarDrop", (bar, data, slot) => Macro.createLostlandsMacro(data, slot));
+Hooks.on('hotbarDrop', (bar, data, slot) => Macro.createBrigandineMacro(data, slot));
 
 /**
  * Adds the actor template context menu
  */
-Hooks.on("getActorDirectoryEntryContext", (html, options) => {
+Hooks.on('getActorDirectoryEntryContext', (html, options) => {
   // Define an actor as a template.
   options.push({
-    name: game.i18n.localize("SIMPLE.DefineTemplate"),
+    name: game.i18n.localize('SIMPLE.DefineTemplate'),
     icon: '<i class="fas fa-stamp"></i>',
-    condition: li => {
-      const actor = game.actors.get(li.data("entityId"));
-      return !actor.getFlag("lostlands", "isTemplate");
+    condition: (li) => {
+      const actor = game.actors.get(li.data('entityId'));
+      return !actor.getFlag('brigandine', 'isTemplate');
     },
-    callback: li => {
-      const actor = game.actors.get(li.data("entityId"));
-      actor.setFlag("lostlands", "isTemplate", true);
-    }
+    callback: (li) => {
+      const actor = game.actors.get(li.data('entityId'));
+      actor.setFlag('brigandine', 'isTemplate', true);
+    },
   });
 
   // Undefine an actor as a template
   options.push({
-    name: game.i18n.localize("SIMPLE.UnsetTemplate"),
+    name: game.i18n.localize('SIMPLE.UnsetTemplate'),
     icon: '<i class="fas fa-times"></i>',
-    condition: li => {
-      const actor = game.actors.get(li.data("entityId"));
-      return actor.getFlag("lostlands", "isTemplate");
+    condition: (li) => {
+      const actor = game.actors.get(li.data('entityId'));
+      return actor.getFlag('brigandine', 'isTemplate');
     },
-    callback: li => {
-      const actor = game.actors.get(li.data("entityId"));
-      actor.setFlag("lostlands", "isTemplate", false);
-    }
+    callback: (li) => {
+      const actor = game.actors.get(li.data('entityId'));
+      actor.setFlag('brigandine', 'isTemplate', false);
+    },
   });
 });
 
 /**
  * Adds the item template context menu
  */
-Hooks.on("getItemDirectoryEntryContext", (html, options) => {
+Hooks.on('getItemDirectoryEntryContext', (html, options) => {
   // Define an item as a template
   options.push({
-    name: game.i18n.localize("SIMPLE.DefineTemplate"),
+    name: game.i18n.localize('SIMPLE.DefineTemplate'),
     icon: '<i class="fas fa-stamp"></i>',
-    condition: li => {
-      const item = game.items.get(li.data("entityId"));
-      return !item.getFlag("lostlands", "isTemplate");
+    condition: (li) => {
+      const item = game.items.get(li.data('entityId'));
+      return !item.getFlag('brigandine', 'isTemplate');
     },
-    callback: li => {
-      const item = game.items.get(li.data("entityId"));
-      item.setFlag("lostlands", "isTemplate", true);
-    }
+    callback: (li) => {
+      const item = game.items.get(li.data('entityId'));
+      item.setFlag('brigandine', 'isTemplate', true);
+    },
   });
 
   // Undefine an item as a template
   options.push({
-    name: game.i18n.localize("SIMPLE.UnsetTemplate"),
+    name: game.i18n.localize('SIMPLE.UnsetTemplate'),
     icon: '<i class="fas fa-times"></i>',
-    condition: li => {
-      const item = game.items.get(li.data("entityId"));
-      return item.getFlag("lostlands", "isTemplate");
+    condition: (li) => {
+      const item = game.items.get(li.data('entityId'));
+      return item.getFlag('brigandine', 'isTemplate');
     },
-    callback: li => {
-      const item = game.items.get(li.data("entityId"));
-      item.setFlag("lostlands", "isTemplate", false);
-    }
+    callback: (li) => {
+      const item = game.items.get(li.data('entityId'));
+      item.setFlag('brigandine', 'isTemplate', false);
+    },
   });
 });
 
 // Play 'what' voice sound on token selection
 // Deselect merchants on token selection
-Hooks.on("controlToken", (token, selected) => {
+Hooks.on('controlToken', (token, selected) => {
   if (!selected) return;
   if (!game.user.isGM && token.actor.type === 'merchant') return token.release();
   const actor = token.actor;
   const actorHp = actor.data.data.hp?.value;
-  if ( +actorHp < 1 ) return;
-  Util.playVoiceSound(Constant.VOICE_MOODS.what, actor, token, {push: false, bubble: false, chance: 0.5});
+  if (+actorHp < 1) return;
+  Util.playVoiceSound(Constant.VOICE_MOODS.what, actor, token, { push: false, bubble: false, chance: 0.5 });
 });
 
 // Play 'ok' voice sound on token movement
-Hooks.on("updateToken", (token, change) => {
-  if (change.x && change.y ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.ok, token.actor, token.data, {push: true, bubble: false, chance: 0.7});
+Hooks.on('updateToken', (token, change) => {
+  if (change.x && change.y) {
+    Util.playVoiceSound(Constant.VOICE_MOODS.ok, token.actor, token.data, { push: true, bubble: false, chance: 0.7 });
   }
 });
 
 // Play 'hurt'/'death' voice sounds on HP decrease
-Hooks.on("preUpdateActor", (actor, change) => {
+Hooks.on('preUpdateActor', (actor, change) => {
   const hpUpdate = change.data?.hp?.value;
   const targetHp = actor.data.data.hp?.value;
   const maxHp = actor.data.data.hp?.max;
@@ -336,49 +333,60 @@ Hooks.on("preUpdateActor", (actor, change) => {
   const xpUpdate = change.data?.xp?.value;
   const maxXp = actor.data.data.xp?.max;
   const token = Util.getTokenFromActor(actor);
-  const maxNegHP = actor.type === "humanoid" || actor.type === "character" ?
-    (0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)) : 0;
+  const maxNegHP =
+    actor.type === 'humanoid' || actor.type === 'character'
+      ? 0 - (actor.data.data.attributes.ability_scores?.con?.value ?? 10)
+      : 0;
 
   // level up sound
   if (targetXp < maxXp && xpUpdate >= maxXp) {
-    Util.playSound('level_up', null, {push: false, bubble: false});
+    Util.playSound('level_up', null, { push: false, bubble: false });
     // set is_level_up flag here if necessary
   }
 
-  if (hpUpdate < maxNegHP  && targetHp >= maxNegHP) {
-    Util.macroChatMessage(actor, {
-      flavor: 'Death', 
-      content: `${actor.name} dies.${actor.type === 'character' ? ' May the Gods have mercy.' : ''}`,
-    }, false);
+  if (hpUpdate < maxNegHP && targetHp >= maxNegHP) {
+    Util.macroChatMessage(
+      actor,
+      {
+        flavor: 'Death',
+        content: `${actor.name} dies.${actor.type === 'character' ? ' May the Gods have mercy.' : ''}`,
+      },
+      false
+    );
     return;
   }
 
-  if ( hpUpdate <= 0 && targetHp > 0 ) {
-    Util.macroChatMessage(actor, {
-      flavor: 'Incapacitated', 
-      content: `${actor.name} collapses.`,
-    }, false);
+  if (hpUpdate <= 0 && targetHp > 0) {
+    Util.macroChatMessage(
+      actor,
+      {
+        flavor: 'Incapacitated',
+        content: `${actor.name} collapses.`,
+      },
+      false
+    );
   }
 
   if (targetHp < 1) return;
 
   if (hpUpdate < 0) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.death, actor, token, {push: true, bubble: true, chance: 1});
-  } else if ( hpUpdate < maxHp / 2 && targetHp >= maxHp / 2 ) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.dying, actor, token, {push: true, bubble: true, chance: 0.7});
+    Util.playVoiceSound(Constant.VOICE_MOODS.death, actor, token, { push: true, bubble: true, chance: 1 });
+  } else if (hpUpdate < maxHp / 2 && targetHp >= maxHp / 2) {
+    Util.playVoiceSound(Constant.VOICE_MOODS.dying, actor, token, { push: true, bubble: true, chance: 0.7 });
   } else if (hpUpdate > 0 && hpUpdate < targetHp) {
-    Util.playVoiceSound(Constant.VOICE_MOODS.hurt, actor, token, {push: true, bubble: true, chance: 0.5});
+    Util.playVoiceSound(Constant.VOICE_MOODS.hurt, actor, token, { push: true, bubble: true, chance: 0.5 });
   }
 });
 
-Hooks.on("preUpdateItem", (item, change) => {
+Hooks.on('preUpdateItem', (item, change) => {
   let heldQtyLimit = 1;
   const charSize = Constant.SIZE_VALUES[item.actor?.data.data.attributes.size?.value] ?? 2;
   const itemSize = Constant.SIZE_VALUES[item.data.data.attributes.size?.value];
   if (item.name.toLowerCase().includes('javelin') && charSize > itemSize) heldQtyLimit = 3;
   else if (itemSize < 1 && charSize > itemSize) heldQtyLimit = 2;
 
-  const invalidHold = (item.data.data.held_offhand || item.data.data.held_mainhand) &&
+  const invalidHold =
+    (item.data.data.held_offhand || item.data.data.held_mainhand) &&
     (change.data?.quantity < 1 || change.data?.quantity > heldQtyLimit);
   if (invalidHold) {
     change.data.held_offhand = false;
@@ -391,10 +399,13 @@ Hooks.on("preUpdateItem", (item, change) => {
   }
 
   // TODO cleanup and use default values
-  if (change.data?.held_offhand != null || change.data?.held_mainhand != null) {// || change.data?.data?.attributes?.atk_modes
-    const atkModes = item.data?.data?.attributes?.atk_modes?.value?.split(',')
-      .map(t => t.toLowerCase().replace(/\s/g, ""))
-      .filter(t => Object.keys(Constant.ATK_MODES).includes(t)) || [];
+  if (change.data?.held_offhand != null || change.data?.held_mainhand != null) {
+    // || change.data?.data?.attributes?.atk_modes
+    const atkModes =
+      item.data?.data?.attributes?.atk_modes?.value
+        ?.split(',')
+        .map((t) => t.toLowerCase().replace(/\s/g, ''))
+        .filter((t) => Object.keys(Constant.ATK_MODES).includes(t)) || [];
 
     if (atkModes.length) {
       change.data.atk_mode = atkModes[0];
@@ -415,11 +426,11 @@ Hooks.on("preUpdateItem", (item, change) => {
   }
 });
 
-Hooks.on("preCreateActiveEffect", (activeEffect, data, options, userId) => {
+Hooks.on('preCreateActiveEffect', (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return false;
 });
 
-Hooks.on("createActiveEffect", (activeEffect, data, options, userId) => {
+Hooks.on('createActiveEffect', (activeEffect, data, options, userId) => {
   const actor = activeEffect.parent;
   const effect = activeEffect.data.label;
 
@@ -431,7 +442,7 @@ Hooks.on("createActiveEffect", (activeEffect, data, options, userId) => {
   }
 });
 
-Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
+Hooks.on('deleteActiveEffect', async (activeEffect, data, options, userId) => {
   if (!game.user.isGM) return;
   const actor = activeEffect.parent;
   const effect = activeEffect.data.label;
@@ -446,8 +457,8 @@ Hooks.on("deleteActiveEffect", async (activeEffect, data, options, userId) => {
     case 'Asleep':
       return applyRest();
     case 'Rest':
-      const restDice = actor.getFlag("lostlands", "restDice");
-      await actor.unsetFlag("lostlands", "restDice");
+      const restDice = actor.getFlag('brigandine', 'restDice');
+      await actor.unsetFlag('brigandine', 'restDice');
       await Fatigue.resetFatigueType(actor, 'hunger');
       await Fatigue.resetFatigueType(actor, 'thirst');
       return applyRest(restDice);
