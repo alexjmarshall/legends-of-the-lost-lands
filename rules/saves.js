@@ -1,5 +1,7 @@
-import { ABILITIES } from './abilities';
+import { ABILITIES as ABILITIES_ENUM } from './abilities';
 import { buildEnum, buildStats, deepFreeze } from './helper';
+
+const { WIS, DEX, CON } = ABILITIES_ENUM;
 
 export const SAVE_BUILDERS = deepFreeze({
   good: (lvl, mod = 0) => ({
@@ -17,17 +19,17 @@ export const SAVE_PROGRESSIONS_ENUM = deepFreeze({
 
 export const SAVES = deepFreeze({
   evasion: {
-    ability: ABILITIES.DEX,
+    ability: DEX,
     armor_check_penalty: false,
     movement_penalty: true,
   },
   mental: {
-    ability: ABILITIES.WIS,
+    ability: WIS,
     armor_check_penalty: false,
     movement_penalty: false,
   },
   physical: {
-    ability: ABILITIES.CON,
+    ability: CON,
     armor_check_penalty: false,
     movement_penalty: false,
   },
@@ -42,5 +44,6 @@ export const SAVES_ENUM = buildEnum(SAVES);
 
 export function buildSaves(saveProgressions, lvl) {
   const { progressions, mod } = saveProgressions;
+
   return buildStats(SAVE_BUILDERS, lvl, progressions, mod);
 }
