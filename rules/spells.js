@@ -1,14 +1,18 @@
-export const SPELL_TYPES = {
+import { deepFreeze } from './helper';
+
+export const SPELL_TYPES = deepFreeze({
   SPELL_CLERIC: 'spell_cleric',
-  SPELL_MAGIC: 'spell_magic',
+  SPELL_MAGICK: 'spell_magick',
   SPELL_WITCH: 'spell_witch',
-};
-export const MAX_SPELL_LEVELS = {
+});
+
+export const MAX_SPELL_LEVELS = deepFreeze({
   [SPELL_TYPES.SPELL_CLERIC]: 6,
-  [SPELL_TYPES.SPELL_MAGIC]: 7,
+  [SPELL_TYPES.SPELL_MAGICK]: 7,
   [SPELL_TYPES.SPELL_WITCH]: 6,
-};
-export const SPELL_SCHOOLS = [
+});
+
+export const SPELL_SCHOOLS = Array.freeze([
   'abjuration',
   'alteration',
   'conjuration',
@@ -17,4 +21,4 @@ export const SPELL_SCHOOLS = [
   'evocation',
   'illusion',
   'necromancy',
-];
+]);
