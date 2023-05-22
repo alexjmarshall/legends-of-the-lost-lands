@@ -1,4 +1,6 @@
-export const WEAPON_SPECIAL_PROPS = Object.freeze({
+import { deepFreeze } from './helper';
+
+export const WEAPON_SPECIAL_PROPS = deepFreeze({
   BACK_RANK: 'back rank', // TODO needed? or only spears
   BALANCED: 'balanced', // TODO needed?
   CONCEALABLE: 'concealable',
@@ -17,7 +19,8 @@ export const WEAPON_SPECIAL_PROPS = Object.freeze({
   UNWIELDY: 'unwieldy',
   VOLATILE: 'volatile', // needed?
 });
-export const AMMO_TYPES = Object.freeze({
+
+export const AMMO_TYPES = deepFreeze({
   STONE: 'stone',
   BULLET: 'bullet',
   BALL: 'ball',
@@ -25,14 +28,9 @@ export const AMMO_TYPES = Object.freeze({
   QUARREL: 'quarrel',
   ARROW: 'arrow',
 });
-export const CROSSBOW_AMMO_TYPES = [
-  AMMO_TYPES.QUARREL,
-];
-export const BOW_AMMO_TYPES = [
-  AMMO_TYPES.ARROW,
-];
-export const GUN_AMMO_TYPES = [
-  AMMO_TYPES.BULLET,
-  AMMO_TYPES.BALL,
-  AMMO_TYPES.SHOT,
-];
+
+export const CROSSBOW_AMMO_TYPES = [AMMO_TYPES.QUARREL];
+
+export const BOW_AMMO_TYPES = [AMMO_TYPES.ARROW];
+
+export const GUN_AMMO_TYPES = [AMMO_TYPES.BULLET, AMMO_TYPES.BALL, AMMO_TYPES.SHOT];
