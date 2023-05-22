@@ -9,6 +9,8 @@
   "rules": {
     "eqeqeq": "error",
     "no-console": "warn",
+    "no-undef": "warn",
+    "no-unused-vars": "warn",
     "prettier/prettier": "error"
   },
   "parserOptions": {
