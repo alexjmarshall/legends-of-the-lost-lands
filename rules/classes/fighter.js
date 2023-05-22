@@ -1,13 +1,12 @@
 import { ALL_ARMORS, ALL_SHIELD_TYPES } from '../armors';
 import { ALL_WEAPONS, BASIC_SKILLS_EXCL_WEAPON, SKILL_PROGRESSIONS_ENUM, buildSkills } from '../skills';
 import { SAVES_ENUM, SAVE_PROGRESSIONS_ENUM, buildSaves } from '../saves';
-import { FEATURES, FEATURES_ENUM, buildFeatures } from '../features';
+import { buildFeatures } from '../features';
 import { BaseClass } from './base-class';
 
 const { SPECIALIZED, BASIC } = SKILL_PROGRESSIONS_ENUM;
 const { GOOD, POOR } = SAVE_PROGRESSIONS_ENUM;
 const { PHYSICAL, EVASION, MENTAL, LUCK } = SAVES_ENUM;
-const { CHAIN_ATTACK, EXTRA_ATTACK, BERSERK } = FEATURES_ENUM;
 
 export class Fighter extends BaseClass {
   #XP_REQS = [1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000, 360000, 480000, 600000, 720000, 840000, Infinity];
@@ -42,10 +41,6 @@ export class Fighter extends BaseClass {
       [POOR]: [EVASION, MENTAL],
     },
   };
-
-  numExtraAttacks(lvl) {
-    return Math.floor((Number(lvl) - 1) / 6);
-  }
 
   constructor(lvl) {
     super(lvl);

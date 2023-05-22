@@ -1,7 +1,7 @@
 {
-  "name": "lostlands",
+  "name": "brigandine",
   "version": "1.0.0",
-  "description": "CSS compiler for the Lostlands system",
+  "description": "CSS compiler for the Brigandine system",
   "type": "module",
   "scripts": {
     "css": "gulp css",
