@@ -1,6 +1,6 @@
 {
-  "name": "lostlands",
-  "title": "Legends of the Lost",
+  "name": "brigandine",
+  "title": "Brigandine",
   "description": "A simulationist FRPG system.",
   "author": "Alex",
   "authors": [],
@@ -12,7 +12,7 @@
   "compatibleCoreVersion": "0.8.9",
   "scripts": [],
   "esmodules": [
-    "module/lost-lands.js"
+    "module/brigandine.js"
   ],
   "styles": [
     "styles/simple.css"
