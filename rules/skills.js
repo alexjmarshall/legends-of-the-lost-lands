@@ -1,4 +1,6 @@
 import { ABILITIES } from './abilities';
+import { buildEnum, buildStats, deepFreeze } from './helper';
+
 /*
  * Skills are Basic or Expert
  * * Skill rolls apply partial ability score modifier + skill bonus
@@ -28,10 +30,10 @@ Major Failure/Success = fail/succeed by 5+. Critical Failure/Success = d100 <= m
 // Morale is Cowardly, Steady or Fearless
 //   0.5x, 1x or 1.5x level to morale checks
 
-export const SKILL_BUILDERS = {
+export const SKILL_BUILDERS = deepFreeze({
   specialized: (lvl) => ({
     baseBonus: Math.floor(lvl / 2),
-    cap: Math.floor(lvl * 1.5),
+    cap: Math.min(lvl + 4, Math.floor(lvl * 1.5)),
   }),
   proficient: (lvl) => ({
     baseBonus: Math.floor(lvl / 3),
@@ -39,21 +41,21 @@ export const SKILL_BUILDERS = {
   }),
   basic: (lvl) => ({
     baseBonus: Math.floor(lvl / 4),
-    cap: Math.floor((lvl * 3) / 4),
+    cap: Math.max(lvl - 4, Math.floor((lvl * 3) / 4)),
   }),
-};
+});
 
-export const SKILL_PROGRESSIONS_ENUM = {
+export const SKILL_PROGRESSIONS_ENUM = deepFreeze({
   SPECIALIZED: 'specialized',
   PROFICIENT: 'proficient',
   BASIC: 'basic',
-};
+});
 
 export const SKILL_POINTS = (numSpecialized, numProficient, numBasic) => {
   return Math.floor(numSpecialized / 2 + numProficient / 3 + numBasic / 4);
 };
 
-export const CATEGORIES = {
+export const CATEGORIES_ENUM = deepFreeze({
   ADVENTURE: 'adventure',
   CULTURE: 'culture',
   LORE: 'lore',
@@ -62,295 +64,295 @@ export const CATEGORIES = {
   SURVIVAL: 'survival',
   THIEVERY: 'thievery',
   WEAPON: 'weapon',
-};
+});
 
-export const SKILLS = {
+export const SKILLS = deepFreeze({
   abjuration: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   alteration: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   appraise: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
   magicka: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   axe: {
     ability: ABILITIES.STR,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   blacksmith: {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   bludgeon: {
     ability: ABILITIES.STR,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   'bowyer/fletcher': {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   calligraphy: {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   carpentry: {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   'carve rune': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   climb: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   conjuration: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   cook: {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   crossbow: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  curved_greatsword: {
+  'curved greatsword': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  curved_sword: {
+  'curved sword': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   dagger: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   demonlore: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   disguise: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
-  distance_run: {
+  'distance run': {
     ability: ABILITIES.CON,
     expert: false,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   divination: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   enchantment: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   etiquette: {
     ability: ABILITIES.CHA,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   evocation: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
-  disarm_trap: {
+  'disarm trap': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
   firecraft: {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   forgery: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
   greatsword: {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   hammer: {
     ability: ABILITIES.STR,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  hand_to_hand: {
+  'hand-to-hand': {
     ability: ABILITIES.STR,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   handgonne: {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  handle_animal: {
+  'handle animal': {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   heraldry: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   herblore: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   hide: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   history: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   'hunt/forage': {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   illusion: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
   leathercraft: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   listen: {
     ability: ABILITIES.INT,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   longbow: {
     // TODO minimum STR 12 needed
@@ -358,266 +360,245 @@ export const SKILLS = {
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   masonry: {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   medicine: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   navigate: {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   necromancy: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SPELL_SCHOOL,
+    category: CATEGORIES_ENUM.SPELL_SCHOOL,
   },
-  open_lock: {
+  'open lock': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
   persuade: {
     ability: ABILITIES.CHA,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
-  pick_pocket: {
+  'pick pocket': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.THIEVERY,
+    category: CATEGORIES_ENUM.THIEVERY,
   },
-  piercing_sword: {
+  'piercing sword': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   'poetry/music': {
     ability: ABILITIES.CHA,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   poisonlore: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   polearm: {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   'read language': {
+    // TODO min req INT 9
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   religion: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   ride: {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.CULTURE,
+    category: CATEGORIES_ENUM.CULTURE,
   },
   runelore: {
     ability: ABILITIES.INT,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.LORE,
+    category: CATEGORIES_ENUM.LORE,
   },
   sail: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   search: {
     ability: ABILITIES.INT,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   shortbow: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   sling: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   sneak: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   spear: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  spiked_bludgeon: {
+  'spiked bludgeon': {
     ability: ABILITIES.STR,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   staff: {
     ability: ABILITIES.STR,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-  straight_sword: {
+  'straight sword': {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
   swim: {
     ability: ABILITIES.CON,
     expert: false,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   tailor: {
     ability: ABILITIES.DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
   track: {
     ability: ABILITIES.WIS,
     expert: true,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.SURVIVAL,
+    category: CATEGORIES_ENUM.SURVIVAL,
   },
   trade: {
     ability: ABILITIES.CHA,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: false,
-    category: CATEGORIES.OCCUPATION,
+    category: CATEGORIES_ENUM.OCCUPATION,
   },
-  treat_wound: {
+  'treat wound': {
     ability: ABILITIES.WIS,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.ADVENTURE,
+    category: CATEGORIES_ENUM.ADVENTURE,
   },
   whip: {
     ability: ABILITIES.DEX,
     expert: false,
     armor_check_penalty: false,
     movement_penalty: true,
-    category: CATEGORIES.WEAPON,
+    category: CATEGORIES_ENUM.WEAPON,
   },
-};
+});
 
-export const ALL_WEAPONS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES.WEAPON);
+export const ALL_WEAPONS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES_ENUM.WEAPON);
 
-export const WEAP_SKILLS_ENUM = {
-  AXE: 'axe',
-  BLUDGEON: 'bludgeon',
-  CROSSBOW: 'crossbow',
-  CURVED_GREATSWORD: 'curved greatsword',
-  CURVED_SWORD: 'curved sword',
-  DAGGER: 'dagger',
-  GREATSWORD: 'greatsword',
-  HAMMER: 'hammer',
-  HANDGONNE: 'handgonne',
-  HAND_TO_HAND: 'hand-to-hand',
-  LONGBOW: 'longbow',
-  PIERCING_SWORD: 'piercing sword',
-  POLEARM: 'polearm',
-  SHORTBOW: 'shortbow',
-  SLING: 'sling',
-  SPEAR: 'spear',
-  SPIKED_BLUDGEON: 'spiked bludgeon',
-  STAFF: 'staff',
-  STRAIGHT_SWORD: 'straight sword',
-  WHIP: 'whip',
-};
+export const WEAPON_SKILLS_ENUM = buildEnum(ALL_WEAPONS);
 
-export const ALL_SPELL_SCHOOLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES.SPELL_SCHOOL);
+export const ALL_SPELL_SCHOOLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES_ENUM.SPELL_SCHOOL);
 
-export const SPELL_SCHOOLS_ENUM = {
-  ABJURATION: 'abjuration',
-  ALTERATION: 'alteration',
-  CONJURATION: 'conjuration',
-  DIVINATION: 'divination',
-  ENCHANTMENT: 'enchantment',
-  EVOCATION: 'evocation',
-  ILLUSION: 'illusion',
-  NECROMANCY: 'necromancy',
-};
+export const SPELL_SCHOOLS_ENUM = buildEnum(ALL_SPELL_SCHOOLS);
 
-export const ALL_ADVENTURE_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES.ADVENTURE);
+export const ALL_ADVENTURE_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES_ENUM.ADVENTURE);
 
 export const BASIC_SKILLS_EXCL_WEAPON = Object.keys(SKILLS).filter(
-  (s) => !SKILLS[s].expert && !SKILLS[s].category === CATEGORIES.WEAPON
+  (s) => !SKILLS[s].expert && SKILLS[s].category !== CATEGORIES_ENUM.WEAPON
 );
 
-export const ALL_THIEVERY_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES.THIEVERY);
+export const ALL_THIEVERY_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === CATEGORIES_ENUM.THIEVERY);
 
 export const BASIC_SKILLS_EXCL_WEAPON_AND_THIEVERY = Object.keys(SKILLS).filter(
-  (s) => !SKILLS[s].expert && !SKILLS[s].category === CATEGORIES.WEAPON && !SKILLS[s].category === CATEGORIES.THIEVERY
+  (s) =>
+    !SKILLS[s].expert &&
+    SKILLS[s].category !== CATEGORIES_ENUM.WEAPON &&
+    SKILLS[s].category !== CATEGORIES_ENUM.THIEVERY
 );
+
+export function buildSkills(skillProgressions, lvl) {
+  const { progressions, mod } = skillProgressions;
+  return buildStats(SKILL_BUILDERS, lvl, progressions, mod);
+}

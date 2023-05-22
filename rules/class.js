@@ -1,244 +1,268 @@
 // base_mv (race), size (race)
-import { WEAPON_CATEGORIES, WEAPON_TIERS } from './weapons';
-import { ARMOR_MATERIALS } from './armors';
-import { SPELLCASTING_TYPES, MAX_SPELL_LEVELS } from './magic';
+// TODO ALWAYS ROUND DOWN
+import { ALL_ARMORS, NON_METAL_ARMORS, LIGHT_ARMORS } from './armors';
+import {
+  ALL_WEAPONS,
+  WEAP_SKILLS_ENUM,
+  ALL_SPELL_SCHOOLS,
+  SPELL_SCHOOLS_ENUM,
+  ALL_ADVENTURE_SKILLS,
+  BASIC_SKILLS_EXCL_WEAPON_SKILLS,
+  ALL_THIEVERY_SKILLS,
+  BASIC_SKILLS_EXCL_WEAPON_AND_THIEVERY,
+} from './skills';
+import FEATURES from './features';
+import CLASSES_ENUM from './classes/classes-enum';
+import * as CLASSES from './classes';
+import { buildEnum, deepFreeze } from './helper';
 
-const ALL_WEAP_CATS = Object.values(WEAPON_CATEGORIES);
-const ALL_WEAP_TIERS = Object.values(WEAPON_TIERS);
-const ALL_ARMORS = Object.keys(ARMOR_MATERIALS);
-const NON_METAL_ARMORS = Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal);
-const NON_BULKY_ARMORS = Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].bulky);
+export const DEFAULT_BASE_AC = 10;
+const { FIGHTER, BERSERKER, CLERIC, CLOISTERED_CLERIC } = CLASSES_ENUM;
 
-export default { // TODO aura of threat around character
-  fighter: { // TODO aura type active effects that get added to other characters in radius
-    xp_thresholds: [
-      0,
-      1000,
-      3000,
-      7000,
-      15000,
-      30000,
-      60000,
-      120000,
-      240000,
-      360000,
-      480000,
-      600000,
-      720000,
-      840000,
-    ],
-    titles: [
-      'Veteran',
-      'Warrior',
-      'Swordsman',
-      'Hero',
-      'Gladiator',
-      'Dominator',
-      'Champion',
-      'Super Hero',
-      'Lord',
-      'Lord (10th)',
-      'Lord (11th)',
-      'Lord (12th)',
-      'Lord (13th)',
-      'Lord (14th)',
-    ],
-    bab: (lvl) => Number(lvl),
-    base_ac: 10,
-    base_sv: (lvl) => Number(lvl) + 1,
-    base_mv_adj: 0,
-    allowed_weap_profs: ALL_WEAP_CATS, // TODO -2 penalty
-    allowed_weap_tiers: ALL_WEAP_TIERS, // TODO -3 penalty
-    allowed_armors: ALL_ARMORS,
+// const BASE_MAGE_FEATURES = [FEATURES['magick spell casting'], FEATURES['scribe magick scrolls']];
+
+// const allSpellSchoolsExcept = (...args) => {
+//   return ALL_SPELL_SCHOOLS.filter((s) => !args.includes(s));
+// };
+
+// TODO also show features that are essentially derived stats (e.g. num attacks, max chain attacks, backstab multi) on derived stats tab
+// TODO level -based bonus to healing spells
+// TODO give monsters a detect invisibility rating, like Magick Resistance?
+// TODO monster special hit locations as non-physical items
+// TODO make a class for each class, with a constructor by level
+// TODO aura of reach-threat around character
+// TODO go back to 3 steps per change in modifier for ability scores
+// TODO add detection of invisibility derived chance for monsters
+// TODO skills for fighting styles -- take 2 points each, but twice as good?
+// TODO use phys/evas/ment saves -- 3 progressions, con/dex/wis
+// TODO both poison and bleed do damage every 1 minute real time
+// TODO dodge gives 2x Dex AC mod (includes swashbuckler's bonus) + 1, and roll to adjacent square
+// TODO make sure all const objects/arrays are frozen, and references to them in class constructors are new with ... operator
+// TODO Magickal Research from the beginning as well
+// TODO back to weapon specialization and specialist mages instead of weap/spell school skills?
+//  --- can go back to swings being Str and thrusts being Dex
+//  --- if not, remove Specialist mage and go back to Incantatrix variant
+// TODO parry value for weapon is added to height area where it is held, but only as another 'layer'
+// TODO use "hurl" instead of "throw" for attack mode
+// TODO must use swing for chain attack, must use thrust for reach
+//  --- thrust +1 speed, -1 impact?
+// TODO no cleric slashing, piercing OK?
+// TODO capstone abilities for every class at name level?
+// CONTINUE -- Thief has Cant feature, Cloistered Cleric has Read Languages SKILL specialized--Thief proficient
+// read scrolls iS NOT a Skill, it's an Int check if unable to memorize the spell level -- use AD&D math! combined probabilities
+// TODO scaling of Evasion save depends on Size, just as Mental save depends on Intelligent
+// TODO in UI show Specialized/Proficient/Basic skills as green 1/2/3 plusses
+// TODO Rune item type and carve macro, like a spell
+// TODO put derived data for ANY object in a derived prop??
+// CONTINUE features have a function to return derived data that takes class and level?
+export default deepFreeze({
+  [FIGHTER]: {
+    class: CLASSES.Fighter,
     variants: {
-      BERSERKER: 'berserker',
-      DUELLIST: 'duellist',
+      [BERSERKER]: {
+        class: CLASSES.Berserker,
+      },
     },
   },
-  cleric: {
-    xp_thresholds: [
-      0,
-      800,
-      2400,
-      5600,
-      12000,
-      25000,
-      55000,
-      110000,
-      220000,
-      330000,
-      440000,
-      550000,
-      660000,
-      770000,
-    ],
-    titles: [
-      'Acolyte',
-      'Adept',
-      'Curate',
-      'Vicar',
-      'Priest',
-      'Bishop',
-      'Lama',
-      'Hierarch',
-      'High Priest',
-      'High Priest (10th)',
-      'High Priest (11th)',
-      'High Priest (12th)',
-      'High Priest (13th)',
-      'High Priest (14th)',
-    ],
-    spell_casting: SPELLCASTING_TYPES.SPELLCASTING_CLERIC,
-    spell_slots: [
-      [],
-      [1],
-      [2],
-      [2, 1],
-      [2, 2],
-      [2, 2, 1],
-      [2, 2, 2],
-      [2, 2, 2, 1],
-      [3, 3, 2, 2],
-      [3, 3, 3, 3, 1],
-      [4, 4, 4, 3, 2],
-      [4, 4, 4, 3, 3, 1],
-      [5, 5, 5, 4, 4, 2],
-      [5, 5, 5, 5, 5, 3],
-    ],
-    bab: (lvl) => Math.floor((Number(lvl) * 2) / 3),
-    base_ac: 10,
-    base_sv: (lvl) => Number(lvl) + 1,
-    base_mv_adj: 0,
-    allowed_weap_profs: [
-      WEAPON_CATEGORIES.BLUDGEON,
-      WEAPON_CATEGORIES.SPIKED_BLUDGEON,
-      WEAPON_CATEGORIES.HAMMER,
-      WEAPON_CATEGORIES.HAND_TO_HAND, // TODO use round up for x 1.5 STR dmg if 2 hand
-      WEAPON_CATEGORIES.SLING,
-      WEAPON_CATEGORIES.STAFF,
-      WEAPON_CATEGORIES.WHIP,
-    ],
-    allowed_weap_tiers: WEAPON_TIERS.SIMPLE, // TODO if weapon has bleed > 0, apply blunt dmg (1d3) IF alignment is non-evil
-    allowed_armors: ALL_ARMORS,
+  [CLERIC]: {
+    class: CLASSES.Cleric,
     variants: {
-      CLOISTERED_CLERIC: 'cloistered cleric',
-      RUNEPRIEST: 'runepriest',
+      [CLOISTERED_CLERIC]: {
+        class: CLASSES.CloisteredCleric,
+      },
     },
   },
-  mage: {
-    xp_thresholds: [
-      0,
-      1200,
-      3600,
-      8400,
-      20000,
-      35000,
-      50000,
-      75000,
-      100000,
-      200000,
-      300000,
-      400000,
-      500000,
-      600000,
-    ],
-    titles: [
-      'Medium',
-      'Seer',
-      'Conjurer',
-      'Theurgist',
-      'Thaumaturgist',
-      'Occultist',
-      'Magician',
-      'Enchanter',
-      'Sorcerer',
-      'Necromancer',
-      'Wizard',
-      'Wizard (12th)',
-      'Wizard (13th)',
-      'Wizard (14th)',
-    ],
-    spell_casting: SPELLCASTING_TYPES.SPELLCASTING_MAGIC,
-    spell_slots: [
-      [1],
-      [2],
-      [3, 1],
-      [4, 2],
-      [4, 2, 1],
-      [4, 2, 2],
-      [4, 3, 3, 2],
-      [4, 3, 3, 2, 1],
-      [4, 4, 3, 3, 2],
-      [4, 4, 4, 3, 3],
-      [4, 4, 4, 4, 4, 1],
-      [5, 5, 5, 4, 4, 2],
-      [5, 5, 5, 4, 4, 3, 1],
-      [5, 5, 5, 4, 4, 4, 2],
-    ],
-    bab: (lvl) => Math.floor(Number(lvl) / 2),
-    base_ac: 10,
-    base_sv: (lvl) => Number(lvl),
-    base_mv_adj: 0,
-    allowed_weap_profs: [
-      WEAPON_CATEGORIES.DAGGER,
-      WEAPON_CATEGORIES.SLING,
-      WEAPON_CATEGORIES.STAFF,
-    ],
-    allowed_weap_tiers: WEAPON_TIERS.SIMPLE,
-    allowed_armors: [],
-    variants: {},
-  },
-  thief: {
-    xp_thresholds: [
-      0,
-      600,
-      1800,
-      4200,
-      9600,
-      20000,
-      40000,
-      70000,
-      110000,
-      160000,
-      220000,
-      360000,
-      500000,
-      640000,
-    ],
-    titles: [
-      'Apprentice',
-      'Footpad',
-      'Cutpurse',
-      'Robber',
-      'Burglar',
-      'Filcher',
-      'Sharper',
-      'Pilferer',
-      'Magsman',
-      'Thief',
-      'Master Thief',
-      'Master Thief (12th)',
-      'Master Thief (13th)',
-      'Master Thief (14th)',
-    ],
-    bab: (lvl) => Math.floor((Number(lvl) * 2) / 3),
-    base_ac: 10,
-    base_sv: (lvl) => Number(lvl),
-    base_mv_adj: 0,
-    allowed_weap_profs: [
-      WEAPON_CATEGORIES.DAGGER,
-      WEAPON_CATEGORIES.BLUDGEON,
-      WEAPON_CATEGORIES.HAND_TO_HAND,
-      WEAPON_CATEGORIES.SLING,
-      WEAPON_CATEGORIES.CURVED_SWORD,
-      WEAPON_CATEGORIES.PIERCING_SWORD,
-      WEAPON_CATEGORIES.STRAIGHT_SWORD,
-    ],
-    allowed_weap_tiers: WEAPON_TIERS.SIMPLE, // TODO is simple relative to category, e.g. make all single-handed swords simple for thieves
-    allowed_armors: NON_BULKY_ARMORS,
-    variants: {
-      ASSASSIN: 'assassin',
-      SWASHBUCKLER: 'swashbuckler',
-    },
-  }, // TODO add class features here? have to do it by variant
-};
+  // mage: {
+  //   class: CLASS_LIST.Mage,
+  //   variants: [
+  //     {
+  //       name: 'abjurer',
+  //       class: CLASS_LIST.Abjurer,
+  //     },
+  //     {
+  //       name: 'conjurer',
+  //       class: CLASS_LIST.Conjurer,
+  //     },
+  //     {
+  //       name: 'diviner',
+  //       class: CLASS_LIST.Diviner,
+  //     },
+  //     {
+  //       name: 'enchanter',
+  //       class: CLASS_LIST.Enchanter,
+  //     },
+  //     {
+  //       name: 'evoker',
+  //       class: CLASS_LIST.Evoker,
+  //     },
+  //     {
+  //       name: 'illusionist',
+  //       class: CLASS_LIST.Illusionist,
+  //     },
+  //     {
+  //       name: 'necromancer',
+  //       class: CLASS_LIST.Necromancer,
+  //     },
+  //     {
+  //       name: 'transmuter',
+  //       class: CLASS_LIST.Transmuter,
+  //     },
+  //   ],
+  // },
+  // thief: {
+  //   variants: {
+  //     ASSASSIN: {
+  //       name: 'assassin',
+  //       allowed_weap_skills: [
+  //         WEAPON_SKILLS.CROSSBOW,
+  //         WEAPON_SKILLS.DAGGER,
+  //         WEAPON_SKILLS.BLUDGEON,
+  //         WEAPON_SKILLS.HAND_TO_HAND,
+  //         WEAPON_SKILLS.SLING,
+  //         WEAPON_SKILLS.CURVED_SWORD,
+  //         WEAPON_SKILLS.PIERCING_SWORD,
+  //         WEAPON_SKILLS.STRAIGHT_SWORD,
+  //       ],
+  //       class_skill_points: (lvl) => Math.max(0, (lvl - 2) * 8),
+  //       class_skills: [...COMMON_SKILLS, 'open locks', 'find/remove traps', 'disguise', 'compound poison'],
+  //       features: ['assassinate'],
+  //       alignments: [ALIGNMENTS.LE, ALIGNMENTS.CE],
+  //       ability_reqs: {
+  //         int: 12,
+  //         dex: 9,
+  //       },
+  //     },
+  //     SWASHBUCKLER: {
+  //       name: 'swashbuckler',
+  //       features: ['tumble'],
+  //       ability_reqs: {
+  //         str: 9,
+  //         dex: 9,
+  //       },
+  //     },
+  //   },
+  // },
+  // paladin: {
+  //   // TODO revise abilities tied to holy sword?
+  //   hit_die: 'd8',
+  //   xp_requirements: [0, 1300, 4000, 9000, 18000, 35000, 70000, 140000, 270000, 400000, 530000, 660000, 790000, 920000],
+  //   titles: [
+  //     'Gallant',
+  //     'Keeper',
+  //     'Protector',
+  //     'Defender',
+  //     'Cavalier',
+  //     'Sentinel',
+  //     'Crusader',
+  //     'Justiciar',
+  //     'Paladin',
+  //     'Paladin (10th',
+  //     'Paladin (11th)',
+  //     'Paladin (12th)',
+  //     'Paladin (13th)',
+  //     'Paladin (14th)',
+  //   ],
+  //   bab: (lvl) => Math.floor(Number(lvl)),
+  //   base_ac: DEFAULT_BASE_AC + 2, // TODO subtract 2 AC if opponent is not evil
+  //   base_sv: (lvl) => Number(lvl) + 2,
+  //   allowed_weap_skills: ALL_WEAPONS,
+  //   allowed_weap_classes: ALL_WEAP_CLASS_LIST,
+  //   allowed_armors: ALL_ARMORS,
+  //   shield_use: true,
+  //   features: [
+  //     'lay on hands',
+  //     'holy protection',
+  //     'detect evil',
+  //     'ascetic',
+  //     'rebuke undead',
+  //     "paladin's steed",
+  //     'aura of protection',
+  //     'banish evil',
+  //     'extra attack',
+  //   ],
+  //   class_skills: [],
+  //   alignments: [ALIGNMENTS.LG],
+  //   ability_reqs: {
+  //     // TODO odds on 3d6 DTL
+  //     str: 9,
+  //     wis: 12,
+  //     cha: 17,
+  //   },
+  //   variants: {
+  //     name: 'inquisitor',
+  //     features: [
+  //       'detect lie',
+  //       'holy protection',
+  //       'detect evil',
+  //       'ascetic',
+  //       'dispel magick',
+  //       "paladin's steed",
+  //       'aura of protection',
+  //       'banish evil',
+  //       'extra attack',
+  //     ],
+  //     alignments: [ALIGNMENTS.LG, ALIGNMENTS.LE],
+  //   },
+  // },
+  // ranger: {
+  //   hit_die: 'd8',
+  //   hp_bonus: 'd8',
+  //   xp_requirements: [0, 1300, 4000, 9000, 18000, 35000, 70000, 140000, 270000, 400000, 530000, 660000, 790000, 920000],
+  //   titles: [
+  //     'Gallant',
+  //     'Keeper',
+  //     'Protector',
+  //     'Defender',
+  //     'Cavalier',
+  //     'Sentinel',
+  //     'Crusader',
+  //     'Justiciar',
+  //     'Paladin',
+  //     'Paladin (10th',
+  //     'Paladin (11th)',
+  //     'Paladin (12th)',
+  //     'Paladin (13th)',
+  //     'Paladin (14th)',
+  //   ],
+  //   bab: (lvl) => Math.floor(Number(lvl)),
+  //   base_ac: DEFAULT_BASE_AC + 2, // TODO subtract 2 AC if opponent is not evil
+  //   base_sv: (lvl) => Number(lvl) + 2,
+  //   allowed_weap_skills: ALL_WEAPONS,
+  //   allowed_weap_classes: ALL_WEAP_CLASS_LIST,
+  //   allowed_armors: ALL_ARMORS,
+  //   shield_use: true,
+  //   features: [
+  //     'lay on hands',
+  //     'holy protection',
+  //     'detect evil',
+  //     'ascetic',
+  //     'rebuke undead',
+  //     "paladin's steed",
+  //     'aura of protection',
+  //     'banish evil',
+  //     'extra attack',
+  //   ],
+  //   class_skills: [],
+  //   alignments: [ALIGNMENTS.LG],
+  //   ability_reqs: {
+  //     str: 9,
+  //     wis: 12,
+  //     cha: 17,
+  //   },
+  //   variants: {
+  //     name: 'inquisitor',
+  //     features: [
+  //       'detect lie',
+  //       'holy protection',
+  //       'detect evil',
+  //       'ascetic',
+  //       'dispel magick',
+  //       "paladin's steed",
+  //       'aura of protection',
+  //       'banish evil',
+  //       'extra attack',
+  //     ],
+  //     alignments: [ALIGNMENTS.LG, ALIGNMENTS.LE],
+  //   },
+  // },
+});
