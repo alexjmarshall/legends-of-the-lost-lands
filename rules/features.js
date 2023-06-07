@@ -4,14 +4,29 @@ import CLASSES_ENUM from './classes/classes-enum';
 // macro: macro code associated with feature for player to activate TODO
 // active_effects: active effect definitions associated with feature TODO
 
-const SOURCE_ENUM = deepFreeze({
+const SOURCE_ENUM = Object.freeze({
   CLASS: 'class',
   RACE: 'race',
 });
 const { CLASS, RACE } = SOURCE_ENUM;
-const { FIGHTER, BERSERKER, CLERIC, CLOISTERED_CLERIC, MAGE, INCANTATRIX, THIEF, WITCH } = CLASSES_ENUM;
+const {
+  FIGHTER,
+  BERSERKER,
+  CLERIC,
+  CLOISTERED_CLERIC,
+  MAGE,
+  INCANTATRIX,
+  AIR_ELEMENTALIST,
+  FIRE_ELEMENTALIST,
+  EARTH_ELEMENTALIST,
+  WATER_ELEMENTALIST,
+  THIEF,
+  ASSASSIN,
+  SWASHBUCKLER,
+  WITCH,
+} = CLASSES_ENUM;
 
-const oneEverySixLevels = (lvl) => Math.floor((Number(lvl) - 1) / 6);
+const onePerNLevels = (lvl, n) => Math.floor((Number(lvl) - 1) / n);
 
 export const FEATURES = deepFreeze({
   'chain attack': {
@@ -33,8 +48,8 @@ export const FEATURES = deepFreeze({
     },
     derivedData: {
       attacks: {
-        [FIGHTER]: oneEverySixLevels,
-        [BERSERKER]: oneEverySixLevels,
+        [FIGHTER]: (lvl) => onePerNLevels(lvl, 6),
+        [BERSERKER]: (lvl) => onePerNLevels(lvl, 6),
       },
     },
   },
@@ -43,18 +58,17 @@ export const FEATURES = deepFreeze({
     reqLvl: {
       [BERSERKER]: 1,
     },
+    derivedData: {
+      usesPerDay: {
+        [BERSERKER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+      },
+    },
     // TODO definition of berserk and fatigued active effect
   },
   'turn undead': {
     source: CLASS,
     reqLvl: {
       [CLERIC]: 1,
-    },
-  },
-  'divine erudition': {
-    source: CLASS,
-    reqLvl: {
-      [CLOISTERED_CLERIC]: 1,
     },
   },
   'cast magick spells': {
@@ -119,6 +133,31 @@ export const FEATURES = deepFreeze({
     reqLvl: {
       [THIEF]: 1,
     },
+    derivedData: {
+      damageMultiplier: {
+        [THIEF]: (lvl) => onePerNLevels(lvl, 4) + 1,
+      },
+    },
+  },
+  assassinate: {
+    source: CLASS,
+    reqLvl: {
+      [ASSASSIN]: 1,
+    },
+  },
+  duellist: {
+    source: CLASS,
+    reqLvl: {
+      [SWASHBUCKLER]: 1,
+    },
+    derivedData: {
+      acBonus: {
+        [SWASHBUCKLER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+      },
+      damageBonus: {
+        [SWASHBUCKLER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+      },
+    },
   },
   'steal spell': {
     source: CLASS,
@@ -128,23 +167,17 @@ export const FEATURES = deepFreeze({
   },
   'sense magick': {
     source: CLASS,
-    sources: {
-      [INCANTATRIX]: 2,
-    },
-  },
-  'see ethereal creatures': {
-    source: CLASS,
     reqLvl: {
-      [INCANTATRIX]: 4,
+      [INCANTATRIX]: 3,
     },
   },
-  'sense memorized spells': {
+  'sense spell': {
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 5,
     },
   },
-  'immune to level drain': {
+  'sense memorized spells': {
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 7,
@@ -154,6 +187,47 @@ export const FEATURES = deepFreeze({
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 11,
+    },
+  },
+  'air elemental focus': {
+    source: CLASS,
+    reqLvl: {
+      [AIR_ELEMENTALIST]: 1,
+    },
+  },
+  'fire elemental focus': {
+    source: CLASS,
+    reqLvl: {
+      [FIRE_ELEMENTALIST]: 1,
+    },
+  },
+  'earth elemental focus': {
+    source: CLASS,
+    reqLvl: {
+      [EARTH_ELEMENTALIST]: 1,
+    },
+  },
+  'water elemental focus': {
+    source: CLASS,
+    reqLvl: {
+      [WATER_ELEMENTALIST]: 1,
+    },
+  },
+  'elemental surge': {
+    source: CLASS,
+    reqLvl: {
+      [AIR_ELEMENTALIST]: 1,
+      [FIRE_ELEMENTALIST]: 1,
+      [EARTH_ELEMENTALIST]: 1,
+      [WATER_ELEMENTALIST]: 1,
+    },
+    derivedData: {
+      usesPerDay: {
+        [AIR_ELEMENTALIST]: 1,
+        [FIRE_ELEMENTALIST]: 1,
+        [EARTH_ELEMENTALIST]: 1,
+        [WATER_ELEMENTALIST]: 1,
+      },
     },
   },
 });
