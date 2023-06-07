@@ -1,6 +1,15 @@
-export default {
+export const CLASSES_ENUM = {
   FIGHTER: 'fighter',
   BERSERKER: 'berserker',
   CLERIC: 'cleric',
   CLOISTERED_CLERIC: 'cloistered cleric',
+  MAGE: 'mage',
+  INCANTATRIX: 'incantatrix',
+  AIR_ELEMENTALIST: 'air elementalist',
+  FIRE_ELEMENTALIST: 'fire elementalist',
+  EARTH_ELEMENTALIST: 'earth elementalist',
+  WATER_ELEMENTALIST: 'water elementalist',
+  THIEF: 'thief',
+  ASSASSIN: 'assassin',
+  SWASHBUCKLER: 'swashbuckler',
 };
