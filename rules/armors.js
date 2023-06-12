@@ -1,10 +1,12 @@
 import { deepFreeze } from './helper';
 
-export const WEIGHT_TYPES_ENUM = deepFreeze({
+export const WEIGHT_TYPES_ENUM = Object.freeze({
   LIGHT: 'light',
   MEDIUM: 'medium',
   HEAVY: 'heavy',
 });
+
+const { LIGHT, MEDIUM, HEAVY } = WEIGHT_TYPES_ENUM;
 
 export const ARMOR_MATERIALS = deepFreeze({
   bone: {
@@ -13,7 +15,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 180,
     metal: false,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 56,
   },
   wood: {
@@ -22,7 +24,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 120,
     metal: false,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 48,
   },
   fur: {
@@ -31,7 +33,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 600,
     metal: false,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.LIGHT,
+    type: LIGHT,
     durability: 74,
   },
   leather: {
@@ -40,7 +42,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 300,
     metal: false,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.LIGHT,
+    type: LIGHT,
     durability: 80,
   },
   padded: {
@@ -49,7 +51,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 240,
     metal: false,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.LIGHT,
+    type: LIGHT,
     durability: 72,
   },
   'cuir bouilli': {
@@ -58,7 +60,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 360,
     metal: false,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.LIGHT,
+    type: LIGHT,
     durability: 60,
   },
   brigandine: {
@@ -67,7 +69,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 1200,
     metal: true,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 68,
   },
   scale: {
@@ -76,7 +78,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 960,
     metal: true,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 76,
   },
   mail: {
@@ -85,7 +87,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 1800,
     metal: true,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 120,
   },
   'elven mail': {
@@ -94,7 +96,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 18000,
     metal: true,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.LIGHT,
+    type: LIGHT,
     durability: 360,
   },
   'plated mail': {
@@ -103,7 +105,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 2400,
     metal: true,
     bulky: false,
-    type: WEIGHT_TYPES_ENUM.MEDIUM,
+    type: MEDIUM,
     durability: 84,
   },
   lamellar: {
@@ -112,7 +114,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 1440,
     metal: true,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.HEAVY,
+    type: HEAVY,
     durability: 52,
   },
   splint: {
@@ -121,7 +123,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 1920,
     metal: true,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.HEAVY,
+    type: HEAVY,
     durability: 72,
   },
   'iron plate': {
@@ -130,7 +132,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 2880,
     metal: true,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.HEAVY,
+    type: HEAVY,
     durability: 60,
   },
   'steel plate': {
@@ -139,7 +141,7 @@ export const ARMOR_MATERIALS = deepFreeze({
     value: 7200,
     metal: true,
     bulky: true,
-    type: WEIGHT_TYPES_ENUM.HEAVY,
+    type: HEAVY,
     durability: 70,
   },
 });
@@ -387,18 +389,21 @@ export const ARMOR_VS_DMG_TYPE = deepFreeze({
   },
 });
 
-export const ALL_ARMORS = Object.keys(ARMOR_MATERIALS);
+export const ALL_ARMORS = Object.freeze(Object.keys(ARMOR_MATERIALS));
 
-export const NON_METAL_ARMORS = Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal);
+export const NON_METAL_ARMORS = Object.freeze(Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal));
 
-export const LIGHT_ARMORS = Object.keys(ARMOR_MATERIALS).filter(
-  (k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES_ENUM.LIGHT
+export const LIGHT_ARMORS = Object.freeze(
+  Object.keys(ARMOR_MATERIALS).filter((k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES_ENUM.LIGHT)
 );
 
-export const SHIELD_TYPES_ENUM = deepFreeze({
-  SMALL: 'small',
+export const MEDIUM_ARMORS = Object.freeze(
+  Object.keys(ARMOR_MATERIALS).filter((k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES_ENUM.LIGHT)
+);
+
+export const SHIELD_TYPES_ENUM = Object.freeze({
   MEDIUM: 'medium',
   LARGE: 'large',
 });
 
-export const ALL_SHIELD_TYPES = Object.values(SHIELD_TYPES_ENUM);
+export const ALL_SHIELDS = Object.freeze(Object.values(SHIELD_TYPES_ENUM));
