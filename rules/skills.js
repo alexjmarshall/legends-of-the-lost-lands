@@ -47,7 +47,7 @@ export const SKILL_BUILDERS = deepFreeze({
   }),
 });
 
-export const SKILL_PROGRESSIONS_ENUM = deepFreeze({
+export const SKILL_PROGRESSIONS_ENUM = Object.freeze({
   SPECIALIZED: 'specialized',
   PROFICIENT: 'proficient',
   BASIC: 'basic',
@@ -57,7 +57,7 @@ export const SKILL_POINTS = (numSpecialized, numProficient, numBasic) => {
   return Math.floor(numSpecialized / 2 + numProficient / 3 + numBasic / 4);
 };
 
-export const CATEGORIES_ENUM = deepFreeze({
+export const CATEGORIES_ENUM = Object.freeze({
   ADVENTURE: 'adventure',
   CULTURE: 'culture',
   LORE: 'lore',
@@ -120,8 +120,15 @@ export const SKILLS = deepFreeze({
     movement_penalty: true,
     category: WEAPON,
   },
+  bow: {
+    ability: DEX,
+    expert: true,
+    armor_check_penalty: false,
+    movement_penalty: true,
+    category: WEAPON,
+  },
   'bowyer/fletcher': {
-    ability: STR,
+    ability: DEX,
     expert: true,
     armor_check_penalty: true,
     movement_penalty: true,
@@ -358,14 +365,6 @@ export const SKILLS = deepFreeze({
     movement_penalty: false,
     category: ADVENTURE,
   },
-  longbow: {
-    // TODO minimum STR 12 needed
-    ability: DEX,
-    expert: true,
-    armor_check_penalty: false,
-    movement_penalty: true,
-    category: WEAPON,
-  },
   masonry: {
     ability: STR,
     expert: true,
@@ -486,13 +485,6 @@ export const SKILLS = deepFreeze({
     movement_penalty: false,
     category: ADVENTURE,
   },
-  shortbow: {
-    ability: DEX,
-    expert: false,
-    armor_check_penalty: false,
-    movement_penalty: true,
-    category: WEAPON,
-  },
   sling: {
     ability: DEX,
     expert: false,
@@ -549,6 +541,13 @@ export const SKILLS = deepFreeze({
     movement_penalty: true,
     category: OCCUPATION,
   },
+  throw: {
+    ability: DEX,
+    expert: false,
+    armor_check_penalty: false,
+    movement_penalty: true,
+    category: WEAPON,
+  },
   track: {
     ability: WIS,
     expert: true,
@@ -579,25 +578,19 @@ export const SKILLS = deepFreeze({
   },
 });
 
+export const ALL_SKILLS = Object.keys(SKILLS);
+
+export const SKILLS_ENUM = buildEnum(ALL_SKILLS);
+
 export const ALL_WEAPONS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === WEAPON);
 
-export const WEAPON_SKILLS_ENUM = buildEnum(ALL_WEAPONS);
+// export const WEAPON_SKILLS_ENUM = buildEnum(ALL_WEAPONS);
 
 export const ALL_SPELL_SCHOOLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === SPELL_SCHOOL);
 
-export const SPELL_SCHOOLS_ENUM = buildEnum(ALL_SPELL_SCHOOLS);
-
-export const ALL_ADVENTURE_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === ADVENTURE);
-
-export const BASIC_SKILLS_EXCL_WEAPON = Object.keys(SKILLS).filter(
-  (s) => !SKILLS[s].expert && SKILLS[s].category !== WEAPON
-);
+// export const SPELL_SCHOOLS_ENUM = buildEnum(ALL_SPELL_SCHOOLS);
 
 export const ALL_THIEVERY_SKILLS = Object.keys(SKILLS).filter((s) => SKILLS[s].category === THIEVERY);
-
-export const BASIC_SKILLS_EXCL_WEAPON_AND_THIEVERY = Object.keys(SKILLS).filter(
-  (s) => !SKILLS[s].expert && SKILLS[s].category !== WEAPON && SKILLS[s].category !== THIEVERY
-);
 
 export function buildSkills(skillProgressions, lvl) {
   const { progressions, mod } = skillProgressions;
