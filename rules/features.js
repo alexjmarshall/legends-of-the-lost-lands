@@ -1,5 +1,5 @@
 import { buildEnum, deepFreeze } from './helper';
-import CLASSES_ENUM from './classes/classes-enum';
+import { CLASSES_ENUM } from './classes/classes-enum';
 
 // macro: macro code associated with feature for player to activate TODO
 // active_effects: active effect definitions associated with feature TODO
@@ -26,20 +26,43 @@ const {
   WITCH,
 } = CLASSES_ENUM;
 
-const onePerNLevels = (lvl, n) => Math.floor((Number(lvl) - 1) / n);
+const onePerNLevelsAfterFirst = (lvl, n) => Math.floor((Number(lvl) - 1) / n);
+
+export const CLASS_FEATURES_ENUM = Object.freeze({
+  CHAIN_ATTACK: 'chain attack',
+  EXTRA_ATTACK: 'extra attack',
+  BERSERK: 'berserk',
+  TURN_UNDEAD: 'turn undead',
+  CAST_MAGICK_SPELLS: 'cast magick spells',
+  READ_MAGICK_SCROLLS: 'read magick scrolls',
+  SCRIBE_MAGICK_SCROLLS: 'scribe magick scrolls',
+  CAST_CLERIC_SPELLS: 'cast cleric spells',
+  READ_CLERIC_SCROLLS: 'read cleric scrolls',
+  SCRIBE_CLERIC_SCROLLS: 'scribe cleric scrolls',
+  CAST_WITCH_SPELLS: 'cast witch spells',
+  READ_WITCH_SCROLLS: 'read witch scrolls',
+  SCRIBE_WITCH_SCROLLS: 'scribe witch scrolls',
+  CARVE_RUNE: 'carve rune',
+  BACKSTAB: 'backstab',
+  ASSASSINATE: 'assassinate',
+  DUELLIST: 'duellist',
+  STEAL_SPELL: 'steal spell',
+  SENSE_SPELL: 'sense spell',
+  SENSE_MEMORIZED_SPELLS: 'sense memorized spells',
+  SENSE_MAGICK: 'sense magick',
+  DRAIN_MAGICK: 'drain magick',
+  AIR_ELEMENTAL_FOCUS: 'air elemental focus',
+  EARTH_ELEMENTAL_FOCUS: 'earth elemental focus',
+  FIRE_ELEMENTAL_FOCUS: 'fire elemental focus',
+  WATER_ELEMENTAL_FOCUS: 'water elemental focus',
+  ELEMENTAL_SURGE: 'elemental surge',
+  DANGER_SENSE: 'danger sense',
+  FEARLESS: 'fearless',
+  FLEET_FOOTED: 'fleet footed',
+  WIZARD_SLAYER: 'wizard slayer',
+});
 
 export const FEATURES = deepFreeze({
-  'chain attack': {
-    source: CLASS,
-    reqLvl: {
-      [FIGHTER]: 1,
-    },
-    derivedData: {
-      attacks: {
-        [FIGHTER]: (lvl) => lvl,
-      },
-    },
-  },
   'extra attack': {
     source: CLASS,
     reqLvl: {
@@ -48,8 +71,8 @@ export const FEATURES = deepFreeze({
     },
     derivedData: {
       attacks: {
-        [FIGHTER]: (lvl) => onePerNLevels(lvl, 6),
-        [BERSERKER]: (lvl) => onePerNLevels(lvl, 6),
+        [FIGHTER]: (lvl) => onePerNLevelsAfterFirst(lvl, 6),
+        [BERSERKER]: (lvl) => onePerNLevelsAfterFirst(lvl, 6),
       },
     },
   },
@@ -60,7 +83,7 @@ export const FEATURES = deepFreeze({
     },
     derivedData: {
       usesPerDay: {
-        [BERSERKER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+        [BERSERKER]: (lvl) => onePerNLevelsAfterFirst(lvl, 4) + 1,
       },
     },
     // TODO definition of berserk and fatigued active effect
@@ -135,7 +158,7 @@ export const FEATURES = deepFreeze({
     },
     derivedData: {
       damageMultiplier: {
-        [THIEF]: (lvl) => onePerNLevels(lvl, 4) + 1,
+        [THIEF]: (lvl) => onePerNLevelsAfterFirst(lvl, 4) + 1,
       },
     },
   },
@@ -152,10 +175,10 @@ export const FEATURES = deepFreeze({
     },
     derivedData: {
       acBonus: {
-        [SWASHBUCKLER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+        [SWASHBUCKLER]: (lvl) => onePerNLevelsAfterFirst(lvl, 4) + 1,
       },
-      damageBonus: {
-        [SWASHBUCKLER]: (lvl) => onePerNLevels(lvl, 4) + 1,
+      dmgBonus: {
+        [SWASHBUCKLER]: (lvl) => onePerNLevelsAfterFirst(lvl, 4) + 1,
       },
     },
   },
@@ -165,19 +188,19 @@ export const FEATURES = deepFreeze({
       [INCANTATRIX]: 1,
     },
   },
-  'sense magick': {
+  'sense spell': {
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 3,
     },
   },
-  'sense spell': {
+  'sense memorized spells': {
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 5,
     },
   },
-  'sense memorized spells': {
+  'sense magick': {
     source: CLASS,
     reqLvl: {
       [INCANTATRIX]: 7,
@@ -229,6 +252,12 @@ export const FEATURES = deepFreeze({
         [WATER_ELEMENTALIST]: 1,
       },
     },
+  },
+  'sense danger': {
+    source: CLASS,
+  },
+  fearless: {
+    source,
   },
 });
 
