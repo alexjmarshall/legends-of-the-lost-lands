@@ -8,14 +8,14 @@ export function buildStats(builders, lvl, progressions, mod = 0) {
   if (!progressions) return {};
 
   const statMapper =
-    (builder, mod = 0) =>
+    (builder, progression, mod = 0) =>
     (stat) =>
-      [stat, builder(lvl, mod)];
+      [stat, { ...builder(lvl, mod), progression }];
 
   const statProgressionMapper =
     (builders, mod) =>
     ([progression, stats]) =>
-      stats.map(statMapper(builders[progression], mod));
+      stats.map(statMapper(builders[progression], progression, mod));
 
   return Object.fromEntries(Object.entries(progressions).flatMap(statProgressionMapper(builders, mod)));
 }
