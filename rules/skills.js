@@ -32,18 +32,20 @@ Major Failure/Success = fail/succeed by 5+. Critical Failure/Success = d100 <= m
 // Morale is Cowardly, Steady or Fearless
 //   0.5x, 1x or 1.5x level to morale checks
 
+const SKILL_BASE = 18;
+
 export const SKILL_BUILDERS = deepFreeze({
   specialized: (lvl) => ({
-    baseBonus: Math.floor(lvl / 2),
-    cap: Math.min(lvl + 4, Math.floor(lvl * 1.5)),
+    base: SKILL_BASE - Math.floor(lvl / 2),
+    cap: SKILL_BASE - Math.min(lvl + 4, Math.floor(lvl * 1.5)),
   }),
   proficient: (lvl) => ({
-    baseBonus: Math.floor(lvl / 3),
-    cap: Math.floor(lvl),
+    base: SKILL_BASE - Math.floor(lvl / 3),
+    cap: SKILL_BASE - Math.floor(lvl),
   }),
   basic: (lvl) => ({
-    baseBonus: Math.floor(lvl / 4),
-    cap: Math.max(lvl - 4, Math.floor((lvl * 3) / 4)),
+    base: SKILL_BASE - Math.floor(lvl / 4),
+    cap: SKILL_BASE - Math.max(lvl - 4, Math.floor((lvl * 3) / 4)),
   }),
 });
 
@@ -53,8 +55,20 @@ export const SKILL_PROGRESSIONS_ENUM = Object.freeze({
   BASIC: 'basic',
 });
 
+const { SPECIALIZED, PROFICIENT, BASIC } = SKILL_PROGRESSIONS_ENUM;
+
+export const SKILL_PROGRESSION_FACTORS = Object.freeze({
+  [SPECIALIZED]: 2,
+  [PROFICIENT]: 3,
+  [BASIC]: 4,
+});
+
 export const SKILL_POINTS = (numSpecialized, numProficient, numBasic) => {
-  return Math.floor(numSpecialized / 2 + numProficient / 3 + numBasic / 4);
+  return Math.floor(
+    numSpecialized / SKILL_PROGRESSION_FACTORS.specialized +
+      numProficient / SKILL_PROGRESSION_FACTORS.proficient +
+      numBasic / SKILL_PROGRESSION_FACTORS.basic
+  );
 };
 
 export const CATEGORIES_ENUM = Object.freeze({
