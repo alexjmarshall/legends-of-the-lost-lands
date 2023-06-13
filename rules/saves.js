@@ -3,12 +3,14 @@ import { buildEnum, buildStats, deepFreeze } from './helper';
 
 const { WIS, DEX, CON } = ABILITIES_ENUM;
 
+const SAVE_BASE = 18;
+
 export const SAVE_BUILDERS = deepFreeze({
   good: (lvl, mod = 0) => ({
-    baseBonus: lvl + mod,
+    base: SAVE_BASE - (lvl + mod),
   }),
   poor: (lvl, mod = 0) => ({
-    baseBonus: Math.max(lvl + mod - 4, Math.floor((lvl * 2) / 3) + mod),
+    base: SAVE_BASE - Math.max(lvl + mod - 4, Math.floor((lvl * 2) / 3) + mod),
   }),
 });
 
