@@ -1,48 +1,35 @@
-import { ABILITIES_ENUM } from './abilities';
-import { buildEnum, buildStats, deepFreeze } from './helper';
+import { abilitiesEnum } from './abilities';
+import { buildEnum, deepFreeze } from './helper';
 
-const { WIS, DEX, CON } = ABILITIES_ENUM;
+const { WIS, DEX, CON } = abilitiesEnum;
 
-const SAVE_BASE = 18;
+export const DEFAULT_SAVE_BASE = 18;
 
-export const SAVE_BUILDERS = deepFreeze({
-  good: (lvl, mod = 0) => ({
-    base: SAVE_BASE - (lvl + mod),
-  }),
-  poor: (lvl, mod = 0) => ({
-    base: SAVE_BASE - Math.max(lvl + mod - 4, Math.floor((lvl * 2) / 3) + mod),
-  }),
-});
+export const MIN_SAVE = 3;
 
-export const SAVE_PROGRESSIONS_ENUM = buildEnum(SAVE_BUILDERS);
+export const getSaveBase = (lvl, mod) => Math.max(MIN_SAVE, DEFAULT_SAVE_BASE - Number(lvl) - Number(mod));
 
-export const SAVES = deepFreeze({
+export const saves = deepFreeze({
   evasion: {
     ability: DEX,
-    armor_check_penalty: false,
-    movement_penalty: true,
+    proficientArmorPenalty: false,
+    nonProficientPenalty: true,
   },
   resolve: {
     ability: WIS,
-    armor_check_penalty: false,
-    movement_penalty: false,
+    proficientArmorPenalty: false,
+    nonProficientPenalty: false,
   },
   resilience: {
     ability: CON,
-    armor_check_penalty: false,
-    movement_penalty: false,
+    proficientArmorPenalty: false,
+    nonProficientPenalty: false,
   },
   luck: {
     ability: null,
-    armor_check_penalty: false,
-    movement_penalty: false,
+    proficientArmorPenalty: false,
+    nonProficientPenalty: false,
   },
 });
 
-export const SAVES_ENUM = buildEnum(SAVES);
-
-export function buildSaves(saveProgressions, lvl) {
-  const { progressions, mod } = saveProgressions;
-
-  return buildStats(SAVE_BUILDERS, lvl, progressions, mod);
-}
+export const savesEnum = buildEnum(saves);

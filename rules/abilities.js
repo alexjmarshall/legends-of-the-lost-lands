@@ -1,4 +1,4 @@
-export const ABILITIES_ENUM = {
+export const abilitiesEnum = {
   STR: 'str',
   INT: 'int',
   WIS: 'wis',
