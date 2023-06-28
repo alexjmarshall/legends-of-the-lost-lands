@@ -1,20 +1,15 @@
-import { ALL_ARMORS, LIGHT_ARMORS, MEDIUM_ARMORS, ALL_SHIELDS } from '../armors';
-import { ALL_WEAPONS, SKILL_PROGRESSIONS_ENUM, BASIC_SKILLS, SKILLS_ENUM, buildSkills } from '../skills';
-import { SAVES_ENUM, SAVE_PROGRESSIONS_ENUM, buildSaves } from '../saves';
-import { buildFeatures, FEATURES_ENUM } from '../features';
+import { allArmorsArray, lightArmorsArray, mediumArmorsArray, allShieldsArray } from '../armors';
+import { allCombatSkillsArray, skillsEnum } from '../skills';
+import { savesEnum } from '../saves';
+import { classFeaturesEnum } from '../features';
 import { BaseClass } from './base-class';
-import { CLASSES_ENUM } from './classes-enum';
-import { deepFreeze } from '../helper';
+import { alignmentsEnum } from '../alignments';
+import { abilitiesEnum } from '../abilities';
 
-const { SPECIALIZED, BASIC } = SKILL_PROGRESSIONS_ENUM;
-const { CLIMB } = SKILLS_ENUM;
-const { GOOD, POOR } = SAVE_PROGRESSIONS_ENUM;
-const { RESILIENCE, RESOLVE, EVASION, LUCK } = SAVES_ENUM;
-const { NATURAL_TOUGHNESS, FEARLESS, FLEET_FOOTED, DANGER_SENSE, WIZARD_SLAYER, FIRST_ATTACK_FEROCITY, EXTRA_ATTACK } =
-  FEATURES_ENUM;
+const chaoticAlignments = [alignmentsEnum.CG, alignmentsEnum.CE];
 
 export class Barbarian extends BaseClass {
-  #XP_REQS = Object.freeze([
+  static XP_REQS = Object.freeze([
     700,
     2000,
     5000,
@@ -31,7 +26,7 @@ export class Barbarian extends BaseClass {
     Infinity,
   ]);
 
-  #TITLES = Object.freeze([
+  static TITLES = Object.freeze([
     'Savage',
     'Tribesman',
     'Clansman',
@@ -48,71 +43,64 @@ export class Barbarian extends BaseClass {
     'Chieftain (14th)',
   ]);
 
-  #SAVES = deepFreeze({
-    progressions: {
-      [GOOD]: [RESILIENCE, EVASION],
-      [POOR]: [RESOLVE, LUCK],
-    },
-  });
-
-  _SKILLS = deepFreeze({
-    progressions: {
-      [SPECIALIZED]: [...ALL_WEAPONS, CLIMB],
-      [BASIC]: BASIC_SKILLS.filter(this.notSpecializedOrProficient),
-    },
-  });
-
-  #oneAfterEightTwoAfterFourteen = (lvl) => {
-    if (lvl < 8) return 0;
-    if (lvl < 14) return 1;
-    return 2;
-  };
-
-  features = {
-    [NATURAL_TOUGHNESS]: {
+  static features = {
+    [classFeaturesEnum.NATURAL_TOUGHNESS]: {
       reqLvl: 1,
     },
-    [DANGER_SENSE]: {
+    [classFeaturesEnum.SENSE_DANGER]: {
       reqLvl: 1,
     },
-    [FEARLESS]: {
+    [classFeaturesEnum.FEARLESS]: {
       reqLvl: 1,
     },
-    [FLEET_FOOTED]: {
-      reqLvl: 1,
-      activeEffect: {}, // TODO implement
-    },
-    [WIZARD_SLAYER]: {
-      // TODO ???
+    [classFeaturesEnum.FLEET_FOOTED]: {
       reqLvl: 1,
     },
-    [FIRST_ATTACK_FEROCITY]: {
+    [classFeaturesEnum.WIZARD_SLAYER]: {
       reqLvl: 1,
     },
-    [EXTRA_ATTACK]: {
-      reqLvl: 7,
-      derivedData: {
-        extraAttacks: this.#oneAfterEightTwoAfterFourteen(this.lvl),
-      },
+    [classFeaturesEnum.FIRST_ATTACK_FEROCITY]: {
+      reqLvl: 1,
+    },
+    [classFeaturesEnum.MULTIATTACK]: {
+      reqLvl: 8,
+      derivedData: (lvl) => ({
+        extraAttacks: BaseClass.oneAtEightAndTwoAtFourteen(lvl),
+      }),
     },
   };
 
-  #getArmorsByLevel(lvl) {
+  static specializedSkills = allCombatSkillsArray;
+
+  static proficientSkills = [skillsEnum.CLIMB];
+
+  static saveMods = Object.freeze({
+    [savesEnum.RESOLVE]: -1,
+    [savesEnum.EVASION]: 1,
+    [savesEnum.RESILIENCE]: 1,
+    [savesEnum.LUCK]: -1,
+  });
+
+  getArmorsByLevel(lvl) {
     if (lvl < 4) return [];
-    if (lvl < 8) return LIGHT_ARMORS;
-    if (lvl < 13) return [...LIGHT_ARMORS, ...MEDIUM_ARMORS];
-    return ALL_ARMORS;
+    if (lvl < 8) return lightArmorsArray;
+    if (lvl < 13) return [...lightArmorsArray, ...mediumArmorsArray];
+    return allArmorsArray;
   }
 
   constructor(lvl) {
-    super(lvl);
-    this.hit_die = 'd10';
-    this.hp_bonus = '2d10';
-    this.req_xp = this.#XP_REQS[lvl - 1];
-    this.title = this.#TITLES[lvl - 1];
-    this.armors = this.#getArmorsByLevel(lvl);
-    this.shields = ALL_SHIELDS;
-    this.saves = buildSaves(this.#SAVES, lvl);
-    this.skills = buildSkills(this._SKILLS, lvl);
+    super(lvl, Barbarian);
+    this.primeReqs = [abilitiesEnum.STR, abilitiesEnum.CON];
+    this.hitDie = 'd10';
+    this.reqXp = Barbarian.XP_REQS[lvl - 1];
+    this.title = Barbarian.TITLES[lvl - 1];
+    this.armors = this.getArmorsByLevel(lvl);
+    this.shields = allShieldsArray;
+    this.alignments = chaoticAlignments;
+    this.abilityReqs = {
+      [abilitiesEnum.CON]: 15,
+      [abilitiesEnum.STR]: 14,
+      [abilitiesEnum.DEX]: 13,
+    };
   }
 }

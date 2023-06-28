@@ -1,4 +1,4 @@
-export const ALIGNMENTS_ENUM = {
+export const alignmentsEnum = {
   LG: 'lawful good',
   CG: 'chaotic good',
   N: 'neutral',
@@ -6,4 +6,4 @@ export const ALIGNMENTS_ENUM = {
   CE: 'chaotic evil',
 };
 
-export const ALL_ALIGNMENTS = Object.values(ALIGNMENTS_ENUM);
+export const allAlignmentsArray = Object.values(alignmentsEnum);

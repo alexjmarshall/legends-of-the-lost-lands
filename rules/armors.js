@@ -1,14 +1,14 @@
 import { deepFreeze } from './helper';
 
-export const WEIGHT_TYPES_ENUM = Object.freeze({
+export const weightTypesEnum = Object.freeze({
   LIGHT: 'light',
   MEDIUM: 'medium',
   HEAVY: 'heavy',
 });
 
-const { LIGHT, MEDIUM, HEAVY } = WEIGHT_TYPES_ENUM;
+const { LIGHT, MEDIUM, HEAVY } = weightTypesEnum;
 
-export const ARMOR_MATERIALS = deepFreeze({
+export const armorMaterials = deepFreeze({
   bone: {
     weight: 42,
     clo: 10,
@@ -146,7 +146,7 @@ export const ARMOR_MATERIALS = deepFreeze({
   },
 });
 
-export const ARMOR_VS_DMG_TYPE = deepFreeze({
+export const armorVsDmgType = deepFreeze({
   none: {
     base_AC: 0,
     blunt: {
@@ -389,21 +389,21 @@ export const ARMOR_VS_DMG_TYPE = deepFreeze({
   },
 });
 
-export const ALL_ARMORS = Object.freeze(Object.keys(ARMOR_MATERIALS));
+export const allArmorsArray = Object.freeze(Object.keys(armorMaterials));
 
-export const NON_METAL_ARMORS = Object.freeze(Object.keys(ARMOR_MATERIALS).filter((k) => !ARMOR_MATERIALS[k].metal));
+export const nonMetalArmorsArray = Object.freeze(Object.keys(armorMaterials).filter((k) => !armorMaterials[k].metal));
 
-export const LIGHT_ARMORS = Object.freeze(
-  Object.keys(ARMOR_MATERIALS).filter((k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES_ENUM.LIGHT)
+export const lightArmorsArray = Object.freeze(
+  Object.keys(armorMaterials).filter((k) => armorMaterials[k].type === weightTypesEnum.LIGHT)
 );
 
-export const MEDIUM_ARMORS = Object.freeze(
-  Object.keys(ARMOR_MATERIALS).filter((k) => ARMOR_MATERIALS[k].type === WEIGHT_TYPES_ENUM.LIGHT)
+export const mediumArmorsArray = Object.freeze(
+  Object.keys(armorMaterials).filter((k) => armorMaterials[k].type === weightTypesEnum.MEDIUM)
 );
 
-export const SHIELD_TYPES_ENUM = Object.freeze({
+export const shieldTypesEnum = Object.freeze({
   MEDIUM: 'medium',
   LARGE: 'large',
 });
 
-export const ALL_SHIELDS = Object.freeze(Object.values(SHIELD_TYPES_ENUM));
+export const allShieldsArray = Object.freeze(Object.values(shieldTypesEnum));
