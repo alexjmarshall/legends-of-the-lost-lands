@@ -70,7 +70,7 @@ export class Barbarian extends BaseClass {
 
   constructor(lvl) {
     lvl = Number(lvl);
-    super(lvl, Barbarian);
+    super(lvl);
     this.primeReqs = [abilitiesEnum.STR, abilitiesEnum.CON];
     this.hitDie = 'd10';
     this.reqXp = Barbarian.XP_REQS[lvl - 1];
@@ -89,5 +89,8 @@ export class Barbarian extends BaseClass {
         min: 13,
       },
     };
+    this.buildSkills(Barbarian);
+    this.buildSaves(Barbarian);
+    this.buildFeatures(Barbarian, lvl);
   }
 }

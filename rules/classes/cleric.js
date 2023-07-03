@@ -42,7 +42,7 @@ export class Cleric extends BaseClass {
   ]);
 
   static SPELL_SLOTS_BY_LEVEL = deepFreeze([
-    [0],
+    [0], // TODO make sure can handle 0 spell slots as null
     [1],
     [2],
     [2, 1],
@@ -80,7 +80,7 @@ export class Cleric extends BaseClass {
 
   constructor(lvl) {
     lvl = Number(lvl);
-    super(lvl, Cleric);
+    super(lvl);
     this.primeReqs = [abilitiesEnum.WIS];
     this.hitDie = 'd6';
     this.reqXp = Cleric.XP_REQS[lvl - 1];
@@ -93,6 +93,9 @@ export class Cleric extends BaseClass {
         min: 9,
       },
     };
+    this.buildSkills(Cleric);
+    this.buildSaves(Cleric);
+    this.buildFeatures(Cleric, lvl);
   }
 }
 

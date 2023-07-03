@@ -57,7 +57,7 @@ export class Fighter extends BaseClass {
 
   constructor(lvl) {
     lvl = Number(lvl);
-    super(lvl, Fighter);
+    super(lvl);
     this.primeReqs = [abilitiesEnum.STR];
     this.hitDie = 'd8';
     this.reqXp = Fighter.XP_REQS[lvl - 1];
@@ -69,6 +69,9 @@ export class Fighter extends BaseClass {
         min: 9,
       },
     };
+    this.buildSkills(Fighter);
+    this.buildSaves(Fighter);
+    this.buildFeatures(Fighter, lvl);
   }
 }
 
