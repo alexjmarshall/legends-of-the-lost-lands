@@ -4,7 +4,33 @@ import { buildEnum, deepFreeze } from './helper';
 // active_effects: active effect definitions associated with feature TODO
 
 // TODO any feature that has an active effect needs to be unique to a source
-export const classFeaturesEnum = Object.freeze({
+export const sourceEnum = Object.freeze({
+  CLASS: 'class',
+  RACE: 'race',
+});
+
+class Feature {
+  constructor(source, name, reqLvl, derivedData) {
+    this.source = source;
+    this.name = name;
+    this.reqLvl = reqLvl;
+    this.derivedData = derivedData;
+  }
+}
+
+export class ClassFeature extends Feature {
+  constructor(name, reqLvl, derivedData = null) {
+    super(sourceEnum.CLASS, name, reqLvl, derivedData);
+  }
+}
+
+export class RaceFeature extends Feature {
+  constructor(name, reqLvl, derivedData) {
+    super(sourceEnum.RACE, name, reqLvl, derivedData);
+  }
+}
+
+export const featuresEnum = Object.freeze({
   CHAIN_ATTACK: 'chain attack',
   MULTIATTACK: 'multiattack',
   BERSERK: 'berserk',
@@ -27,10 +53,7 @@ export const classFeaturesEnum = Object.freeze({
   SENSE_MEMORIZED_SPELLS: 'sense memorized spells',
   SENSE_MAGICK: 'sense magick',
   DRAIN_MAGICK: 'drain magick',
-  AIR_ELEMENTAL_FOCUS: 'air elemental focus',
-  EARTH_ELEMENTAL_FOCUS: 'earth elemental focus',
-  FIRE_ELEMENTAL_FOCUS: 'fire elemental focus',
-  WATER_ELEMENTAL_FOCUS: 'water elemental focus',
+  ELEMENTAL_FOCUS: 'elemental focus',
   ELEMENTAL_SURGE: 'elemental surge',
   FEARLESS: 'fearless',
   FLEET_FOOTED: 'fleet-footed',
@@ -39,29 +62,3 @@ export const classFeaturesEnum = Object.freeze({
   NATURAL_TOUGHNESS: 'natural toughness',
   FIRST_ATTACK_FEROCITY: 'first attack ferocity',
 });
-
-// TODO remove all below
-
-// export function buildFeatures(source, lvl) {
-//   {
-//     const sourceFeatures = Object.keys(features).filter((key) => features[key].reqLvl?.[source] <= lvl);
-//     const features = {};
-//     sourceFeatures.forEach((key) => {
-//       features[key] = buildFeature(key, source, lvl);
-//     });
-
-//     return features;
-//   }
-// }
-
-// export function buildFeature(key, source, lvl) {
-//   const feature = { ...features[key] };
-//   feature.reqLvl = feature.reqLvl[source];
-//   Object.entries(feature.derivedData ?? {}).forEach(([k, v]) => {
-//     if (v[source] && typeof v[source] === 'function') {
-//       feature.derivedData = { ...feature.derivedData, [k]: v[source](lvl) };
-//     }
-//   });
-
-//   return feature;
-// }
