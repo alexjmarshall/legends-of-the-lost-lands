@@ -1,25 +1,13 @@
-import { ALL_ARMORS, ALL_SHIELDS } from '../armors';
-import {
-  WEAP_SKILLS_ENUM,
-  ALL_SPELL_SCHOOLS,
-  SKILL_PROGRESSIONS_ENUM,
-  BASIC_SKILLS_EXCL_WEAPON,
-  buildSkills,
-} from '../skills.js';
-import { SAVES_ENUM, SAVE_PROGRESSIONS_ENUM, buildSaves } from '../saves';
-import { buildFeatures } from '../features';
+import { allArmorsArray, allShieldsArray, lightArmorsArray, mediumArmorsArray } from '../armors';
+import { basicCombatSkillsArray, allSpellSkillsArray, skillsEnum } from '../skills.js';
+import { saveModGroups } from '../saves';
+import { ClassFeature, featuresEnum } from '../features';
 import { BaseClass } from './base-class';
-import { CLASSES_ENUM } from './classes-enum';
+import { abilitiesEnum } from '../abilities';
 import { deepFreeze } from '../helper';
 
-const { SPECIALIZED, PROFICIENT, BASIC } = SKILL_PROGRESSIONS_ENUM;
-const { GOOD, POOR } = SAVE_PROGRESSIONS_ENUM;
-const { RESILIENCE, RESOLVE, EVASION, LUCK } = SAVES_ENUM;
-const { BLUDGEON, HAMMER, HAND_TO_HAND, SLING, STAFF, THROW, WHIP } = WEAP_SKILLS_ENUM;
-const { CLERIC, CLOISTERED_CLERIC } = CLASSES_ENUM;
-
 export class Cleric extends BaseClass {
-  #XP_REQS = Object.freeze([
+  static XP_REQS = Object.freeze([
     800,
     2400,
     5600,
@@ -32,18 +20,18 @@ export class Cleric extends BaseClass {
     400000,
     550000,
     700000,
-    8500000,
+    850000,
     Infinity,
   ]);
 
-  #TITLES = Object.freeze([
+  static TITLES = Object.freeze([
     'Acolyte',
+    'Initiate',
     'Adept',
     'Curate',
-    'Vicar',
+    'Elder',
     'Priest',
-    'Bishop',
-    'Lama',
+    'Hierophant',
     'Hierarch',
     'High Priest',
     'High Priest (10th)',
@@ -53,7 +41,7 @@ export class Cleric extends BaseClass {
     'High Priest (14th)',
   ]);
 
-  _SPELL_SLOTS_BY_LEVEL = deepFreeze([
+  static SPELL_SLOTS_BY_LEVEL = deepFreeze([
     [0],
     [1],
     [2],
@@ -70,42 +58,92 @@ export class Cleric extends BaseClass {
     [5, 5, 5, 5, 5, 3],
   ]);
 
-  #SKILLS = deepFreeze({
-    progressions: {
-      [SPECIALIZED]: ALL_SPELL_SCHOOLS,
-      [PROFICIENT]: [BLUDGEON, HAMMER, HAND_TO_HAND, SLING, STAFF, THROW, WHIP],
-      [BASIC]: BASIC_SKILLS_EXCL_WEAPON,
-    },
-  });
+  static features = deepFreeze([
+    new ClassFeature(featuresEnum.TURN_UNDEAD, 1, (lvl) => ({
+      turningLvl: lvl,
+    })),
+    new ClassFeature(featuresEnum.CAST_CLERIC_SPELLS, 1),
+    new ClassFeature(featuresEnum.READ_CLERIC_SCROLLS, 1),
+  ]);
 
-  #SAVES = deepFreeze({
-    mod: 1,
-    progressions: {
-      [GOOD]: [RESILIENCE, RESOLVE],
-      [POOR]: [EVASION, LUCK],
-    },
-  });
+  static specializedSkills = Object.freeze([...allSpellSkillsArray]);
+  static proficientSkills = Object.freeze([
+    skillsEnum.BLUDGEON,
+    skillsEnum.HAND_TO_HAND,
+    skillsEnum.SLING,
+    skillsEnum.STAFF,
+    skillsEnum.THROW,
+    skillsEnum.FLAIL_WHIP,
+  ]);
+
+  static saveMods = saveModGroups.cleric;
 
   constructor(lvl) {
-    super(lvl);
+    lvl = Number(lvl);
+    super(lvl, Cleric);
+    this.primeReqs = [abilitiesEnum.WIS];
     this.hitDie = 'd6';
-    this.xpRequired = this.#XP_REQS[lvl - 1];
-    this.title = this.#TITLES[lvl - 1];
-    this.spellSlots = this.SPELL_SLOTS_BY_LEVEL[lvl - 1];
-    this.armors = ALL_ARMORS;
-    this.shields = ALL_SHIELDS;
-    this.skills = buildSkills(this.#SKILLS, lvl);
-    this.saves = buildSaves(this.#SAVES, lvl);
-    this.features = buildFeatures(CLERIC, lvl);
+    this.reqXp = Cleric.XP_REQS[lvl - 1];
+    this.title = Cleric.TITLES[lvl - 1];
+    this.spellSlots = Cleric.SPELL_SLOTS_BY_LEVEL[lvl - 1];
+    this.armors = [...allArmorsArray];
+    this.shields = [...allShieldsArray];
+    this.abilityReqs = {
+      [abilitiesEnum.WIS]: {
+        min: 9,
+      },
+    };
   }
 }
 
 export class CloisteredCleric extends Cleric {
+  static specializedSkills = Object.freeze([...super.specializedSkills, skillsEnum.READ_LANGUAGES]);
+
+  static features = deepFreeze([...super.features, new ClassFeature(featuresEnum.SCRIBE_CLERIC_SCROLLS, 1)]);
+
+  static SPELL_SLOTS_BY_LEVEL = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Cleric.SPELL_SLOTS_BY_LEVEL)]);
+
   constructor(lvl) {
+    lvl = Number(lvl);
     super(lvl);
+    this.spellSlots = CloisteredCleric.SPELL_SLOTS_BY_LEVEL[lvl - 1];
     this.armors = [];
     this.shields = [];
-    this.spellSlots = super.addOneSpellSlotPerLevel(super._SPELL_SLOTS_BY_LEVEL);
-    this.features = buildFeatures(CLOISTERED_CLERIC, lvl);
+    this.abilityReqs = {
+      ...this.abilityReqs,
+      [abilitiesEnum.INT]: {
+        min: 9,
+      },
+    };
+    this.buildSkills(CloisteredCleric);
+    this.buildFeatures(CloisteredCleric, lvl);
+  }
+}
+
+export class Runepriest extends Cleric {
+  static specializedSkills = Object.freeze([skillsEnum.RUNELORE, skillsEnum.RUNECARVING]);
+  static proficientSkills = Object.freeze([...basicCombatSkillsArray]);
+
+  static features = deepFreeze([
+    new ClassFeature(featuresEnum.TURN_UNDEAD, 1, (lvl) => ({
+      turningLvl: lvl,
+    })),
+    new ClassFeature(featuresEnum.RUNE_MAGICK, 1),
+  ]);
+
+  constructor(lvl) {
+    lvl = Number(lvl);
+    super(lvl);
+    this.spellSlots = [];
+    this.armors = [...lightArmorsArray, ...mediumArmorsArray];
+    this.shields = [...allShieldsArray];
+    this.abilityReqs = {
+      ...this.abilityReqs,
+      [abilitiesEnum.INT]: {
+        min: 9,
+      },
+    };
+    this.buildSkills(Runepriest);
+    this.buildFeatures(Runepriest, lvl);
   }
 }
