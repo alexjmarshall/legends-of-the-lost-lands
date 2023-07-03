@@ -1,10 +1,11 @@
 import { allArmorsArray, lightArmorsArray, mediumArmorsArray, allShieldsArray } from '../armors';
 import { allCombatSkillsArray, skillsEnum } from '../skills';
-import { savesEnum } from '../saves';
-import { classFeaturesEnum } from '../features';
+import { saveModGroups } from '../saves';
+import { ClassFeature, featuresEnum } from '../features';
 import { BaseClass } from './base-class';
 import { alignmentsEnum } from '../alignments';
 import { abilitiesEnum } from '../abilities';
+import { deepFreeze } from '../helper';
 
 const chaoticAlignments = [alignmentsEnum.CG, alignmentsEnum.CE];
 
@@ -43,45 +44,24 @@ export class Barbarian extends BaseClass {
     'Chieftain (14th)',
   ]);
 
-  static features = {
-    [classFeaturesEnum.NATURAL_TOUGHNESS]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.SENSE_DANGER]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.FEARLESS]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.FLEET_FOOTED]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.WIZARD_SLAYER]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.FIRST_ATTACK_FEROCITY]: {
-      reqLvl: 1,
-    },
-    [classFeaturesEnum.MULTIATTACK]: {
-      reqLvl: 8,
-      derivedData: (lvl) => ({
-        extraAttacks: BaseClass.oneAtEightAndTwoAtFourteen(lvl),
-      }),
-    },
-  };
+  static features = deepFreeze([
+    new ClassFeature(featuresEnum.NATURAL_TOUGHNESS, 1),
+    new ClassFeature(featuresEnum.SENSE_DANGER, 1),
+    new ClassFeature(featuresEnum.FEARLESS, 1),
+    new ClassFeature(featuresEnum.FLEET_FOOTED, 1),
+    new ClassFeature(featuresEnum.WIZARD_SLAYER, 1),
+    new ClassFeature(featuresEnum.FIRST_ATTACK_FEROCITY, 1),
+    new ClassFeature(featuresEnum.MULTIATTACK, 8, (lvl) => ({
+      extraAttacks: BaseClass.oneAtEightAndTwoAtFourteen(lvl),
+    })),
+  ]);
 
-  static specializedSkills = allCombatSkillsArray;
+  static specializedSkills = Object.freeze([...allCombatSkillsArray]);
+  static proficientSkills = Object.freeze([skillsEnum.CLIMB]);
 
-  static proficientSkills = [skillsEnum.CLIMB];
+  static saveMods = saveModGroups.fighter;
 
-  static saveMods = Object.freeze({
-    [savesEnum.RESOLVE]: -1,
-    [savesEnum.EVASION]: 1,
-    [savesEnum.RESILIENCE]: 1,
-    [savesEnum.LUCK]: -1,
-  });
-
-  getArmorsByLevel(lvl) {
+  #getArmorsByLevel(lvl) {
     if (lvl < 4) return [];
     if (lvl < 8) return lightArmorsArray;
     if (lvl < 13) return [...lightArmorsArray, ...mediumArmorsArray];
@@ -89,18 +69,25 @@ export class Barbarian extends BaseClass {
   }
 
   constructor(lvl) {
+    lvl = Number(lvl);
     super(lvl, Barbarian);
     this.primeReqs = [abilitiesEnum.STR, abilitiesEnum.CON];
     this.hitDie = 'd10';
     this.reqXp = Barbarian.XP_REQS[lvl - 1];
     this.title = Barbarian.TITLES[lvl - 1];
-    this.armors = this.getArmorsByLevel(lvl);
+    this.armors = this.#getArmorsByLevel(lvl);
     this.shields = allShieldsArray;
     this.alignments = chaoticAlignments;
     this.abilityReqs = {
-      [abilitiesEnum.CON]: 15,
-      [abilitiesEnum.STR]: 14,
-      [abilitiesEnum.DEX]: 13,
+      [abilitiesEnum.CON]: {
+        min: 15,
+      },
+      [abilitiesEnum.STR]: {
+        min: 14,
+      },
+      [abilitiesEnum.DEX]: {
+        min: 13,
+      },
     };
   }
 }
