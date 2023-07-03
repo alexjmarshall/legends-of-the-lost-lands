@@ -17,12 +17,12 @@ export class BaseClass {
     return this.#addNSpellSlotsPerLevel(spellSlots, -1);
   }
 
-  static onePerNLevelsAfterFirst(n) {
-    return Math.floor((this.lvl - 1) / n);
+  static onePerNLevelsAfterFirst(lvl, n) {
+    return Math.floor((lvl - 1) / n);
   }
 
-  static onePlusOnePerFourLevels() {
-    return 1 + this.onePerNLevelsAfterFirst(this.lvl, 4);
+  static onePlusOnePerFourLevels(lvl) {
+    return 1 + this.onePerNLevelsAfterFirst(lvl, 4);
   }
 
   static oneAtEightAndTwoAtFourteen(lvl) {
@@ -46,11 +46,9 @@ export class BaseClass {
   }
 
   buildFeatures(Class, lvl) {
-    this.features = Object.fromEntries(
-      Object.keys(Class.features)
-        .filter((f) => Class.features[f].reqLvl <= this.lvl)
-        .map((f) => [f, Class.features[f].derivedData ? Class.features[f].derivedData(lvl) : {}])
-    );
+    this.features = Class.features
+      .filter((f) => f.reqLvl <= lvl)
+      .map((f) => ({ ...f, derivedData: f.derivedData ? f.derivedData(lvl) : {} }));
   }
 
   // class properties
@@ -74,13 +72,14 @@ export class BaseClass {
     [savesEnum.RESILIENCE]: DEFAULT_SAVE_BASE,
     [savesEnum.LUCK]: DEFAULT_SAVE_BASE,
   };
-  features = {};
+  features = [];
   alignments = allAlignmentsArray;
   languages = [];
   abilityReqs = {};
 
   constructor(lvl, Class) {
-    this.lvl = Number(lvl);
+    lvl = Number(lvl);
+    this.lvl = lvl;
     this.buildSkills(Class);
     this.buildSaves(Class);
     this.buildFeatures(Class, lvl);
