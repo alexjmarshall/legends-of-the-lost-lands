@@ -659,6 +659,10 @@ export const skillsEnum = buildEnum(skills);
 
 export const allCombatSkillsArray = Object.keys(skills).filter((s) => skills[s].category === COMBAT);
 
+export const basicCombatSkillsArray = Object.keys(skills).filter(
+  (s) => skills[s].category === COMBAT && skills[s].expert === false
+);
+
 export const allSpellSkillsArray = Object.keys(skills).filter((s) => skills[s].category === SPELLS);
 
 export const allThieverySkillsArray = Object.keys(skills).filter((s) => skills[s].category === THIEVERY);
