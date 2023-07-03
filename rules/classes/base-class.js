@@ -77,11 +77,8 @@ export class BaseClass {
   languages = [];
   abilityReqs = {};
 
-  constructor(lvl, Class) {
+  constructor(lvl) {
     lvl = Number(lvl);
     this.lvl = lvl;
-    this.buildSkills(Class);
-    this.buildSaves(Class);
-    this.buildFeatures(Class, lvl);
   }
 }
