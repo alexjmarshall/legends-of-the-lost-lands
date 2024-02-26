@@ -1,8 +1,8 @@
 {
   "name": "brigandine",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CSS compiler for the Brigandine system",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "css": "gulp css",
     "watch": "gulp",

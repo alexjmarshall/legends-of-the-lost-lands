@@ -18,7 +18,7 @@
             <a class="attribute-control" data-action="create" data-group="{{groupKey}}" data-dtype="{{group.dtype}}" {{#if ../isPlayer}}style="display:none;"{{/if}}><i class="fas fa-plus"></i></a>
             <a class="group-control" data-action="delete-group" {{#if ../isPlayer}}style="display:none;"{{/if}}><i class="fas fa-trash"></i></a>
         </div>
-        {{> "systems/lostlands/templates/parts/sheet-attributes.html" isPlayer=../isPlayer attributes=group.attributes group=groupKey dtypes=../dtypes}}
+        {{> "systems/brigandine/templates/parts/sheet-attributes.html" isPlayer=../isPlayer attributes=group.attributes group=groupKey dtypes=../dtypes}}
     </li>
     {{/each}}
 </ol>

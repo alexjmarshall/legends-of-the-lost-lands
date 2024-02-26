@@ -1,0 +1,261 @@
+import { allSpellSkills, SKILLS } from '../skills.js';
+import { saveBases } from '../saves.js';
+import { FeatureConfig, features } from '../features.js';
+import { BaseClass } from './base-class.js';
+import { ABILITIES } from '../abilities.js';
+import { deepFreeze } from '../helper.js';
+import { WEAPON_CLASS } from '../weapons.js';
+
+export class Mage extends BaseClass {
+  static XP_REQS = Object.freeze([1200, 3600, 8400, 18000, 35000, 50000, 75000, 100000, 200000, 300000]);
+
+  static XP_REQ_AFTER_NAME_LVL = 100000;
+
+  static TITLES = Object.freeze([
+    'Medium',
+    'Seer',
+    'Conjurer',
+    'Theurgist',
+    'Thaumaturgist',
+    'Occultist',
+    'Magician',
+    'Enchanter',
+    'Sorcerer',
+    'Necromancer',
+    'Wizard',
+  ]);
+
+  static SPELL_SLOTS_BY_LEVEL = deepFreeze([
+    [2],
+    [3],
+    [3, 1],
+    [4, 2],
+    [4, 2, 1],
+    [4, 2, 2],
+    [4, 3, 2, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 2, 1],
+    [4, 4, 3, 3, 2],
+    [4, 4, 4, 3, 3],
+    [4, 4, 4, 4, 4, 1],
+    [5, 5, 5, 4, 4, 2],
+    [5, 5, 5, 4, 4, 3, 1],
+    [5, 5, 5, 4, 4, 4, 2],
+    [5, 5, 5, 5, 5, 5, 2, 1],
+    [6, 6, 6, 5, 5, 5, 2, 2],
+    [6, 6, 6, 6, 6, 6, 2, 2, 1],
+    [7, 7, 7, 6, 6, 6, 3, 2, 2],
+    [7, 7, 7, 7, 7, 7, 3, 3, 2],
+  ]);
+
+  static featuresConfig = deepFreeze([
+    new FeatureConfig(features.CAST_MAGIC_SPELLS, 1),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 1),
+    new FeatureConfig(features.SCRIBE_MAGIC_SCROLLS, 1),
+  ]);
+
+  static specializedSkills = Object.freeze([...allSpellSkills]);
+
+  static untrainedSkills = Object.freeze([SKILLS.DAGGER, SKILLS.SLING, SKILLS.STAFF]);
+
+  static saveProgressions = saveBases.mage;
+
+  static firstLvlHp = 'd4+1';
+  static hitDie = 'd4';
+  static description = 'A master of magical energies who devotes much of their time to spell research.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Requires Intelligence 9+',
+  ]);
+  static shieldsDescription = 'none';
+  static armorDescription = 'none';
+  static weaponDescription = 'simple daggers, slings and staffs';
+  static weaponClass = WEAPON_CLASS.SIMPLE;
+
+  static abilityReqs = [
+    {
+      name: ABILITIES.INT,
+      min: 9,
+    },
+  ];
+
+  static primeReqs = [ABILITIES.INT];
+
+  constructor(lvl, Class = Mage) {
+    super(lvl, Class);
+    this.armors = [];
+    this.shields = [];
+  }
+}
+
+export class Incantatrix extends Mage {
+  static description = 'A mage with the uncanny ability to steal spells from other minds.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 fewer slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Steal spell',
+    'Sense spell (level 3)',
+    'Sense memorized spells (level 5)',
+    'Sense magic (level 7)',
+    'Drain magic (level 11)',
+  ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.STEAL_SPELL, 1),
+    new FeatureConfig(features.SENSE_SPELL, 3),
+    new FeatureConfig(features.SENSE_MEMORIZED_SPELLS, 5),
+    new FeatureConfig(features.SENSE_MAGIC, 7),
+    new FeatureConfig(features.DRAIN_MAGIC, 11),
+  ]);
+
+  static SPELL_SLOTS_BY_LEVEL = Object.freeze([
+    [1],
+    [2],
+    [3],
+    [3, 1],
+    [3, 2],
+    [3, 2, 1],
+    [3, 2, 2],
+    [3, 2, 2, 1],
+    [3, 2, 2, 2],
+    [3, 3, 2, 2, 1],
+    [3, 3, 3, 2, 2],
+    [3, 3, 3, 3, 3],
+    [4, 4, 4, 3, 3, 1],
+    [4, 4, 4, 3, 3, 2],
+    [4, 4, 4, 3, 3, 3, 1],
+    [4, 4, 4, 4, 4, 4, 1],
+    [5, 5, 5, 4, 4, 4, 1, 1],
+    [5, 5, 5, 5, 5, 5, 2, 1, 1],
+    [6, 6, 6, 5, 5, 5, 2, 1, 1],
+    [6, 6, 6, 6, 6, 6, 2, 2, 1],
+  ]);
+
+  constructor(lvl) {
+    super(lvl, Incantatrix);
+  }
+}
+
+class BaseSpecialist extends Mage {
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 fewer slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+  ]);
+  static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.SPECIALIST_FOCUS, 1)]);
+
+  static SPELL_SLOTS_BY_LEVEL = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Mage.SPELL_SLOTS_BY_LEVEL)]);
+
+  constructor(lvl, Class = BaseSpecialist) {
+    super(lvl, Class);
+    this.buildFeatures(BaseSpecialist, lvl);
+  }
+}
+
+export class Abjurer extends BaseSpecialist {
+  static description = 'A mage who specializes in protection and warding magics.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast alteration spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Conjurer extends BaseSpecialist {
+  static description = 'A mage who specializes in summoning creatures and creating objects.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast divination spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Diviner extends BaseSpecialist {
+  static description = 'A mage who specializes in detection and divining magics.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast conjuration spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Enchanter extends BaseSpecialist {
+  static description = 'A mage who specializes in manipulating the minds of others.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast evocation spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Evoker extends BaseSpecialist {
+  static description = 'A mage who specializes in the manipulation of raw and elemental energies.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast enchantment spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Illusionist extends BaseSpecialist {
+  static description = 'A mage who specializes in creating illusions to confuse and mislead.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast necromancy spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Necromancer extends BaseSpecialist {
+  static description = 'A mage who specializes in magic dealing with life and death.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast illusion spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}
+
+export class Transmuter extends BaseSpecialist {
+  static description = 'A mage who specializes in magics that alter physical reality.';
+  static featureDescriptions = Object.freeze([
+    'Cast magic spells (1 additional slot per level)',
+    'Read magic scrolls',
+    'Scribe magic scrolls',
+    'Cannot cast abjuration spells',
+  ]);
+  constructor(lvl) {
+    super(lvl);
+  }
+}

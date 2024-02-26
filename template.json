@@ -1,147 +1,944 @@
 {
-"Actor": {
-  "types": ["character","retainer","humanoid","monster","storage","merchant","party"],
-  "templates": {
-    "props": {
-      "description": "",
-      "attributes": {},
-      "groups": {}
-    },
-    "hit_locs": { // TODO determine precise format for this string
-      "attributes": {
-        "hit_locs": {
-          "dtype": "String",
-          "group": "",
-          "label": "Hit Locations",
-          "value": ""
-        }
-      }
-    },
-    "resistances": {
-      "groups": {
-        "dmg_mods": {
-          "dtype": "String",
-          "label": "Damage Type Modifiers"
-        },
-        "immunities": {
-          "dtype": "Boolean",
-          "label": "Damage Effect Immunities"
-        }
+  "Actor": {
+    "types": ["character", "npc", "humanoid", "monster", "storage", "merchant", "party"],
+    "templates": {
+      "props": {
+        "description": "",
+        "notes": "",
+        "attributes": {},
+        "groups": {}
       },
-      "attributes": {
-        "immunities": {
-          "immune_crits": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Crits",
-            "value": false
-          },
-          "immune_bleed": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Bleed",
-            "value": false
-          },
-          "immune_knockdown": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Knockdown",
-            "value": false
-          },
-          "immune_impale": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Impale",
-            "value": false
-          },
-          "immune_injury": {
-            "dtype": "Boolean",
-            "group": "immunities",
-            "label": "Immune to Injury",
-            "value": false
-          }
-        },
-        "dmg_mods": {
-          "dmg_vul": {
+      "languages": {
+        "attributes": {
+          "languages": {
             "dtype": "String",
-            "group": "dmg_mods",
-            "label": "Damage Vulnerabilities",
-            "value": ""
-          },
-          "dmg_res": {
-            "dtype": "String",
-            "group": "dmg_mods",
-            "label": "Damage Resistances",
-            "value": ""
-          },
-          "dmg_immune": {
-            "dtype": "String",
-            "group": "dmg_mods",
-            "label": "Damage Immunities",
+            "group": "",
+            "label": "Languages",
             "value": ""
           }
         }
-      }
-    },
-    "monster": {
-      "hp": {
-        "value": 8,
-        "min": 0,
-        "max": 8
       },
-      "xp": 0,
-      "attributes": {
-        "hd": {
-          "dtype": "String",
-          "group": "",
-          "label": "Hit Dice",
-          "value": "5+2"
+      "resistances": {
+        "groups": {
+          "immunities": {
+            "dtype": "Boolean",
+            "label": "Damage Effect Immunities"
+          },
+          "dmg_mods": {
+            "dtype": "String",
+            "label": "Damage Type Modifiers"
+          }
         },
-        "size": {
-          "dtype": "String", // TODO select type
-          "group": "",
-          "label": "Size",
-          "value": "L"
+        "attributes": {
+          "immunities": {
+            "immune_crits": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Crits",
+              "value": false
+            },
+            "immune_bleed": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Bleed",
+              "value": false
+            },
+            "immune_knockdown": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Knockdown",
+              "value": false
+            },
+            "immune_impale": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Impale",
+              "value": false
+            },
+            "immune_injury": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Injury",
+              "value": false
+            },
+            "immune_grappling": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Immune to Grappling",
+              "value": false
+            },
+            "req_magic_weap": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Requires Silvered/Magic Weapon",
+              "value": false
+            }
+          },
+          "dmg_mods": {
+            "fire": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Fire Modifier",
+              "value": ""
+            },
+            "cold": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Cold Modifier",
+              "value": ""
+            },
+            "electricity": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Electricity Modifier",
+              "value": ""
+            },
+            "acid": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Acid Modifier",
+              "value": ""
+            },
+            "holy": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Holy Modifier",
+              "value": ""
+            },
+            "poison": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Poison Modifier",
+              "value": ""
+            },
+            "magic": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Magic Modifier",
+              "value": ""
+            },
+            "blunt": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Blunt Modifier",
+              "value": ""
+            },
+            "pierce": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Pierce Modifier",
+              "value": ""
+            },
+            "slash": {
+              "dtype": "String",
+              "group": "dmg_mods",
+              "label": "Slash Modifier",
+              "value": ""
+            }
+          }
+        }
+      },
+      "actor": {
+        "hp": {
+          "value": 8,
+          "min": 0,
+          "max": 8
         },
-        "mv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Movement Rate",
-          "value": 15
+        "fp": {
+          "value": 0,
+          "min": 0,
+          "max": 50
         },
-        "xp_multi": {
-          "dtype": "Number",
-          "group": "",
-          "label": "XP Multiplier",
-          "value": 1
-        },
-        "intelligent": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Intelligent",
-          "value": false
+        "xp": 0
+      },
+      "monster": {
+        "attributes": {
+          "mv": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Movement Rate",
+            "value": 15
+          },
+          "ac": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Armor Class",
+            "value": 15
+          },
+          "size": {
+            "dtype": "String",
+            "group": "",
+            "label": "Size",
+            "value": "M"
+          },
+          "infravision": {
+            "dtype": "String",
+            "group": "",
+            "label": "Infravision",
+            "value": 60
+          },
+          "hd": {
+            "dtype": "String",
+            "group": "",
+            "label": "Hit Dice",
+            "value": "1+1"
+          },
+          "type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Type",
+            "value": ""
+          },
+          "subtype": {
+            "dtype": "String",
+            "group": "",
+            "label": "Subtype",
+            "value": ""
+          },
+          "xp_multi": {
+            "dtype": "Number",
+            "group": "",
+            "label": "XP Multiplier",
+            "value": 1
+          },
+          "alignment": {
+            "dtype": "String",
+            "group": "",
+            "label": "Alignment",
+            "value": "N"
+          },
+          "hide": {
+            "dtype": "String",
+            "group": "",
+            "label": "Hide",
+            "value": "leather"
+          },
+          "magic_resistance": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Magic Resistance",
+            "value": 0
+          },
+          "saves_as": {
+            "dtype": "String",
+            "group": "",
+            "label": "Saves As",
+            "value": "Fighter"
+          },
+          "intelligence": {
+            "dtype": "String",
+            "group": "",
+            "label": "Intelligence",
+            "value": "non"
+          }
+        }
+      },
+      "skills": {
+        "skills": {
+          "abjuration": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "alteration": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "ancient languages": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "animal handling": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "appraisal": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "axe": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "blacksmithing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "bludgeon": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "bow": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "bowyery": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "calligraphy": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "climbing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "conjuration": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "cookery": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "crossbow": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "curved sword": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "dagger": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "dancing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "deception": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "demonlore": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "disarm trap": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "disguise": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "divination": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "enchantment": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "etiquette": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "evocation": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "farming": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "firecraft": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "fishing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "foraging": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "forgery": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "hand-to-hand": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "handgonne": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "heraldry": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "herbalism": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "herblore": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "hiding": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "history": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "hunting": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "illusion": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "intimidation": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "leatherworking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "listening": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "magica": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "music": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "navigation": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "necromancy": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "one-handed straight sword": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "one-handed curved sword": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "persuasion": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "physica": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "lockpicking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "pickpocketing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "poetry": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "poisonlore": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "poison_handling": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "polearm": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "religion": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "riding": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "running": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "runecarving": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "runelore": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "sailing": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "searching": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "sling": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "sneaking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "spear": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "spiked bludgeon": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "staff": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "stoneworking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "swimming": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "tailoring": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "tracking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "trading": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "two-handed straight sword": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "two-handed curved sword": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "whip": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "woodworking": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "wound treatment": {
+            "lvl": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          }
+        }
+      },
+      "humanoid": {
+        "hp": {
+          "value": 8,
+          "min": 0,
+          "max": 8,
+          "right_arm": {
+            "value": 0,
+            "min": 0
+          },
+          "left_arm": {
+            "value": 0,
+            "min": 0
+          },
+          "right_leg": {
+            "value": 0,
+            "min": 0
+          },
+          "left_leg": {
+            "value": 0,
+            "min": 0
+          },
+          "lower_torso": {
+            "value": 0,
+            "min": 0
+          },
+          "upper_torso": {
+            "value": 0,
+            "min": 0
+          },
+          "head": {
+            "value": 0,
+            "min": 0
+          }
         }
       }
     },
     "character": {
-      "attitude_map": {},
-      "voice": "",
-      "injuries": "",
-      "done_chargen": false,
-      "hp": {
-        "value": 8,
-        "min": 0,
-        "max": 8
-      },
-      "xp": {
+      "templates": ["props", "actor", "humanoid", "resistances", "languages", "skills"],
+      "gender": "M",
+      "size": "M",
+      "age": 0,
+      "max_age": 100,
+      "origin": "Wildling",
+      "voice": "M_Fgt01",
+      "height": 0,
+      "weight": 0,
+      "lvl": 0,
+      "race": "Human",
+      "class": "Fighter",
+      "xp_req": {
         "value": 0,
         "min": 0,
         "max": 1000
       },
       "groups": {
+        "retainer": {
+          "dtype": "String",
+          "label": "Retainer"
+        },
+        "admin": {
+          "dtype": "Boolean",
+          "label": "Admin"
+        },
         "ability_scores": {
           "dtype": "Number",
           "label": "Ability Scores"
+        },
+        "alignment": {
+          "dtype": "Number",
+          "label": "Alignment"
         },
         "spellcasting_cleric": {
           "dtype": "Resource",
@@ -151,41 +948,65 @@
           "dtype": "Resource",
           "label": "Magic Spells"
         },
-        "spellcasting_witch": {
+        "spellcasting_druid": {
           "dtype": "Resource",
-          "label": "Witch Spells"
+          "label": "Druid Spells"
         }
       },
-      "attributes": { //TODO separate tabs for attributes and derived stats, and use physical, mental, evasion and luck saves
-        "class": { // stats tab has all values derived from class/race, and adjusts dynamically from effects
-          "dtype": "String", //TODO basic code organization/splitting as well. Will be easy to fix imports
-          "group": "",
-          "label": "Class",
-          "value": "fighter"
+      "attributes": {
+        "admin": {
+          "is_retainer": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Is Retainer",
+            "value": false
+          },
+          "apply_fatigue": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Fatigue Damage",
+            "value": true
+          },
+          "use_target_skill_lvl": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Use Target Skill Levels",
+            "value": false
+          }
         },
-        "race": {
-          "dtype": "String",
-          "group": "",
-          "label": "Race",
-          "value": "human"
+        "retainer": {
+          "master": {
+            "dtype": "String",
+            "group": "retainer",
+            "label": "Master",
+            "value": ""
+          },
+          "loyalty": {
+            "dtype": "Number",
+            "group": "retainer",
+            "label": "Loyalty",
+            "value": 10
+          }
         },
-        "weap_profs": {
-          "dtype": "String",
-          "group": "",
-          "label": "Proficiencies",
-          "value": ""
+        "alignment": {
+          "lawfulness": {
+            "dtype": "Number",
+            "group": "alignment",
+            "label": "Chaotic/Lawful",
+            "value": 10
+          },
+          "goodness": {
+            "dtype": "Number",
+            "group": "alignment",
+            "label": "Evil/Good",
+            "value": 10
+          }
         },
         "ability_scores": {
           "str": {
             "dtype": "Number",
             "group": "ability_scores",
             "label": "Strength",
-            "value": 10
-          },
-          "int": {
-            "dtype": "Number",
-            "group": "ability_scores",
-            "label": "Intelligence",
             "value": 10
           },
           "wis": {
@@ -210,6 +1031,12 @@
             "dtype": "Number",
             "group": "ability_scores",
             "label": "Charisma",
+            "value": 10
+          },
+          "int": {
+            "dtype": "Number",
+            "group": "ability_scores",
+            "label": "Intelligence",
             "value": 10
           }
         },
@@ -321,10 +1148,10 @@
             "max": 0
           }
         },
-        "spellcasting_witch": {
+        "spellcasting_druid": {
           "lvl_1": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 1",
             "min": 0,
             "value": 0,
@@ -332,7 +1159,7 @@
           },
           "lvl_2": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 2",
             "min": 0,
             "value": 0,
@@ -340,7 +1167,7 @@
           },
           "lvl_3": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 3",
             "min": 0,
             "value": 0,
@@ -348,7 +1175,7 @@
           },
           "lvl_4": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 4",
             "min": 0,
             "value": 0,
@@ -356,7 +1183,7 @@
           },
           "lvl_5": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 5",
             "min": 0,
             "value": 0,
@@ -364,7 +1191,7 @@
           },
           "lvl_6": {
             "dtype": "Resource",
-            "group": "spellcasting_witch",
+            "group": "spellcasting_druid",
             "label": "Level 6",
             "min": 0,
             "value": 0,
@@ -372,608 +1199,815 @@
           }
         }
       }
-    }
-  },
-  "character": {
-    "templates": ["props","character","resistances"]
-  },
-  "retainer": {
-    "templates": ["props","character","resistances"],
-    "groups": {
-      "retainer": {
-        "dtype": "String",
-        "label": "Retainer"
+    },
+    "humanoid": {
+      "templates": ["props", "actor", "humanoid", "monster", "resistances", "languages"]
+    },
+    "monster": {
+      "templates": ["props", "actor", "monster", "resistances", "languages"],
+      "attributes": {
+        "atk_routine": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Routine",
+          "value": "claw, claw, bite"
+        }
       }
     },
-    "attributes": {
-      "retainer": {
-        "master": {
-          "dtype": "String", // TODO select type
-          "group": "retainer",
-          "label": "Master",
+    "storage": {
+      "templates": ["props"],
+      "attributes": {
+        "wgt_limit": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Weight Limit",
+          "value": 50
+        },
+        "item_type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Item Type",
+          "value": "any"
+        }
+      }
+    },
+    "merchant": {
+      "templates": ["props"],
+      "groups": {
+        "trade_goods": {
+          "dtype": "String",
+          "label": "Trade Goods"
+        }
+      },
+      "attributes": {
+        "trade_goods": {
+          "demand": {
+            "dtype": "String",
+            "group": "trade_goods",
+            "label": "Demand",
+            "value": ""
+          },
+          "surplus": {
+            "dtype": "String",
+            "group": "trade_goods",
+            "label": "Surplus",
+            "value": ""
+          }
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
           "value": ""
         },
-        "loyalty": {
+        "buy_factor": {
           "dtype": "Number",
-          "group": "retainer",
-          "label": "Loyalty",
+          "group": "",
+          "label": "Buy Price Factor",
+          "value": 0.8
+        },
+        "sell_factor": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Sell Price Factor",
+          "value": 1.2
+        },
+        "money": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Money (CPs)",
+          "value": 24000
+        }
+      }
+    },
+    "party": {
+      "templates": ["props"],
+      "attributes": {
+        "members": {
+          "dtype": "String",
+          "group": "",
+          "label": "Members",
+          "value": ""
+        },
+        "advance_time": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Advance Time on Move",
+          "value": false
+        },
+        "reputation": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Reputation",
           "value": 10
         }
       }
     }
   },
-  "humanoid": {
-    "templates": ["props","monster","resistances"],
-    "attributes": {
-      "base_ac": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Base Armor Class",
-        "value": 10
+  "Item": {
+    "types": [
+      "item",
+      "storage",
+      "container",
+      "scroll",
+      "armor",
+      "helmet",
+      "clothing",
+      "gem",
+      "trade_good",
+      "food",
+      "jewelry",
+      "shield",
+      "melee_weapon",
+      "missile_weapon",
+      "bow",
+      "missile",
+      "currency",
+      "spell",
+      "feature",
+      "natural_weapon",
+      "natural_missile_weapon",
+      "hit_location"
+    ],
+    "templates": {
+      "props": {
+        "description": "",
+        "notes": "",
+        "attributes": {},
+        "groups": {},
+        "macro": ""
       },
-      "size": {
-        "dtype": "String", // TODO select type
-        "group": "",
-        "label": "Size",
-        "value": "M"
-      },
-      "mv": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Movement Rate",
-        "value": 9
-      },
-      "intelligent": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Intelligent",
-        "value": true
-      }
-    }
-  },
-  "monster": {
-    "templates": ["props","monster","resistances","hit_locs"],
-    "attributes": {
-      "ac": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Armor Class",
-        "value": 15
-      },
-      "atk_routine": {
-        "dtype": "String",
-        "group": "",
-        "label": "Attack Routine",
-        "value": "claw, claw, bite"
-      },
-      "req_magic_weap": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Requires Silver/Magic Weapon",
-        "value": true
-      },
-      "mr": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Magic Resistance",
-        "value": 0
-      },
-      "hide": {
-        "dtype": "String", // TODO select type
-        "group": "",
-        "label": "Hide",
-        "value": "leather"
-      }
-    }
-  },
-  "storage": {
-    "templates": ["props"],
-    "attributes": {
-      "base_weight": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Base Weight",
-        "value": 1
-      },
-      "material": {
-        "dtype": "String",
-        "group": "",
-        "label": "Material",
-        "value": "wood" // TODO select storage material Type
-      },
-      "load_red_factor": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Load Reduction Factor",
-        "value": 1
-      },
-      "wgt_limt": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Weight Limit",
-        "value": 50
-      },
-      "item_type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Item Type",
-        "value": "any" // TODO select Item Type, incl. any
-      }
-    }
-  },
-  "merchant": {
-    "templates": ["props"],
-    "attitude_map": {},
-    "groups": {
-      "trade_goods": {
-        "dtype": "String",
-        "label": "Trade Goods"
-      }
-    },
-    "attributes": {
-      "trade_goods": {
-        "demand": {
-          "dtype": "String",
-          "group": "trade_goods",
-          "label": "Demand", // TODO select type trade good
-          "value": ""
+      "item": {
+        "worn": false,
+        "held_mainhand": false,
+        "held_offhand": false,
+        "belt": false,
+        "value": 0,
+        "quantity": 1,
+        "weight": 0,
+        "groups": {
+          "admin": {
+            "dtype": "Boolean",
+            "label": "Admin"
+          },
+          "charged": {
+            "dtype": "Resource",
+            "label": "Charged"
+          }
         },
-        "surplus": {
-          "dtype": "String",
-          "group": "trade_goods",
-          "label": "Surplus", // TODO select type trade good
-          "value": ""
+        "attributes": {
+          "admin": {
+            "identified": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Identified",
+              "value": true
+            },
+            "magic": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Magic",
+              "value": false
+            },
+            "treasure": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Treasure",
+              "value": false
+            },
+            "holdable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Holdable",
+              "value": true
+            },
+            "wearable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Wearable",
+              "value": false
+            },
+            "improvised_weapon": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Improvised Weapon",
+              "value": false
+            },
+            "charged": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Charged",
+              "value": false
+            }
+          },
+          "charged": {
+            "charges": {
+              "dtype": "Resource",
+              "group": "charged",
+              "label": "Charges",
+              "min": 0,
+              "value": 20,
+              "max": 20
+            }
+          },
+          "material_type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Material Type",
+            "value": "wood"
+          }
         }
       },
-      "type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Type", // TODO select merchant subtype
-        "value": ""
+      "container": {
+        "attributes": {
+          "base_weight": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Base Weight",
+            "value": 1
+          },
+          "inner_qty": {
+            "dtype": "Resource",
+            "group": "",
+            "label": "Inner Quantity",
+            "min": 0,
+            "value": 3,
+            "max": 3
+          }
+        }
       },
-      "buy_factor": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Buy Price Factor",
-        "value": 0.8
+      "weapon": {
+        "attributes": {
+          "class": {
+            "dtype": "String",
+            "group": "",
+            "label": "Class",
+            "value": "martial"
+          }
+        }
       },
-      "sell_factor": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Sell Price Factor",
-        "value": 1.2
+      "natural_weapon": {
+        "groups": {
+          "admin": {
+            "dtype": "Boolean",
+            "label": "Admin"
+          }
+        },
+        "attributes": {
+          "dmg": {
+            "dtype": "String",
+            "group": "",
+            "label": "Damage",
+            "value": "d6"
+          },
+          "admin": {
+            "magic": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Magic",
+              "value": false
+            }
+          }
+        }
       },
-      "money": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Money (CPs)",
-        "value": 24000
+      "melee_weapon": {
+        "atk_mode": "",
+        "atk_height": "mid",
+        "atk_style": "standard",
+        "atk_timing": "standard",
+        "atk_grip": "standard",
+        "attributes": {
+          "atk_modes": {
+            "dtype": "String",
+            "group": "",
+            "label": "Attack Modes",
+            "value": "swi(S)"
+          },
+          "atk_mod": {
+            "dtype": "Number",
+            "group": "",
+            "label": "To-Hit Mod.",
+            "value": 0
+          },
+          "dmg": {
+            "dtype": "String",
+            "group": "",
+            "label": "Damage",
+            "value": "d6"
+          },
+          "skill": {
+            "dtype": "String",
+            "group": "",
+            "label": "Skill",
+            "value": ""
+          },
+          "reach": {
+            "dtype": "String",
+            "group": "",
+            "label": "Reach",
+            "value": "0,1"
+          },
+          "range": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Throwing Range (ft.)",
+            "value": 0
+          },
+          "size": {
+            "dtype": "String",
+            "group": "",
+            "label": "Size",
+            "value": "M"
+          },
+          "cutting": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Cutting Power",
+            "value": 0
+          },
+          "penetration": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Armor Penetration",
+            "value": 0
+          },
+          "impact": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Impact",
+            "value": 0
+          },
+          "speed": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Speed",
+            "value": 0
+          },
+          "parry": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Parry",
+            "value": 0
+          },
+          "special_props": {
+            "dtype": "String",
+            "group": "",
+            "label": "Special Properties",
+            "value": ""
+          }
+        }
+      },
+      "missile_weapon": {
+        "reload": 0,
+        "attributes": {
+          "atk_mod": {
+            "dtype": "Number",
+            "group": "",
+            "label": "To-Hit Mod.",
+            "value": 0
+          },
+          "skill": {
+            "dtype": "String",
+            "group": "",
+            "label": "Skill",
+            "value": ""
+          },
+          "missile_type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Missile Type",
+            "value": "quarrel"
+          },
+          "rof": {
+            "dtype": "String",
+            "group": "",
+            "label": "Rate of Fire",
+            "value": "1"
+          },
+          "range": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Range (ft.)",
+            "value": 0
+          },
+          "size": {
+            "dtype": "String",
+            "group": "",
+            "label": "Size",
+            "value": "M"
+          }
+        }
+      },
+      "magic_dmg": {
+        "groups": {
+          "magic_dmg": {
+            "dtype": "String",
+            "label": "Magic Damage Bonus"
+          }
+        },
+        "attributes": {
+          "magic_dmg": {
+            "dmg_magic": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Magic",
+              "value": ""
+            },
+            "dmg_acid": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Acid",
+              "value": ""
+            },
+            "dmg_fire": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Fire",
+              "value": ""
+            },
+            "dmg_cold": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Cold",
+              "value": ""
+            },
+            "dmg_elec": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Electricity",
+              "value": ""
+            },
+            "dmg_holy": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Holy",
+              "value": ""
+            },
+            "dmg_poison": {
+              "dtype": "String",
+              "group": "magic_dmg",
+              "label": "Poison",
+              "value": ""
+            }
+          }
+        }
+      },
+      "garment": {
+        "cp": {
+          "value": 8,
+          "min": 0,
+          "max": 8
+        },
+        "attributes": {
+          "admin": {
+            "wearable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Wearable",
+              "value": true
+            },
+            "holdable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Holdable",
+              "value": false
+            }
+          },
+          "material": {
+            "dtype": "String",
+            "group": "",
+            "label": "Material",
+            "value": "leather"
+          },
+          "size": {
+            "dtype": "String",
+            "group": "",
+            "label": "Size",
+            "value": "M"
+          }
+        }
       }
-    }
-  },
-  "party": {
-    "templates": ["props"],
-    "attributes": {
-      "members": {
-        "dtype": "String",
-        "group": "",
-        "label": "Members",
-        "value": ""
-      },
-      "advance_time": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Advance Time on Move",
-        "value": false
-      },
-      "mv": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Movement Rate",
-        "value": 9
-      },
-      "reputation": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Reputation",
-        "value": 10
-      }
-    }
-  }
-}, // TODO doublecheck all actor and item types are included in types prop
-"Item": { // TODO 4 quick items can be worn at belt
-  "types": [ // same restrictions as what can be held in hand
-    "item",
-    "potion",
-    "scroll",
-    "storage",
-    "charged_item",
-    "armor",
-    "helmet",
-    "clothing",
-    "gem",
-    "trade_good",
-    "food",
-    "drink",
-    "jewelry",
-    "shield",
-    "melee_weapon",
-    "throw_weapon",
-    "missile_weapon",
-    "ammo",
-    "currency",
-    "spell_magic",
-    "spell_cleric",
-    "spell_witch",
-    "feature",
-    "skill",
-    "natural_weapon",
-    "natural_missile_weapon",
-    "grapple_maneuver"
-  ],
-  "templates": {
-    "props": {
-      "description": "",
-      "attributes": {},
-      "groups": {},
-      "macro": ""
     },
     "item": {
-      "worn": false,
-      "held_mainhand": false,
-      "held_offhand": false,
-      "value": 0,
-      "quantity": 1,
-      "weight": 0,
-      "groups": {
+      "templates": ["props", "item"]
+    },
+    "storage": {
+      "templates": ["props", "item"],
+      "attributes": {
         "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          }
+        },
+        "linked_actor": {
+          "dtype": "String",
+          "group": "",
+          "label": "Linked Actor",
+          "value": ""
+        },
+        "material": {
+          "dtype": "String",
+          "group": "",
+          "label": "Material",
+          "value": "wood"
+        },
+        "load_red_factor": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Load Reduction Factor",
+          "value": 1
+        },
+        "base_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Base Weight",
+          "value": 1
+        },
+        "max_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Max. Weight",
+          "value": 50
+        }
+      }
+    },
+    "container": {
+      "templates": ["props", "item", "container"]
+    },
+    "scroll": {
+      "copy_progress": {
+        "value": 0,
+        "min": 0,
+        "max": 1
+      },
+      "templates": ["props", "item"],
+      "macro": "",
+      "attributes": {
+        "material": {
+          "dtype": "String",
+          "group": "",
+          "label": "Material",
+          "value": "parchment"
+        },
+        "spell": {
+          "dtype": "String",
+          "group": "",
+          "label": "Spell",
+          "value": ""
+        }
+      }
+    },
+    "armor": {
+      "templates": ["props", "item", "garment"],
+      "attributes": {
+        "coverage": {
+          "dtype": "String",
+          "group": "",
+          "label": "Coverage",
+          "value": "chest,gut"
+        }
+      }
+    },
+    "helmet": {
+      "templates": ["props", "item", "garment"],
+      "attributes": {
+        "coverage": {
+          "dtype": "String",
+          "group": "",
+          "label": "Coverage",
+          "value": "skull"
+        },
+        "fixed": {
           "dtype": "Boolean",
-          "label": "Admin"
+          "group": "helmet",
+          "label": "Fixed",
+          "value": false
+        },
+        "closed": {
+          "dtype": "Boolean",
+          "group": "helmet",
+          "label": "Closed",
+          "value": false
+        }
+      }
+    },
+    "clothing": {
+      "templates": ["props", "item", "garment"],
+      "attributes": {
+        "coverage": {
+          "dtype": "String",
+          "group": "",
+          "label": "Coverage",
+          "value": "chest,gut"
+        }
+      }
+    },
+    "gem": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "semi-precious"
+        },
+        "quality": {
+          "dtype": "String",
+          "group": "",
+          "label": "Quality",
+          "value": "B"
+        }
+      }
+    },
+    "trade_good": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          }
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "cloth"
+        },
+        "material": {
+          "dtype": "String",
+          "group": "",
+          "label": "Material",
+          "value": "wool"
+        }
+      }
+    },
+    "food": {
+      "templates": ["props", "item"],
+      "macro": "game.brigandine.Macro.eatFood(itemId,options)",
+      "groups": {
+        "spoilable": {
+          "dtype": "String",
+          "label": "Spoilable"
         }
       },
       "attributes": {
         "admin": {
-          "identified": {
+          "spoilable": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Identified",
+            "label": "Spoilable",
             "value": true
-          },
-          "magic": {
+          }
+        },
+        "spoilable": {
+          "spoiled": {
+            "dtype": "Boolean",
+            "group": "spoilable",
+            "label": "Spoiled",
+            "value": false
+          }
+        }
+      }
+    },
+    "jewelry": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "admin": {
+          "wearable": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Magic",
+            "label": "Wearable",
+            "value": true
+          }
+        }
+      }
+    },
+    "shield": {
+      "templates": ["props", "item", "garment"],
+      "held_height": "mid",
+      "attributes": {
+        "shape": {
+          "dtype": "String",
+          "group": "",
+          "label": "Shape",
+          "value": "round"
+        }
+      }
+    },
+    "melee_weapon": {
+      "templates": ["props", "item", "weapon", "melee_weapon", "magic_dmg"]
+    },
+    "missile_weapon": {
+      "templates": ["props", "item", "weapon", "missile_weapon"]
+    },
+    "bow": {
+      "templates": ["props", "item", "weapon", "missile_weapon"],
+      "attributes": {
+        "req_str": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Strength Required",
+          "value": 3
+        },
+        "dmg_bonus": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Damage Bonus",
+          "value": 0
+        }
+      }
+    },
+    "missile": {
+      "templates": ["props", "item", "magic_dmg", "container"],
+      "attributes": {
+        "admin": {
+          "wearable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Wearable",
+            "value": true
+          }
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "arrow"
+        },
+        "dmg": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage",
+          "value": "1d6"
+        },
+        "dmg_type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Type",
+          "value": "Pierce"
+        },
+        "cutting": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Cutting Power",
+          "value": 0
+        },
+        "penetration": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Penetration",
+          "value": 0
+        },
+        "impact": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impact",
+          "value": 0
+        }
+      }
+    },
+    "currency": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
             "value": false
           },
           "treasure": {
             "dtype": "Boolean",
             "group": "admin",
             "label": "Treasure",
-            "value": false
-          },
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": false
-          },
-          "wearable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Wearable",
-            "value": false
-          },
-          "consumable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Consumable",
-            "value": false
-          },
-          "merchant_type": {
-            "dtype": "String", // TODO select merchant type
-            "group": "admin",
-            "label": "Merchant Type",
-            "value": "general"
-          }
-        }
-      }
-    },
-    "container": {
-      "groups": {
-        "container": {
-          "dtype": "Number",
-          "label": "Container"
-        }
-      },
-      "attributes": {
-        "container": {
-          "base_weight": {
-            "dtype": "Number",
-            "group": "container",
-            "label": "Base Weight",
-            "value": 1
-          },
-          "qty_limit": {
-            "dtype": "Number",
-            "group": "container",
-            "label": "Quantity Limit",
-            "value": 20
-          }
-        }
-      }
-    },
-    "weapon": {
-      "attributes": {
-        "special_props": {
-          "dtype": "String",
-          "group": "",
-          "label": "Special Properties",
-          "value": ""
-        }
-      }
-    },
-    "natural_weapon": {
-      "attributes": {
-        "dmg": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage",
-          "value": "d6"
-        }
-      }
-    },
-    "melee_weapon": { // TODO hit locations field for monsters, like this: body(99/AC18), eye(1/AC10)
-      "vs_armor_mods": {},
-      "atk_mode": "",
-      "atk_height": "mid",
-      "atk_style": "stable",
-      "atk_init": "immediate",
-      "attributes": {
-        "admin": {
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": true
-          },
-          "silver": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Silver",
-            "value": false
-          },
-        },
-        "atk_modes": {
-          "dtype": "String",
-          "group": "",
-          "label": "Attack Modes",
-          "value": "swi(S)"
-        },
-        "atk_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "To-Hit Mod.",
-          "value": 0
-        },
-        "dmg": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage",
-          "value": "d6"
-        },
-        "category": {
-          "dtype": "String",
-          "group": "",
-          "label": "Category", // TODO select weapon category
-          "value": "axe"
-        },
-        "tier": {
-          "dtype": "String",
-          "group": "",
-          "label": "Tier",
-          "value": "martial" // TODO select weap tier
-        },
-        "cut": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Cutting Power",
-          "value": 1
-        },
-        "pen": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Penetration",
-          "value": 4
-        },
-        "impact": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Impact",
-          "value": 4
-        },
-        "speed": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Speed",
-          "value": 4
-        },
-        "parry": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Parry",
-          "value": 3
-        },
-        "reach": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Reach",
-          "value": 1
-        },
-        "size": {
-          "dtype": "String", // TODO select size
-          "group": "",
-          "label": "Size",
-          "value": "M"
-        } // TODO for max impales, blunt = 0, axes  = 1 -- impale dmg = % chance weapon gets stuck?
-      }
-    },
-    "missile_weapon": {
-      "ammo_id": "",
-      "reload": 0,
-      "attributes": {
-        "admin": {
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": true
-          }
-        },
-        "atk_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "To-Hit Mod.",
-          "value": 0
-        },
-        "category": {
-          "dtype": "String",
-          "group": "",
-          "label": "Category", // TODO select category
-          "value": "crossbow"
-        },
-        "tier": {
-          "dtype": "String",
-          "group": "",
-          "label": "Tier",
-          "value": "simple" // TODO select tier
-        },
-        "ammo_type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Ammo Type",
-          "value": "quarrel"  // TODO select ammo type
-        },
-        "dmg_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Damage Mod.",
-          "value": 0
-        },
-        "rof": {
-          "dtype": "String",
-          "group": "",
-          "label": "Rate of Fire",
-          "value": "1"
-        },
-        "range": {
-          "dtype": "String",
-          "group": "",
-          "label": "Range",
-          "value": "100'"
-        },
-        "range_inc": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Range Increment",
-          "value": 2
-        },
-        "impact": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Impact",
-          "value": 2
-        },
-        "hands_req": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Hands Required",
-          "value": 2
-        },
-        "mounted_use": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Mounted Use",
-          "value": false
-        }
-      }
-    },
-    "magic_dmg": {
-      "groups": {
-        "magic_dmg": {
-          "dtype": "String",
-          "label": "Magic Damage"
-        }
-      },
-      "attributes": {
-        "magic_dmg": {
-          "dmg_type": {
-            "dtype": "String",
-            "group": "magic_dmg",
-            "label": "Damage Type",  // TODO select magic dmg type
-            "value": ""
-          },
-          "dmg": {
-            "dtype": "String",
-            "group": "magic_dmg",
-            "label": "Damage",
-            "value": ""
-          }
-        }
-      }
-    },
-    "magic_mods": {
-      "groups": {
-        "magic_mods": {
-          "dtype": "Number",
-          "label": "Magic Modifiers"
-        }
-      },
-      "attributes": {
-        "magic_mods": {
-          "ac_mod": {
-            "dtype": "Number",
-            "group": "magic_mods",
-            "label": "Armor Class Mod.",
-            "value": 0
-          },
-          "sv_mod": {
-            "dtype": "Number",
-            "group": "magic_mods",
-            "label": "Save Mod.",
-            "value": 0
-          }
-        }
-      }
-    },
-    "garment": {
-      "coverage": [],
-      "attributes": {
-        "admin": {
-          "wearable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Wearable",
             "value": true
           }
         },
         "material": {
           "dtype": "String",
           "group": "",
-          "label": "Material", // TODO select material
-          "value": "leather"
-        },
-        "size": {
-          "dtype": "String",
-          "group": "",
-          "label": "Size",  // TODO select size
-          "value": "M"
+          "label": "Material",
+          "value": "silver"
         }
       }
     },
     "spell": {
+      "templates": ["props"],
       "prepared": false,
-      "macro": "game.lostlands.Macro.castSpell(itemId,options)",
+      "macro": "game.brigandine.Macro.castSpell(itemId,options)",
       "attributes": {
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "magic"
+        },
         "lvl": {
           "dtype": "Number",
           "group": "",
@@ -984,484 +2018,229 @@
           "dtype": "String",
           "group": "",
           "label": "Range",
-          "value": "60'"
+          "value": ""
         },
         "duration": {
           "dtype": "String",
           "group": "",
           "label": "Duration",
-          "value": "1 turn"
+          "value": ""
         },
         "area": {
           "dtype": "String",
           "group": "",
           "label": "Area",
-          "value": "30' radius"
+          "value": ""
         },
         "school": {
           "dtype": "String",
           "group": "",
-          "label": "School",  // TODO select school
-          "value": "necromancy"
-        },
-        "complexity": {
-          "dtype": "String",
-          "group": "",
-          "label": "Complexity",
-          "value": "1"
+          "label": "School",
+          "value": ""
         },
         "components": {
           "dtype": "String",
           "group": "",
           "label": "Components",
           "value": "V,S"
+        },
+        "casting_time": {
+          "dtype": "String",
+          "group": "",
+          "label": "Casting Time",
+          "value": ""
+        },
+        "save_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Save Modifier",
+          "value": 0
         }
       }
-    }
-  },
-  "item": {
-    "templates": ["props","item"]
-  },
-  "potion": {
-    "templates": ["props","item","potion"],
-    "macro": "game.lostlands.Macro.drinkPotion(itemId,options)",
-    "attributes": {
-      "admin": {
-        "identified": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Identified",
-          "value": false
+    },
+    "feature": {
+      "templates": ["props"],
+      "attributes": {
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": ""
         },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Magic",
-          "value": true
-        },
-        "holdable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Holdable",
-          "value": true
-        },
-        "consumable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Consumable",
-          "value": true
+        "uses_per_day": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Uses Per Day",
+          "min": 0,
+          "value": 0,
+          "max": 0
         }
       }
-    }
-  },
-  "scroll": {
-    "templates": ["props","item","spell"],
-    "macro": "game.lostlands.Macro.readScroll(itemId,options)",
-    "blank": true,
-    "attributes": {
-      "type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Type",
-        "value": "Magic"  // TODO select caster type
-      },
-      "admin": {
-        "identified": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Identified",
-          "value": false
+    },
+    "natural_weapon": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
+      "attributes": {
+        "atk_modes": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Modes",
+          "value": "swi(S)"
         },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Magic",
-          "value": true
+        "cutting": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Cutting Power",
+          "value": 0
         },
-        "holdable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Holdable",
-          "value": true
+        "penetration": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Penetration",
+          "value": 0
         },
-        "consumable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Consumable",
-          "value": true
+        "impact": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impact",
+          "value": 0
+        },
+        "speed": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Speed",
+          "value": 0
+        },
+        "reach": {
+          "dtype": "String",
+          "group": "",
+          "label": "Reach",
+          "value": ""
         }
       }
-    }
-  },
-  "storage": {
-    "templates": ["props","item"],
-    "attributes": {
-      "linked_actor": {
-        "dtype": "String",
-        "group": "",
-        "label": "Linked Actor",
-        "value": "" // TODO select actor with storage type
+    },
+    "natural_missile_weapon": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
+      "attributes": {
+        "range": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Range",
+          "value": 60
+        },
+        "rof": {
+          "dtype": "String",
+          "group": "",
+          "label": "Rate of Fire",
+          "value": "1"
+        },
+        "cutting": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Cutting Power",
+          "value": 0
+        },
+        "penetration": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Penetration",
+          "value": 0
+        },
+        "impact": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impact",
+          "value": 0
+        }
       }
-    }
-  },
-  "charged_item": {
-    "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.useChargedItem(itemId,options)",
-    "attributes": {
-      "charges": {
-        "dtype": "Resource",
-        "group": "",
-        "label": "Charges",
+    },
+    "grappling_maneuver": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
+      "attributes": {
+        "req_status": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Status",
+          "value": ""
+        },
+        "inflicts_status": {
+          "dtype": "String",
+          "group": "",
+          "label": "Inflicts Status",
+          "value": ""
+        },
+        "check_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Check Modifier",
+          "value": 0
+        }
+      }
+    },
+    "hit_location": {
+      "templates": ["props"],
+      "hp": {
+        "value": 10,
         "min": 0,
-        "value": 20,
-        "max": 20
+        "max": 10
       },
-      "admin": {
-        "holdable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Holdable",
-          "value": true
+      "attributes": {
+        "admin": {
+          "use_loc_hp": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Use Location HP",
+            "value": false
+          },
+          "apply_main_hp": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Damage to Main HP",
+            "value": true
+          }
         },
-        "identified": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Identified",
-          "value": false
+        "name": {
+          "dtype": "String",
+          "group": "",
+          "label": "Name",
+          "value": ""
         },
-        "magic": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Magic",
-          "value": true
-        }
-      }
-    }
-  },
-  "armor": {
-    "templates": ["props","item","garment","magic_mods"],
-    "ac": {},
-    "attributes": {
-      "coverage": {
-        "dtype": "String",
-        "group": "",
-        "label": "Coverage",
-        "value": "chest,gut"
-      }
-    }
-  },
-  "helmet": {
-    "templates": ["props","item","garment","magic_mods"],
-    "ac": {},
-    "attributes": {
-      "coverage": {
-        "dtype": "String",
-        "group": "",
-        "label": "Coverage",
-        "value": "skull"
-      },
-      "fixed": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Fixed",
-        "value": false
-      },
-      "closed": {
-        "dtype": "Boolean",
-        "group": "",
-        "label": "Closed",
-        "value": false
-      }
-    }
-  },
-  "clothing": {
-    "templates": ["props","item","garment","magic_mods"],
-    "attributes": {
-      "coverage": {
-        "dtype": "String",
-        "group": "",
-        "label": "Coverage",
-        "value": "chest,gut"
-      }
-    }
-  },
-  "gem": {
-    "templates": ["props","item"],
-    "attributes": {
-      "type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Type",
-        "value": "semi-precious" // TODO select gem type
-      },
-      "quality": {
-        "dtype": "String",
-        "group": "",
-        "label": "Quality",  // TODO select quality rating
-        "value": "B"
-      },
-      "admin": {
-        "derive_attr_from_value": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Derive attributes from value",
-          "value": true
-        }
-      }
-    }
-  },
-  "trade_good": {
-    "templates": ["props","item"],
-    "attributes": {
-      "material": {
-        "dtype": "String",
-        "group": "",
-        "label": "Material",  // TODO select trade good
-        "value": "wool"
-      }
-    }
-  },
-  "food": {
-    "templates": ["props","item"],
-    "macro": "game.lostlands.Macro.eatFood(itemId,options)",
-    "attributes": {
-      "admin": {
-        "spoiled": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Spoiled",
-          "value": false
+        "ac": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Class",
+          "value": 10
         },
-        "consumable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Consumable",
-          "value": true
-        }
-      }
-    }
-  },
-  "drink": {
-    "templates": ["props","item","container"],
-    "macro": "game.lostlands.Macro.drinkWater(itemId,options)",
-    "attributes": {
-      "admin": {
-        "alcohol": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Alcoholic",
-          "value": false
+        "hide": {
+          "dtype": "String",
+          "group": "",
+          "label": "Hide",
+          "value": ""
         },
-        "consumable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Consumable",
-          "value": true
-        }
-      }
-    }
-  },
-  "jewelry": {
-    "templates": ["props","item","magic_mods"],
-    "attributes": {
-      "admin": {
-        "wearable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Wearable",
-          "value": true
-        }
-      }
-    }
-  },
-  "shield": {
-    "templates": ["props","item","garment","magic_mods"],
-    "shield_height": "mid",
-    "shield_style": "stable",
-    "ac": {},
-    "attributes": {
-      "shield_shape": {
-        "dtype": "String",
-        "group": "",
-        "label": "Shape",  // TODO select shield shape
-        "value": "round"
-      }
-    }
-  },
-  "melee_weapon": {
-    "templates": ["props","item","weapon","melee_weapon","magic_dmg"]
-  },
-  "throw_weapon": {
-    "templates": ["props","item","weapon","melee_weapon","magic_dmg"],
-    "attributes": {
-      "range": {
-        "dtype": "String",
-        "group": "",
-        "label": "Range",
-        "value": "50'"
-      },
-      "range_inc": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Range Increment",
-        "value": 1
-      }
-    }
-  },
-  "missile_weapon": {
-    "templates": ["props","item","weapon","missile_weapon"]
-  },
-  "bow": {
-    "templates": ["props","item","weapon","missile_weapon"],
-    "attributes": {
-      "category": {
-        "dtype": "String",
-        "group": "",
-        "label": "Category",
-        "value": "bow"
-      },
-      "req_str": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Strength Req.",
-        "value": 12
-      }
-    }
-  },
-  "ammo": {
-    "templates": ["props","item","magic_dmg","container"],
-    "vs_armor_mods": {},
-    "attributes": {
-      "admin": {
-        "wearable": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Wearable",
-          "value": true
+        "hit_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Hit Weight",
+          "value": 10
         },
-        "silver": {
-          "dtype": "Boolean",
-          "group": "admin",
-          "label": "Silver",
-          "value": false
+        "dmg_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impale Damage Multiplier",
+          "value": 1
+        },
+        "crit_chance_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Crit Chance Multiplier",
+          "value": 1
+        },
+        "max_impale": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Max. Impale",
+          "value": 2
         }
-      },
-      "type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Type",  // TODO select ammo type
-        "value": "arrow"
-      },
-      "dmg": {
-        "dtype": "String",
-        "group": "",
-        "label": "Damage",
-        "value": "d6"
-      },
-      "dmg_type": {
-        "dtype": "String",
-        "group": "",
-        "label": "Damage Type",  // TODO select dmg type
-        "value": "Slashing"
-      },
-      "cut": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Cutting Power",
-        "value": 1
-      },
-      "pen": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Armor Penetration",
-        "value": 5
-      },
-      "special_props": {
-        "dtype": "String",
-        "group": "",
-        "label": "Special Properties",
-        "value": ""
-      }
-    }
-  },
-  "currency": {
-    "templates": ["props","item"],
-    "attributes": {
-      "material": {
-        "dtype": "String",
-        "group": "",
-        "label": "Material",  // TODO select currency material
-        "value": "silver"
-      }
-    }
-  },
-  "spell_magic": {
-    "templates": ["props", "spell"]
-  },
-  "spell_cleric": {
-    "templates": ["props","spell"]
-  },
-  "spell_witch": {
-    "templates": ["props","spell"]
-  },
-  "feature": {
-    "templates": ["props"],
-    "attributes": {
-      "source": {
-        "dtype": "String",
-        "group": "",
-        "label": "Source",  // TODO select source type
-        "value": "class"
-      }
-    }
-  },
-  "skill": {
-    "templates": ["props"],
-    "attributes": {
-      "base_st": {
-        "dtype": "Number",
-        "group": "",
-        "label": "Base ST",
-        "value": 16
-      },
-      "mod_attr": {
-        "dtype": "String",
-        "group": "",
-        "label": "Modifying Ability",  // TODO select ability abbr
-        "value": "dex"
-      }
-    }
-  },
-  "natural_weapon": {
-    "templates": ["props","weapon","natural_weapon","magic_dmg"]
-  },
-  "natural_missile_weapon": {
-    "templates": ["props","weapon","natural_weapon","magic_dmg"],
-    "attributes": {
-      "range": {
-        "dtype": "String",
-        "group": "",
-        "label": "Range",
-        "value": "60'"
-      }
-    }
-  },
-  "grapple_maneuver": { // TODO flesh out system, make notes, pummel/kick?
-    "templates": ["props"],
-    "attributes": {
-      "req_atk_status": {
-        "dtype": "String",
-        "group": "",
-        "label": "Attacker Status",  // TODO select status
-        "value": "grappled"
-      },
-      "req_def_status": {
-        "dtype": "String",
-        "group": "",
-        "label": "Defender Status",
-        "value": "grappled"
       }
     }
   }
-}
 }

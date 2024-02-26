@@ -2,8 +2,11 @@
 <nav class="sheet-tabs tabs" data-group="primary">
     <a class="item" data-tab="description">Description</a>
     <a class="item" data-tab="attributes">Attributes</a>
+    {{#if showEffects}}
+    <a class="item" data-tab="effects">Effects</a>
+    {{/if}}
     {{#if isGM}}
-    <a class="item" data-tab="macro">Macro</a>  
+    <a class="item" data-tab="macro">Macro</a>
     {{/if}}
 </nav>
 
@@ -31,11 +34,11 @@
         {{/if}}
 
         {{!-- Render the attribute list partial. --}}
-        {{> "systems/lostlands/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
+        {{> "systems/brigandine/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
 
         {{!-- Render the grouped attributes partial and control. --}}
         <div class="groups">
-            {{> "systems/lostlands/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
+            {{> "systems/brigandine/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
 
             {{#if isGM}}
             <div class="group-controls flexrow">
@@ -46,6 +49,28 @@
         </div>
         {{/if}}
     </div>
+
+    {{!-- Effects Tab --}}
+    {{#if showEffects}}
+    <div class="tab" data-group="primary" data-tab="effects">
+        <ul class="effects-list">
+            {{#each effects as |effect|}}
+            <li class="effect flexrow" data-effect-id="{{effect.id}}">
+                <div class="effect-name">{{effect.data.label}}</div>
+                <div class="effect-controls">
+                    <a class="effect-control" data-action="edit"><i class="fas fa-edit"></i></a>
+                    <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
+                </div>
+            </li>
+            {{/each}}
+        </ul>
+        {{#if isGM}}
+        <div class="effect-controls flexrow">
+            <a class="button effect-control" data-action="create"><i class="fas fa-plus"></i> Add Effect</a>
+        </div>
+        {{/if}}
+    </div>
+    {{/if}}
 
     {{!-- Macro Tab --}}
     <div class="tab" data-group="primary" data-tab="macro">

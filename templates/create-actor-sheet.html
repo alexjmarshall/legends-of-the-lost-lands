@@ -1,0 +1,188 @@
+<form class="flexcol {{cssClass}}" autocomplete="off">
+  {{!-- Sheet Header --}}
+  <header class="sheet-header create-actor-sheet-header">
+    <div class="data-fields">
+      <input name="data.age" type="hidden" value="{{age}}" />
+      <div class="grid-item data-fields-age">
+        <label>Age:</label>
+        <span class="data-fields-age">{{age}}</span>
+      </div>
+      <input name="data.height" type="hidden" value="{{height}}" />
+      <div class="grid-item">
+        <label>Height:</label>
+        <span class="data-fields-height">{{heightFeetInches}}</span>
+      </div>
+      <input name="data.weight" type="hidden" value="{{weight}}" />
+      <div class="grid-item"><label>Weight:</label> <span class="data-fields-weight">{{weight}}</span> lb</div>
+      <input name="data.size" type="hidden" value="{{size}}" />
+      <div class="grid-item"><label>Size:</label> <span class="data-fields-size">{{size}}</span></div>
+      <input name="sp" type="hidden" value="{{sp}}" />
+      <div class="grid-item"><label>Wealth:</label> <span class="data-fields-sp">{{sp}}</span> {{spAbbr}}</div>
+      <input name="data.hp.value" type="hidden" value="{{hp}}" />
+      <input name="data.hp.max" type="hidden" value="{{hp}}" />
+      <div class="grid-item"><label>HP:</label> <span class="data-fields-hp">{{hp}}</span></div>
+    </div>
+  </header>
+
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs tabs" data-group="primary">
+    <a class="item" data-tab="gender-race">Gender & Race</a>
+    <a class="item" data-tab="abilities">Abilities</a>
+    <a class="item" data-tab="class">Class</a>
+    <a class="item" data-tab="alignment">Alignment</a>
+    <a class="item" data-tab="origin">Origin</a>
+    <a class="item" data-tab="appearance">Appearance</a>
+  </nav>
+
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
+    {{!-- Gender & Race Tab --}}
+    <div class="tab gender-race" data-group="primary" data-tab="gender-race">
+      <label class="gender-label" for="chargen-gender-select">Gender</label>
+      <div class="gender-container">
+        <select class="list-box select-gender" id="chargen-gender-select" name="data.gender" size="2">
+          <option selected value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+        <div class="gender-description">
+          This is an aesthetic choice and does not affect your character's abilities.
+        </div>
+      </div>
+      <hr />
+      <label class="select-label" for="chargen-race-select">Race</label>
+      <div class="race-container">
+        <select class="list-box select-race" id="chargen-race-select" name="data.race" size="8">
+          <option selected value="Human">Human</option>
+          <option value="Dwarf">Dwarf</option>
+          <option value="Elf">Elf</option>
+          <option value="HalfElf">Half-Elf</option>
+          <option value="HalfOgre">Half-Ogre</option>
+          <option value="HalfOrc">Half-Orc</option>
+          <option value="Halfling">Halfling</option>
+          <option value="Pixie">Pixie</option>
+        </select>
+        <div class="race-description">
+          <div class="race-description-desc">{{race.raceDescription}}</div>
+          <ul class="race-description-list">
+            {{{race.listItems}}}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Abilities Tab --}}
+    <div class="tab abilities" data-group="primary" data-tab="abilities">
+      <div class="abilities-container">
+        <label class="abilities-label">Select a set of ability scores</label>
+        <div class="ability-heading">{{{ abilitiesHeading }}}</div>
+        <select
+          class="list-box select-abilities"
+          id="chargen-abilities-select"
+          name="data.race"
+          size="{{abilities.numAbilitySets}}"
+        >
+          {{{abilityOptions}}}
+        </select>
+        <input name="data.attributes.ability_scores.str.value" type="hidden" value="{{abilities.str}}" />
+        <input name="data.attributes.ability_scores.int.value" type="hidden" value="{{abilities.int}}" />
+        <input name="data.attributes.ability_scores.wis.value" type="hidden" value="{{abilities.wis}}" />
+        <input name="data.attributes.ability_scores.dex.value" type="hidden" value="{{abilities.dex}}" />
+        <input name="data.attributes.ability_scores.con.value" type="hidden" value="{{abilities.con}}" />
+        <input name="data.attributes.ability_scores.cha.value" type="hidden" value="{{abilities.cha}}" />
+      </div>
+    </div>
+
+    {{!-- Class Tab --}}
+    <div class="tab class" data-group="primary" data-tab="class">
+      <div class="class-container">
+        <select class="list-box select-class" id="chargen-class-select" name="data.class" size="{{classOptions.size}}">
+          {{{classOptions.options}}}
+        </select>
+        <div class="class-description">
+          <p class="class-description-desc">{{classDescription.description}}</p>
+          <div class="class-description-stats">{{{classDescription.stats}}}</div>
+          <p>
+            <span class="class-specialized-skills">{{{classDescription.specializedSkillsDesc}}}</span>
+          </p>
+          <p>
+            <span class="class-proficient-skills">{{{classDescription.proficientSkillsDesc}}}</span>
+          </p>
+          <ul class="class-description-list">
+            {{{classDescription.featureListItems}}}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Alignment Tab --}}
+    <div class="tab alignment" data-group="primary" data-tab="alignment">
+      <div class="alignment-container">
+        <select
+          class="list-box select-alignment"
+          id="chargen-alignment-select"
+          name="data.alignment"
+          size="{{alignment.size}}"
+        >
+          {{{alignment.options}}}
+        </select>
+        <div class="alignment-description">
+          <p class="alignment-description-desc">{{alignmentDescription}}</p>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Origin Tab --}}
+    <div class="tab origin" data-group="primary" data-tab="origin">
+      <div class="origin-container">
+        <select class="list-box select-origin" id="chargen-origin-select" name="data.origin" size="{{origin.size}}">
+          {{{origin.originOptions}}}
+        </select>
+        <div class="origin-description">
+          <p class="origin-description-desc">{{origin.description.originDescription}}</p>
+          <p>
+            <label>Starting HP modifier:</label><span class="origin-hp-bonus">{{origin.description.hpBonusDesc}}</span>
+          </p>
+          <p>
+            <label>Starting wealth:</label><span class="origin-starting-sp">{{origin.description.startingSpDesc}}</span>
+          </p>
+          <p>
+            <label>Proficient skills:</label
+            ><span class="origin-description-list">{{ origin.description.listItems}}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Name & Portrait Tab --}}
+    <div class="tab appearance" data-group="primary" data-tab="appearance">
+      <div class="name-voice-container">
+        <div class="name-container">
+          <label class="name-label" for="chargen-name-input">Name</label>
+          <input
+            class="name-input"
+            name="name"
+            id="chargen-name-input"
+            type="text"
+            value="{{data.name}}"
+            placeholder="Name"
+          />
+        </div>
+        <div class="voice-container">
+          <label class="voice-label" for="chargen-voice-select">Voice</label>
+          <select id="chargen-voice-select" name="data.voice" class="voice-select">
+            {{{voiceOptions}}}
+          </select>
+          <a class="voice-preview" title="Preview Voice"><i class="fas fa-volume-up"></i></a>
+        </div>
+      </div>
+      <hr />
+      <div class="portrait-container">
+        <label class="portrait-label" for="chargen-portrait">Portrait</label>
+        <div class="portrait-img-container">
+          <img class="profile-img" id="chargen-portrait" src="{{data.img}}" title="{{data.name}}" />
+        </div>
+        <div class="portrait-img-options">{{{portraitImgs}}}</div>
+      </div>
+    </div>
+  </section>
+</form>
