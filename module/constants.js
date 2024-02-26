@@ -1,732 +1,215 @@
-export const ASSETS_PATH = 'systems/lostlands/assets';
-export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
+export const ASSETS_PATH = 'systems/brigandine/assets';
+export const ATTRIBUTE_TYPES = ['String', 'Number', 'Boolean', 'Formula', 'Resource'];
 export const SECONDS_IN_DAY = 86400;
 export const SECONDS_IN_HOUR = 3600;
 export const MIN_BLEED_DMG = 6; // TODO need? min knockdown dmg?
-export const BASE_IMPALE_CHANCE = 30;  // TODO need?
-export const SPELL_TYPES = {
-  SPELL_CLERIC: "spell_cleric",
-  SPELL_MAGIC: "spell_magic",
-  SPELL_WITCH: "spell_witch"
-};
-export const MAX_SPELL_LEVELS = {
-  [SPELL_TYPES.SPELL_CLERIC]: 5,
-  [SPELL_TYPES.SPELL_MAGIC]: 9,
-  [SPELL_TYPES.SPELL_WITCH]: 6
-};
+export const BASE_IMPALE_CHANCE = 30; // TODO need?
 export const ATTITUDES = {
-  HOSTILE: "hostile",
-  DISMISSIVE: "dismissive",
-  UNCERTAIN: "uncertain",
-  ACCEPTING: "accepting",
-  HELPFUL: "helpful"
+  HOSTILE: 'hostile',
+  DISMISSIVE: 'dismissive',
+  UNCERTAIN: 'uncertain',
+  ACCEPTING: 'accepting',
+  HELPFUL: 'helpful',
+};
+export const STORAGE_MATERIALS = {
+  WOOD: 'wood',
+  LEATHER: 'leather',
+  BRASS: 'brass',
+  IVORY: 'ivory',
+  JADE: 'jade',
+};
+export const SCROLL_MATERIALS = {
+  PAPYRUS: 'papyrus',
+  LINEN: 'linen paper',
+  PARCHMENT: 'parchment',
+  VELLUM: 'vellum',
 };
 export const ATTITUDE_SELL_ADJ = {
   [ATTITUDES.HOSTILE]: 1.5,
   [ATTITUDES.DISMISSIVE]: 1.15,
   [ATTITUDES.UNCERTAIN]: 1,
   [ATTITUDES.ACCEPTING]: 0.95,
-  [ATTITUDES.HELPFUL]: 0.85
+  [ATTITUDES.HELPFUL]: 0.85,
 };
 export const ATTITUDE_BUY_ADJ = {
   [ATTITUDES.HOSTILE]: 0.5,
   [ATTITUDES.DISMISSIVE]: 0.85,
   [ATTITUDES.UNCERTAIN]: 1,
   [ATTITUDES.ACCEPTING]: 1.05,
-  [ATTITUDES.HELPFUL]: 1.15
+  [ATTITUDES.HELPFUL]: 1.15,
 };
-export const DMG_TYPES = [
-  "blunt",        // B
-  "piercing",     // P
-  "slashing",     // S
-  "rending",      // R
-];
-export const MAGIC_DMG_TYPES = [
-  "fire",         // F
-  "cold",         // C
-  "electricity",  // E
-  "acid",         // A
-  "magic",        // M
-];
+
 export const SHIELD_TYPES = {
   round: {
     L: {
-      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut", // TODO make shield high guard -4 atk for being blind
-      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh",  // TODO make sure weight is always computed from M coverage
-      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin",
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut', // TODO make shield high guard -4 atk for being blind
+      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh', // TODO make sure weight is always computed from M coverage
+      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin',
     },
     M: {
-      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand",
-      mid:"armpit,upper arm,elbow,forearm,hand,chest,gut",
-      low:"elbow,forearm,hand,gut,groin,hip,thigh",
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,forearm,hand',
+      mid: 'armpit,upper arm,elbow,forearm,hand,chest,gut',
+      low: 'elbow,forearm,hand,gut,groin,hip,thigh',
     },
   },
   kite: {
     L: {
-      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin",
-      mid:"jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,thigh,knee",
-      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot",
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin',
+      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,thigh,knee',
+      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot',
     },
     M: {
-      high:"skull,eye,nose,jaw,neck,shoulder,forearm,hand,chest",
-      mid:"shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin",
-      low:"elbow,forearm,hand,gut,groin,thigh",
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,forearm,hand,chest',
+      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin',
+      low: 'elbow,forearm,hand,gut,groin,thigh',
     },
   },
   tower: {
-    L: { // TODO can't be used on horseback
-      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip",
-      mid:"neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh,knee",
-      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot",
+    L: {
+      // TODO can't be used on horseback
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip',
+      mid: 'neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh,knee',
+      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot',
     },
     M: {
-      high:"skull,eye,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut",
-      mid:"shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip",
-      low:"elbow,forearm,hand,gut,groin,hip,thigh,knee",
-    }
-  }
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut',
+      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip',
+      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee',
+    },
+  },
 };
-export const GARMENT_MATERIAL_PROPS = {
+export const GARMENT_MATERIALS = {
   bone: {
-    weight:40,
-    clo:10,
-    value:180,
+    weight: 40,
+    clo: 10,
+    value: 180,
   },
   wood: {
-    weight:40,
-    clo:10,
-    value:120,
+    weight: 40,
+    clo: 10,
+    value: 120,
   },
   burlap: {
-    weight:8,
-    clo:5,
-    value:6,
+    weight: 8,
+    clo: 5,
+    value: 6,
   },
   linen: {
-    weight:4,
-    clo:8,
-    value:60,
+    weight: 4,
+    clo: 8,
+    value: 60,
   },
   wool: {
-    weight:8,
-    clo:16,
-    value:144,
+    weight: 8,
+    clo: 16,
+    value: 144,
   },
   silk: {
-    weight:2,
-    clo:11,
-    value:1080,
+    weight: 2,
+    clo: 11,
+    value: 1080,
   },
   fur: {
-    weight:20,
-    clo:32,
-    value:600,
+    weight: 20,
+    clo: 32,
+    value: 600,
   },
   leather: {
-    weight:16,
-    clo:10,
-    value:300,
-    metal:false,
-    bulky:false,
+    weight: 16,
+    clo: 10,
+    value: 300,
+    metal: false,
+    bulky: false,
   },
   padded: {
-    weight:16,
-    clo:18,
-    value:240,
-    metal:false,
-    bulky:false,
-  },
-  "cuir bouilli": {
-    weight:24,
-    clo:9,
-    value:360,
-    metal:false,
-    bulky:true,
-  },
-  brigandine: {
-    weight:80,
-    clo:16,
-    value:1200,
-    metal:true,
-    bulky:true,
-  },
-  scale: {
-    weight:88,
-    clo:13,
-    value:960,
-    metal:true,
-    bulky:false,
-  },
-  mail: {
-    weight:48,
-    clo:2,
-    value:1800,
-    metal:true,
-    bulky:false,
-  },
-  "elven mail": {
-    weight:24,
-    clo:1,
-    value: 18000,
-    metal:true,
-    bulky:false,
-  },
-  "plated mail": {
-    weight:60,
-    clo:4,
-    value:2400,
-    metal:true,
-    bulky:false,
-  },
-  lamellar: {
-    weight:88,
-    clo:11,
-    value:1440,
-    metal:true,
-    bulky:true,
-  },
-  splint: {
-    weight:72,
-    clo:14,
-    value:1920,
-    metal:true,
-    bulky:true,
-  },
-  "iron plate": {
-    weight:80,
-    clo:10,
-    value:2880,
-    metal:true,
-    bulky:true,
-  },
-  "steel plate": {
-    weight:72,
-    clo:8,
-    value:7200,
-    metal:true,
-    bulky:true,
-  },
-};
-export const ARMOR_VS_DMG_TYPE = {
-  none: {
-    base_AC: 0,
-    blunt: {
-      ac:1,
-      dr:0,
-    },
-    piercing: {
-      ac:0,
-      dr:0,
-    },
-    slashing: {
-      ac:-1,
-      dr:0,
-    },
-    rending: {
-      ac:0,
-      dr:0,
-    },
-  },
-  fur: {
-    base_AC: 1,
-    blunt: {
-      ac:0,
-      dr:1,
-    },
-    piercing: {
-      ac:0,
-      dr:1,
-    },
-    slashing: {
-      ac:0,
-      dr:0,
-    },
-    rending: {
-      ac:-1,
-      dr:1,
-    },
-  },
-  leather: {
-    base_AC: 2,
-    blunt: {
-      ac:0,
-      dr:0,
-    },
-    piercing: {
-      ac:0,
-      dr:1,
-    },
-    slashing: {
-      ac:-1,
-      dr:1,
-    },
-    rending: {
-      ac:-2,
-      dr:2,
-    },
-  },
-  padded: {
-    base_AC: 2,
-    blunt: {
-      ac:0,
-      dr:1,
-    },
-    piercing: {
-      ac:-1,
-      dr:1,
-    },
-    slashing: {
-      ac:-1,
-      dr:0,
-    },
-    rending: {
-      ac:-2,
-      dr:1,
-    },
-  },
-  "cuir bouilli": {
-    base_AC: 2,
-    blunt: {
-      ac:1,
-      dr:1,
-    },
-    piercing: {
-      ac:1,
-      dr:0,
-    },
-    slashing: {
-      ac:0,
-      dr:0,
-    },
-    rending: {
-      ac:-2,
-      dr:2,
-    },
-  },
-  wood: {
-    base_AC: 2,
-    blunt: {
-      ac:1,
-      dr:1,
-    },
-    piercing: {
-      ac:1,
-      dr:0,
-    },
-    slashing: {
-      ac:0,
-      dr:0,
-    },
-    rending: {
-      ac:-2,
-      dr:2,
-    },
-  },
-  bone: {
-    base_AC: 2,
-    blunt: {
-      ac:1,
-      dr:1,
-    },
-    piercing: {
-      ac:1,
-      dr:0,
-    },
-    slashing: {
-      ac:0,
-      dr:0,
-    },
-    rending: {
-      ac:-2,
-      dr:2,
-    },
-  },
-  scale: {
-    base_AC: 2,
-    blunt: {
-      ac:2,
-      dr:0,
-    },
-    piercing: {
-      ac:1,
-      dr:0,
-    },
-    slashing: {
-      ac:3,
-      dr:0,
-    },
-    rending: {
-      ac:-2,
-      dr:2,
-    },
-  },
-  brigandine: {
-    base_AC: 3,
-    blunt: {
-      ac:1,
-      dr:1,
-    },
-    piercing: {
-      ac:0,
-      dr:1,
-    },
-    slashing: {
-      ac:1,
-      dr:0,
-    },
-    rending: {
-      ac:-3,
-      dr:2,
-    },
-  },
-  mail: {
-    base_AC: 3,
-    blunt: {
-      ac:0,
-      dr:0,
-    },
-    piercing: {
-      ac:-1,
-      dr:1,
-    },
-    slashing: {
-      ac:2,
-      dr:1,
-    },
-    rending: {
-      ac:-3,
-      dr:3,
-    },
-  },
-  "elven mail": {
-    base_AC: 3,
-    blunt: {
-      ac:0,
-      dr:0,
-    },
-    piercing: {
-      ac:-1,
-      dr:1,
-    },
-    slashing: {
-      ac:2,
-      dr:1,
-    },
-    rending: {
-      ac:-3,
-      dr:3,
-    },
-  },
-  lamellar: {
-    base_AC: 3,
-    blunt: {
-      ac:0,
-      dr:1,
-    },
-    piercing: {
-      ac:2,
-      dr:1,
-    },
-    slashing: {
-      ac:1,
-      dr:1,
-    },
-    rending: {
-      ac:-3,
-      dr:3,
-    },
-  },
-  "plated mail": {
-    base_AC: 4,
-    blunt: {
-      ac:0,
-      dr:0,
-    },
-    piercing: {
-      ac:2,
-      dr:0,
-    },
-    slashing: {
-      ac:1,
-      dr:1,
-    },
-    rending: {
-      ac:-4,
-      dr:3,
-    },
-  },
-  splint: {
-    base_AC: 4,
-    blunt: {
-      ac:-1,
-      dr:1,
-    },
-    piercing: {
-      ac:1,
-      dr:0,
-    },
-    slashing: {
-      ac:1,
-      dr:1,
-    },
-    rending: {
-      ac:-4,
-      dr:2,
-    },
-  },
-  "iron plate": {
-    base_AC: 5,
-    blunt: {
-      ac: -1,
-      dr: 1,
-    },
-    piercing: {
-      ac: 2,
-      dr: 0,
-    },
-    slashing: {
-      ac: 1,
-      dr: 2,
-    },
-    rending: {
-      ac:-5,
-      dr:2,
-    },
-  },
-  "steel plate": {
-    base_AC: 6,
-    blunt: {
-      ac: -1,
-      dr: 2,
-    },
-    piercing: {
-      ac: 3,
-      dr: 0,
-    },
-    slashing: {
-      ac: 1,
-      dr: 2,
-    },
-    rending: {
-      ac:-6,
-      dr:2,
-    },
-  },
-}
-// TODO ask players whether all melee should use STR, and have finesse weaps
-// finesse weapons could be daggers and thrusting swords
-export const ATK_MODES = {
-  "swing(b)": {
-    ATK_ATTR: "str",
-    DMG_ATTR: "str",
-    DMG_TYPE: "blunt",
-    ATK_TYPE: "melee",
-    ATK_FORM: "swing",
-  },
-  "swing(s)": {
-    ATK_ATTR: "str",
-    DMG_ATTR: "str",
-    DMG_TYPE: "slashing",
-    ATK_TYPE: "melee",
-    ATK_FORM: "swing",
-  },
-  "swing(p)": {
-    ATK_ATTR: "str",
-    DMG_ATTR: "str",
-    DMG_TYPE: "piercing",
-    ATK_TYPE: "melee",
-    ATK_FORM: "swing",
-  },
-  "thrust(b)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "blunt",
-    ATK_TYPE: "melee",
-    ATK_FORM: "thrust",
-  },
-  "thrust(s)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "slashing",
-    ATK_TYPE: "melee",
-    ATK_FORM: "thrust",
-  },
-  "thrust(p)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "piercing",
-    ATK_TYPE: "melee",
-    ATK_FORM: "thrust",
-  },
-  "shoot(b)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: null,
-    DMG_TYPE: "blunt",
-    ATK_TYPE: "missile",
-    ATK_FORM: "shoot",
-  },
-  "shoot(s)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: null,
-    DMG_TYPE: "slashing",
-    ATK_TYPE: "missile",
-    ATK_FORM: "shoot",
-  },
-  "shoot(p)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: null,
-    DMG_TYPE: "piercing",
-    ATK_TYPE: "missile",
-    ATK_FORM: "shoot",
-  },
-  "throw(b)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "blunt",
-    ATK_TYPE: "missile",
-    ATK_FORM: "throw",
-  },
-  "throw(s)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "slashing",
-    ATK_TYPE: "missile",
-    ATK_FORM: "throw",
-  },
-  "throw(p)": {
-    ATK_ATTR: "dex",
-    DMG_ATTR: "str",
-    DMG_TYPE: "piercing",
-    ATK_TYPE: "missile",
-    ATK_FORM: "throw",
-  },
-};
-export const VOICE_MOODS = {
-  "amused": {
-    title: "amused",
-    icon: "https://img.icons8.com/external-wanicon-lineal-wanicon/50/000000/external-laughing-emoji-wanicon-lineal-wanicon.png",
-  },
-  "angry": {
-    title: "amused",
-    icon: "https://img.icons8.com/ios/50/000000/battle.png",
-  },
-  "bored": {
-    title: "bored",
-    icon: "https://img.icons8.com/ios/50/000000/bored.png",
-  },
-  "death": {
-    title: "death",
-    icon: "https://img.icons8.com/ios/50/000000/dying.png",
-  },
-  "dying": {
-    title: "wounded",
-    icon: "https://img.icons8.com/ios/50/000000/wound.png",
-  },
-  "hurt": {
-    title: "hurt",
-    icon: "https://img.icons8.com/ios/50/000000/action.png",
-  },
-  "kill": {
-    title: "kill",
-    icon: "https://img.icons8.com/ios/50/000000/murder.png",
-  },
-  "lead": {
-    title: "lead",
-    icon: "https://img.icons8.com/ios/50/000000/leadership.png",
-  },
-  "ok": {
-    title: "ok",
-    icon: "https://img.icons8.com/ios/50/000000/easy.png",
-  },
-  "party_death": {
-    title: "rip",
-    icon: "https://img.icons8.com/external-prettycons-lineal-prettycons/50/000000/external-rip-holidays-prettycons-lineal-prettycons.png",
-  },
-  "party_fail": {
-    title: "facepalm",
-    icon: "https://img.icons8.com/ios/50/000000/facepalm.png",
-  },
-  "retreat": {
-    title: "retreat",
-    icon: "https://img.icons8.com/ios/50/000000/running-rabbit.png",
-  },
-  "sleepy": {
-    title: "sleepy",
-    icon: "https://img.icons8.com/external-tulpahn-detailed-outline-tulpahn/50/000000/external-sleepy-heart-feeling-tulpahn-detailed-outline-tulpahn.png",
-  },
-  "toot": {
-    title: "toot",
-    icon: "https://img.icons8.com/ios-glyphs/50/000000/air-element--v1.png",
-  },
-  "what": {
-    title: "what",
-    icon: "https://img.icons8.com/ios/50/000000/question-mark--v1.png"
-  },
-};
-export const VOICE_SOUNDS = {};
-// populate voice sounds on startup
-(async function() {
-  const getFileArr = async partialPath => {
-    const response = await fetch(`${ASSETS_PATH}/sounds/voice${partialPath}/DirContents.txt/`);
-    const fileList = await response.text();
-    return fileList.replace(/DirContents.txt[\s\S]?/,'').split(/\n/).filter(i => i).map(i => i.trim());
-  }
-  const voiceTypeList = await getFileArr('');
-  for (const voiceType of voiceTypeList) {
-    VOICE_SOUNDS[voiceType] = {};
-    const voiceProfiles = await getFileArr(`/${voiceType}`);
-    for (const voiceProfile of voiceProfiles) {
-      VOICE_SOUNDS[voiceType][voiceProfile] = {};
-      const partialPath = `/${voiceType}/${voiceProfile}`;
-      const voiceFiles = await getFileArr(partialPath);
-      Object.keys(VOICE_MOODS).forEach(mood => {
-        const pathArr = voiceFiles.filter(f => new RegExp(`\^${mood}_\\d+.ogg`).test(f)).map(f => `${ASSETS_PATH}/sounds/voice${partialPath}/${f}`);
-        VOICE_SOUNDS[voiceType][voiceProfile][mood] = pathArr;
-      });
-    }
-  }
-  console.log('Completed loading voice sound file paths', VOICE_SOUNDS);
-})();
-export const CURRENCY_MATERIAL_VALUE_PER_POUND = {
-  "copper": 20,
-  "brass": 40, // weight 0.1 (10 per pound) for Brass Piece worth 4
-  "silver": 960, // weight 0.5 for Silver Mark ingot worth 480
-  "electrum": 8400, // weight 0.0154 (65 per pound) for Electrum Piece worth 96
-  "gold": 12000, // weight 0.5 for Gold Mark ingot worth 6000
-};
-export const TRADE_GOODS_VALUE_PER_POUND = {
-  // TODO add clothing types to GARMENT_MATERIAL_PROPS as well
-};
-export const COINS_OF_ACCOUNT = {
-  "cp": {
-    weight: 0.05, // 20 per pound
-    value: 1,
-    name: "Copper Piece",
-    abbr: "cp",
-  },
-  "sp": {
-    weight: 0.0125, // 80 per pound
-    value: 12,
-    name: "Silver Piece",
-    abbr: "sp",
-  },
-  "gp": {
-    weight: 0.02, // 50 per pound
+    weight: 16,
+    clo: 18,
     value: 240,
-    name: "Gold Piece",
-    abbr: "gp",
+    metal: false,
+    bulky: false,
+  },
+  'cuir bouilli': {
+    weight: 24,
+    clo: 9,
+    value: 360,
+    metal: false,
+    bulky: true,
+  },
+  brigandine: {
+    weight: 80,
+    clo: 16,
+    value: 1200,
+    metal: true,
+    bulky: true,
+  },
+  scale: {
+    weight: 88,
+    clo: 13,
+    value: 960,
+    metal: true,
+    bulky: false,
+  },
+  mail: {
+    weight: 48,
+    clo: 2,
+    value: 1800,
+    metal: true,
+    bulky: false,
+  },
+  'elven mail': {
+    weight: 24,
+    clo: 1,
+    value: 18000,
+    metal: true,
+    bulky: false,
+  },
+  'plated mail': {
+    weight: 60,
+    clo: 4,
+    value: 2400,
+    metal: true,
+    bulky: false,
+  },
+  lamellar: {
+    weight: 88,
+    clo: 11,
+    value: 1440,
+    metal: true,
+    bulky: true,
+  },
+  splint: {
+    weight: 72,
+    clo: 14,
+    value: 1920,
+    metal: true,
+    bulky: true,
+  },
+  'iron plate': {
+    weight: 80,
+    clo: 10,
+    value: 2880,
+    metal: true,
+    bulky: true,
+  },
+  'steel plate': {
+    weight: 72,
+    clo: 8,
+    value: 7200,
+    metal: true,
+    bulky: true,
   },
 };
+
 export const LIMB_GROUPS = {
-  "lower leg": ["foot","shin"],
-  "leg": ["foot","shin","knee","thigh"],
-  "forearm": ["hand","forearm"],
-  "arm": ["hand","forearm","elbow","upper arm"],
+  'lower leg': ['foot', 'shin'],
+  leg: ['foot', 'shin', 'knee', 'thigh'],
+  forearm: ['hand', 'forearm'],
+  arm: ['hand', 'forearm', 'elbow', 'upper arm'],
 };
-export const minorBleedDesc = ` and the wound bleeds heavily`;
-export const majorBleedDesc = ` and blood spurts from the wound!`;
-export const internalBleedDesc = area => ` and the ${area} bleeds internally`;
-export const compoundFractureDesc = ' and the broken bones poke through the skin';
+export const minorBleedDesc = ' and the wound bleeds heavily';
+export const majorBleedDesc = (area) => ` and blood spurts from the ${area}!`;
+export const internalBleedDesc = (area) => ` and the ${area} bleeds internally`;
+export const compoundFractureDesc = ' and the broken bones jut through the skin';
 export const weaponStuckDesc = ' and the weapon is stuck';
 export const knockdownDesc = ' and knocks them down';
 export const knockoutDesc = ' and knocks them out';
@@ -735,48 +218,67 @@ export const staggerDesc = ' and staggers them';
 export const knockWindDesc = ' and knocks the wind from them';
 export const bloodWellDesc = ' and blood wells around the weapon...';
 const gruesBluntHeadDesc = ' and shatters the skull spattering chunks of gore!';
-const gruesSlashHeadDesc = ' and cleaves the head in two spattering blood in an arc!';
-export const bleedDescs = [minorBleedDesc,majorBleedDesc,internalBleedDesc];
-export const knockDescs = [knockdownDesc,knockoutDesc,knockbackDesc,staggerDesc,knockWindDesc];
+const gruesSlashHeadDesc = ' and cleaves through the head spattering blood in an arc!';
+export const bleedDescs = [minorBleedDesc, majorBleedDesc, internalBleedDesc];
+export const knockDescs = [knockdownDesc, knockoutDesc, knockbackDesc, staggerDesc, knockWindDesc];
 const ranChoice = (choices) => {
   const ranInd = Math.floor(Math.random() * choices.length);
   return choices[ranInd];
-}
-export const ranAnnoyedMerchant = () => ranChoice([
-  'The merchant purses their lips.',
-  'The merchant rubs the bridge of their nose.',
-  'The merchant closes their eyes and sighs.',
-  'The merchant clucks their tongue.',
-  'The merchant looks upward.']);
-const ranToe = () => ranChoice(['big','long','middle','ring','little']);
-const ranOrifice = () => ranChoice(['nose','mouth','ears']);
-const ranFinger = () => ranChoice(['thumb','index finger','middle finger','ring finger','pinky finger']);
-const ranShinBone = () => ranChoice(['fibula','tibia']);
-const ranForearmBone = () => ranChoice(['ulnar bone','radial bone']);
-const ranArmMuscle = () => ranChoice(['triceps','biceps']);
-const ranThighMuscle = () => ranChoice(['quadriceps','quadriceps','hamstrings']);
-const ranChestBone = () => ranChoice(['a rib','the sternum']);
-const ranOrgan = () => ranChoice(['the liver','the spleen','a kidney','the bowels','the spine']);
-const ranChestOrgan = () => ranChoice(['a lung','the heart']);
-const ranGutBone = () => ranChoice(['a rib','the back']);
-const lowBrainBleed = (organ=null) => (Math.random() < 0.25) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
-const highBrainBleed = (organ=null) => (Math.random() < 0.75) ? ` and blood streams from the ${organ || ranOrifice()}` : '';
-const highMinBleed = () => (Math.random() < 0.75) ? minorBleedDesc : '';
-const lowMinBleed = () => (Math.random() < 0.25) ? minorBleedDesc : '';
-const highWeapStuck = () => (Math.random() < 0.75) ? weaponStuckDesc : '';
-const lowWeapStuck = () => (Math.random() < 0.25) ? weaponStuckDesc : '';
-const highMajBleed = () => (Math.random() < 0.75) ? majorBleedDesc : '';
-const lowMajBleed = () => (Math.random() < 0.25) ? majorBleedDesc : '';
-const highIntBleed = area => (Math.random() < 0.75) ? internalBleedDesc(area) : '';
-const lowIntBleed = area => (Math.random() < 0.25) ? internalBleedDesc(area) : '';
-const compFract = (chance, intBleed=false, area=null) => {
-  if (Math.random() < (1 - chance)) return '';
+};
+
+/* TODO
+0.5x STR mod on Thrusts
+-1 to-hit for pre-attack maneuevers
+order armor listed in inventory rows is order it is layered when worn
+weapon must be balanced to riposte after parry
+give some weapons a +1 parry bonus
+attack bonus on riposte??? a +2 might be balanced now considering chance of overcoming parry
+flex blades more durable but need to be half-sworded to avoid 1/2 damage on blunted thrust
+half-swording also eliminates bonus damage vs. Large
+saber/scimitar needs to do slightly more damage -- 1d9 or 2d4
+OR scimitars can have expanded reach range and never get stuck
+can list special weapon properties as a comma separated list on the weapon item
+*/
+export const ranAnnoyedMerchant = () =>
+  ranChoice([
+    'The merchant purses their lips.',
+    'The merchant rubs the bridge of their nose.',
+    'The merchant closes their eyes and sighs.',
+    'The merchant clucks their tongue.',
+    'The merchant looks upward.',
+  ]); // CONTINUE
+const ranToe = () => ranChoice(['big', 'long', 'middle', 'ring', 'little']);
+const ranOrifice = () => ranChoice(['nose', 'mouth', 'ears']);
+const ranFinger = () => ranChoice(['thumb', 'index finger', 'middle finger', 'ring finger', 'pinky finger']);
+const ranShinBone = () => ranChoice(['fibula', 'tibia']);
+const ranForearmBone = () => ranChoice(['ulnar bone', 'radial bone']);
+const ranArmMuscle = () => ranChoice(['triceps', 'biceps']);
+const ranThighMuscle = () => ranChoice(['quadriceps', 'quadriceps', 'hamstrings']);
+const ranChestBone = () => ranChoice(['a rib', 'the sternum']);
+const ranOrgan = () => ranChoice(['the liver', 'the spleen', 'a kidney', 'the bowels', 'the spine']);
+const ranChestOrgan = () => ranChoice(['a lung', 'the heart']);
+const ranGutBone = () => ranChoice(['a rib', 'the back']);
+const lowBrainBleed = (organ = null) =>
+  Math.random() < 0.25 ? ` and blood streams from the ${organ || ranOrifice()}` : '';
+const highBrainBleed = (organ = null) =>
+  Math.random() < 0.75 ? ` and blood streams from the ${organ || ranOrifice()}` : '';
+const highMinBleed = () => (Math.random() < 0.75 ? minorBleedDesc : '');
+const lowMinBleed = () => (Math.random() < 0.25 ? minorBleedDesc : '');
+const highWeapStuck = () => (Math.random() < 0.75 ? weaponStuckDesc : '');
+const lowWeapStuck = () => (Math.random() < 0.25 ? weaponStuckDesc : '');
+const highMajBleed = (area = 'wound') => (Math.random() < 0.75 ? majorBleedDesc(area) : '');
+const lowMajBleed = (area = 'wound') => (Math.random() < 0.25 ? majorBleedDesc(area) : '');
+const highIntBleed = (area) => (Math.random() < 0.75 ? internalBleedDesc(area) : '');
+const lowIntBleed = (area) => (Math.random() < 0.25 ? internalBleedDesc(area) : '');
+const compFract = (chance, intBleed = false, area = null) => {
+  if (Math.random() < 1 - chance) return '';
   intBleed = intBleed && Math.random() < 0.5;
   return compoundFractureDesc + (intBleed ? lowIntBleed(area) : lowMinBleed());
 };
-const highCompFract = (intBleed=false, area=null) => compFract(0.75, intBleed, area);
-const lowCompFract = (intBleed=false, area=null) => compFract(0.25, intBleed, area);
-export const HIT_LOC_WEIGHT_INDEXES = { // TODO make weights object instead of array in hit locations and remove this
+const highCompFract = (intBleed = false, area = null) => compFract(0.75, intBleed, area);
+const lowCompFract = (intBleed = false, area = null) => compFract(0.25, intBleed, area);
+export const HIT_LOC_WEIGHT_INDEXES = {
+  // TODO make weights object instead of array in hit locations and remove this
   SWING: 0,
   THRUST: 1,
   SWING_HIGH: 2,
@@ -788,17 +290,17 @@ export const HIT_LOC_WEIGHT_INDEXES = { // TODO make weights object instead of a
 };
 export const HIT_LOCATIONS = {
   foot: {
-    weights: [2,2,0,0,6,6,10,4],
+    weights: [2, 2, 0, 0, 6, 6, 8, 4],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 1,
     injury: {
       blunt: {
         light: {
-          text: ` and crushes the ${ranToe()} toe`,
+          text: ` and crushes the ${ranToe()} toe`, // types of injuries and stat affected: leg (MV), arm,
         },
         serious: {
-          text: ' and breaks the ankle',
+          text: ' and breaks the ankle', // heal interval, heal DC (Con check), effect (active Effect format)
           dmgEffect: lowCompFract(),
         },
         critical: {
@@ -811,9 +313,9 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and cuts a nerve',
+          text: ' and severs a nerve',
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -829,7 +331,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + highMinBleed(),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and severs the tendons on top of the foot',
           dmgEffect: highMinBleed(),
@@ -848,11 +350,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed() + lowMinBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   shin: {
-    weights: [6,4,0,0,12,8,20,10],
+    weights: [6, 4, 0, 0, 12, 8, 16, 8],
     crit_chance_multi: 2,
     bilateral: true,
     max_impale: 2,
@@ -874,7 +376,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highCompFract(true, 'shin'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and tears the calf muscle',
           dmgEffect: lowMinBleed(),
@@ -884,7 +386,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and cuts a nerve in the calf',
+          text: ' and severs a nerve in the calf',
           dmgEffect: lowWeapStuck() + highMinBleed(),
         },
         gruesome: {
@@ -892,13 +394,13 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('shin'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the calf muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the calf',
+          text: ' and severs a nerve in the calf',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -910,11 +412,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   knee: {
-    weights: [8,4,0,0,14,8,8,4],
+    weights: [8, 4, 0, 0, 14, 8, 8, 4],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 1,
@@ -928,14 +430,14 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and shatters the kneecap',
-          dmgEffect: lowCompFract(true,'knee'),
+          dmgEffect: lowCompFract(true, 'knee'),
         },
         gruesome: {
           text: ' and mangles the knee tearing the ligaments',
           // dmgEffect: highCompFract(true,'knee'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and chips the kneecap',
         },
@@ -952,13 +454,13 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('knee'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the knee',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and severs the tendon below the knee`,
+          text: ' and severs the tendon below the knee',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -966,7 +468,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         gruesome: {
-          text: ` and severs the leg at the knee!`,
+          text: ' and severs the leg at the knee!',
           removal: true,
           dmgEffect: highMajBleed() || minorBleedDesc,
         },
@@ -974,7 +476,7 @@ export const HIT_LOCATIONS = {
     },
   },
   thigh: {
-    weights: [10,10,4,4,14,18,12,10],
+    weights: [10, 10, 4, 4, 14, 18, 16, 10],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 3,
@@ -989,15 +491,15 @@ export const HIT_LOCATIONS = {
         critical: {
           text: ' and snaps the femur',
           // TODO injuries affect leg STR and max MV, arms DEX, torso CON, head/eyes INT, nose/neck CHA
-          dmgEffect: lowCompFract(true,'thigh'), // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
+          dmgEffect: lowCompFract(true, 'thigh'), // Light Injury -3 (heals at max max HP), Serious -6 (heals at max max HP)
           // Critical/Gruesome -6 (-3 heals at max max HP, but -3 permanent), healing a removed part requires prosthesis
         },
         gruesome: {
           text: ' and shatters the femur',
-          dmgEffect: highCompFract(true,'thigh'),
+          dmgEffect: highCompFract(true, 'thigh'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ` and tears the ${ranThighMuscle()}`,
           dmgEffect: lowMinBleed(),
@@ -1007,7 +509,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ` and cuts a nerve in the ${ranThighMuscle()}`,
+          text: ` and severs a nerve in the ${ranThighMuscle()}`,
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
@@ -1015,13 +517,13 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('thigh'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ` and gashes the ${ranThighMuscle()}`,
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ` and cuts a nerve in the ${ranThighMuscle()}`,
+          text: ` and severs a nerve in the ${ranThighMuscle()}`,
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1032,11 +534,11 @@ export const HIT_LOCATIONS = {
           text: ' and cleaves the thigh to the bone',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
-      }
+      },
     },
   },
   hip: {
-    weights: [6,4,2,0,10,6,4,8],
+    weights: [6, 4, 2, 0, 10, 6, 4, 8],
     bilateral: true,
     crit_chance_multi: 1,
     crit_dmg_multi: 2,
@@ -1051,20 +553,20 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and breaks the hip',
-          dmgEffect: lowCompFract(true,'hip'),
+          dmgEffect: lowCompFract(true, 'hip'),
         },
         gruesome: {
-          text: ' and shatters the hip',
-          dmgEffect: highCompFract(true,'hip'),
+          text: ' and shatters the hip', // TODO gruesome blunt - tear off rather than shatter
+          dmgEffect: highCompFract(true, 'hip'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and pierces the buttock',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the buttock',
+          text: ' and severs a nerve in the buttock',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1076,7 +578,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('hip'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the buttock',
           dmgEffect: highMinBleed(),
@@ -1098,7 +600,10 @@ export const HIT_LOCATIONS = {
     },
   },
   groin: {
-    weights: [2,8,0,3,3,12,3,4],
+    // TODO blunt hit save or be stunned by pain for male chars
+    // female chars treat groin shot as gut and don't display on sheet
+    // also move knockdown/bleed bonii here
+    weights: [2, 8, 0, 3, 3, 12, 2, 4],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 2,
@@ -1112,14 +617,14 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and fractures the pubic bone',
-          dmgEffect: lowCompFract(true,'groin'),
+          dmgEffect: lowCompFract(true, 'groin'),
         },
         gruesome: {
           text: ' and shatters the pelvis',
-          dmgEffect: highCompFract(true,'groin'),
+          dmgEffect: highCompFract(true, 'groin'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the genitals',
           dmgEffect: lowMinBleed(),
@@ -1137,7 +642,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('groin'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the genitals',
           dmgEffect: highMinBleed(),
@@ -1160,7 +665,7 @@ export const HIT_LOCATIONS = {
     },
   },
   gut: {
-    weights: [8,16,4,9,12,16,8,12],
+    weights: [8, 16, 4, 9, 12, 16, 6, 12],
     crit_chance_multi: 2,
     crit_dmg_multi: 2,
     max_impale: 3,
@@ -1179,39 +684,39 @@ export const HIT_LOCATIONS = {
           dmgEffect: highIntBleed('gut'),
         },
         gruesome: {
-          text: ' and breaks the back severing the spine',// TODO paralysis desc
+          text: ' and breaks the back severing the spine', // TODO paralysis desc
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and gouges the belly',
+          text: ' and gouges the gut',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and penetrates the belly and gouges the bowels`,
+          text: ' and penetrates the gut and gouges the bowels',
           dmgEffect: lowMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and penetrates the belly and pierces ${ranOrgan()}`,
+          text: ` and penetrates the gut and pierces ${ranOrgan()}`,
           dmgEffect: lowWeapStuck() + highIntBleed('gut'),
         },
         gruesome: {
-          text: ` and transfixes them from the belly through ${ranOrgan()} and out the back`,
+          text: ` and pierces them from the gut through ${ranOrgan()} and out the back`,
           fatal: true,
           dmgEffect: highWeapStuck() + highIntBleed('gut'),
         },
       },
-      slashing: {
+      slash: {
         light: {
-          text: ' and gashes the belly',
+          text: ' and gashes the gut',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and tears through the belly gashing the bowels',
+          text: ' and tears through the gut gashing the bowels',
           dmgEffect: highMinBleed() || lowIntBleed('gut'),
         },
         critical: {
-          text: ` and cleaves into the belly and eviscerates ${ranOrgan()}`,
+          text: ` and cleaves into the gut and eviscerates ${ranOrgan()}`,
           fatal: true,
           dmgEffect: lowIntBleed('gut') || highMinBleed(),
         },
@@ -1225,7 +730,7 @@ export const HIT_LOCATIONS = {
     },
   },
   chest: {
-    weights: [4,12,6,16,2,5,5,8],
+    weights: [4, 12, 6, 16, 2, 5, 5, 8],
     crit_chance_multi: 1,
     crit_dmg_multi: 3,
     max_impale: 3,
@@ -1240,15 +745,15 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and snaps the collarbone',
-          dmgEffect: lowCompFract(true,'chest'),
+          dmgEffect: lowCompFract(true, 'chest'),
         },
         gruesome: {
-          text: ` and caves the sternum into the heart!`,
+          text: ' and caves the sternum into the heart!',
           fatal: true,
           dmgEffect: highIntBleed('chest'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ` and chips ${ranChestBone()}`,
         },
@@ -1262,12 +767,12 @@ export const HIT_LOCATIONS = {
           fatal: true,
         },
         gruesome: {
-          text: ` and transfixes them from the chest through ${ranChestOrgan()} and out the back`,
+          text: ` and pierces them from the chest through ${ranChestOrgan()} and out the back`,
           fatal: true,
           dmgEffect: highWeapStuck() + highIntBleed('chest'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the chest muscle',
           dmgEffect: highMinBleed(),
@@ -1289,7 +794,7 @@ export const HIT_LOCATIONS = {
     },
   },
   hand: {
-    weights: [6,4,6,4,4,2,6,4],
+    weights: [6, 4, 6, 4, 4, 2, 6, 4],
     bilateral: true,
     crit_chance_multi: 1,
     max_impale: 1,
@@ -1304,16 +809,16 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and shatters the wrist',
-          dmgEffect: lowCompFract(true,'wrist'),
+          dmgEffect: lowCompFract(true, 'wrist'),
         },
         gruesome: {
           text: ' and crushes the hand into red pulp',
           dmgEffect: highMinBleed(),
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and cuts a nerve',
+          text: ' and severs a nerve',
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -1329,7 +834,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMinBleed(),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and severs the tendons on the back of the hand',
           dmgEffect: highMinBleed(),
@@ -1347,11 +852,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   forearm: {
-    weights: [8,4,8,4,6,2,6,4],
+    weights: [8, 4, 8, 4, 6, 2, 8, 6],
     bilateral: true,
     max_impale: 1,
     injury: {
@@ -1369,16 +874,16 @@ export const HIT_LOCATIONS = {
         },
         gruesome: {
           text: ' and shatters the forearm',
-          dmgEffect: highCompFract(true,'forearm'),
+          dmgEffect: highCompFract(true, 'forearm'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and tears the forearm muscle',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the forearm muscle',
+          text: ' and severs a nerve in the forearm muscle',
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1390,13 +895,13 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('forearm'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the forearm muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the forearm muscle',
+          text: ' and severs a nerve in the forearm muscle',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1408,11 +913,11 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMajBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   elbow: {
-    weights: [8,4,10,6,2,2,4,2],
+    weights: [8, 4, 10, 6, 2, 2, 4, 2],
     crit_chance_multi: 2,
     max_impale: 1,
     bilateral: true,
@@ -1427,16 +932,16 @@ export const HIT_LOCATIONS = {
         },
         critical: {
           text: ' and shatters the elbow',
-          dmgEffect: lowCompFract(true,'elbow'),
+          dmgEffect: lowCompFract(true, 'elbow'),
         },
         gruesome: {
           text: ' and mangles the elbow tearing the ligaments',
           // dmgEffect: highCompFract(true,'elbow'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ` and chips the ulnar bone`,
+          text: ' and chips the ulnar bone',
         },
         serious: {
           text: ' and tears the biceps tendon',
@@ -1451,57 +956,58 @@ export const HIT_LOCATIONS = {
           dmgEffect: highWeapStuck() + lowIntBleed('elbow'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the elbow',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and severs the biceps tendon`,
+          text: ' and splits the elbow tearing a ligament',
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and splits the elbow tearing a ligament',
-          dmgEffect: highMinBleed(),
+          text: ' and severs the arm at the elbow!',
+          removal: true,
+          dmgEffect: highMajBleed(),
         },
         gruesome: {
-          text: ` and severs the arm at the elbow!`,
+          text: ' and cleaves through the arm at the elbow and into the gut!',
           removal: true,
           dmgEffect: highMajBleed(),
         },
       },
     },
   },
-  "upper arm": {
-    weights: [6,4,10,8,2,2,6,6],
+  'upper arm': {
+    weights: [6, 4, 10, 8, 2, 2, 8, 6],
     crit_chance_multi: 1,
     max_impale: 1,
     bilateral: true,
     injury: {
       blunt: {
         light: {
-          text: ' and cracks the humerus',
+          text: ' and tears muscle from bone',
         },
         serious: {
-          text: ' and snaps the humerus',
+          text: ' and snaps the bone',
           dmgEffect: lowCompFract(),
         },
         critical: {
-          text: ' and snaps the humerus',
-          dmgEffect: lowCompFract(true,'upper arm'),
+          text: ' and snaps the bone',
+          dmgEffect: lowCompFract(true, 'upper arm'),
         },
         gruesome: {
-          text: ' and shatters the humerus',
-          dmgEffect: highCompFract(true,'upper arm'),
+          text: ' and shatters the bone!',
+          dmgEffect: highCompFract(true, 'upper arm'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ` and pierces the ${ranArmMuscle()}`,
+          text: ` and gashes the muscle`,
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ` and cuts a nerve in the ${ranArmMuscle()}`,
+          text: ` and splits the muscle severing a nerve`,
           dmgEffect: lowMinBleed(),
         },
         critical: {
@@ -1509,33 +1015,33 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and shatters the humerus',
+          text: ' and impales the upper arm shattering the bone!',
           dmgEffect: lowWeapStuck() + lowIntBleed('upper arm'),
         },
       },
-      slashing: {
+      slash: {
         light: {
-          text: ` and gashes the ${ranArmMuscle()}`,
+          text: ` and gashes the muscle`,
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ` and cuts a nerve in the ${ranArmMuscle()}`,
+          text: ` and cleaves the muscle severing a nerve`,
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ` and severs the ${ranArmMuscle()}`,
+          text: ` and cleaves the muscle chipping the bone`,
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm below the shoulder',
+          text: ' and severs the arm below the shoulder!',
           dmgEffect: highMajBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   armpit: {
-    weights: [2,6,4,12,2,4,4,4],
+    weights: [2, 6, 4, 12, 2, 4, 4, 4],
     crit_chance_multi: 2,
     crit_dmg_multi: 2,
     max_impale: 2,
@@ -1543,23 +1049,23 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and dislocates the shoulder',
+          text: ' and cracks the collarbone',
         },
         serious: {
-          text: ' and separates the shoulder',
+          text: ' and wrenches the arm from its socket',
         },
         critical: {
-          text: ' and snaps the humerus',
-          dmgEffect: lowCompFract(true,'armpit'),
+          text: ' and snaps the upper arm',
+          dmgEffect: lowCompFract(true, 'armpit'),
         },
         gruesome: {
-          text: ' and shatters the shoulder',
-          dmgEffect: highCompFract(true,'armpit'),
+          text: ' and mangles the shoulder tearing the ligaments!',
+          // dmgEffect: highCompFract(true,'shoulder'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and tears the upper back muscle',
+          text: ' and gashes the muscle',
           dmgEffect: lowMinBleed(),
         },
         serious: {
@@ -1567,37 +1073,37 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and cuts a nerve near the chest',
+          text: ' and splits the armpit severing a nerve',
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and severs a rib',
+          text: ' and impales the body through the armpit!',
           dmgEffect: highWeapStuck() + lowIntBleed('armpit'),
         },
       },
-      slashing: {
+      slash: {
         light: {
-          text: ' and gashes the upper back muscle',
+          text: ' and gashes the muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve near the chest',
+          text: ' and cleaves into the muscle severing a nerve',
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and severs a tendon below the shoulder',
+          text: ' and cleaves into the armpit severing a tendon',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm at the shoulder',
+          text: ' and severs the arm at the shoulder!',
           dmgEffect: highMajBleed(),
           removal: true,
         },
-      }
+      },
     },
   },
   shoulder: {
-    weights: [8,6,12,12,2,2,6,6],
+    weights: [8, 6, 12, 12, 2, 2, 6, 6],
     crit_chance_multi: 1,
     crit_dmg_multi: 2,
     max_impale: 2,
@@ -1605,45 +1111,45 @@ export const HIT_LOCATIONS = {
     injury: {
       blunt: {
         light: {
-          text: ' and dislocates the shoulder',
+          text: ' and cracks the collarbone',
         },
         serious: {
-          text: ' and separates the shoulder',
+          text: ' and wrenches the arm from its socket',
         },
         critical: {
           text: ' and snaps the collarbone',
-          dmgEffect: lowCompFract(true,'shoulder'),
+          dmgEffect: lowCompFract(true, 'shoulder'),
         },
         gruesome: {
-          text: ' and mangles the shoulder tearing the ligaments',
+          text: ' and mangles the shoulder tearing the ligaments!',
           // dmgEffect: highCompFract(true,'shoulder'),
         },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and tears the deltoid',
+          text: ' and gashes the muscle',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and tears the rotator cuff',
+          text: ' and splits the muscle tearing a tendon',
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the shoulder tearing a ligament',
+          text: ' and pierces the shoulder tearing a ligament',
           dmgEffect: lowWeapStuck() + highMajBleed(),
         },
         gruesome: {
-          text: ' and transfixes them from the shoulder through the upper back',
+          text: ' and impales the body through the shoulder!',
           dmgEffect: highWeapStuck() + lowIntBleed('shoulder'),
         },
       },
-      slashing: {
+      slash: {
         light: {
-          text: ' and gashes the deltoid',
+          text: ' and gashes the muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the deltoid',
+          text: ' and cleaves muscle severing a nerve',
           dmgEffect: highMinBleed(),
         },
         critical: {
@@ -1651,7 +1157,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the arm at the shoulder',
+          text: ' and severs the arm at the shoulder!',
           dmgEffect: highMajBleed(),
           removal: true,
         },
@@ -1659,71 +1165,71 @@ export const HIT_LOCATIONS = {
     },
   },
   neck: {
-    weights: [3,2,6,4,2,1,3,3],
+    weights: [3, 2, 6, 4, 2, 1, 4, 3],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 2,
     injury: {
       blunt: {
         light: {
-          text: ' and crushes the larynx',
+          text: ' and crushes the windpipe',
         },
         serious: {
-          text: ' and fractures a vertebra',
+          text: ' and wrenches the neck cracking the spine',
         },
         critical: {
           text: ' and snaps the neck severing the spine',
-          dmgEffect: lowCompFract(true,'neck'),
+          dmgEffect: lowCompFract(true, 'neck'),
         },
         gruesome: {
-          text: ' and mangles the neck tearing the ligaments',
-          // dmgEffect: highCompFract(true,'neck'),
+          text: ' and mangles the neck tearing the ligaments!',
+          // dmgEffect: highCompFract(true,'neck'), TODO
           fatal: true,
-        }
+        },
       },
-      piercing: {
+      pierce: {
         light: {
-          text: ' and pierces the larynx',
+          text: ' and pierces the windpipe',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in the neck muscle',
+          text: ' and splits the muscle severing a nerve',
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and tears a ligament',
+          text: ' and splits the muscle tearing a tendon',
           dmgEffect: lowWeapStuck() || highMajBleed(),
         },
         gruesome: {
-          text: ' and severs the spine',
+          text: ' and stabs into the neck piercing the spine!',
           dmgEffect: highWeapStuck() + lowMajBleed(),
           fatal: true,
-        }
+        },
       },
-      slashing: {
+      slash: {
         light: {
-          text: ' and gashes the neck muscle',
+          text: ' and gashes the muscle',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and cuts a nerve in a neck muscle',
+          text: ' and cleaves the muscle severing a nerve',
           dmgEffect: lowMajBleed() || highMinBleed(),
         },
         critical: {
-          text: ' and severs the neck muscle',
+          text: ' and cleaves the muscle chipping the spine',
           dmgEffect: highMajBleed() || highMinBleed(),
         },
         gruesome: {
-          text: ' and severs the head',
+          text: ' and severs the head!',
           dmgEffect: highMajBleed(),
           fatal: true,
           removal: true,
-        }
+        },
       },
     },
   },
   jaw: {
-    weights: [3,2,6,3,2,1,2,2],
+    weights: [3, 2, 6, 3, 2, 1, 2, 2],
     crit_chance_multi: 2,
     max_impale: 2,
     injury: {
@@ -1747,7 +1253,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the cheek',
           dmgEffect: highMinBleed(),
@@ -1757,17 +1263,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales below the chin and pierces the brainstem',
+          text: ' and stabs under the chin piercing the brainstem',
           dmgEffect: lowWeapStuck() + highBrainBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and transfixes them from the jaw through the brainstem and out the back of the skull',
+          text: ' and impales the head through the jaw!',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the mouth',
           dmgEffect: highMinBleed(),
@@ -1791,7 +1297,7 @@ export const HIT_LOCATIONS = {
     },
   },
   nose: {
-    weights: [1,2,2,3,1,0,2,1],
+    weights: [1, 2, 2, 3, 1, 0, 2, 1],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 2,
@@ -1806,7 +1312,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: knockoutDesc,
         },
         critical: {
-          text: ' and smashes the face into the brain',
+          text: ' and smashes the nose into the brain',
           dmgEffect: lowCompFract(),
           fatal: true,
         },
@@ -1816,7 +1322,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the nose',
           dmgEffect: lowMinBleed(),
@@ -1826,17 +1332,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the nose and pierces the brain',
+          text: ' and stabs into the nose piercing the brain',
           dmgEffect: lowWeapStuck() + highBrainBleed('mouth'),
           fatal: true,
         },
         gruesome: {
-          text: ' and impales through the nose and through the brain and through the back of the skull',
+          text: ' and impales the head through the nose!',
           dmgEffect: highWeapStuck() + lowBrainBleed('mouth'),
           fatal: true,
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the nose',
           dmgEffect: highMinBleed(),
@@ -1859,8 +1365,8 @@ export const HIT_LOCATIONS = {
       },
     },
   },
-  eye: { // TODO add ear hit location -- add everywhere eye is referenced!
-    weights: [2,2,4,4,0,2,2,2],
+  eye: {
+    weights: [0, 2, 0, 4, 0, 2, 2, 2],
     crit_chance_multi: 5,
     crit_dmg_multi: 2,
     max_impale: 3,
@@ -1886,7 +1392,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the brow',
           dmgEffect: highMinBleed(),
@@ -1896,17 +1402,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and impales the eye and pierces the brain',
+          text: ' and stabs into the eye piercing the brain',
           dmgEffect: lowWeapStuck() + highBrainBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and transfixes them from the eye through the brain and out the back of the skull',
+          text: ' and impales the head through the eye!',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the brow',
           dmgEffect: highMinBleed(),
@@ -1930,7 +1436,7 @@ export const HIT_LOCATIONS = {
     },
   },
   ear: {
-    weights: [2,2,4,4,2,0,2,2],
+    weights: [4, 2, 8, 4, 2, 0, 2, 2],
     crit_chance_multi: 3,
     crit_dmg_multi: 2,
     max_impale: 3,
@@ -1956,7 +1462,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the ear',
           dmgEffect: lowMinBleed(),
@@ -1966,17 +1472,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMinBleed(),
         },
         critical: {
-          text: ' and impales the ear and pierces the brain',
+          text: ' and stabs into the ear piercing the brain',
           dmgEffect: lowWeapStuck() + highBrainBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and transfixes them from the ear through the brain and out the other side of the head',
+          text: ' and impales the head through the ear!',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed(),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the ear',
           dmgEffect: highMinBleed(),
@@ -2000,7 +1506,7 @@ export const HIT_LOCATIONS = {
     },
   },
   skull: {
-    weights: [5,2,12,4,2,3,7,4],
+    weights: [5, 2, 12, 4, 2, 3, 7, 4],
     crit_chance_multi: 2,
     crit_dmg_multi: 3,
     max_impale: 3,
@@ -2024,7 +1530,7 @@ export const HIT_LOCATIONS = {
           removal: true,
         },
       },
-      piercing: {
+      pierce: {
         light: {
           text: ' and gouges the scalp',
           dmgEffect: highMinBleed(),
@@ -2034,17 +1540,17 @@ export const HIT_LOCATIONS = {
           dmgEffect: lowMinBleed(),
         },
         critical: {
-          text: ' and penetrates the skull and pierces the brain',
+          text: ' and stabs into the skull piercing the brain',
           dmgEffect: lowWeapStuck() + highBrainBleed(),
           fatal: true,
         },
         gruesome: {
-          text: ' and transfixes them from the forehead through the brain and out the back of the skull',
+          text: ' and impales the skull through the forehead',
           fatal: true,
           dmgEffect: highWeapStuck() + lowBrainBleed('nose'),
         },
       },
-      slashing: {
+      slash: {
         light: {
           text: ' and gashes the scalp',
           dmgEffect: highMinBleed(),
@@ -2067,23 +1573,25 @@ export const HIT_LOCATIONS = {
       },
     },
   },
+  // no real bones, sever at critical level elbow, wrist and ankle, exclamation for gruesome
 };
-export const STANCE_MODS = { // TODO move this to combat file
+export const STANCE_MODS = {
+  // TODO move this to combat file
   power: {
     ac_mod: -2,
     atk_mod: -2,
-    dmg_mod: weap => Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
-    str_dmg_mod: char => Math.floor(Math.max(0, char.data.data.str_mod) / 2) || 0,
-    impact_mod: weap =>  Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
-    speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
+    dmg_mod: (weap) => Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
+    str_dmg_mod: (char) => Math.floor(Math.max(0, char.data.data.str_mod) / 2) || 0, // TODO don't need
+    impact_mod: (weap) => Math.floor(weap.data.data.attributes.impact?.value / 2) || 0,
+    speed_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
   fluid: {
     ac_mod: 1,
     atk_mod: 2,
-    dmg_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
-    str_dmg_mod: char => 0 - Math.ceil(Math.max(0, char.data.data.str_mod) / 2) || 0,
-    impact_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
-    speed_mod: weap => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
+    dmg_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+    str_dmg_mod: (char) => 0 - Math.ceil(Math.max(0, char.data.data.str_mod) / 2) || 0,
+    impact_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+    speed_mod: (weap) => Math.floor(weap.data.data.attributes.speed?.value / 2) || 0,
     shield_dr_mod: 1,
     shield_ac_mod: 1,
     shield_atk_mod: -2,
@@ -2094,35 +1602,44 @@ export const STANCE_MODS = { // TODO move this to combat file
 };
 export const PREP_MODS = {
   feint: {
-    atk_mod: weap => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
-    speed_mod: weap => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
+    atk_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.impact?.value / 2) || 0,
+    speed_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
 };
 export const WEAP_BREAK_CHANCE = 5;
 export const GRID_SIZE = 5;
-export const ATK_HEIGHTS =['high','mid','low'];
+export const ATK_HEIGHTS = ['high', 'mid', 'low'];
 export const AIM_AREAS = {
-  head: ['skull','left eye','right eye','nose','jaw','neck'],
-  shoulders: ['left shoulder','left armpit','right shoulder','right armpit',],
-  arms: ['left upper arm','left elbow','left forearm','left hand','right upper arm','right elbow','right forearm','right hand'],
-  torso: ['chest','gut'],
-  pelvis: ['left hip','groin','right hip'],
-  legs: ['left thigh','left knee','left shin','left foot','right thigh','right knee','right shin','right foot'],
+  head: ['skull', 'left eye', 'right eye', 'left ear', 'right ear', 'nose', 'jaw', 'neck'],
+  shoulders: ['left shoulder', 'left armpit', 'right shoulder', 'right armpit'],
+  arms: [
+    'left upper arm',
+    'left elbow',
+    'left forearm',
+    'left hand',
+    'right upper arm',
+    'right elbow',
+    'right forearm',
+    'right hand',
+  ],
+  torso: ['chest', 'gut'],
+  pelvis: ['left hip', 'groin', 'right hip'],
+  legs: ['left thigh', 'left knee', 'left shin', 'left foot', 'right thigh', 'right knee', 'right shin', 'right foot'],
 };
 export const AIM_AREAS_UNILATERAL = {
-  head: ['skull','eye','nose','jaw','neck'],
-  shoulders: ['shoulder','armpit'],
-  arms: ['upper arm','elbow','forearm','hand',],
-  torso: ['chest','gut'],
-  pelvis: ['hip','groin'],
-  legs: ['thigh','knee','shin','foot'],
+  head: ['skull', 'eye', 'ear', 'nose', 'jaw', 'neck'],
+  shoulders: ['shoulder', 'armpit'],
+  arms: ['upper arm', 'elbow', 'forearm', 'hand'],
+  torso: ['chest', 'gut'],
+  pelvis: ['hip', 'groin'],
+  legs: ['thigh', 'knee', 'shin', 'foot'],
 };
 export const SHIELD_WEIGHT_MULTI = {
   worn: 1.2,
   medium_kite: 0.9,
   medium_round: 1,
   large_kite: 1.2,
-  large_round: 1.33
+  large_round: 1.33,
 };
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {
@@ -2133,221 +1650,128 @@ export const HIT_LOC_ARRS = {
   const fillLocArr = function (loc, weight, bi) {
     const arr = [];
     for (let i = 0; i < weight; i++) {
-      const entry = bi ? i < weight / 2 ? `left ${loc}`: `right ${loc}` : loc;
+      const entry = bi ? (i < weight / 2 ? `left ${loc}` : `right ${loc}`) : loc;
       arr.push(entry);
     }
     return arr;
   };
 
   // add more hit location tables for high/low
-  Object.keys(HIT_LOC_ARRS).forEach(a => ["HIGH","LOW"].forEach(l => Object.assign(HIT_LOC_ARRS, {[`${a}_${l}`]: []})));
+  Object.keys(HIT_LOC_ARRS).forEach((a) =>
+    ['HIGH', 'LOW'].forEach((l) => Object.assign(HIT_LOC_ARRS, { [`${a}_${l}`]: [] }))
+  );
   for (const [k, v] of Object.entries(HIT_LOCATIONS)) {
-    Object.keys(HIT_LOC_ARRS).forEach(arr => {
+    Object.keys(HIT_LOC_ARRS).forEach((arr) => {
       const i = HIT_LOC_WEIGHT_INDEXES[arr];
       HIT_LOC_ARRS[arr].push(...fillLocArr(k, v.weights[i], v.bilateral));
     });
   }
   // add more hit location tables for the aim areas
-  Object.keys(HIT_LOC_ARRS).forEach(a => Object.keys(AIM_AREAS).forEach(l => {
-    const key = `${a}_${l.toUpperCase()}`;
-    const values = AIM_AREAS[l].map(loc => HIT_LOC_ARRS[a].filter(hitLoc => hitLoc === loc)).flat();
-    Object.assign(HIT_LOC_ARRS, {[key]: values});
-  }));
+  Object.keys(HIT_LOC_ARRS).forEach((a) =>
+    Object.keys(AIM_AREAS).forEach((l) => {
+      const key = `${a}_${l.toUpperCase()}`;
+      const values = AIM_AREAS[l].map((loc) => HIT_LOC_ARRS[a].filter((hitLoc) => hitLoc === loc)).flat();
+      Object.assign(HIT_LOC_ARRS, { [key]: values });
+    })
+  );
 
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();
-export const AIM_AREA_PENALTIES = Object.fromEntries(Object.entries(HIT_LOC_ARRS).map( ([k,v]) => {
-  const getPenalty = chance => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(1.8)));
-  return [k, getPenalty(v.length)];
-}));
-export const SIZE_VALUES = {
-  T: 0, // tiny
-  S: 1, // small
-  M: 2, // medium
-  L: 3, // large
-  H: 4, // huge
-  G: 5, // gargantuan
-  C: 6, // colossal
-  default: 2,
-};
+export const AIM_AREA_PENALTIES = Object.fromEntries(
+  Object.entries(HIT_LOC_ARRS).map(([k, v]) => {
+    const getPenalty = (chance) => 0 - Math.min(8, Math.round(Math.log(100 / chance) / Math.log(1.8)));
+    return [k, getPenalty(v.length)];
+  })
+);
 export const HEIGHT_AREAS = {
-  low: ['foot','shin','knee','thigh','hip','groin'],
-  mid: ['gut','chest','hand','forearm','elbow','upper arm'],
-  high: ['armpit','shoulder','neck','jaw','nose','eye','skull'],
+  low: ['foot', 'shin', 'knee', 'thigh', 'hip', 'groin'],
+  mid: ['gut', 'chest', 'hand', 'forearm', 'elbow', 'upper arm'],
+  high: ['armpit', 'shoulder', 'neck', 'jaw', 'nose', 'eye', 'ear', 'skull'],
 };
-export const WEAPON_TIERS = ["martial","simple"];
-export const WEAPON_SPECIAL_PROPS = [
-  "back rank", // TODO needed? or only spears
-  "balanced", // TODO needed?
-  "concealable",
-  "curved", // TODO needed?
-  "flexible",
-  "fragile",
-  "hook",
-  "loud",
-  "mounted charge",
-  "quick draw",
-  "quick slash", // TODO remove
-  "set vs. charge",
-  "silent",
-  "silvered",
-  "sweep",
-  "unwieldy",
-  "volatile" // needed?
-];
-export const WEAPON_CATEGORIES = [
-  "axe",
-  "bludgeon",
-  "bow",
-  "crossbow",
-  "curved sword",
-  "dagger",
-  "hammer",
-  "hand-to-hand",
-  "greatsword",
-  "piercing sword",
-  "polearm",
-  "spear",
-  "spiked bludgeon",
-  "sling",
-  "staff",
-  "straight sword",
-  "whip",
-];
-export const AMMO_TYPES = [
-  "stone",
-  "bullet",
-  "ball",
-  "shot",
-  "quarrel",
-  "arrow"
-];
-export const BOW_AMMO_TYPES = [
-  "quarrel",
-  "arrow"
-];
-export const GUN_AMMO_TYPES = [
-  "bullet",
-  "ball",
-  "shot"
-];
-export const SAVES_AS_CLASSES = [
-  "fighter",
-  "cleric",
-  "thief",
-  "magic-user"
-];
-export const ALIGNMENTS = [
-  "CE", // chaotic evil
-  "LE", // lawful evil
-  "N", // neutral
-  "CG", // chaotic good
-  "LG", // lawful good
-];
 export const MERCHANT_SUBTYPES = [
-  "apothecary",
-  "magic",
-  "armorer",
-  "clothier",
-  "jeweller",
-  "innkeeper",
-  "general",
-  "trader",
-  "weaponsmith",
-  "bowyer",
-  "gunsmith"
+  'apothecary',
+  'magic',
+  'armorer',
+  'clothier',
+  'jeweller',
+  'innkeeper',
+  'general',
+  'trader',
+  'weaponsmith',
+  'bowyer',
 ];
-export const FEATURE_TYPES = [
-  "feature",
-  "skill",
-  "natural_weapon",
-  "grapple_maneuver",
-];
-export const HUMANOID_TYPES = [
-  "character",
-  "humanoid",
-];
-export const NONCOMBATANT_TYPES = [
-  "container",
-  "merchant",
-];
+
+export const HUMANOID_TYPES = ['character', 'humanoid'];
+export const NONCOMBATANT_TYPES = ['container', 'merchant'];
+// CONST.ACTIVE_EFFECT_MODES = { CUSTOM: 0, MULTIPLY: 1, ADD: 2, DOWNGRADE: 3, UPGRADE: 4, OVERRIDE: 5 }
+// top level prop transfer: true for item active effects to affect actors
+// TODO add active effects sheet tabs to items/actors
 export const STATUS_EFFECTS = [
-{id: "dead", label: "EFFECT.StatusDead", icon: "icons/svg/skull.svg"},
-{id: "unconscious", label: "EFFECT.StatusUnconscious", icon: "icons/svg/unconscious.svg"},
-{id: "sleep", label: "EFFECT.StatusAsleep", icon: "icons/svg/sleep.svg"},
-{
-  id: "stun",
-  label: "EFFECT.StatusStunned",
-  icon: "icons/svg/daze.svg",
-  duration: {
-    rounds: null,
-    seconds: 600,
-    startRound: null,
-    startTime: null,
-    startTurn: null,
-    turns: null,
+  { id: 'dead', label: 'EFFECT.StatusDead', icon: 'icons/svg/skull.svg' },
+  { id: 'unconscious', label: 'EFFECT.StatusUnconscious', icon: 'icons/svg/unconscious.svg' },
+  { id: 'sleep', label: 'EFFECT.StatusAsleep', icon: 'icons/svg/sleep.svg' },
+  {
+    id: 'stun',
+    label: 'EFFECT.StatusStunned',
+    icon: 'icons/svg/daze.svg',
+    duration: {
+      rounds: null,
+      seconds: 600,
+      startRound: null, // item subtype?
+      startTime: null,
+      startTurn: null,
+      turns: null,
+    },
+    changes: [
+      {
+        key: 'data.hp.max',
+        mode: 2,
+        value: '-9',
+      },
+    ],
   },
-  changes: [{
-      key: "data.hp.max",
-      mode: 2,
-      value: "-9",
-  }],
-  flags: {
-    core: { statusId: "stun" }
-  }
-},
-{id: "prone", label: "EFFECT.StatusProne", icon: "icons/svg/falling.svg"},
-{id: "restrain", label: "EFFECT.StatusRestrained", icon: "icons/svg/net.svg"},
-{id: "paralysis", label: "EFFECT.StatusParalysis", icon: "icons/svg/paralysis.svg"},
-{id: "fly", label: "EFFECT.StatusFlying", icon: "icons/svg/wing.svg"},
-{id: "blind", label: "EFFECT.StatusBlind", icon: "icons/svg/blind.svg"},
-{id: "deaf", label: "EFFECT.StatusDeaf", icon: "icons/svg/deaf.svg"},
-{id: "silence", label: "EFFECT.StatusSilenced", icon: "icons/svg/silenced.svg"},
-{id: "fear", label: "EFFECT.StatusFear", icon: "icons/svg/terror.svg"},
-{id: "burning", label: "EFFECT.StatusBurning", icon: "icons/svg/fire.svg"},
-{id: "frozen", label: "EFFECT.StatusFrozen", icon: "icons/svg/frozen.svg"},
-{id: "shock", label: "EFFECT.StatusShocked", icon: "icons/svg/lightning.svg"},
-{id: "corrode", label: "EFFECT.StatusCorrode", icon: "icons/svg/acid.svg"},
-{id: "bleeding", label: "EFFECT.StatusBleeding", icon: "icons/svg/blood.svg"},
-{id: "disease", label: "EFFECT.StatusDisease", icon: "icons/svg/biohazard.svg"},
-{id: "poison", label: "EFFECT.StatusPoison", icon: "icons/svg/poison.svg"},
-{id: "radiation", label: "EFFECT.StatusRadiation", icon: "icons/svg/radiation.svg"},
-{id: "regen", label: "EFFECT.StatusRegen", icon: "icons/svg/regen.svg"},
-{id: "degen", label: "EFFECT.StatusDegen", icon: "icons/svg/degen.svg"},
-{id: "upgrade", label: "EFFECT.StatusUpgrade", icon: "icons/svg/upgrade.svg"},
-{id: "downgrade", label: "EFFECT.StatusDowngrade", icon: "icons/svg/downgrade.svg"},
-{id: "target", label: "EFFECT.StatusTarget", icon: "icons/svg/target.svg"},
-{id: "eye", label: "EFFECT.StatusMarked", icon: "icons/svg/eye.svg"},
-{id: "curse", label: "EFFECT.StatusCursed", icon: "icons/svg/sun.svg"},
-{id: "bless", label: "EFFECT.StatusBlessed", icon: "icons/svg/angel.svg"},
-{id: "fireShield", label: "EFFECT.StatusFireShield", icon: "icons/svg/fire-shield.svg"},
-{id: "coldShield", label: "EFFECT.StatusIceShield", icon: "icons/svg/ice-shield.svg"},
-{id: "magicShield", label: "EFFECT.StatusMagicShield", icon: "icons/svg/mage-shield.svg"},
-{id: "holyShield", label: "EFFECT.StatusHolyShield", icon: "icons/svg/holy-shield.svg"},
+  { id: 'prone', label: 'EFFECT.StatusProne', icon: 'icons/svg/falling.svg' },
+  { id: 'restrain', label: 'EFFECT.StatusRestrained', icon: 'icons/svg/net.svg' },
+  { id: 'paralysis', label: 'EFFECT.StatusParalysis', icon: 'icons/svg/paralysis.svg' },
+  { id: 'fly', label: 'EFFECT.StatusFlying', icon: 'icons/svg/wing.svg' },
+  { id: 'blind', label: 'EFFECT.StatusBlind', icon: 'icons/svg/blind.svg' },
+  { id: 'deaf', label: 'EFFECT.StatusDeaf', icon: 'icons/svg/deaf.svg' },
+  { id: 'silence', label: 'EFFECT.StatusSilenced', icon: 'icons/svg/silenced.svg' },
+  { id: 'fear', label: 'EFFECT.StatusFear', icon: 'icons/svg/terror.svg' },
+  { id: 'burning', label: 'EFFECT.StatusBurning', icon: 'icons/svg/fire.svg' },
+  { id: 'frozen', label: 'EFFECT.StatusFrozen', icon: 'icons/svg/frozen.svg' },
+  { id: 'shock', label: 'EFFECT.StatusShocked', icon: 'icons/svg/lightning.svg' },
+  { id: 'corrode', label: 'EFFECT.StatusCorrode', icon: 'icons/svg/acid.svg' },
+  { id: 'bleeding', label: 'EFFECT.StatusBleeding', icon: 'icons/svg/blood.svg' },
+  { id: 'disease', label: 'EFFECT.StatusDisease', icon: 'icons/svg/biohazard.svg' },
+  { id: 'poison', label: 'EFFECT.StatusPoison', icon: 'icons/svg/poison.svg' },
+  { id: 'radiation', label: 'EFFECT.StatusRadiation', icon: 'icons/svg/radiation.svg' },
+  { id: 'regen', label: 'EFFECT.StatusRegen', icon: 'icons/svg/regen.svg' },
+  { id: 'degen', label: 'EFFECT.StatusDegen', icon: 'icons/svg/degen.svg' },
+  { id: 'upgrade', label: 'EFFECT.StatusUpgrade', icon: 'icons/svg/upgrade.svg' },
+  { id: 'downgrade', label: 'EFFECT.StatusDowngrade', icon: 'icons/svg/downgrade.svg' },
+  { id: 'target', label: 'EFFECT.StatusTarget', icon: 'icons/svg/target.svg' },
+  { id: 'eye', label: 'EFFECT.StatusMarked', icon: 'icons/svg/eye.svg' },
+  { id: 'curse', label: 'EFFECT.StatusCursed', icon: 'icons/svg/sun.svg' },
+  { id: 'bless', label: 'EFFECT.StatusBlessed', icon: 'icons/svg/angel.svg' },
+  { id: 'fireShield', label: 'EFFECT.StatusFireShield', icon: 'icons/svg/fire-shield.svg' },
+  { id: 'coldShield', label: 'EFFECT.StatusIceShield', icon: 'icons/svg/ice-shield.svg' },
+  { id: 'magicShield', label: 'EFFECT.StatusMagicShield', icon: 'icons/svg/mage-shield.svg' },
+  { id: 'holyShield', label: 'EFFECT.StatusHolyShield', icon: 'icons/svg/holy-shield.svg' },
 ];
- export const SPELL_SCHOOLS = [
-  "abjuration",
-  "alteration",
-  "conjuration",
-  "divination",
-  "enchantment",
-  "evocation",
-  "illusion",
-  "necromancy"
- ];
-export const HIDDEN_GROUPS = ["admin","dmg_mods","immunities"];
-export const MAGIC_GROUPS = ["magic_dmg","magic_mods"];
+export const HIDDEN_GROUPS = ['admin', 'dmg_mods', 'immunities'];
+export const MAGIC_GROUPS = ['magic_dmg', 'magic_mods'];
 export const GEM_BASE_VALUE = {
-  "ornamental": 60, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite
-  "semi-precious": 1200, // e.g. peridot, topaz, garnet, pearl, amethyst
-  "precious": 12000 // e.g. diamond, ruby, sapphire, emerald, opal
+  ornamental: 60, // e.g. agate, lapis lazuli, obsidian, turquoise, malachite
+  'semi-precious': 1200, // e.g. peridot, topaz, garnet, pearl, amethyst
+  precious: 12000, // e.g. diamond, ruby, sapphire, emerald, opal
 };
- export const GEM_DEFAULT_WEIGHT = 0.1;
- export const GEM_QUALITY_ADJ = {
-  "AAA": 4,
-  "AA": 2.8,
-  "A": 2,
-  "B": 1.4,
-  "C": 1
- };
- export const GEM_WEIGHT_ADJ = ratio => Math.pow(ratio, 2);
+export const GEM_DEFAULT_WEIGHT = 0.1;
+export const GEM_QUALITY_ADJ = {
+  AAA: 4,
+  AA: 2.8,
+  A: 2,
+  B: 1.4,
+  C: 1,
+};
+export const GEM_WEIGHT_ADJ = (ratio) => ratio ** 2;

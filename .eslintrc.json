@@ -1,15 +1,10 @@
 {
-  "extends": [
-    "eslint:recommended",
-    "plugin:prettier/recommended"
-  ],
-  "plugins": [
-    "prettier"
-  ],
+  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
+  "plugins": ["prettier"],
   "rules": {
-    "eqeqeq": "error",
-    "no-console": "warn",
-    "no-undef": "warn",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-console": "off",
+    "no-undef": "off",
     "no-unused-vars": "warn",
     "prettier/prettier": "error"
   },
@@ -23,10 +18,5 @@
     "es6": true,
     "jest": true
   },
-  "ignorePatterns": [
-    "node_modules",
-    "build",
-    "dist",
-    "public"
-  ]
+  "ignorePatterns": ["node_modules", "build", "dist", "public"]
 }

@@ -16,12 +16,15 @@
             <div class="resource">
                 <label class="left-label">XP</label>
                 {{#if isCharacter}}
-                <input type="number" name="data.xp.value" value="{{systemData.xp.value}}" {{#if isPlayer}}readonly{{/if}}/>
+                <input type="number" name="data.xp_req.value" value="{{systemData.xp_req.value}}" {{#if isPlayer}}readonly{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.xp.max" value="{{systemData.xp.max}}" {{#if isPlayer}}readonly{{/if}}/>
+                <input type="number" name="data.xp_req.max" value="{{systemData.xp_req.max}}" {{#if isPlayer}}readonly{{/if}}/>
                 {{else}}
                 <input type="number" name="data.xp.value" value="{{systemData.xp}}" readonly/>
                 {{/if}}
+                <div class="level-controls">
+                    <a title="Level Up" class="level-control" data-action="level-up"><i class="fas fa-plus"></i></a>
+                </div>
             </div>
             <div class="properties">
                 <div class="property" style="max-width:200px;">
@@ -29,9 +32,9 @@
                     <label class="left-label">B</label>
                     <span class="property-field property-field-ac">{{systemData.ac.total.blunt.ac}} / {{systemData.ac.total.blunt.dr}}</span>
                     <label class="left-label">P</label>
-                    <span class="property-field property-field-ac">{{systemData.ac.total.piercing.ac}} / {{systemData.ac.total.piercing.dr}}</span>
+                    <span class="property-field property-field-ac">{{systemData.ac.total.pierce.ac}} / {{systemData.ac.total.pierce.dr}}</span>
                     <label class="left-label">S</label>
-                    <span class="property-field property-field-ac">{{systemData.ac.total.slashing.ac}} / {{systemData.ac.total.slashing.dr}}</span>
+                    <span class="property-field property-field-ac">{{systemData.ac.total.slash.ac}} / {{systemData.ac.total.slash.dr}}</span>
                 </div>
                 {{#if systemData.ac.touch_ac}}
                 <div class="property">
@@ -60,7 +63,6 @@
                     <span style="margin-right:0" class="property-field">{{systemData.mv}}</span>
                 </div>
             </div>
-
         </div>
     </header>
 
@@ -80,6 +82,10 @@
         <a class="item" data-tab="attributes">Attributes</a>
         <a class="item" data-tab="voice">Voice</a>
         <a class="item" data-tab="fatigue">Fatigue</a>
+        {{#if showEffects}}
+        <a class="item" data-tab="effects">Effects</a>
+        {{/if}}
+
     </nav>
 
     {{!-- Sheet Body --}}
@@ -251,7 +257,7 @@
             <header class="features-header flexrow">
                 <span>
                     {{#ifeq key 'Skill'}}
-                    {{../skillPenaltyText}}
+                    {{../encPenaltyText}}
                     {{/ifeq}}
                 </span>
                 <span class="text-center">{{key}}</span>
@@ -291,11 +297,11 @@
             {{/if}}
 
             {{!-- Render the attribute list partial. --}}
-            {{> "systems/lostlands/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
+            {{> "systems/brigandine/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
 
             {{!-- Render the grouped attributes partial and control. --}}
             <div class="groups">
-                {{> "systems/lostlands/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
+                {{> "systems/brigandine/templates/parts/sheet-groups.html" groups=systemData.groups dtypes=dtypes}}
 
                 {{#if isGM}}
                 <div class="group-controls flexrow">
@@ -370,6 +376,28 @@
             {{/each}}
             {{/if}}
         </div>
+
+        {{!-- Effects Tab --}}
+        {{#if showEffects}}
+        <div class="tab" data-group="primary" data-tab="effects">
+            <ul class="effects-list">
+                {{#each effects as |effect|}}
+                <li class="effect flexrow" data-effect-id="{{effect.id}}">
+                    <div class="effect-name">{{effect.data.label}}</div>
+                    <div class="effect-controls">
+                        <a class="effect-control" data-action="edit"><i class="fas fa-edit"></i></a>
+                        <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
+                    </div>
+                </li>
+                {{/each}}
+            </ul>
+            {{#if isGM}}
+            <div class="effect-controls flexrow">
+                <a class="button effect-control" data-action="create"><i class="fas fa-plus"></i> Add Effect</a>
+            </div>
+            {{/if}}
+        </div>
+        {{/if}}
 
     </section>
 </form>
