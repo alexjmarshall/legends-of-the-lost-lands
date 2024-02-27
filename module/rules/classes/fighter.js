@@ -1,15 +1,15 @@
 import { allArmors, lightArmors, mediumArmors, allShields } from '../armors.js';
-import { allCombatSkills, allMeleeWeaponSkills, allMissileWeaponSkills, SKILLS } from '../skills.js';
+import { allCombatSkills, allMeleeWeaponSkills, allMissileWeaponSkills } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { chaoticAlignments } from '../alignments.js';
 
 export class Fighter extends BaseClass {
-  static XP_REQS = Object.freeze([1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000]);
+  static XP_REQS = Object.freeze([0, 1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000]);
 
   static XP_REQ_AFTER_NAME_LVL = 180000;
 
@@ -45,8 +45,8 @@ export class Fighter extends BaseClass {
 
   static primeReqs = [ABILITIES.STR];
 
-  constructor(lvl, Class = Fighter) {
-    super(lvl, Class);
+  constructor(lvl, origin, Class = Fighter) {
+    super(lvl, origin, Class);
     this.armors = [...allArmors];
     this.shields = [...allShields];
   }
@@ -57,7 +57,7 @@ export class Berserker extends Fighter {
   static featureDescriptions = Object.freeze([
     'Extra attack after killing an enemy',
     'Attack 2x at 7th level, 3x at 13th level',
-    'Berserk rage (+2 to-hit & damage, +2/level temporary HP, immune to charm, fear, sleep and bleeding)',
+    'Berserk rage (+2 to-hit & damage, +4 to saving throws vs. mental attacks, physical damage resistance, immune to bleeding)',
     'Requires Strength 11+ and Wisdom no greater than 11',
   ]);
 
@@ -84,38 +84,8 @@ export class Berserker extends Fighter {
 
   static alignments = chaoticAlignments;
 
-  constructor(lvl) {
-    super(lvl, Berserker);
-    this.armors = [...lightArmors, ...mediumArmors];
-  }
-}
-
-export class Runecaster extends Fighter {
-  static description = 'A warrior who has learned to harness the power of runes.';
-  static featureDescriptions = Object.freeze([
-    'Carve magic runes',
-    'Attack 2x at 8th level, 3x at 15th level',
-    'Requires Intelligence 9+ and Wisdom 13+',
-  ]);
-  static armorDescription = 'medium';
-
-  static featuresConfig = deepFreeze([new FeatureConfig(features.RUNE_MAGIC, 1), super.multiattackFeature(8, 15)]);
-
-  static specializedSkills = Object.freeze([...super.specializedSkills, SKILLS.RUNELORE, SKILLS.RUNECARVING]);
-
-  static abilityReqs = [
-    {
-      name: ABILITIES.INT,
-      min: 9,
-    },
-    {
-      name: ABILITIES.WIS,
-      min: 13,
-    },
-  ];
-
-  constructor(lvl) {
-    super(lvl, Berserker);
+  constructor(lvl, origin) {
+    super(lvl, origin, Berserker);
     this.armors = [...lightArmors, ...mediumArmors];
   }
 }

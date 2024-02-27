@@ -63,7 +63,7 @@ export class Dwarf extends BaseRace {
   static allowedClasses = Object.freeze([
     CLASS.Fighter.name,
     CLASS.Berserker.name,
-    CLASS.Runecaster.name,
+    CLASS.Runepriest.name,
     CLASS.Cleric.name,
     CLASS.Thief.name,
     CLASS.Assassin.name,
@@ -81,7 +81,7 @@ export class Dwarf extends BaseRace {
       case CLASS.Berserker.name:
         return 40 + rollDice('5d4');
       case CLASS.Cleric.name:
-      case CLASS.Runecaster.name:
+      case CLASS.Runepriest.name:
         return 100 + rollDice('2d10');
       case CLASS.Thief.name:
       case CLASS.Assassin.name:

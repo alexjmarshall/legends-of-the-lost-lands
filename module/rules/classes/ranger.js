@@ -5,11 +5,11 @@ import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { goodAlignments } from '../alignments.js';
 
 export class Ranger extends BaseClass {
-  static XP_REQS = Object.freeze([1100, 3300, 7700, 16500, 40000, 90000, 150000, 220000, 320000]);
+  static XP_REQS = Object.freeze([0, 1100, 3300, 7700, 16500, 40000, 90000, 150000, 220000, 320000]);
 
   static XP_REQ_AFTER_NAME_LVL = 200000;
 
@@ -138,15 +138,15 @@ export class Ranger extends BaseClass {
 
   static alignments = goodAlignments;
 
-  constructor(lvl, Class = Ranger) {
-    super(lvl, Class);
+  constructor(lvl, origin, Class = Ranger) {
+    super(lvl, origin, Class);
     this.armors = [...allArmors];
     this.shields = [...allShields];
   }
 }
 
 export class VampireHunter extends Ranger {
-  static description = 'An implacable hunter of the most dangerous undead.';
+  static description = 'An implacable hunter of the most terrible undead.';
   static featureDescriptions = Object.freeze([
     '+1 damage every 3 levels against the undead',
     '+4 bonus to saving throws vs. energy drain',
@@ -175,7 +175,7 @@ export class VampireHunter extends Ranger {
     super.multiattackFeature(8, 15),
   ]);
 
-  constructor(lvl) {
-    super(lvl, VampireHunter);
+  constructor(lvl, origin) {
+    super(lvl, origin, VampireHunter);
   }
 }

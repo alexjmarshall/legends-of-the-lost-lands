@@ -1,4 +1,4 @@
-import { EntitySheetHelper } from '../helper.js';
+import { EntitySheetHelper } from '../helper/helper.js';
 import * as Constant from '../constants.js';
 import * as CLASSES from '../rules/classes/index.js';
 import { origins } from '../rules/origin.js';
@@ -12,10 +12,11 @@ import { skills, SKILL_CATEGORIES } from '../rules/skills.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
 import { alignmentDescriptions } from '../rules/alignments.js';
 import { portraits, basePath } from '../helper/portrait.js';
+import { getLevelUpdates } from '../helper/actor.js';
+import { cloneItem } from '../helper/item.js';
 
 // save stats generated for characters here
 const charGenSave = {};
-
 const numAbilitySets = 12;
 
 export class CreateActorSheet extends ActorSheet {
@@ -94,12 +95,11 @@ export class CreateActorSheet extends ActorSheet {
     // Class
     const allowedClassesObj = this._getClassOptionsObj(context.systemData.race, firstAbilitySet);
     context.classOptions = this._getClassOptions(allowedClassesObj);
-    console.log('classOptions', context.classOptions);
     const selectedClass = Object.keys(allowedClassesObj)[0];
     context.classDescription = this._getClassDescription(selectedClass);
 
     // Alignment
-    const allowedAlignments = CLASSES[selectedClass].alignments;
+    const allowedAlignments = this._getAllowedAlignments(selectedClass);
     const selectedAlignment = allowedAlignments[0];
     context.alignment = this._getAlignmentOptions(allowedAlignments);
     context.alignmentDescription = alignmentDescriptions[selectedAlignment];
@@ -140,10 +140,9 @@ export class CreateActorSheet extends ActorSheet {
   }
 
   _getClassDescription(className) {
-    console.log('getClassDescription', className);
     if (className.includes('/')) {
       return {
-        description: `Multi-classed characters have access to each class's features and use the best skill progressions, saves, armor and weapon selection of either class. (Note that spellcasting and many skills are penalized by wearing heavy armor). Hit die is the average rounded down to the nearest whole number (e.g. d5 for classes of d6 and d4 hit dice). XP required is the sum of each class's requirement at each level (e.g. level 2 for a Fighter/Mage will require 1000 XP + 1200 XP = 2200 XP).`,
+        description: `<p>Multi-classed characters have each class's features and skills, and use the best saves, armor and weapon selection of either. (Note that spellcasting and many skills are penalized by wearing heavy armor).</p><p>Hit die is the average rounded down to the nearest whole number (e.g. d5 for classes of d6 and d4 hit dice).</p><p>XP required is the sum of each class's requirement at each level (e.g. level 2 for a Fighter/Mage will require 1000 XP + 1200 XP = 2200 XP).</p>`,
         stats: '',
         specializedSkillsDesc: '',
         proficientSkillsDesc: '',
@@ -180,7 +179,7 @@ export class CreateActorSheet extends ActorSheet {
       : '';
 
     return {
-      description: selectedClass.description,
+      description: `<p>${selectedClass.description}</p>`,
       stats,
       specializedSkillsDesc,
       proficientSkillsDesc,
@@ -249,7 +248,6 @@ export class CreateActorSheet extends ActorSheet {
   }
 
   _getAlignmentOptions(allowedAlignments) {
-    console.log('getAlignmentOptions', allowedAlignments);
     const options = allowedAlignments
       .map((a, idx) => `<option ${idx === 0 ? 'selected' : ''} value='${a}'>${a}</option>`)
       .join('');
@@ -261,7 +259,6 @@ export class CreateActorSheet extends ActorSheet {
 
   _getClassOptions(classGroups) {
     // Generate HTML options with optgroup
-    console.log('getClassOptions', classGroups);
     const parentNames = Object.keys(classGroups);
     let options = '';
     let size = parentNames.length;
@@ -347,7 +344,6 @@ export class CreateActorSheet extends ActorSheet {
   }
 
   _getStartingHp(origin, className, size, conScore) {
-    console.log('getStartingHp key', `hp_${origin}${className}${size}${conScore}`);
     const firstLvlHp = className.includes('/')
       ? this._getMultiClassFirstLvlHp(className)
       : CLASSES[className].firstLvlHp;
@@ -367,7 +363,6 @@ export class CreateActorSheet extends ActorSheet {
   }
 
   _getHeightAndWeight(race, gender, str, abilitesIdx) {
-    console.log('getHeightAndWeight key', `heightweight_${race}${gender}${abilitesIdx}`);
     const heightWeightGetter = () => RACES[race].randomHeightWeight(gender, str);
     return this._getOrSetFlag(`heightweight_${race}${gender}${abilitesIdx}`, heightWeightGetter);
   }
@@ -386,6 +381,15 @@ export class CreateActorSheet extends ActorSheet {
       charSaves[key] = getter();
     }
     return charSaves[key];
+  }
+
+  _getAllowedAlignments(className) {
+    // if multiclass, return only alignments that are allowed by both classes
+    if (className.includes('/')) {
+      const classes = className.split('/');
+      return CLASSES[classes[0]].alignments.filter((a) => CLASSES[classes[1]].alignments.includes(a));
+    }
+    return CLASSES[className].alignments;
   }
 
   _getRaceDescription(race) {
@@ -458,18 +462,6 @@ export class CreateActorSheet extends ActorSheet {
       abilitySets.push(genAbiilities);
     }
 
-    // TODO remove this
-    if (race === 'Human') {
-      // make last set all 18s to see all classes
-      abilitySets[numAbilitySets - 1] = [
-        { name: ABILITIES.STR, score: 18 },
-        { name: ABILITIES.INT, score: 18 },
-        { name: ABILITIES.DEX, score: 18 },
-        { name: ABILITIES.CON, score: 18 },
-        { name: ABILITIES.WIS, score: 18 },
-        { name: ABILITIES.CHA, score: 18 },
-      ];
-    }
     return abilitySets;
   }
 
@@ -522,31 +514,26 @@ export class CreateActorSheet extends ActorSheet {
 
     // Age input changes
     ageInput.change((event) => {
-      console.log('ageInput change', event.target.value);
       const age = event.target.value;
       html.find('span.data-fields-age').text(age);
     });
     // Height input changes
     heightInput.change((event) => {
-      console.log('heightInput change', event.target.value);
       const height = event.target.value;
       html.find('span.data-fields-height').text(this._getHeightAndFeetInchesAsString(height));
     });
     // Weight input changes
     weightInput.change((event) => {
-      console.log('weightInput change', event.target.value);
       const weight = event.target.value;
       html.find('span.data-fields-weight').text(weight);
     });
     // SP input changes
     spInput.change((event) => {
-      console.log('spInput change', event.target.value);
       const sp = event.target.value;
       html.find('span.data-fields-sp').text(sp);
     });
     // HP input changes
     hpValueInput.change((event) => {
-      console.log('hpValueInput change', event.target.value);
       const hp = event.target.value;
       html.find('span.data-fields-hp').text(hp);
       // update hp max
@@ -554,14 +541,12 @@ export class CreateActorSheet extends ActorSheet {
     });
     // Size input changes
     sizeInput.change((event) => {
-      console.log('sizeInput change', event.target.value);
       const size = event.target.value;
       html.find('span.data-fields-size').text(size);
     });
 
     // Gender-select changes
     genderSelect.change((event) => {
-      console.log('genderSelect change', event.target.value);
       const gender = event.target.value;
       // update height and weight
       const heightWeight = this._getHeightAndWeight(
@@ -586,7 +571,6 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-race changes
     raceSelect.change((event) => {
-      console.log('raceSelect change', event.target.value);
       const race = event.target.value;
       // update race description
       const { raceDescription, listItems } = this._getRaceDescription(race);
@@ -601,7 +585,6 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-alignment changes
     alignmentSelect.change((event) => {
-      console.log('alignmentSelect change', event.target.value);
       const alignment = event.target.value;
       // update alignment description
       const alignmentDescription = alignmentDescriptions[alignment];
@@ -610,7 +593,6 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-abilities changes
     abilitiesSelect.change((event) => {
-      console.log('abilitiesSelect change', raceSelect.val());
       const selectedSet = JSON.parse(event.target.value);
       strInput.val(selectedSet.find((s) => s.name === ABILITIES.STR).score);
       intInput.val(selectedSet.find((s) => s.name === ABILITIES.INT).score);
@@ -637,12 +619,11 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-class changes
     classSelect.change((event) => {
-      console.log('classSelect change', event.target.value);
       const className = event.target.value;
       // update class description
       const { description, stats, specializedSkillsDesc, proficientSkillsDesc, featureListItems } =
         this._getClassDescription(className);
-      html.find('p.class-description-desc').text(description);
+      html.find('div.class-description-desc').html(description);
       html.find('div.class-description-stats').html(stats);
       html.find('ul.class-description-list').html(featureListItems);
       html.find('span.class-specialized-skills').html(specializedSkillsDesc);
@@ -654,7 +635,7 @@ export class CreateActorSheet extends ActorSheet {
       const hp = this._getStartingHp(originSelect.val(), className, sizeInput.val(), conInput.val());
       hpValueInput.val(hp).trigger('change');
       // update alignment options
-      const allowedAlignments = CLASSES[className].alignments;
+      const allowedAlignments = this._getAllowedAlignments(className);
       const alignmentOptions = this._getAlignmentOptions(allowedAlignments);
       alignmentSelect.html(alignmentOptions.options).trigger('change');
       // update size attribute of alignmentSelect
@@ -665,7 +646,6 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-origin changes
     originSelect.change((event) => {
-      console.log('originSelect change', event.target.value);
       const origin = event.target.value;
       // update origin description
       const { originDescription, hpBonusDesc, startingSpDesc, listItems } = this._getOriginDescription(origin);
@@ -675,7 +655,6 @@ export class CreateActorSheet extends ActorSheet {
       html.find('span.origin-description-list').text(listItems);
       // update starting SP
       const sp = this._getStartingSp(origin);
-      console.log(sp);
       spInput.val(sp).trigger('change');
       // update starting HP
       const hp = this._getStartingHp(origin, classSelect.val(), sizeInput.val(), conInput.val());
@@ -691,84 +670,43 @@ export class CreateActorSheet extends ActorSheet {
 
   /* -------------------------------------------- */
 
-  /**
-   * Handle click events for Item control buttons within the Actor Sheet
-   * @param event
-   * @private
-   */
-  async _onItemControl(event) {
-    event.preventDefault();
-
-    // Obtain event data
-    const button = event.currentTarget;
-    const li = button.closest('.item');
-    const itemId = li?.dataset.itemId;
-    const item = this.actor.items.get(itemId);
-    const type = button.dataset.type;
-    const data = { name: game.i18n.localize('SIMPLE.ItemNew'), type: type };
-
-    // Handle different actions
-    switch (button.dataset.action) {
-      case 'create': {
-        const cls = getDocumentClass('Item');
-        return cls.create(data, { parent: this.actor });
-      }
-      case 'edit':
-        return item.sheet.render(true);
-      case 'delete': {
-        const actor = this.actor;
-        const itemQty = +item.data.data.quantity || 0;
-        if (itemQty <= 1) return item.delete();
-        return new Dialog({
-          title: 'Delete Item',
-          content: `<form>
-            <div class="flexrow">
-              <label class="flex1">How many?</label>
-              <label class="flex1" style="text-align:center;" id="splitValue"></label>
-              <input class="flex3" type="range" min="1" id="splitRange">
-            </div>
-          </form>`,
-          buttons: {
-            one: {
-              icon: '<i class="fas fa-check"></i>',
-              label: 'Submit',
-              callback: async (html) => {
-                const quantityVal = +html.find('#splitRange').val();
-                if (quantityVal >= itemQty) return item.delete();
-                await actor.updateEmbeddedDocuments('Item', [
-                  { _id: item._id, 'data.quantity': itemQty - quantityVal },
-                ]);
-              },
-            },
-            two: {
-              icon: '<i class="fas fa-times"></i>',
-              label: 'Cancel',
-            },
-          },
-          render: (html) => {
-            const initialVal = itemQty;
-            const splitRange = html.find('#splitRange');
-            splitRange.attr('max', itemQty);
-            splitRange.val(initialVal);
-            const splitValue = html.find('#splitValue');
-            splitValue.html(initialVal);
-            splitRange.on('input', () => {
-              splitValue.html(splitRange.val());
-            });
-          },
-        }).render(true);
-      }
-    }
-  }
-
-  /* -------------------------------------------- */
-
   /** @inheritdoc */
   _getSubmitData(updateData) {
     let formData = super._getSubmitData(updateData);
+    // determine max age
+    formData['data.max_age'] = RACES[formData['data.race']].randomMaxAge();
     console.log('formData', formData);
-    formData = EntitySheetHelper.updateAttributes(formData, this.object);
-    formData = EntitySheetHelper.updateGroups(formData, this.object);
+    const firstLevelUpdates = getLevelUpdates(
+      this.actor,
+      1,
+      formData['data.class'],
+      formData['data.race'],
+      formData['data.origin']
+    );
+    // add SP item
+    const spItem = game.items.getName(COINS_OF_ACCOUNT.sp.name);
+    if (!spItem) {
+      ui.notifications.error(`Could not find ${COINS_OF_ACCOUNT.sp.name} in game items!`);
+    }
+    const createData = cloneItem(spItem);
+    createData.data.quantity = Number(formData['sp']);
+    delete formData['sp'];
+    firstLevelUpdates.item.push(createData);
+    console.log('itemUpdates', firstLevelUpdates.item);
+    formData = {
+      ...formData,
+      ...firstLevelUpdates.actor,
+    };
+    console.log('formData', formData);
+    return;
+    // TODO
+    // add img prop with value from profile img src
+    // show confirmation dialog to create
+    // change sheet class flag
+    // make level up function handle multi-class
+    // level up function also needs to set spell slots
+    // add random languages and spells known
+    // handle actor update here and return undefined from this function, use updateLevel
     return formData;
   }
 }

@@ -4,8 +4,10 @@ import { skills, allSkills, SKILL_PROFS } from '../skills.js';
 import { FeatureConfig, features } from '../features.js';
 import { LANGUAGES } from '../languages.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { progressions, removeDuplicates } from '../helper.js';
+import { progressions } from '../helper.js';
+import { removeDuplicates } from '../../helper/helper.js';
 import { allOrigins } from '../origin.js';
+import { origins } from '../origin.js';
 
 const BASE_AC_DEFAULT = 10;
 
@@ -69,16 +71,19 @@ export class BaseClass {
   getXpReq(Class) {
     const afterName = this.lvl >= Class.XP_REQS.length;
     if (afterName) return Class.XP_REQ_AFTER_NAME_LVL ?? Infinity;
-    return Class.XP_REQS[this.lvl] - Class.XP_REQS[this.lvl - 1];
+    return Class.XP_REQS[this.lvl] - (Class.XP_REQS[this.lvl - 1] ?? 0);
   }
 
   /**
    * Builds and assigns a skills object based on the provided Class, containing three skill proficiency categories.
    * @param {Class} Class - The Class object that defines skill proficiency categories.
+   * @param {string} origin - The origin of the character.
    */
-  buildSkills(Class) {
+  buildSkills(Class, origin) {
+    const actorOrigin = origins[origin];
     const spec = Class.specializedSkills ?? [];
-    const prof = Class.proficientSkills ?? [];
+    // add origin skills to proficient skills
+    const prof = removeDuplicates([...(Class.proficientSkills ?? []), ...actorOrigin.skills]);
     const untr = Class.untrainedSkills ?? [];
     this.skills = Object.freeze({
       [SKILL_PROFS.SPECIALIZED]: removeDuplicates(spec).map((s) => ({
@@ -170,7 +175,7 @@ export class BaseClass {
   features = [];
   languages = [];
 
-  constructor(lvl, Class) {
+  constructor(lvl, origin, Class) {
     lvl = Math.max(1, Number(lvl));
     if (Class.XP_REQ_AFTER_NAME_LVL == null) {
       lvl = Math.min(lvl, Class.TITLES.length);
@@ -178,7 +183,7 @@ export class BaseClass {
     this.lvl = lvl;
     this.reqXp = this.getXpReq(Class);
     this.title = Class.TITLES[lvl - 1] ?? `${Class.TITLES[Class.TITLES.length - 1]} (${lvl}th Level)`;
-    this.buildSkills(Class);
+    this.buildSkills(Class, origin);
     this.buildSaves(Class);
     this.buildFeatures(Class);
     this.buildSpellSlots(Class);

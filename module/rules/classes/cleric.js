@@ -1,14 +1,14 @@
-import { allArmors, allShields } from '../armors.js';
-import { allSpellSkills, SKILLS } from '../skills.js';
+import { allArmors, lightArmors, mediumArmors, allShields } from '../armors.js';
+import { allSpellSkills, SKILLS, allCombatSkills } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Cleric extends BaseClass {
-  static XP_REQS = Object.freeze([800, 2400, 5600, 12000, 25000, 55000, 110000]);
+  static XP_REQS = Object.freeze([0, 800, 2400, 5600, 12000, 25000, 55000, 110000]);
 
   static XP_REQ_AFTER_NAME_LVL = 120000;
 
@@ -89,8 +89,8 @@ export class Cleric extends BaseClass {
 
   static primeReqs = [ABILITIES.WIS];
 
-  constructor(lvl, Class = Cleric) {
-    super(lvl, Class);
+  constructor(lvl, origin, Class = Cleric) {
+    super(lvl, origin, Class);
     this.armors = [...allArmors];
     this.shields = [...allShields];
   }
@@ -126,9 +126,45 @@ export class CloisteredCleric extends Cleric {
     },
   ];
 
-  constructor(lvl) {
-    super(lvl, CloisteredCleric);
+  constructor(lvl, origin) {
+    super(lvl, origin, CloisteredCleric);
     this.armors = [];
     this.shields = [];
+  }
+}
+
+export class Runepriest extends Cleric {
+  static description = 'A holy warrior who carves magic runes to channel divine power.';
+  static featureDescriptions = Object.freeze([
+    'Turn undead with holy symbol',
+    'Carve magic runes',
+    'Requires Intelligence 9+ and Wisdom 13+',
+  ]);
+  static weaponDescription = 'any';
+  static armorDescription = 'medium';
+
+  static featuresConfig = deepFreeze([
+    new FeatureConfig(features.TURN_UNDEAD, 1),
+    new FeatureConfig(features.RUNE_MAGIC, 1),
+  ]);
+
+  static specializedSkills = Object.freeze([SKILLS.RUNELORE, SKILLS.RUNECARVING]);
+
+  static proficientSkills = Object.freeze([...allCombatSkills]);
+
+  static abilityReqs = [
+    {
+      name: ABILITIES.INT,
+      min: 9,
+    },
+    {
+      name: ABILITIES.WIS,
+      min: 13,
+    },
+  ];
+
+  constructor(lvl, origin) {
+    super(lvl, origin, Runepriest);
+    this.armors = [...lightArmors, ...mediumArmors];
   }
 }

@@ -1,7 +1,7 @@
 /* eslint-disable no-prototype-builtins */
-import * as ITEM from './helper/item.js';
-import * as SPELLS from './rules/spells.js';
-import * as Util from './utils.js';
+import * as ITEM from './item.js';
+import * as SPELLS from '../rules/spells.js';
+import * as Util from '../utils.js';
 
 export class EntitySheetHelper {
   static getAttributeData(data) {
@@ -659,4 +659,41 @@ export class EntitySheetHelper {
       options: options,
     });
   }
+}
+
+/**
+ * Recursively freezes all properties of an object, making it immutable.
+ * This function deeply freezes an object by freezing all of its properties,
+ * including nested objects and functions.
+ *
+ * @param {Object} object - The object to deep freeze.
+ * @returns {Object} - The deeply frozen object.
+ *
+ * @example
+ * const myObject = { a: 1, b: { c: 2 } };
+ * const frozenObject = deepFreeze(myObject);
+ *
+ * // Attempting to modify a property on the frozenObject will throw an error:
+ * // frozenObject.a = 3; // Throws an error
+ * // frozenObject.b.c = 4; // Throws an error
+ */
+export function deepFreeze(object) {
+  // Retrieve the property names defined on object
+  const propNames = Reflect.ownKeys(object);
+
+  // Freeze properties before freezing self
+  for (const name of propNames) {
+    const value = object[name];
+
+    if ((value && typeof value === 'object') || typeof value === 'function') {
+      deepFreeze(value);
+    }
+  }
+
+  return Object.freeze(object);
+}
+
+// remove duplicates from an array
+export function removeDuplicates(array) {
+  return [...new Set(array)];
 }

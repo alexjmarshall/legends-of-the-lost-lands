@@ -1,12 +1,12 @@
-import { EntitySheetHelper } from '../helper.js';
+import { EntitySheetHelper } from '../helper/helper.js';
 import * as Util from '../utils.js';
-import * as ItemUtil from '../helper/item.js';
 import * as Constant from '../constants.js';
 import * as Fatigue from '../fatigue.js';
 import * as CLASSES from '../rules/classes/index.js';
 import * as RACES from '../rules/races/index.js';
 import { getAdvancementPointsRequired } from '../rules/skills.js';
 import { rollDice } from '../helper/dice.js';
+import { getLevelUpdates, updateLevel } from '../helper/actor.js';
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -381,8 +381,10 @@ export class SimpleActorSheet extends ActorSheet {
     const button = event.currentTarget;
 
     switch (button.dataset.action) {
-      case 'level-up':
-        return this._updateLevel(owner, owner.data.data.lvl + 1, true);
+      case 'level-up': {
+        const updates = getLevelUpdates(owner, owner.data.data.lvl + 1);
+        updateLevel(owner, updates.actor, updates.item);
+      }
     }
   }
 
@@ -535,97 +537,6 @@ export class SimpleActorSheet extends ActorSheet {
       case 'use':
         return this._handleUseItem(item, event);
     }
-  }
-
-  async _updateLevel(actor, lvl, incrementHp = false) {
-    // delete all features on this actor
-    const featureIds = actor.data.items.filter((i) => i.type === 'feature').map((i) => i._id);
-    await actor.deleteEmbeddedDocuments('Item', featureIds);
-
-    // get class and race data
-    const actorClass = CLASSES[actor.data.data.class];
-    if (!actorClass) return ui.notifications.error(`Could not find class ${actor.data.data.class}!`);
-    const classObj = new actorClass(lvl);
-
-    const actorRace = RACES[actor.data.data.race];
-    if (!actorRace) return ui.notifications.error(`Could not find race ${actor.data.data.race}!`);
-
-    // for each feature, add a feature item to this actor
-    // get the base feature from the existing one, and modify it according to class feature config data
-    const classFeatures = classObj.features;
-    const raceFeatures = actorRace.features;
-    const features = [...classFeatures, ...raceFeatures];
-    const createFeatureUpdates = [];
-    for (const feature of features) {
-      const featureItem = game.items.getName(feature.name);
-      if (!featureItem) {
-        ui.notifications.error(`Could not find ${feature.name} in game items!`);
-        continue;
-      }
-      const createData = ItemUtil.cloneItem(featureItem);
-      if (feature.usesPerDay) {
-        createData.data.attributes.uses_per_day.value = feature.usesPerDay;
-        createData.data.attributes.uses_per_day.max = feature.usesPerDay;
-      }
-      createFeatureUpdates.push(createData);
-    }
-
-    createFeatureUpdates.length && (await actor.createEmbeddedDocuments('Item', createFeatureUpdates));
-
-    // update lvl, xp_req value and xp_req max
-    const leftoverXp = Math.max(0, actor.data.data.xp_req.value - actor.data.data.xp_req.max);
-    const actorUpdates = {
-      'data.lvl': lvl,
-      'data.xp_req.value': leftoverXp,
-      'data.xp_req.max': classObj.reqXp,
-    };
-
-    // update skills
-    const allSkills = classObj.skills.flatMap();
-    const skillUpdates = {};
-    for (const skill of allSkills) {
-      const skillUpdate = foundry.utils.deepClone(actor.data.data.skills[skill.name]);
-      if (!skillUpdate) {
-        ui.notifications.error(`Could not find ${skill.name} in actor skills!`);
-        continue;
-      }
-      if (actor.data.data.attributes.admin.use_target_skill_lvl) {
-        skillUpdate.lvl = skill.target;
-        continue;
-      }
-      while (skillUpdate.adv_req.value >= skillUpdate.adv_req.max) {
-        skillUpdate.adv_req.value -= skillUpdate.adv_req.max;
-        skillUpdate.lvl++;
-        skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
-      }
-      const chanceOfIncrease = skillUpdate.adv_req.value / skillUpdate.adv_req.max;
-      if (Math.random() < chanceOfIncrease) {
-        skillUpdate.lvl++;
-        skillUpdate.adv_req.value = 0;
-      }
-      if (skillUpdate.lvl < skill.min) {
-        skillUpdate.lvl = skill.min;
-      }
-      skill.adv_req.max = getAdvancementPointsRequired(skill.lvl);
-      skillUpdates[`${skill}`] = skillUpdate;
-    }
-    actorUpdates['data.skills'] = skillUpdates;
-
-    // update HP
-    let rolledHp = 0;
-    if (lvl === 1) {
-      console.log('first lvl hp', classObj.firstLvlHp);
-      rolledHp = classObj.firstLvlHp;
-    } else if (incrementHp && lvl === actor.data.data.lvl + 1) {
-      rolledHp = rollDice(`${classObj.hitDie}`);
-    }
-    const maxHpUpdate = actor.data.data.hp.max + rolledHp;
-    const hpUpdate = actor.data.data.hp.value + rolledHp;
-
-    actorUpdates['data.hp.max'] = maxHpUpdate;
-    actorUpdates['data.hp.value'] = hpUpdate;
-
-    await actor.update(actorUpdates);
   }
 
   async _handleUseItem(item, event) {

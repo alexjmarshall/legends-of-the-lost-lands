@@ -75,12 +75,7 @@
       <div class="abilities-container">
         <label class="abilities-label">Select a set of ability scores</label>
         <div class="ability-heading">{{{ abilitiesHeading }}}</div>
-        <select
-          class="list-box select-abilities"
-          id="chargen-abilities-select"
-          name="data.race"
-          size="{{abilities.numAbilitySets}}"
-        >
+        <select class="list-box select-abilities" id="chargen-abilities-select" size="{{abilities.numAbilitySets}}">
           {{{abilityOptions}}}
         </select>
         <input name="data.attributes.ability_scores.str.value" type="hidden" value="{{abilities.str}}" />
@@ -99,7 +94,7 @@
           {{{classOptions.options}}}
         </select>
         <div class="class-description">
-          <p class="class-description-desc">{{classDescription.description}}</p>
+          <div class="class-description-desc">{{{classDescription.description}}}</div>
           <div class="class-description-stats">{{{classDescription.stats}}}</div>
           <p>
             <span class="class-specialized-skills">{{{classDescription.specializedSkillsDesc}}}</span>
@@ -177,9 +172,15 @@
       </div>
       <hr />
       <div class="portrait-container">
-        <label class="portrait-label" for="chargen-portrait">Portrait</label>
-        <div class="portrait-img-container">
-          <img class="profile-img" id="chargen-portrait" src="{{data.img}}" title="{{data.name}}" />
+        <div class="profile-img-and-submit">
+          <div class="profile-img-container">
+            <label class="profile-label" for="chargen-portrait">Portrait</label>
+            <img class="profile-img" id="chargen-portrait" src="{{data.img}}" title="{{data.name}}" />
+          </div>
+          <div class="character-create-container">
+            <div>Your journey awaits...</div>
+            <button class="character-create" title="Create Character">Create Character</button>
+          </div>
         </div>
         <div class="portrait-img-options">{{{portraitImgs}}}</div>
       </div>
