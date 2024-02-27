@@ -1,5 +1,6 @@
 import { ABILITIES } from './abilities.js';
-import { deepFreeze, progressions } from './helper.js';
+import { progressions } from './helper.js';
+import { deepFreeze } from '../helper/helper.js';
 
 const { STR, INT, WIS, DEX, CON, CHA } = ABILITIES;
 

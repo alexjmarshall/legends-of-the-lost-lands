@@ -5,11 +5,11 @@ import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { ALIGNMENTS, lawfulAlignments } from '../alignments.js';
 
 export class Paladin extends BaseClass {
-  static XP_REQS = Object.freeze([1300, 4000, 9000, 20000, 45000, 95000, 170000, 340000]);
+  static XP_REQS = Object.freeze([0, 1300, 4000, 9000, 20000, 45000, 95000, 170000, 340000]);
 
   static XP_REQ_AFTER_NAME_LVL = 220000;
 
@@ -81,8 +81,8 @@ export class Paladin extends BaseClass {
 
   static alignments = [ALIGNMENTS.LG];
 
-  constructor(lvl, Class = Paladin) {
-    super(lvl, Class);
+  constructor(lvl, origin, Class = Paladin) {
+    super(lvl, origin, Class);
     this.armors = [...allArmors];
     this.shields = [...allShields];
   }
@@ -135,7 +135,7 @@ export class Inquisitor extends Paladin {
 
   static alignments = lawfulAlignments;
 
-  constructor(lvl) {
-    super(lvl, Inquisitor);
+  constructor(lvl, origin) {
+    super(lvl, origin, Inquisitor);
   }
 }

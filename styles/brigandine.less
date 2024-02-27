@@ -175,6 +175,8 @@ select {
       line-height: 36px;
       font-weight: bold;
       border-bottom: inset;
+      overflow: hidden;
+      max-height: 40px;
     }
 
     .item.active {
@@ -344,20 +346,31 @@ select {
         justify-content: center;
         flex-flow: column;
 
-        .portrait-label {
-          margin-bottom: 5px;
-          text-align: center;
-        }
-
-        .portrait-img-container {
+        .profile-img-and-submit {
           display: flex;
-          justify-content: center;
+          justify-content: space-around;
           margin-bottom: 30px;
 
+          .profile-label {
+            margin-bottom: 5px;
+            text-align: center;
+          }
+
           .profile-img {
-            height: 300px;
-            max-width: 200px;
+            height: 260px;
+            max-width: 175px;
             object-fit: cover;
+          }
+
+          .character-create-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 40px;
+
+            button {
+              height: 40px;
+            }
           }
         }
 

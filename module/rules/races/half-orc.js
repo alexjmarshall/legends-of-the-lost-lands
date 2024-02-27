@@ -52,7 +52,7 @@ export class HalfOrc extends BaseRace {
   static allowedClasses = Object.freeze([
     CLASS.Fighter.name,
     CLASS.Berserker.name,
-    CLASS.Runecaster.name,
+    CLASS.Runepriest.name,
     CLASS.Thief.name,
     CLASS.Swashbuckler.name,
     CLASS.Assassin.name,
@@ -73,7 +73,7 @@ export class HalfOrc extends BaseRace {
     switch (Class) {
       case CLASS.Fighter.name:
       case CLASS.Berserker.name:
-      case CLASS.Runecaster.name:
+      case CLASS.Runepriest.name:
         return 13 + rollDice('d4');
       case CLASS.Thief.name:
       case CLASS.Swashbuckler.name:

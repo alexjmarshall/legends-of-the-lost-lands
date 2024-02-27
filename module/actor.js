@@ -1,4 +1,4 @@
-import { EntitySheetHelper } from './helper.js';
+import { EntitySheetHelper } from './helper/helper.js';
 import * as ActorUtil from './helper/actor.js';
 import * as Constant from './constants.js';
 

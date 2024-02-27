@@ -5,12 +5,12 @@ import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { allExceptLawfulGood, evilAlignments } from '../alignments.js';
 import { LANGUAGES } from '../languages.js';
 
 export class Thief extends BaseClass {
-  static XP_REQS = Object.freeze([600, 1800, 4200, 10000, 20000, 40000, 70000, 110000, 160000]);
+  static XP_REQS = Object.freeze([0, 600, 1800, 4200, 10000, 20000, 40000, 70000, 110000, 160000]);
 
   static XP_REQ_AFTER_NAME_LVL = 140000;
 
@@ -76,8 +76,8 @@ export class Thief extends BaseClass {
 
   static alignments = allExceptLawfulGood;
 
-  constructor(lvl, Class = Thief) {
-    super(lvl, Class);
+  constructor(lvl, origin, Class = Thief) {
+    super(lvl, origin, Class);
     this.armors = [...lightArmors];
     this.shields = [];
   }
@@ -104,8 +104,8 @@ export class Assassin extends Thief {
   static weaponDescription = 'any';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
-  constructor(lvl) {
-    super(lvl, Assassin);
+  constructor(lvl, origin) {
+    super(lvl, origin, Assassin);
     this.shields = [...allShields];
     this.alignments = [...evilAlignments];
   }
@@ -139,7 +139,7 @@ export class Swashbuckler extends Thief {
     },
   ];
 
-  constructor(lvl) {
-    super(lvl, Swashbuckler);
+  constructor(lvl, origin) {
+    super(lvl, origin, Swashbuckler);
   }
 }

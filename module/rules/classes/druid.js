@@ -4,14 +4,14 @@ import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 import { LANGUAGES } from '../languages.js';
 import { ALIGNMENTS } from '../alignments.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Druid extends BaseClass {
   static XP_REQS = Object.freeze([
-    900, 3200, 7000, 11000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 675000,
+    0, 900, 3200, 7000, 11000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 675000,
   ]);
 
   static TITLES = Object.freeze([
@@ -106,8 +106,8 @@ export class Druid extends BaseClass {
 
   static alignments = [ALIGNMENTS.N];
 
-  constructor(lvl, Class = Druid) {
-    super(lvl, Class);
+  constructor(lvl, origin) {
+    super(lvl, origin, Druid);
     this.armors = [...lightArmors];
     this.shields = [allShields.medium];
   }

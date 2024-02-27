@@ -6,10 +6,10 @@ import { BaseClass } from './base-class.js';
 import { chaoticAlignments } from '../alignments.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../helper.js';
+import { deepFreeze } from '../../helper/helper.js';
 
 export class Barbarian extends BaseClass {
-  static XP_REQS = Object.freeze([700, 2000, 5000, 10000, 25000, 45000, 90000, 150000, 230000]);
+  static XP_REQS = Object.freeze([0, 700, 2000, 5000, 10000, 25000, 45000, 90000, 150000, 230000]);
 
   static XP_REQ_AFTER_NAME_LVL = 160000;
 
@@ -93,8 +93,8 @@ export class Barbarian extends BaseClass {
 
   static alignments = chaoticAlignments;
 
-  constructor(lvl) {
-    super(lvl, Barbarian);
+  constructor(lvl, origin) {
+    super(lvl, origin, Barbarian);
     this.armors = Barbarian.getArmorsByLevel(lvl);
     this.shields = allShields;
   }

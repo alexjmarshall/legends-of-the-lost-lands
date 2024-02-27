@@ -51,7 +51,7 @@ export class Human extends BaseRace {
     CLASS.Berserker.name,
     CLASS.Paladin.name,
     CLASS.Inquisitor.name,
-    CLASS.Runecaster.name,
+    CLASS.Runepriest.name,
     CLASS.Ranger.name,
     CLASS.VampireHunter.name,
     CLASS.Thief.name,
@@ -83,7 +83,7 @@ export class Human extends BaseRace {
         return 15 + rollDice('d4');
       case CLASS.Paladin.name:
       case CLASS.Inquisitor.name:
-      case CLASS.Runecaster.name:
+      case CLASS.Runepriest.name:
         return 17 + rollDice('d4');
       case CLASS.Ranger.name:
       case CLASS.VampireHunter.name:

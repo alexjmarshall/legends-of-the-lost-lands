@@ -1,4 +1,4 @@
-import { EntitySheetHelper } from '../helper.js';
+import { EntitySheetHelper } from '../helper/helper.js';
 import * as Constant from '../constants.js';
 import * as Util from '../utils.js';
 

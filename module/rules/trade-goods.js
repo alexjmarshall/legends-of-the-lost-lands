@@ -1,4 +1,4 @@
-import { deepFreeze } from './helper.js';
+import { deepFreeze } from '../helper/helper.js';
 
 // TODO item save types and save targets by attack form
 // item saving throw macro that opens screen with modifier like char saving throws

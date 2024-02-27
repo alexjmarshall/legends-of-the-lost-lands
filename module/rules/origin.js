@@ -1,4 +1,4 @@
-import { deepFreeze } from './helper.js';
+import { deepFreeze } from '../helper/helper.js';
 import { rollDice } from '../helper/dice.js';
 import { SKILLS } from './skills.js';
 
