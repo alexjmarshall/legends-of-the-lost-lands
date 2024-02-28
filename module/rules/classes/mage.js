@@ -3,7 +3,7 @@ import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Mage extends BaseClass {
@@ -25,7 +25,7 @@ export class Mage extends BaseClass {
     'Wizard',
   ]);
 
-  static SPELL_SLOTS_BY_LEVEL = deepFreeze([
+  static MAGIC_SPELL_SLOTS = deepFreeze([
     [2],
     [3],
     [3, 1],
@@ -112,7 +112,7 @@ export class Incantatrix extends Mage {
     new FeatureConfig(features.DRAIN_MAGIC, 11),
   ]);
 
-  static SPELL_SLOTS_BY_LEVEL = Object.freeze([
+  static MAGIC_SPELL_SLOTS = Object.freeze([
     [1],
     [2],
     [3],
@@ -148,7 +148,7 @@ class BaseSpecialist extends Mage {
   ]);
   static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.SPECIALIST_FOCUS, 1)]);
 
-  static SPELL_SLOTS_BY_LEVEL = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Mage.SPELL_SLOTS_BY_LEVEL)]);
+  static MAGIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Mage.MAGIC_SPELL_SLOTS)]);
 
   constructor(lvl, origin, Class = BaseSpecialist) {
     super(lvl, origin, Class);

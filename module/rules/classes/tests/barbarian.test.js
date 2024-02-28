@@ -7,7 +7,7 @@ describe('Barbarian class', () => {
 
   it.each(expectedLevels)('constructs a Barbarian of level %i with the correct properties', (lvl) => {
     const actual = new Barbarian(lvl, 'Innkeeper');
-    console.log(actual.skills);
+    console.log(actual);
     // expect(actual).toEqual(expected[lvl]);
   });
 });

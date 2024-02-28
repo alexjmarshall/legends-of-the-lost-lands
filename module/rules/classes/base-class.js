@@ -5,7 +5,7 @@ import { FeatureConfig, features } from '../features.js';
 import { LANGUAGES } from '../languages.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { progressions } from '../helper.js';
-import { removeDuplicates } from '../../helper/helper.js';
+import { removeDuplicates } from '../../helper.js';
 import { allOrigins } from '../origin.js';
 import { origins } from '../origin.js';
 
@@ -132,7 +132,9 @@ export class BaseClass {
   }
 
   buildSpellSlots(Class) {
-    this.spellSlots = Class.SPELL_SLOTS_BY_LEVEL?.[this.lvl - 1].filter((x) => x > 0) ?? [];
+    this.magicSpellSlots = Class.MAGIC_SPELL_SLOTS?.[this.lvl - 1] ?? [];
+    this.clericSpellSlots = Class.CLERIC_SPELL_SLOTS?.[this.lvl - 1] ?? [];
+    this.druidSpellSlots = Class.DRUID_SPELL_SLOTS?.[this.lvl - 1] ?? [];
   }
 
   buildLanguages(Class) {
@@ -161,7 +163,9 @@ export class BaseClass {
   baseAc = BASE_AC_DEFAULT;
   armors = [];
   shields = [];
-  spellSlots = [];
+  magicSpellSlots = [];
+  clericSpellSlots = [];
+  druidSpellSlots = [];
   skills = {
     [SKILL_PROFS.SPECIALIZED]: [],
     [SKILL_PROFS.PROFICIENT]: [],

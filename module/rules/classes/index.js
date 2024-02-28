@@ -6,3 +6,4 @@ export * from './mage.js';
 export * from './paladin.js';
 export * from './ranger.js';
 export * from './thief.js';
+export * from './multi-class.js';

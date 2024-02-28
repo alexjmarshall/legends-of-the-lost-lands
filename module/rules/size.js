@@ -1,4 +1,4 @@
-import { SIZES as actorSizes } from '../helper/actor.js';
+import { SIZES as actorSizes } from '../actor-helper.js';
 
 export const sizes = Object.freeze({
   [actorSizes.TINY]: {

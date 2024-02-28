@@ -1,19 +1,20 @@
-import { EntitySheetHelper } from '../helper/helper.js';
+import { EntitySheetHelper } from '../helper.js';
 import * as Constant from '../constants.js';
 import * as CLASSES from '../rules/classes/index.js';
 import { origins } from '../rules/origin.js';
 import * as RACES from '../rules/races/index.js';
-import { rollDice } from '../helper/dice.js';
+import { rollDice } from '../dice.js';
 import { COINS_OF_ACCOUNT } from '../rules/currency.js';
 import { sizes } from '../rules/size.js';
-import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../helper/sound.js';
-import { insertSpaceBeforeCapitalUnlessSlash } from '../helper/string.js';
+import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
+import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
 import { skills, SKILL_CATEGORIES } from '../rules/skills.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
 import { alignmentDescriptions } from '../rules/alignments.js';
-import { portraits, basePath } from '../helper/portrait.js';
-import { getLevelUpdates } from '../helper/actor.js';
-import { cloneItem } from '../helper/item.js';
+import { portraits, basePath } from '../portrait.js';
+import { getLevelUpdates } from '../actor-helper.js';
+import { cloneItem } from '../item-helper.js';
+import { confirmDialog } from '../dialog.js';
 
 // save stats generated for characters here
 const charGenSave = {};
@@ -30,7 +31,7 @@ export class CreateActorSheet extends ActorSheet {
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'genderrace' }],
       submitOnChange: false,
       submitOnClose: false,
-      closeOnSubmit: true,
+      closeOnSubmit: false,
     });
   }
 
@@ -506,10 +507,11 @@ export class CreateActorSheet extends ActorSheet {
     const chaInput = html.find('input[name="data.attributes.ability_scores.cha.value"]');
     const originSelect = html.find('select.select-origin');
     const classSelect = html.find('select.select-class');
-    const profileImg = html.find('img.profile-img');
+
     const portraitImgClickHandler = (event) => {
       const img = $(event.currentTarget);
-      profileImg.attr('src', img.attr('src'));
+      html.find('img.profile-img').attr('src', img.attr('src'));
+      html.find('input[name="img"]').val(img.attr('src'));
     };
 
     // Age input changes
@@ -671,11 +673,11 @@ export class CreateActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @inheritdoc */
-  _getSubmitData(updateData) {
+  async _getSubmitData(updateData) {
     let formData = super._getSubmitData(updateData);
     // determine max age
     formData['data.max_age'] = RACES[formData['data.race']].randomMaxAge();
-    console.log('formData', formData);
+
     const firstLevelUpdates = getLevelUpdates(
       this.actor,
       1,
@@ -683,6 +685,7 @@ export class CreateActorSheet extends ActorSheet {
       formData['data.race'],
       formData['data.origin']
     );
+
     // add SP item
     const spItem = game.items.getName(COINS_OF_ACCOUNT.sp.name);
     if (!spItem) {
@@ -692,17 +695,28 @@ export class CreateActorSheet extends ActorSheet {
     createData.data.quantity = Number(formData['sp']);
     delete formData['sp'];
     firstLevelUpdates.item.push(createData);
-    console.log('itemUpdates', firstLevelUpdates.item);
+
     formData = {
       ...formData,
       ...firstLevelUpdates.actor,
     };
     console.log('formData', formData);
+
+    const yesCallback = async () => {
+      this.actor.sheet.close();
+      this.actor._sheet = null;
+      await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
+      await this.actor.update(formData);
+    };
+    // confirm with user
+    confirmDialog(
+      'Confirm Character Creation',
+      `Are you sure you want to create ${formData.name || 'this character'} and begin the game?`,
+      yesCallback
+    );
+
     return;
     // TODO
-    // add img prop with value from profile img src
-    // show confirmation dialog to create
-    // change sheet class flag
     // make level up function handle multi-class
     // level up function also needs to set spell slots
     // add random languages and spells known

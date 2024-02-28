@@ -13,7 +13,7 @@ import { PartyActorSheet } from './sheets/party-actor-sheet.js';
 import { preloadHandlebarsTemplates } from './templates.js';
 import * as Macro from './macro.js';
 import * as Constant from './constants.js';
-import * as ITEM from './helper/item.js';
+import * as ITEM from './item-helper.js';
 import * as SPELLS from './rules/spells.js';
 import * as Util from './utils.js';
 import { TimeQ } from './time-queue.js';

@@ -1,7 +1,7 @@
 /* eslint-disable no-prototype-builtins */
-import * as ITEM from './item.js';
-import * as SPELLS from '../rules/spells.js';
-import * as Util from '../utils.js';
+import * as ITEM from './item-helper.js';
+import * as SPELLS from './rules/spells.js';
+import * as Util from './utils.js';
 
 export class EntitySheetHelper {
   static getAttributeData(data) {

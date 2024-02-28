@@ -62,10 +62,10 @@ export function altDialog(options, title, buttons) {
   }
 }
 
-function confirmDialog(title, content, noCallback, yesCallback) {
+export function confirmDialog(title, content, yesCallback, noCallback = () => {}) {
   return new Dialog({
     title,
-    content,
+    content: `<p>${content}</p>`,
     buttons: {
       one: {
         icon: '<i class="fas fa-check"></i>',
@@ -81,11 +81,11 @@ function confirmDialog(title, content, noCallback, yesCallback) {
   }).render(true);
 }
 
-export function confirmDiseaseDialog(actor, disease, noCallback, yesCallback) {
+export function confirmDiseaseDialog(actor, disease, yesCallback, noCallback) {
   const title = 'Confirm Disease';
-  const content = `<p>${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?</p>`;
+  const content = `${actor.name} must Save or contract ${Util.upperCaseFirst(disease)}. Success?`;
 
-  return confirmDialog(title, content, noCallback, yesCallback);
+  return confirmDialog(title, content, yesCallback, noCallback);
 }
 
 export function attackOptionsDialog(options, weapon, preparations, aimPenalties, callback) {

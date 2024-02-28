@@ -4,7 +4,7 @@ import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 import { LANGUAGES } from '../languages.js';
 import { ALIGNMENTS } from '../alignments.js';
 import { WEAPON_CLASS } from '../weapons.js';
@@ -31,7 +31,7 @@ export class Druid extends BaseClass {
     'The Great Druid',
   ]);
 
-  static SPELL_SLOTS_BY_LEVEL = deepFreeze([
+  static DRUID_SPELL_SLOTS = deepFreeze([
     [2],
     [2, 1],
     [3, 2, 1],

@@ -1,4 +1,4 @@
-import { getTokenFromActor } from './actor.js';
+import { getTokenFromActor } from './actor-helper.js';
 
 export function chatBubble(token, text, emote = true) {
   if (token == null) {

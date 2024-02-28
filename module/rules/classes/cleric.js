@@ -4,7 +4,7 @@ import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Cleric extends BaseClass {
@@ -23,7 +23,7 @@ export class Cleric extends BaseClass {
     'High Priest',
   ]);
 
-  static SPELL_SLOTS_BY_LEVEL = deepFreeze([
+  static CLERIC_SPELL_SLOTS = deepFreeze([
     [1],
     [2],
     [2, 1],
@@ -101,7 +101,7 @@ export class CloisteredCleric extends Cleric {
 
   static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.SCRIBE_CLERIC_SCROLLS, 1)]);
 
-  static SPELL_SLOTS_BY_LEVEL = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Cleric.SPELL_SLOTS_BY_LEVEL)]);
+  static CLERIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Cleric.CLERIC_SPELL_SLOTS)]);
 
   static description = 'A scholar of the divine, who studies the ancient texts and languages of the gods.';
   static featureDescriptions = Object.freeze([
