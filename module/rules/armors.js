@@ -1,4 +1,4 @@
-import { deepFreeze } from '../helper/helper.js';
+import { deepFreeze } from '../helper.js';
 import { PHYSICAL_DMG_TYPES } from './attack-and-damage.js';
 
 const { BLUNT, PIERCE, SLASH } = PHYSICAL_DMG_TYPES;

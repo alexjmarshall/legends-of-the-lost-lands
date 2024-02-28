@@ -1,6 +1,6 @@
 import * as Constant from './constants.js';
 import * as Util from './utils.js';
-import * as Dialogs from './dialogs.js';
+import * as Dialogs from './dialog.js';
 
 export async function attack(attacker, target, options) {
   // TODO to break attacking loop, return false;

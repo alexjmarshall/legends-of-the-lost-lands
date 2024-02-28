@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { chaoticAlignments } from '../alignments.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 
 export class Barbarian extends BaseClass {
   static XP_REQS = Object.freeze([0, 700, 2000, 5000, 10000, 25000, 45000, 90000, 150000, 230000]);

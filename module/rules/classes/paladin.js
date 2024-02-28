@@ -5,7 +5,7 @@ import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 import { ALIGNMENTS, lawfulAlignments } from '../alignments.js';
 
 export class Paladin extends BaseClass {

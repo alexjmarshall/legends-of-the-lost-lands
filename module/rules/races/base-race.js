@@ -1,4 +1,4 @@
-import { rollDice } from '../../helper/dice.js';
+import { rollDice } from '../../dice.js';
 import { AGE_CATEGORIES } from '../age.js';
 
 export class BaseRace {

@@ -1,7 +1,7 @@
-import * as CLASSES from '../rules/classes/index.js';
-import * as RACES from '../rules/races/index.js';
-import { cloneItem } from '../helper/item.js';
-import { getAdvancementPointsRequired } from '../rules/skills.js';
+import * as CLASSES from './rules/classes/index.js';
+import * as RACES from './rules/races/index.js';
+import { cloneItem } from './item-helper.js';
+import { getAdvancementPointsRequired } from './rules/skills.js';
 
 export const SIZES = {
   TINY: 'T',
@@ -49,7 +49,7 @@ export function sizeMulti(val, charSize) {
 export function getTokenFromActor(actor) {
   const token = actor?.isToken
     ? actor.token.data
-    : canvas.tokens?.objects?.children.find((t) => t.actor?._id === actor?._id && t.name == actor?.name);
+    : canvas.tokens?.objects?.children.find((t) => t.actor?._id === actor?._id && t.name === actor?.name);
   return token;
 }
 
@@ -69,8 +69,14 @@ export function getLevelUpdates(actor, lvl, className, race, origin) {
   origin = origin || actor.data.data.origin;
 
   // get class, race and origin data
-  const actorClass = CLASSES[className];
-  const classObj = new actorClass(lvl, origin);
+  let classObj = {};
+  if (className.includes('/')) {
+    const classes = className.split('/').map((c) => CLASSES[c]);
+    classObj = new CLASSES.MultiClass(classes, lvl, origin);
+  } else {
+    const actorClass = CLASSES[className];
+    classObj = new actorClass(lvl, origin);
+  }
   const actorRace = RACES[race];
 
   // for each feature, add a feature item to this actor

@@ -1,4 +1,4 @@
-import { ASSETS_PATH } from '../constants.js';
+import { ASSETS_PATH } from './constants.js';
 import { chatBubble } from './chat.js';
 
 export const VOICE_MOODS = {

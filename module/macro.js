@@ -2,7 +2,7 @@ import * as Constant from './constants.js';
 import { TimeQ } from './time-queue.js';
 import * as Util from './utils.js';
 import * as Fatigue from './fatigue.js';
-import * as Dialogs from './dialogs.js';
+import * as Dialogs from './dialog.js';
 import { attack } from './combat.js';
 
 /**
@@ -1348,8 +1348,8 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     return Dialogs.confirmDiseaseDialog(
       actor,
       disease,
-      () => confirmDisease(),
-      () => Fatigue.deleteDisease(actor, disease)
+      () => Fatigue.deleteDisease(actor, disease),
+      () => confirmDisease()
     );
   }
 

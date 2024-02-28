@@ -1,12 +1,12 @@
-import { EntitySheetHelper } from '../helper/helper.js';
+import { EntitySheetHelper } from '../helper.js';
 import * as Util from '../utils.js';
 import * as Constant from '../constants.js';
 import * as Fatigue from '../fatigue.js';
 import * as CLASSES from '../rules/classes/index.js';
 import * as RACES from '../rules/races/index.js';
 import { getAdvancementPointsRequired } from '../rules/skills.js';
-import { rollDice } from '../helper/dice.js';
-import { getLevelUpdates, updateLevel } from '../helper/actor.js';
+import { rollDice } from '../dice.js';
+import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 
 /**
  * Extend the basic ActorSheet with some very simple modifications

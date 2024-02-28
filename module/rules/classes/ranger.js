@@ -5,7 +5,7 @@ import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
-import { deepFreeze } from '../../helper/helper.js';
+import { deepFreeze } from '../../helper.js';
 import { goodAlignments } from '../alignments.js';
 
 export class Ranger extends BaseClass {
@@ -26,8 +26,7 @@ export class Ranger extends BaseClass {
     'Ranger-Lord',
   ]);
 
-  // TODO may need to modify a base class method
-  static MAGIC_SPELL_SLOTS_BY_LEVEL = Object.freeze([
+  static MAGIC_SPELL_SLOTS = Object.freeze([
     [],
     [],
     [],
@@ -50,7 +49,7 @@ export class Ranger extends BaseClass {
     [2, 2],
   ]);
 
-  static DRUID_SPELL_SLOTS_BY_LEVEL = Object.freeze([
+  static DRUID_SPELL_SLOTS = Object.freeze([
     [],
     [],
     [],
