@@ -1,6 +1,6 @@
 import { ABILITIES } from '../abilities.js';
 import { features } from '../features.js';
-import { SIZES } from '../../actor-helper.js';
+import { SIZES } from '../size.js';
 import { AGE_CATEGORIES } from '../age.js';
 import * as CLASS from '../classes/index.js';
 import { rollDice } from '../../dice.js';

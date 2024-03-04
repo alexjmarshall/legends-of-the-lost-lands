@@ -65,7 +65,9 @@ export class Cleric extends BaseClass {
   static saveProgressions = saveBases.cleric;
 
   static firstLvlHp = 'd4+2';
+  static fpReserve = 10;
   static hitDie = 'd6';
+  static afterNameHp = 2;
   static description = 'A holy warrior of the divine.';
   static featureDescriptions = Object.freeze([
     'Turn undead with holy symbol',

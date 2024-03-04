@@ -2,49 +2,12 @@ import * as CLASSES from './rules/classes/index.js';
 import * as RACES from './rules/races/index.js';
 import { cloneItem } from './item-helper.js';
 import { getAdvancementPointsRequired } from './rules/skills.js';
-
-export const SIZES = {
-  TINY: 'T',
-  SMALL: 'S',
-  MEDIUM: 'M',
-  LARGE: 'L',
-  HUGE: 'H',
-  GARGANTUAN: 'G',
-  COLOSSAL: 'C',
-};
-
-export const SIZE_VALUES = {
-  [SIZES.TINY]: 1, // tiny
-  [SIZES.SMALL]: 2, // small
-  [SIZES.MEDIUM]: 3, // medium
-  [SIZES.LARGE]: 4, // large
-  [SIZES.HUGE]: 5, // huge
-  [SIZES.GARGANTUAN]: 6, // gargantuan
-  [SIZES.COLOSSAL]: 7, // colossal
-  default: 2,
-};
-
-/**
- * Adjusts the size of a value based on the provided character size.
- * @param {number} val - The value to adjust.
- * @param {number} charSize - The character size factor.
- * @returns {number} - The adjusted size.
- */
-export function sizeMulti(val, charSize) {
-  if (charSize > 2) {
-    // If charSize is greater than 2, increase the size by 50%.
-    return (val * 3) / 2;
-  } else if (charSize === 1) {
-    // If charSize is 1, decrease the size by 1/3.
-    return (val * 2) / 3;
-  } else if (charSize < 1) {
-    // If charSize is less than 1, decrease the size by 50%.
-    return val / 2;
-  } else {
-    // For other cases, return the original size.
-    return val;
-  }
-}
+import { getExtraLanguages } from './rules/languages.js';
+import { getClericSpellsKnown, getDruidSpellsKnown, getStartingMagicSpellsKnown, SPELL_TYPES } from './rules/spells.js';
+import { getStartingRunesKnown } from './rules/runes.js';
+import { getStartingRecipesKnown } from './rules/recipes.js';
+import { features as rulesFeatures } from './rules/features.js';
+import { rollDice } from './dice.js';
 
 export function getTokenFromActor(actor) {
   const token = actor?.isToken
@@ -53,65 +16,77 @@ export function getTokenFromActor(actor) {
   return token;
 }
 
-export async function updateLevel(actor, actorUpdates, itemUpdates) {
-  console.log('updateLevel', actor, actorUpdates, itemUpdates);
-  // delete all features on this actor
-  const featureIds = actor.data.items.filter((i) => i.type === 'feature').map((i) => i._id);
-  await actor.deleteEmbeddedDocuments('Item', featureIds);
-  await actor.createEmbeddedDocuments('Item', itemUpdates);
-  return actor.update(actorUpdates);
-}
-
-export function getLevelUpdates(actor, lvl, className, race, origin) {
-  console.log('getLevelUpdates', actor, lvl, className, race, origin);
-  className = className || actor.data.data.class;
-  race = race || actor.data.data.race;
-  origin = origin || actor.data.data.origin;
-
-  // get class, race and origin data
-  let classObj = {};
+function getClassInstance(className, lvl, origin) {
   if (className.includes('/')) {
     const classes = className.split('/').map((c) => CLASSES[c]);
-    classObj = new CLASSES.MultiClass(classes, lvl, origin);
-  } else {
-    const actorClass = CLASSES[className];
-    classObj = new actorClass(lvl, origin);
+    return new CLASSES.MultiClass(classes, lvl, origin);
   }
-  const actorRace = RACES[race];
+  const actorClass = CLASSES[className];
+  return new actorClass(lvl, origin);
+}
 
-  // for each feature, add a feature item to this actor
-  // get the base feature from the existing one, and modify it according to class feature config data
-  const classFeatures = classObj.features;
-  const raceFeatures = actorRace.features;
+function addFeatures(itemData, classInstance, race, actor) {
+  const classFeatures = classInstance.features ?? [];
+  const raceFeatures = race.features ?? [];
   const features = [...classFeatures, ...raceFeatures];
-  const createFeatureUpdates = [];
+
   for (const feature of features) {
-    const featureItem = game.items.getName(feature.name);
+    const featureFinder = (i) => i.type === 'feature' && i.name === feature.name;
+    const featureItem = game.items.find(featureFinder);
     if (!featureItem) {
       ui.notifications.error(`Could not find ${feature.name} in game items!`);
       continue;
     }
-    const createData = cloneItem(featureItem);
-    if (feature.usesPerDay) {
-      createData.data.attributes.uses_per_day.value = feature.usesPerDay;
-      createData.data.attributes.uses_per_day.max = feature.usesPerDay;
+    // if actor, check whether they already have this feature
+    const actorFeature = actor?.data.items.find(featureFinder);
+    if (actorFeature) {
+      const actorFeatureData = actorFeature?.data.data;
+      // if they do, only update if the usesPerDay is different
+      if (
+        feature.usesPerDay &&
+        actorFeatureData.attributes.uses_per_day.value !== feature.usesPerDay &&
+        actorFeatureData.attributes.uses_per_day.value !== feature.usesPerDay
+      ) {
+        itemData.update.push({
+          _id: actorFeature._id,
+          'data.attributes.uses_per_day.value': feature.usesPerDay,
+          'data.attributes.uses_per_day.max': feature.usesPerDay,
+        });
+      }
+    } else {
+      // check if the feature already has a feature with the same baseName
+      // this means the feature must be *replaced* with the new version
+      // probably because it's not possible to update an embedded feature's activeEffects
+      // add the old feature's id to the delete list
+      const baseName = feature.baseName;
+      if (baseName) {
+        const otherFeaturesWithBaseName = Object.values(rulesFeatures).filter(
+          (f) => f.baseName === baseName && f.name !== feature.name
+        );
+        for (const otherFeature of otherFeaturesWithBaseName) {
+          const otherFeatureItem = actor?.data.items.find((i) => i.type === 'feature' && i.name === otherFeature.name);
+          if (otherFeatureItem) {
+            itemData.delete.push(otherFeatureItem._id);
+          }
+        }
+      }
+
+      const featureData = cloneItem(featureItem);
+      if (feature.usesPerDay) {
+        featureData.data.attributes.uses_per_day.value = feature.usesPerDay;
+        featureData.data.attributes.uses_per_day.max = feature.usesPerDay;
+      }
+      itemData.create.push(featureData);
     }
-    createFeatureUpdates.push(createData);
   }
+}
 
-  // update lvl, xp_req value and xp_req max
-  const leftoverXp = Math.max(0, actor.data.data.xp_req.value - actor.data.data.xp_req.max);
-  const actorUpdates = {
-    'data.lvl': lvl,
-    'data.xp_req.value': leftoverXp,
-    'data.xp_req.max': classObj.reqXp,
-  };
-
-  // update skills
-  const allSkills = Object.values(classObj.skills).flat();
+const addSkills = (updateData, actor, classInstance) => {
+  const allSkills = Object.values(classInstance.skills).flat();
   const skillUpdates = {};
   for (const skill of allSkills) {
-    const skillUpdate = foundry.utils.deepClone(actor.data.data.skills[skill.name]);
+    // use the _source value for the current skill lvl, to avoid active effects
+    const skillUpdate = foundry.utils.deepClone(actor.data._source.data.skills[skill.name]);
     if (!skillUpdate) {
       ui.notifications.error(`Could not find ${skill.name} in actor skills!`);
       continue;
@@ -136,19 +111,151 @@ export function getLevelUpdates(actor, lvl, className, race, origin) {
     skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
     skillUpdates[`${skill.name}`] = skillUpdate;
   }
-  actorUpdates['data.skills'] = skillUpdates;
+  updateData['data.skills'] = skillUpdates;
+};
 
-  // update HP
-  if (lvl > 1 && lvl === actor.data.data.lvl + 1) {
-    const rolledHp = rollDice(`${classObj.hitDie}`);
-    const maxHpUpdate = actor.data.data.hp.max + rolledHp;
-    const hpUpdate = actor.data.data.hp.value + rolledHp;
-    actorUpdates['data.hp.max'] = maxHpUpdate;
-    actorUpdates['data.hp.value'] = hpUpdate;
+const addSpellsKnown = (itemData, classInstance, actor) => {
+  let clericSpellsKnown = getClericSpellsKnown(classInstance);
+  let druidSpellsKnown = getDruidSpellsKnown(classInstance);
+  let magicSpellsKnown = getStartingMagicSpellsKnown(classInstance);
+
+  // remove spells that the actor already knows
+  if (actor) {
+    const actorSpells = actor.data.items.filter((i) => i.type === 'spell');
+    const actorSpellNames = actorSpells.map((i) => i.name);
+    clericSpellsKnown = clericSpellsKnown.filter((spell) => !actorSpellNames.includes(spell));
+    druidSpellsKnown = druidSpellsKnown.filter((spell) => !actorSpellNames.includes(spell));
+    magicSpellsKnown = magicSpellsKnown.filter((spell) => !actorSpellNames.includes(spell));
   }
+
+  // get the game spell items matching the name of the spells known
+  const spellFinder = (spellType, spell) => (i) =>
+    i.type === 'spell' && i.data.data.attributes.type.value === spellType && i.name === spell;
+  const clericSpellItems = clericSpellsKnown
+    .map((spell) => game.items.find(spellFinder(SPELL_TYPES.CLERIC, spell)))
+    .filter((i) => i);
+  const druidSpellItems = druidSpellsKnown
+    .map((spell) => game.items.find(spellFinder(SPELL_TYPES.DRUID, spell)))
+    .filter((i) => i);
+  const magicSpellItems = magicSpellsKnown
+    .map((spell) => game.items.find(spellFinder(SPELL_TYPES.MAGIC, spell)))
+    .filter((i) => i);
+  const clonedItems = [...clericSpellItems, ...druidSpellItems, ...magicSpellItems].map((i) => cloneItem(i));
+  itemData.create.push(...clonedItems);
+};
+
+const addRecipesKnown = (itemData, classInstance) => {
+  const recipesKnown = getStartingRecipesKnown(classInstance);
+  const recipeItems = recipesKnown.map((recipe) => game.items.find((i) => i.type === 'recipe' && i.name === recipe));
+  const recipeData = recipeItems.map((i) => cloneItem(i));
+  itemData.create.push(...recipeData);
+};
+
+const addRunesKnown = (itemData, classInstance) => {
+  const runesKnown = getStartingRunesKnown(classInstance);
+  const runeItems = runesKnown.map((rune) => game.items.find((i) => i.type === 'rune' && i.name === rune));
+  const runeData = runeItems.map((r) => cloneItem(r));
+  itemData.create.push(...runeData);
+};
+
+const addSpellSlotsToSpellType = (updateData, spellSlots, spellType) => {
+  for (let i = 0; i < spellSlots.length; i++) {
+    const slots = spellSlots[i];
+    const lvl = i + 1;
+    updateData[`data.attributes.spellcasting_${spellType}.lvl_${lvl}.value`] = slots;
+    updateData[`data.attributes.spellcasting_${spellType}.lvl_${lvl}.max`] = slots;
+  }
+};
+
+const addSpellSlots = (updateData, actor, classInstance) => {
+  let magicSpellSlots = classInstance.magicSpellSlots;
+  let clericSpellSlots = classInstance.clericSpellSlots;
+  let druidSpellSlots = classInstance.druidSpellSlots;
+
+  // remove if actor already has the same spell slots
+  if (actor) {
+    const magicSlots = actor.data.magic_spell_slots;
+    const clericSlots = actor.data.cleric_spell_slots;
+    const druidSlots = actor.data.druid_spell_slots;
+    if (magicSlots === magicSpellSlots) {
+      magicSpellSlots = [];
+    }
+    if (clericSlots === clericSpellSlots) {
+      clericSpellSlots = [];
+    }
+    if (druidSlots === druidSpellSlots) {
+      druidSpellSlots = [];
+    }
+  }
+
+  addSpellSlotsToSpellType(updateData, magicSpellSlots, 'magic');
+  addSpellSlotsToSpellType(updateData, clericSpellSlots, 'cleric');
+  addSpellSlotsToSpellType(updateData, druidSpellSlots, 'druid');
+};
+
+const addLanguages = (updateData, classInstance, int) => {
+  const currentLang = classInstance.languages;
+  const updateLang = getExtraLanguages(currentLang, int);
+  updateData['data.attributes.languages.values'] = updateLang.join(', ').trim();
+};
+
+export function getLevelUpdates(actor, lvl, formData = {}) {
+  const actorData = actor.data.data;
+  const className = formData['data.class'] ?? actorData.class;
+  const race = formData['data.race'] ?? actorData.race;
+  const origin = formData['data.origin'] ?? actorData.origin;
+  const classInstance = getClassInstance(className, lvl, origin);
+  const int = formData['data.attributes.ability_scores.int.value'] ?? actorData.attributes.ability_scores.int.value;
+  const actorRace = RACES[race];
+  const itemData = {
+    create: [],
+    update: [],
+    delete: [],
+  };
+
+  const leftoverXp = Math.max(0, actorData.xp_req.value - actorData.xp_req.max);
+  const actorUpdates = {
+    'data.lvl': lvl,
+    'data.xp_req.value': leftoverXp,
+    'data.xp_req.max': classInstance.reqXp,
+  };
+  addSkills(actorUpdates, actor, classInstance);
+
+  // update HP & FP if the character is past first level and incrementing level
+  if (lvl > 1 && lvl === actorData.lvl + 1) {
+    const rolledHp = rollDice(`${classInstance.thisLevelHp}`);
+    actorUpdates['data.hp.max'] = actorData.hp.max + rolledHp;
+    actorUpdates['data.hp.value'] = actorData.hp.value + rolledHp;
+    actorUpdates['data.fp.max'] = actorData.fp.max + rolledHp;
+    actorUpdates['data.fp.value'] = actorData.fp.value + rolledHp;
+  }
+
+  // add starting languages, recipes and runes if the character is being created
+  if (lvl === 1) {
+    addLanguages(actorUpdates, classInstance, int);
+    addRecipesKnown(itemData, classInstance);
+    addRunesKnown(itemData, classInstance);
+  }
+
+  addFeatures(itemData, classInstance, actorRace, actor);
+  addSpellsKnown(itemData, classInstance);
+  addSpellSlots(actorUpdates, actor, classInstance);
 
   return {
     actor: actorUpdates,
-    item: createFeatureUpdates,
+    item: itemData,
   };
+}
+
+export async function updateLevel(actor, actorUpdates, itemUpdates) {
+  await actor.update(actorUpdates);
+  if (itemUpdates.delete.length > 0) {
+    await actor.deleteEmbeddedDocuments('Item', itemUpdates.delete);
+  }
+  if (itemUpdates.update.length > 0) {
+    await actor.updateEmbeddedDocuments('Item', itemUpdates.update);
+  }
+  if (itemUpdates.create.length > 0) {
+    await actor.createEmbeddedDocuments('Item', itemUpdates.create);
+  }
 }

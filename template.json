@@ -25,7 +25,7 @@
             "label": "Damage Effect Immunities"
           },
           "dmg_mods": {
-            "dtype": "String",
+            "dtype": "Number",
             "label": "Damage Type Modifiers"
           }
         },
@@ -76,64 +76,64 @@
           },
           "dmg_mods": {
             "fire": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Fire Modifier",
-              "value": ""
+              "value": 0
             },
             "cold": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Cold Modifier",
-              "value": ""
+              "value": 0
             },
             "electricity": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Electricity Modifier",
-              "value": ""
+              "value": 0
             },
             "acid": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Acid Modifier",
-              "value": ""
+              "value": 0
             },
             "holy": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Holy Modifier",
-              "value": ""
+              "value": 0
             },
             "poison": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Poison Modifier",
-              "value": ""
+              "value": 0
             },
             "magic": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Magic Modifier",
-              "value": ""
+              "value": 0
             },
             "blunt": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Blunt Modifier",
-              "value": ""
+              "value": 0
             },
             "pierce": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Pierce Modifier",
-              "value": ""
+              "value": 0
             },
             "slash": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_mods",
               "label": "Slash Modifier",
-              "value": ""
+              "value": 0
             }
           }
         }
@@ -1275,8 +1275,8 @@
         "money": {
           "dtype": "Number",
           "group": "",
-          "label": "Money (CPs)",
-          "value": 24000
+          "label": "Money (SPs)",
+          "value": 2400
         }
       }
     },
@@ -1315,7 +1315,9 @@
       "clothing",
       "gem",
       "trade_good",
-      "food",
+      "recipe",
+      "rune",
+      "ingredient",
       "jewelry",
       "shield",
       "melee_weapon",
@@ -1341,7 +1343,6 @@
         "worn": false,
         "held_mainhand": false,
         "held_offhand": false,
-        "belt": false,
         "value": 0,
         "quantity": 1,
         "weight": 0,
@@ -1349,10 +1350,6 @@
           "admin": {
             "dtype": "Boolean",
             "label": "Admin"
-          },
-          "charged": {
-            "dtype": "Resource",
-            "label": "Charged"
           }
         },
         "attributes": {
@@ -1393,28 +1390,20 @@
               "label": "Improvised Weapon",
               "value": false
             },
-            "charged": {
-              "dtype": "Boolean",
-              "group": "admin",
-              "label": "Charged",
-              "value": false
-            }
-          },
-          "charged": {
             "charges": {
               "dtype": "Resource",
-              "group": "charged",
+              "group": "admin",
               "label": "Charges",
               "min": 0,
               "value": 20,
               "max": 20
+            },
+            "item_saving_throw_type": {
+              "dtype": "String",
+              "group": "",
+              "label": "Item Saving Throw Type",
+              "value": "wood"
             }
-          },
-          "material_type": {
-            "dtype": "String",
-            "group": "",
-            "label": "Material Type",
-            "value": "wood"
           }
         }
       },
@@ -1847,31 +1836,65 @@
         }
       }
     },
-    "food": {
+    "ingredient": {
       "templates": ["props", "item"],
       "macro": "game.brigandine.Macro.eatFood(itemId,options)",
-      "groups": {
-        "spoilable": {
-          "dtype": "String",
-          "label": "Spoilable"
-        }
-      },
       "attributes": {
         "admin": {
-          "spoilable": {
+          "holdable": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Spoilable",
-            "value": true
-          }
-        },
-        "spoilable": {
+            "label": "Holdable",
+            "value": false
+          },
+          "edible": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Edible",
+            "value": false
+          },
           "spoiled": {
             "dtype": "Boolean",
-            "group": "spoilable",
+            "group": "admin",
             "label": "Spoiled",
             "value": false
+          },
+          "attributes": {
+            "shelf_life": {
+              "dtype": "Number",
+              "group": "",
+              "label": "Shelf Life",
+              "value": 0
+            }
           }
+        }
+      }
+    },
+    "recipe": {
+      "templates": ["props"],
+      "attributes": {
+        "ingredient": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Ingredient(s)",
+          "value": "none"
+        },
+        "tool": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Tool(s)",
+          "value": "none"
+        }
+      }
+    },
+    "rune": {
+      "templates": ["props"],
+      "attributes": {
+        "prereqs": {
+          "dtype": "String",
+          "group": "",
+          "label": "Prerequisites",
+          "value": "none"
         }
       }
     },
@@ -1994,6 +2017,12 @@
           "group": "",
           "label": "Material",
           "value": "silver"
+        },
+        "purity": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Purity",
+          "value": 1
         }
       }
     },

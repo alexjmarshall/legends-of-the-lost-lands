@@ -25,10 +25,6 @@ select {
   font-family: 'IM Fell English';
   font-size: 16px;
 }
-.brigandine.sheet.create-actor label {
-  display: block;
-  font-weight: bold;
-}
 .brigandine {
   /* Sheet Tabs */
   /* Items List */
@@ -140,17 +136,6 @@ select {
 .brigandine .sheet-header .property-field-ac {
   margin-right: 5px;
 }
-.brigandine .create-actor-sheet-header {
-  flex-basis: unset;
-}
-.brigandine .create-actor-sheet-header .data-fields {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 20px;
-}
-.brigandine .create-actor-sheet-header .data-fields label {
-  display: inline-block;
-}
 .brigandine .tabs {
   flex: 0 0 40px;
   height: 40px !important;
@@ -188,143 +173,6 @@ select {
 .brigandine .sheet-body .tab {
   height: 100%;
   overflow-y: auto;
-}
-.brigandine .sheet-body .tab.gender-race {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.gender-race .gender-container,
-.brigandine .sheet-body .tab.gender-race .race-container {
-  margin: 5px 0 20px;
-  display: flex;
-  justify-content: space-between;
-}
-.brigandine .sheet-body .tab.gender-race .gender-description,
-.brigandine .sheet-body .tab.gender-race .race-description {
-  width: 65%;
-}
-.brigandine .sheet-body .tab.gender-race hr {
-  margin-bottom: 20px;
-}
-.brigandine .sheet-body .tab.abilities {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.abilities .abilities-label {
-  margin-bottom: 5px;
-}
-.brigandine .sheet-body .tab.abilities .ability-heading {
-  font-family: 'Chivo Mono', monospace;
-}
-.brigandine .sheet-body .tab.abilities .select-abilities {
-  font-family: 'Chivo Mono', monospace;
-  width: 270px;
-}
-.brigandine .sheet-body .tab.abilities .abilities-container {
-  margin: 5px 0 20px;
-  display: flex;
-  flex-flow: column;
-  align-items: center;
-}
-.brigandine .sheet-body .tab.alignment {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.alignment .alignment-container {
-  margin: 5px 0 20px;
-  display: flex;
-  justify-content: space-between;
-}
-.brigandine .sheet-body .tab.alignment .alignment-description {
-  width: 65%;
-}
-.brigandine .sheet-body .tab.origin {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.origin .origin-container {
-  margin: 5px 0 20px;
-  display: flex;
-  justify-content: space-between;
-}
-.brigandine .sheet-body .tab.origin .origin-description {
-  width: 65%;
-}
-.brigandine .sheet-body .tab.origin .origin-description label {
-  display: inline-block;
-}
-.brigandine .sheet-body .tab.class {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.class .class-container {
-  margin: 5px 0 20px;
-  display: flex;
-  justify-content: space-between;
-}
-.brigandine .sheet-body .tab.class .class-description {
-  width: 65%;
-}
-.brigandine .sheet-body .tab.class .class-description label {
-  display: inline-block;
-}
-.brigandine .sheet-body .tab.appearance {
-  padding: 5px 20px 0;
-}
-.brigandine .sheet-body .tab.appearance hr {
-  margin-bottom: 20px;
-}
-.brigandine .sheet-body .tab.appearance .name-voice-container {
-  margin-bottom: 20px;
-  display: flex;
-  gap: 20px;
-  justify-content: space-between;
-}
-.brigandine .sheet-body .tab.appearance .name-voice-container .name-label,
-.brigandine .sheet-body .tab.appearance .name-voice-container .voice-label {
-  margin-bottom: 5px;
-}
-.brigandine .sheet-body .tab.appearance .name-voice-container .name-container {
-  flex-grow: 1;
-}
-.brigandine .sheet-body .tab.appearance .name-voice-container .voice-container a.voice-preview {
-  margin-left: 5px;
-}
-.brigandine .sheet-body .tab.appearance .name-voice-container .voice-container a.voice-preview i {
-  vertical-align: middle;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container {
-  display: flex;
-  margin: 5px 0 20px;
-  justify-content: center;
-  flex-flow: column;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .profile-img-and-submit {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 30px;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .profile-label {
-  margin-bottom: 5px;
-  text-align: center;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .profile-img {
-  height: 260px;
-  max-width: 175px;
-  object-fit: cover;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 40px;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container button {
-  height: 40px;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .portrait-img-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.brigandine .sheet-body .tab.appearance .portrait-container .portrait-img-options .portrait-img-option {
-  height: 90px;
-  max-width: 60px;
 }
 .brigandine .editor,
 .brigandine .editor-content {
@@ -597,6 +445,166 @@ select {
 .brigandine .text-center {
   text-align: center;
 }
+/* create Actor Sheet */
+.brigandine.sheet.create-actor label {
+  display: block;
+  font-weight: bold;
+}
+.brigandine.sheet.create-actor .create-actor-sheet-header {
+  flex-basis: unset;
+}
+.brigandine.sheet.create-actor .create-actor-sheet-header .data-fields {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+}
+.brigandine.sheet.create-actor .create-actor-sheet-header .data-fields label {
+  display: inline-block;
+}
+.brigandine.sheet.create-actor .sheet-tabs a.disabled {
+  pointer-events: none;
+  color: #5a5a5a;
+  font-weight: normal;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race .gender-container,
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race .race-container {
+  margin: 5px 0 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race .gender-description,
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race .race-description {
+  width: 65%;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.gender-race hr {
+  margin-bottom: 20px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.abilities {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.abilities .abilities-label {
+  margin-bottom: 5px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.abilities .ability-heading {
+  font-family: 'Chivo Mono', monospace;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.abilities .select-abilities {
+  font-family: 'Chivo Mono', monospace;
+  width: 270px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.abilities .abilities-container {
+  margin: 5px 0 20px;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.alignment {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.alignment .alignment-container {
+  margin: 5px 0 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.alignment .alignment-description {
+  width: 65%;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.origin {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.origin .origin-container {
+  margin: 5px 0 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.origin .origin-description {
+  width: 65%;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.origin .origin-description label {
+  display: inline-block;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.class {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.class .class-container {
+  margin: 5px 0 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.class .class-description {
+  width: 65%;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.class .class-description label {
+  display: inline-block;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance {
+  padding: 5px 20px 0;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance hr {
+  margin-bottom: 20px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container .name-label,
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container .voice-label {
+  margin-bottom: 5px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container .name-container {
+  flex-grow: 1;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container .voice-container a.voice-preview {
+  margin-left: 5px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .name-voice-container .voice-container a.voice-preview i {
+  vertical-align: middle;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container {
+  display: flex;
+  margin: 5px 0 20px;
+  justify-content: center;
+  flex-flow: column;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .profile-label {
+  margin-bottom: 5px;
+  text-align: center;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .profile-img {
+  height: 260px;
+  max-width: 175px;
+  object-fit: cover;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 40px;
+  font-size: 18px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container button {
+  height: 50px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options .portrait-img-option {
+  height: 90px;
+  max-width: 60px;
+}
+/* Actor Sheet */
 .brigandine.sheet.actor {
   min-width: 575px;
   min-height: 420px;
@@ -611,6 +619,7 @@ select {
   height: 100px;
   max-width: 100px;
 }
+/* Item Sheet */
 .brigandine.sheet.item {
   min-width: 460px;
   min-height: 400px;

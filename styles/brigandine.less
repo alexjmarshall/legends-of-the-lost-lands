@@ -7,13 +7,6 @@ select {
   font-size: 16px;
 }
 
-.brigandine.sheet.create-actor {
-  label {
-    display: block;
-    font-weight: bold;
-  }
-}
-
 .brigandine {
   // input[type='text']:focus,
   // input[type='number']:focus,
@@ -151,20 +144,6 @@ select {
     }
   }
 
-  .create-actor-sheet-header {
-    flex-basis: unset;
-
-    .data-fields {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 20px;
-
-      label {
-        display: inline-block;
-      }
-    }
-  }
-
   /* Sheet Tabs */
   .tabs {
     flex: 0 0 40px;
@@ -209,182 +188,6 @@ select {
     .tab {
       height: 100%;
       overflow-y: auto;
-    }
-
-    @tab-padding: 5px 20px 0;
-    @tab-desc-width: 65%;
-
-    .tab.gender-race {
-      padding: @tab-padding;
-
-      .gender-container,
-      .race-container {
-        margin: 5px 0 20px;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .gender-description,
-      .race-description {
-        width: @tab-desc-width;
-      }
-
-      hr {
-        margin-bottom: 20px;
-      }
-    }
-
-    .tab.abilities {
-      padding: @tab-padding;
-
-      .abilities-label {
-        margin-bottom: 5px;
-      }
-
-      .ability-heading {
-        font-family: 'Chivo Mono', monospace;
-      }
-
-      .select-abilities {
-        font-family: 'Chivo Mono', monospace;
-        width: 270px;
-      }
-
-      .abilities-container {
-        margin: 5px 0 20px;
-        display: flex;
-        flex-flow: column;
-        align-items: center;
-      }
-    }
-
-    .tab.alignment {
-      padding: @tab-padding;
-
-      .alignment-container {
-        margin: 5px 0 20px;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .alignment-description {
-        width: @tab-desc-width;
-      }
-    }
-
-    .tab.origin {
-      padding: @tab-padding;
-
-      .origin-container {
-        margin: 5px 0 20px;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .origin-description {
-        width: @tab-desc-width;
-
-        label {
-          display: inline-block;
-        }
-      }
-    }
-
-    .tab.class {
-      padding: @tab-padding;
-
-      .class-container {
-        margin: 5px 0 20px;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .class-description {
-        width: @tab-desc-width;
-
-        label {
-          display: inline-block;
-        }
-      }
-    }
-
-    .tab.appearance {
-      padding: @tab-padding;
-
-      hr {
-        margin-bottom: 20px;
-      }
-
-      .name-voice-container {
-        margin-bottom: 20px;
-        display: flex;
-        gap: 20px;
-        justify-content: space-between;
-
-        .name-label,
-        .voice-label {
-          margin-bottom: 5px;
-        }
-
-        .name-container {
-          flex-grow: 1;
-        }
-        .voice-container {
-          a.voice-preview {
-            margin-left: 5px;
-
-            i {
-              vertical-align: middle;
-            }
-          }
-        }
-      }
-
-      .portrait-container {
-        display: flex;
-        margin: 5px 0 20px;
-        justify-content: center;
-        flex-flow: column;
-
-        .profile-img-and-submit {
-          display: flex;
-          justify-content: space-around;
-          margin-bottom: 30px;
-
-          .profile-label {
-            margin-bottom: 5px;
-            text-align: center;
-          }
-
-          .profile-img {
-            height: 260px;
-            max-width: 175px;
-            object-fit: cover;
-          }
-
-          .character-create-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 40px;
-
-            button {
-              height: 40px;
-            }
-          }
-        }
-
-        .portrait-img-options {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 5px;
-
-          .portrait-img-option {
-            height: 90px;
-            max-width: 60px;
-          }
-        }
-      }
     }
   }
 
@@ -720,6 +523,216 @@ select {
   }
 }
 
+/* create Actor Sheet */
+.brigandine.sheet.create-actor {
+  label {
+    display: block;
+    font-weight: bold;
+  }
+
+  .create-actor-sheet-header {
+    flex-basis: unset;
+
+    .data-fields {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+
+      label {
+        display: inline-block;
+      }
+    }
+  }
+
+  .sheet-tabs {
+    a.disabled {
+      pointer-events: none;
+      color: #5a5a5a;
+      font-weight: normal;
+    }
+  }
+
+  @tab-padding: 5px 20px 0;
+  @tab-desc-width: 65%;
+
+  .sheet-body {
+    .tab.gender-race {
+      padding: @tab-padding;
+
+      .gender-container,
+      .race-container {
+        margin: 5px 0 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .gender-description,
+      .race-description {
+        width: @tab-desc-width;
+      }
+
+      hr {
+        margin-bottom: 20px;
+      }
+    }
+
+    .tab.abilities {
+      padding: @tab-padding;
+
+      .abilities-label {
+        margin-bottom: 5px;
+      }
+
+      .ability-heading {
+        font-family: 'Chivo Mono', monospace;
+      }
+
+      .select-abilities {
+        font-family: 'Chivo Mono', monospace;
+        width: 270px;
+      }
+
+      .abilities-container {
+        margin: 5px 0 20px;
+        display: flex;
+        flex-flow: column;
+        align-items: center;
+      }
+    }
+
+    .tab.alignment {
+      padding: @tab-padding;
+
+      .alignment-container {
+        margin: 5px 0 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .alignment-description {
+        width: @tab-desc-width;
+      }
+    }
+
+    .tab.origin {
+      padding: @tab-padding;
+
+      .origin-container {
+        margin: 5px 0 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .origin-description {
+        width: @tab-desc-width;
+
+        label {
+          display: inline-block;
+        }
+      }
+    }
+
+    .tab.class {
+      padding: @tab-padding;
+
+      .class-container {
+        margin: 5px 0 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .class-description {
+        width: @tab-desc-width;
+
+        label {
+          display: inline-block;
+        }
+      }
+    }
+
+    .tab.appearance {
+      padding: @tab-padding;
+
+      hr {
+        margin-bottom: 20px;
+      }
+
+      .name-voice-container {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+
+        .name-label,
+        .voice-label {
+          margin-bottom: 5px;
+        }
+
+        .name-container {
+          flex-grow: 1;
+        }
+        .voice-container {
+          a.voice-preview {
+            margin-left: 5px;
+
+            i {
+              vertical-align: middle;
+            }
+          }
+        }
+      }
+
+      .portrait-container {
+        display: flex;
+        margin: 5px 0 20px;
+        justify-content: center;
+        flex-flow: column;
+
+        .profile-img-and-submit {
+          display: flex;
+          justify-content: space-around;
+          margin-bottom: 30px;
+
+          .profile-label {
+            margin-bottom: 5px;
+            text-align: center;
+          }
+
+          .profile-img {
+            height: 260px;
+            max-width: 175px;
+            object-fit: cover;
+          }
+
+          .character-create-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 40px;
+            font-size: 18px;
+
+            button {
+              height: 50px;
+            }
+          }
+        }
+
+        .portrait-img-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+
+          .portrait-img-option {
+            height: 90px;
+            max-width: 60px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Actor Sheet */
 .brigandine.sheet.actor {
   min-width: 575px;
   min-height: 420px;
@@ -738,6 +751,7 @@ select {
   }
 }
 
+/* Item Sheet */
 .brigandine.sheet.item {
   min-width: 460px;
   min-height: 400px;

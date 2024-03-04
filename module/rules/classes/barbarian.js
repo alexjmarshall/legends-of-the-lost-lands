@@ -62,7 +62,11 @@ export class Barbarian extends BaseClass {
     'Requires Constitution 15+, Strength 14+ and Dexterity 13+',
   ]);
 
-  static firstLvlHp = 'd10+10';
+  static firstLvlHp = 'd8+8';
+
+  static fpReserve = 15;
+
+  static afterNameHp = 3;
 
   static hitDie = 'd10';
 

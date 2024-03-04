@@ -24,6 +24,7 @@ export const features = Object.freeze({
   },
   MULTIATTACK_TWO: {
     name: 'Multiattack - 2',
+    baseName: 'Multiattack',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Multiattack',
@@ -39,6 +40,7 @@ export const features = Object.freeze({
   },
   MULTIATTACK_THREE: {
     name: 'Multiattack - 3',
+    baseName: 'Multiattack',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Multiattack',
@@ -259,14 +261,6 @@ export const features = Object.freeze({
     name: 'Energy Drain Resistance',
     type: FEATURE_TYPE.INHERENT,
   },
-  SLOW_POISON: {
-    name: 'Slow Poison',
-    type: FEATURE_TYPE.INHERENT,
-  },
-  AMBIDEXTROUS: {
-    name: 'Ambidextrous',
-    type: FEATURE_TYPE.INHERENT,
-  },
   GREATER_EVASION: {
     name: 'Greater Evasion',
     type: FEATURE_TYPE.INHERENT,
@@ -354,21 +348,6 @@ export const features = Object.freeze({
     name: 'Worldbound',
     type: FEATURE_TYPE.INHERENT,
   },
-  ALOOF: {
-    name: 'Aloof',
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Aloof',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.xp_req.max',
-          mode: 1,
-          value: 1.1,
-        },
-      ],
-    },
-  },
   HARDY: {
     name: 'Hardy',
     type: FEATURE_TYPE.INHERENT,
@@ -384,21 +363,6 @@ export const features = Object.freeze({
   SMALL_ARMS: {
     name: 'Small Arms',
     type: FEATURE_TYPE.INHERENT,
-  },
-  STUBBORN: {
-    name: 'Stubborn',
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Stubborn',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.xp_req.max',
-          mode: 1,
-          value: 1.1,
-        },
-      ],
-    },
   },
   UNCANNY_SHOT: {
     name: 'Uncanny Shot',

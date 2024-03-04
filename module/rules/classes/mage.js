@@ -61,7 +61,9 @@ export class Mage extends BaseClass {
   static saveProgressions = saveBases.mage;
 
   static firstLvlHp = 'd4+1';
+  static fpReserve = 5;
   static hitDie = 'd4';
+  static afterNameHp = 1;
   static description = 'A master of magical energies who devotes much of their time to spell research.';
   static featureDescriptions = Object.freeze([
     'Cast magic spells',

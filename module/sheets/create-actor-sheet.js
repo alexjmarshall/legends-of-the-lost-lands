@@ -4,7 +4,7 @@ import * as CLASSES from '../rules/classes/index.js';
 import { origins } from '../rules/origin.js';
 import * as RACES from '../rules/races/index.js';
 import { rollDice } from '../dice.js';
-import { COINS_OF_ACCOUNT } from '../rules/currency.js';
+import { UNITS_OF_ACCOUNT } from '../rules/currency.js';
 import { sizes } from '../rules/size.js';
 import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
@@ -12,7 +12,7 @@ import { skills, SKILL_CATEGORIES } from '../rules/skills.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
 import { alignmentDescriptions } from '../rules/alignments.js';
 import { portraits, basePath } from '../portrait.js';
-import { getLevelUpdates } from '../actor-helper.js';
+import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 import { cloneItem } from '../item-helper.js';
 import { confirmDialog } from '../dialog.js';
 
@@ -34,40 +34,6 @@ export class CreateActorSheet extends ActorSheet {
       closeOnSubmit: false,
     });
   }
-
-  /*
-  heading: 
-    Img Picker
-    1st row Character Name (text input)
-    2nd row Height Weight Age GP (spans)
-
-    present as tabs, but must use Next/Previous buttons, all other tabs but current are disabled
-
-    each tab has two columns, one for the choice, next for a description
-    choice column can also have a picture of current selection under a select menu
-
-    all generated stats have a map with a value for each key, generate if not already in map, then store
-
-    Tab -- onChange
-    Gender (radio) -- gender onChange height and weight
-    Race (select) -- height and weight, languages, class list
-    Abilities (radio) -- class list, height and weight
-    Origin (select) -- starting hp, starting sp
-    Class (grouped select) -- starting spells, languages, alignment
-    Alignment (radio) -- 
-    Languages (multiselect) -- 
-    Appearance (img picker) --
-
-    on click Submit, show confirmation dialog with all stats listed
-    -- if confirm, open Purchase Equipment
-    -- after Purchase Equipment, update actor, add items, add spells, update to level 1, open character sheet
-
-    TODO change update level function to return update data, so can combine with submit data
-    also update to take origin into account for skills and 1st level HP
-    also race effect on hit die, starting HP and size
-    remember when calculating skills, use base lvl value, before any active effects! (how to access? -- actora.data._source -- readonly!)
-
-   */
 
   /* -------------------------------------------- */
 
@@ -131,7 +97,7 @@ export class CreateActorSheet extends ActorSheet {
     context.weight = heightWeight.weight;
     context.age = this._getAge(context.systemData.race, context.systemData.class);
     context.sp = this._getStartingSp(context.systemData.origin);
-    context.spAbbr = COINS_OF_ACCOUNT.sp.abbr;
+    context.spAbbr = UNITS_OF_ACCOUNT.sp.abbr;
 
     context.size = RACES[context.systemData.race].size();
 
@@ -160,7 +126,7 @@ export class CreateActorSheet extends ActorSheet {
             .trim()}`
         : ''
     }
-    <p><label>XP required:</label> ${selectedClass.XP_REQS[0]}</p>
+    <p><label>XP required:</label> ${selectedClass.XP_REQS[1]}</p>
     <p><label>Starting HP:</label> ${selectedClass.firstLvlHp}</p>
     <p><label>Hit die:</label> ${selectedClass.hitDie}</p>
     <p><label>Armor:</label> ${selectedClass.armorDescription}</p>
@@ -353,6 +319,18 @@ export class CreateActorSheet extends ActorSheet {
     return this._getOrSetFlag(`hp_${origin}${className}${size}${conScore}`, hpGetter);
   }
 
+  _getStartingFp(className) {
+    let classFactor = 0;
+    if (className.includes('/')) {
+      const classes = className.split('/').map((c) => CLASSES[c]);
+      classFactor = CLASSES.MultiClass.getFpReserve(classes);
+    } else {
+      const cls = CLASSES[className];
+      classFactor = cls.fpReserve;
+    }
+    return 30 + classFactor;
+  }
+
   _getStartingSp(origin) {
     const spGetter = origins[origin].startingWealth;
     return this._getOrSetFlag(`sp_${origin}`, spGetter);
@@ -406,7 +384,7 @@ export class CreateActorSheet extends ActorSheet {
     const listItems = ' ' + selectedOrigin.skills?.join(', ').trim() || '';
     const hpBonus = selectedOrigin.hpBonus;
     const hpBonusDesc = ` ${hpBonus > 0 ? '+' : ''}${hpBonus}`;
-    const startingSpDesc = ` ${selectedOrigin.startingSp} ${COINS_OF_ACCOUNT.sp.abbr}`;
+    const startingSpDesc = ` ${selectedOrigin.startingSp} ${UNITS_OF_ACCOUNT.sp.abbr}`;
     return { originDescription, hpBonusDesc, startingSpDesc, listItems };
   }
 
@@ -466,18 +444,6 @@ export class CreateActorSheet extends ActorSheet {
     return abilitySets;
   }
 
-  // TODO select options for alignment
-  // languages assign randomly at the end
-  // alignment and languages separate tabs?
-  // -- function to determine options by class
-  // -- call on getData and when class changes
-  // multi-select for languages
-  // -- backing hidden input with CSV string of selected languages
-  // -- update this multi-select changes
-  // -- function to determine options by race and class
-  // -- maybe checkboxes instead of multi-select?
-  // -- call on getData and when class changes
-
   /* -------------------------------------------- */
 
   /** @inheritdoc */
@@ -488,6 +454,7 @@ export class CreateActorSheet extends ActorSheet {
     // Everything below here is only needed if the sheet is editable
     if (!this.isEditable) return;
 
+    const tabLinks = html.find('.sheet-tabs a.item');
     const ageInput = html.find('input[name="data.age"]');
     const heightInput = html.find('input[name="data.height"]');
     const weightInput = html.find('input[name="data.weight"]');
@@ -507,6 +474,19 @@ export class CreateActorSheet extends ActorSheet {
     const chaInput = html.find('input[name="data.attributes.ability_scores.cha.value"]');
     const originSelect = html.find('select.select-origin');
     const classSelect = html.find('select.select-class');
+
+    // set all tabs after the one after the one with class of .active to .disabled
+    // and remove .disabled from all tabs before the one with class of .active
+    const setDisabledTabs = (activeTab) => {
+      const allTabs = $(activeTab).parent().children();
+      const activeTabIndex = allTabs.index(activeTab);
+      allTabs.removeClass('disabled');
+      allTabs.slice(activeTabIndex + 2).addClass('disabled');
+    };
+    setDisabledTabs(tabLinks.filter('.active')[0]);
+    tabLinks.click((event) => {
+      setDisabledTabs(event.currentTarget);
+    });
 
     const portraitImgClickHandler = (event) => {
       const img = $(event.currentTarget);
@@ -568,7 +548,7 @@ export class CreateActorSheet extends ActorSheet {
       html.find('div.portrait-img-options').html(portraitImgs);
       html.find('div.portrait-img-options > img').click(portraitImgClickHandler);
       // update profile img
-      profileImg.attr('src', `${basePath}${portraitOptions[0]}`);
+      html.find('img.profile-img').attr('src', `${basePath}${portraitOptions[0]}`);
     });
 
     // Select-race changes
@@ -670,31 +650,46 @@ export class CreateActorSheet extends ActorSheet {
     html.find('div.portrait-img-options > img').click(portraitImgClickHandler);
   }
 
+  _coerceTypes(formData) {
+    formData['data.age'] = Number(formData['data.age']);
+    formData['data.attributes.ability_scores.str.value'] = Number(formData['data.attributes.ability_scores.str.value']);
+    formData['data.attributes.ability_scores.int.value'] = Number(formData['data.attributes.ability_scores.int.value']);
+    formData['data.attributes.ability_scores.dex.value'] = Number(formData['data.attributes.ability_scores.dex.value']);
+    formData['data.attributes.ability_scores.con.value'] = Number(formData['data.attributes.ability_scores.con.value']);
+    formData['data.attributes.ability_scores.wis.value'] = Number(formData['data.attributes.ability_scores.wis.value']);
+    formData['data.attributes.ability_scores.cha.value'] = Number(formData['data.attributes.ability_scores.cha.value']);
+    formData['data.height'] = Number(formData['data.height']);
+    formData['data.weight'] = Number(formData['data.weight']);
+    formData['data.hp.value'] = Number(formData['data.hp.value']);
+    formData['data.hp.max'] = Number(formData['data.hp.max']);
+    formData['sp'] = Number(formData['sp']);
+    return formData;
+  }
+
   /* -------------------------------------------- */
 
   /** @inheritdoc */
   async _getSubmitData(updateData) {
     let formData = super._getSubmitData(updateData);
-    // determine max age
+    // fix types
+    formData = this._coerceTypes(formData);
     formData['data.max_age'] = RACES[formData['data.race']].randomMaxAge();
+    const startingFp = this._getStartingFp(formData['data.class']);
+    formData['data.fp.value'] = startingFp;
+    formData['data.fp.max'] = startingFp;
 
-    const firstLevelUpdates = getLevelUpdates(
-      this.actor,
-      1,
-      formData['data.class'],
-      formData['data.race'],
-      formData['data.origin']
-    );
+    const firstLevelUpdates = getLevelUpdates(this.actor, 1, formData);
 
     // add SP item
-    const spItem = game.items.getName(COINS_OF_ACCOUNT.sp.name);
+    const spItem = game.items.getName(UNITS_OF_ACCOUNT.sp.name);
     if (!spItem) {
-      ui.notifications.error(`Could not find ${COINS_OF_ACCOUNT.sp.name} in game items!`);
+      ui.notifications.error(`Could not find ${UNITS_OF_ACCOUNT.sp.name} in game items!`);
+    } else {
+      const createData = cloneItem(spItem);
+      createData.data.quantity = formData['sp'];
+      firstLevelUpdates.item.push(createData);
     }
-    const createData = cloneItem(spItem);
-    createData.data.quantity = Number(formData['sp']);
     delete formData['sp'];
-    firstLevelUpdates.item.push(createData);
 
     formData = {
       ...formData,
@@ -706,7 +701,7 @@ export class CreateActorSheet extends ActorSheet {
       this.actor.sheet.close();
       this.actor._sheet = null;
       await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
-      await this.actor.update(formData);
+      await updateLevel(this.actor, formData, firstLevelUpdates.item);
     };
     // confirm with user
     confirmDialog(
@@ -717,10 +712,7 @@ export class CreateActorSheet extends ActorSheet {
 
     return;
     // TODO
-    // make level up function handle multi-class
-    // level up function also needs to set spell slots
-    // add random languages and spells known
-    // handle actor update here and return undefined from this function, use updateLevel
-    return formData;
+    // actor derived data!!!
+    // TODO give max HP to every char at first lvl?
   }
 }

@@ -2,7 +2,7 @@ import { allAlignments } from '../alignments.js';
 import { SAVES } from '../saves.js';
 import { skills, allSkills, SKILL_PROFS } from '../skills.js';
 import { FeatureConfig, features } from '../features.js';
-import { LANGUAGES } from '../languages.js';
+import { defaultLanguages } from '../languages.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { progressions } from '../helper.js';
 import { removeDuplicates } from '../../helper.js';
@@ -10,6 +10,7 @@ import { allOrigins } from '../origin.js';
 import { origins } from '../origin.js';
 
 const BASE_AC_DEFAULT = 10;
+const MAX_LVL = 20;
 
 export class BaseClass {
   /**
@@ -69,8 +70,9 @@ export class BaseClass {
    * @returns {number} The additional experience points required to reach the next level.
    */
   getXpReq(Class) {
-    const afterName = this.lvl >= Class.XP_REQS.length;
-    if (afterName) return Class.XP_REQ_AFTER_NAME_LVL ?? Infinity;
+    if (this.lvl >= MAX_LVL) return Infinity;
+    const atName = this.lvl >= Class.XP_REQS.length;
+    if (atName) return Class.XP_REQ_AFTER_NAME_LVL ?? Infinity;
     return Class.XP_REQS[this.lvl] - (Class.XP_REQS[this.lvl - 1] ?? 0);
   }
 
@@ -139,12 +141,30 @@ export class BaseClass {
 
   buildLanguages(Class) {
     const classLang = Class.languages ?? [];
-    this.languages = [LANGUAGES.WESTERLING, ...classLang];
+    this.languages = [...defaultLanguages, ...classLang];
+  }
+
+  getThisLevelHp(Class) {
+    const afterName = this.lvl > Class.TITLES.length;
+    if (afterName) return Class.afterNameHp ?? 0;
+    return Class.hitDie;
+  }
+
+  getTitle(Class) {
+    const title = Class.TITLES[this.lvl - 1];
+    if (title) return title;
+    const nameTitle = Class.TITLES[Class.TITLES.length - 1];
+    if (!Class.XP_REQ_AFTER_NAME_LVL) return nameTitle;
+    return `${nameTitle} (${this.lvl}th Level)`;
   }
 
   static firstLvlHp = 'd4+2';
 
+  static fpReserve = 5;
+
   static hitDie = 'd6';
+
+  static afterNameHp = 2;
 
   static allowedOrigins = allOrigins;
 
@@ -155,6 +175,10 @@ export class BaseClass {
   static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static abilityReqs = [];
+
+  static languages = [];
+
+  static startingRecipes = [];
 
   // property defaults
   lvl = 0;
@@ -181,16 +205,17 @@ export class BaseClass {
 
   constructor(lvl, origin, Class) {
     lvl = Math.max(1, Number(lvl));
-    if (Class.XP_REQ_AFTER_NAME_LVL == null) {
-      lvl = Math.min(lvl, Class.TITLES.length);
+    if (lvl >= MAX_LVL) {
+      lvl = MAX_LVL;
     }
     this.lvl = lvl;
     this.reqXp = this.getXpReq(Class);
-    this.title = Class.TITLES[lvl - 1] ?? `${Class.TITLES[Class.TITLES.length - 1]} (${lvl}th Level)`;
+    this.title = this.getTitle(Class);
     this.buildSkills(Class, origin);
     this.buildSaves(Class);
     this.buildFeatures(Class);
     this.buildSpellSlots(Class);
     this.buildLanguages(Class);
+    this.thisLevelHp = this.getThisLevelHp(Class);
   }
 }

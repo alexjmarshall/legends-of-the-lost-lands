@@ -32,7 +32,9 @@ export class Fighter extends BaseClass {
   static saveProgressions = saveBases.fighter;
 
   static firstLvlHp = 'd6+2';
+  static fpReserve = 20;
   static hitDie = 'd8';
+  static afterNameHp = 3;
   static description = 'A champion of the battlefield.';
   static featureDescriptions = Object.freeze([
     'Extra attack after killing an enemy',

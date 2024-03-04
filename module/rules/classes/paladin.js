@@ -42,7 +42,9 @@ export class Paladin extends BaseClass {
   static saveProgressions = saveBases.cleric;
 
   static firstLvlHp = 'd6+2';
+  static fpReserve = 15;
   static hitDie = 'd8';
+  static afterNameHp = 3;
   static description = 'A warrior bold and pure.';
   static featureDescriptions = Object.freeze([
     'Lay on hands to heal 2 HP/level (1/day)',
