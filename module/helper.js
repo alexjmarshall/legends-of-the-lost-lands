@@ -626,8 +626,7 @@ export class EntitySheetHelper {
           createData.img = img;
         }
         // Set sheet for non-default types
-        const sheetClass = // TODO character actor sheets should be CreateActorSheet
-          // update the flag sheetClass to the standard actor sheet on save of that form
+        const sheetClass =
           createData.type === types.character
             ? 'brigandine.CreateActorSheet'
             : createData.type === types.container
@@ -697,3 +696,5 @@ export function deepFreeze(object) {
 export function removeDuplicates(array) {
   return [...new Set(array)];
 }
+
+export const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];

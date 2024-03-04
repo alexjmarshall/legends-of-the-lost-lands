@@ -1,11 +1,11 @@
-import { allShields, lightArmors } from '../armors.js';
+import { SHIELD_TYPES, lightArmors } from '../armors.js';
 import { allSpellSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { deepFreeze } from '../../helper.js';
-import { LANGUAGES } from '../languages.js';
+import { RARE_LANGUAGES } from '../languages.js';
 import { ALIGNMENTS } from '../alignments.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
@@ -13,6 +13,8 @@ export class Druid extends BaseClass {
   static XP_REQS = Object.freeze([
     0, 900, 3200, 7000, 11000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 675000,
   ]);
+
+  static MULTICLASS_XP_AFTER_NAME_LVL = 225000;
 
   static TITLES = Object.freeze([
     'Aspirant',
@@ -46,6 +48,12 @@ export class Druid extends BaseClass {
     [5, 5, 4, 4, 3, 2, 1],
     [6, 5, 5, 5, 4, 3, 2],
     [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
+    [6, 6, 6, 6, 5, 4, 3],
   ]);
 
   static featuresConfig = deepFreeze([
@@ -73,10 +81,12 @@ export class Druid extends BaseClass {
 
   static saveProgressions = saveBases.cleric;
 
-  static languages = [LANGUAGES.DRUIDIC];
+  static languages = [RARE_LANGUAGES.DRUIDIC];
 
   static firstLvlHp = 'd4+2';
+  static fpReserve = 10;
   static hitDie = 'd6';
+  static afterNameHp = 0;
   static description = 'Serves the forces of nature and balance.';
   static featureDescriptions = Object.freeze([
     'Cast druid spells',
@@ -109,6 +119,6 @@ export class Druid extends BaseClass {
   constructor(lvl, origin) {
     super(lvl, origin, Druid);
     this.armors = [...lightArmors];
-    this.shields = [allShields.medium];
+    this.shields = [SHIELD_TYPES.MEDIUM];
   }
 }

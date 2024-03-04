@@ -1,15 +1,12 @@
 import { ABILITIES } from '../abilities.js';
 import { features } from '../features.js';
-import { SIZES } from '../../actor-helper.js';
+import { SIZES } from '../size.js';
 import { AGE_CATEGORIES } from '../age.js';
 import * as CLASS from '../classes/index.js';
 import { rollDice } from '../../dice.js';
 import { BaseRace } from './base-race.js';
 
-// CONTINUE
-// TODO implement racial/age category ability score adjustments in level up/time advacement
-// so can abide by racial score maximums, don't use active effects
-// when alt/ahift/ctrl clicking rolled damage in chat, option there to choose damage type
+// TODO // when alt/shift/ctrl clicking rolled damage in chat, option there to choose damage type
 export class Dwarf extends BaseRace {
   static abilityScoreModifiers = {
     [ABILITIES.STR]: 0,

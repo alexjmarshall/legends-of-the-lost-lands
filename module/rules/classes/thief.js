@@ -7,7 +7,7 @@ import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
 import { allExceptLawfulGood, evilAlignments } from '../alignments.js';
-import { LANGUAGES } from '../languages.js';
+import { RARE_LANGUAGES } from '../languages.js';
 
 export class Thief extends BaseClass {
   static XP_REQS = Object.freeze([0, 600, 1800, 4200, 10000, 20000, 40000, 70000, 110000, 160000]);
@@ -34,6 +34,8 @@ export class Thief extends BaseClass {
 
   static specializedSkills = Object.freeze([
     SKILLS.SEARCHING,
+    SKILLS.LISTENING,
+    SKILLS.HIDING,
     ...allThieverySkills.filter((s) => s !== SKILLS.DISGUISE),
   ]);
 
@@ -50,10 +52,12 @@ export class Thief extends BaseClass {
 
   static saveProgressions = saveBases.thief;
 
-  static languages = Object.freeze([LANGUAGES.THIEVES_CANT]);
+  static languages = Object.freeze([RARE_LANGUAGES.THIEVES_CANT]);
 
   static firstLvlHp = 'd4+1';
+  static fpReserve = 10;
   static hitDie = 'd4';
+  static afterNameHp = 1;
   static description = 'A master of stealth and guile.';
   static featureDescriptions = Object.freeze([
     'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
@@ -89,6 +93,9 @@ export class Assassin extends Thief {
   static specializedSkills = Object.freeze([SKILLS.POISONLORE, SKILLS.POISON_HANDLING]);
 
   static proficientSkills = Object.freeze([
+    SKILLS.SEARCHING,
+    SKILLS.LISTENING,
+    SKILLS.HIDING,
     ...allCombatSkills,
     ...allThieverySkills.filter((s) => s !== SKILLS.APPRAISAL && s !== SKILLS.PICKPOCKETING),
   ]);
@@ -104,17 +111,18 @@ export class Assassin extends Thief {
   static weaponDescription = 'any';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
+  static alignments = evilAlignments;
+
   constructor(lvl, origin) {
     super(lvl, origin, Assassin);
     this.shields = [...allShields];
-    this.alignments = [...evilAlignments];
   }
 }
 
 export class Swashbuckler extends Thief {
   static featuresConfig = deepFreeze(
     new FeatureConfig(features.DUELLIST, 1),
-    new FeatureConfig(features.GREATER_EVASION, 1) // no damage/half damage on successful/failed Evasion saves
+    new FeatureConfig(features.GREATER_EVASION, 1) // no damage on successful Evasion saves
   );
 
   static description = 'A master of the blade and the art of the duel.';

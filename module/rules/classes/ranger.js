@@ -7,6 +7,7 @@ import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
 import { goodAlignments } from '../alignments.js';
+import { RECIPES } from '../recipes.js';
 
 export class Ranger extends BaseClass {
   static XP_REQS = Object.freeze([0, 1100, 3300, 7700, 16500, 40000, 90000, 150000, 220000, 320000]);
@@ -75,8 +76,6 @@ export class Ranger extends BaseClass {
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.ANCIENT_HATRED, 1),
     new FeatureConfig(features.ALERT, 1),
-    new FeatureConfig(features.SLOW_POISON, 1),
-    new FeatureConfig(features.AMBIDEXTROUS, 1),
     new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
     new FeatureConfig(features.CAST_MAGIC_SPELLS, 7),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
@@ -93,13 +92,13 @@ export class Ranger extends BaseClass {
   static saveProgressions = saveBases.ranger;
 
   static firstLvlHp = 'd6+6';
+  static fpReserve = 15;
   static hitDie = 'd8';
+  static afterNameHp = 3;
   static description = 'A warrior and woodsman with a profound destiny.';
   static featureDescriptions = Object.freeze([
     '+1 damage every 3 levels against evil humanoids',
-    'Immune to backstabs',
-    'Create a poison-slowing tincture',
-    'Halved two-weapon fighting penalties',
+    'Immune to backstabs and +4 to avoid surprise',
     'Cast druid spells (level 6)',
     'Cast magic spells (level 7)',
     'Read magic scrolls (level 7)',
@@ -109,6 +108,7 @@ export class Ranger extends BaseClass {
     'Attack 2x at 8th level, 3x at 15th level',
     'Requires Strength 13+, Intelligence 13+, Wisdom 14+, Constitution 12+ and Good alignment',
   ]);
+  static startingRecipes = [RECIPES.POULTICE_TO_SLOW_POISON];
   static shieldsDescription = 'any';
   static armorDescription = 'any';
   static weaponDescription = 'any';
@@ -148,9 +148,8 @@ export class VampireHunter extends Ranger {
   static description = 'An implacable hunter of the most terrible undead.';
   static featureDescriptions = Object.freeze([
     '+1 damage every 3 levels against the undead',
+    'Immune to backstabs and +4 to avoid surprise',
     '+4 bonus to saving throws vs. energy drain',
-    'Immune to backstabs',
-    'Halved two-weapon fighting penalties',
     'Cast druid spells (level 6)',
     'Cast magic spells (level 7)',
     'Read magic scrolls (level 7)',
@@ -161,11 +160,12 @@ export class VampireHunter extends Ranger {
     'Requires Strength 13+, Intelligence 13+, Wisdom 14+, Constitution 12+ and Good alignment',
   ]);
 
+  static startingRecipes = [RECIPES.WARD_AGAINST_VAMPIRES, RECIPES.WARD_AGAINST_LYCANTHROPES];
+
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.ANCIENT_HATRED, 1),
     new FeatureConfig(features.ALERT, 1),
     new FeatureConfig(features.ENERGY_DRAIN_RESISTANCE, 1),
-    new FeatureConfig(features.AMBIDEXTROUS, 1),
     new FeatureConfig(features.CAST_MAGIC_SPELLS, 4),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
     new FeatureConfig(features.SCRIBE_MAGIC_SCROLLS, 4),

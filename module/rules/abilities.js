@@ -24,11 +24,15 @@ export const getScoreMod = (score) => {
   if (score <= 3) return -3;
   if (score <= 5) return -2;
   if (score <= 8) return -1;
-  if (score <= 11) return 0;
-  if (score <= 14) return 1;
+  if (score <= 12) return 0;
+  if (score <= 15) return 1;
   if (score <= 17) return 2;
   if (score <= 18) return 3;
   return score - 18 + 3;
+};
+
+export const getNumExtraLanguages = (int) => {
+  return Math.max(0, getScoreMod(int));
 };
 
 // TODO other ability related rules, literacy, max retainers, bonus spells, etc.

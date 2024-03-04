@@ -1025,9 +1025,9 @@ export async function buyMacro(item, priceInCp, merchant, qty, options = {}) {
     // TODO TESTTTT buying AND selling thoroughly
     const expandedPriceObj = Util.expandPrice(changeInCp);
     const keyToItemName = {
-      gp: Constant.COINS_OF_ACCOUNT.gp.name,
-      sp: Constant.COINS_OF_ACCOUNT.sp.name,
-      cp: Constant.COINS_OF_ACCOUNT.cp.name,
+      gp: Constant.CURRENCY.gp.name,
+      sp: Constant.CURRENCY.sp.name,
+      cp: Constant.CURRENCY.cp.name,
     };
 
     for (const [k, v] of Object.entries(expandedPriceObj)) {

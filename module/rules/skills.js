@@ -325,7 +325,7 @@ export const skills = deepFreeze({
     expert: false,
     proficientArmorPenalty: 0,
     nonProficientArmorPenalty: 0,
-    category: THIEVERY,
+    category: ADVENTURE,
     advancementBase: COMMON,
   },
   [SKILLS.DEMONLORE]: {
@@ -421,8 +421,8 @@ export const skills = deepFreeze({
     expert: true,
     proficientArmorPenalty: 0,
     nonProficientArmorPenalty: 0,
-    category: THIEVERY,
-    advancementBase: COMMON,
+    category: CULTURE,
+    advancementBase: RARE,
   },
   [SKILLS.HAND_TO_HAND]: {
     ability: STR,

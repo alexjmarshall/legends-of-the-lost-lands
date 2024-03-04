@@ -1,11 +1,11 @@
 import { Cleric, CloisteredCleric, Runepriest } from '../cleric';
 
 describe('Cleric class', () => {
-  const expectedLevels = [1];
+  const expectedLevels = [7];
 
   it.each(expectedLevels)('constructs a Cleric of level %i with the correct properties', (lvl) => {
     const actual = new Cleric(lvl, 'Healer');
-    console.log(actual.skills);
+    console.log(actual);
   });
 });
 

@@ -122,6 +122,25 @@ export const CLOCKS = {
     warnCondition: (date) => date.second === 0 && date.minute % 10 === 0,
   },
 };
+
+const SYMPTOMS = Object.freeze({
+  COUGH: 'cough', // done
+  HEADACHE: 'headache', // done
+  FATIGUE: 'fatigue', // done
+  DIARRHEA: 'diarrhea', // done
+  GUT_PAIN: 'gut pain', // done
+  RASH: 'rash',
+  FEVER: 'fever', // done
+  PAIN: 'pain', // done
+  PUS: 'pus',
+  PAROXYSMS: 'paroxysms',
+  VOMITING: 'vomiting', // done
+  RAPID_BREATHING: 'rapid breathing',
+  CONFUSION: 'confusion',
+  BLACK_TISSUE: 'black tissue',
+  NUMBNESS: 'numbness',
+});
+
 export const DISEASES = {
   // TODO add contagiousness value
   grippe: {

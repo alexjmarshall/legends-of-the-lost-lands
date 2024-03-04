@@ -55,7 +55,7 @@ export class MerchantActorSheet extends ActorSheet {
       for (const [k, v] of Object.entries(expandedPrice)) {
         expandedPrice[k] = {};
         expandedPrice[k].value = v;
-        expandedPrice[k].label = Constant.COINS_OF_ACCOUNT[k].abbr;
+        expandedPrice[k].label = Constant.UNITS_OF_ACCOUNT[k].abbr;
       }
       item.price = expandedPrice;
     });
@@ -115,8 +115,8 @@ export class MerchantActorSheet extends ActorSheet {
         }
         const totalPriceInCp = Math.round(
           copperPrice +
-            silverPrice * Constant.COINS_OF_ACCOUNT.sp.value +
-            goldPrice * Constant.COINS_OF_ACCOUNT.gp.value
+            silverPrice * Constant.UNITS_OF_ACCOUNT.sp.value +
+            goldPrice * Constant.UNITS_OF_ACCOUNT.gp.value
         );
         return buyMacro(item, totalPriceInCp, this.actor);
       }
