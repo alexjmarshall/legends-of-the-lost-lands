@@ -24,9 +24,9 @@
             "dtype": "Boolean",
             "label": "Damage Effect Immunities"
           },
-          "dmg_mods": {
+          "dmg_multi": {
             "dtype": "Number",
-            "label": "Damage Type Modifiers"
+            "label": "Damage Type Multiplier"
           }
         },
         "attributes": {
@@ -34,105 +34,111 @@
             "immune_crits": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Crits",
+              "label": "Critical Hits",
+              "value": false
+            },
+            "immune_backstab": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Backstabs",
               "value": false
             },
             "immune_bleed": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Bleed",
+              "label": "Bleed",
               "value": false
             },
             "immune_knockdown": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Knockdown",
+              "label": "Knockdown",
               "value": false
             },
             "immune_impale": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Impale",
+              "label": "Impale",
               "value": false
             },
             "immune_injury": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Injury",
+              "label": "Injury",
               "value": false
             },
             "immune_grappling": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Immune to Grappling",
+              "label": "Grapples",
+              "value": false
+            },
+            "immune_silver_weap": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Silver Weapons",
+              "value": false
+            },
+            "immune_cold_iron": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Cold Iron Weapons",
               "value": false
             },
             "req_magic_weap": {
-              "dtype": "Boolean",
+              "dtype": "Number",
               "group": "immunities",
-              "label": "Requires Silvered/Magic Weapon",
-              "value": false
+              "label": "Requires Magic Weapon Value",
+              "value": 0
             }
           },
-          "dmg_mods": {
+          "dmg_multi": {
             "fire": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Fire Modifier",
+              "group": "dmg_multi",
+              "label": "Fire",
               "value": 0
             },
             "cold": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Cold Modifier",
+              "group": "dmg_multi",
+              "label": "Cold",
               "value": 0
             },
             "electricity": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Electricity Modifier",
+              "group": "dmg_multi",
+              "label": "Electricity",
               "value": 0
             },
             "acid": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Acid Modifier",
+              "group": "dmg_multi",
+              "label": "Acid",
               "value": 0
             },
             "holy": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Holy Modifier",
-              "value": 0
-            },
-            "poison": {
-              "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Poison Modifier",
-              "value": 0
-            },
-            "magic": {
-              "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Magic Modifier",
+              "group": "dmg_multi",
+              "label": "Holy",
               "value": 0
             },
             "blunt": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Blunt Modifier",
+              "group": "dmg_multi",
+              "label": "Blunt",
               "value": 0
             },
-            "pierce": {
+            "piercing": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Pierce Modifier",
+              "group": "dmg_multi",
+              "label": "Piercing",
               "value": 0
             },
-            "slash": {
+            "slashing": {
               "dtype": "Number",
-              "group": "dmg_mods",
-              "label": "Slash Modifier",
+              "group": "dmg_multi",
+              "label": "Slashing",
               "value": 0
             }
           }
@@ -219,12 +225,6 @@
             "label": "Magic Resistance",
             "value": 0
           },
-          "saves_as": {
-            "dtype": "String",
-            "group": "",
-            "label": "Saves As",
-            "value": "Fighter"
-          },
           "intelligence": {
             "dtype": "String",
             "group": "",
@@ -237,6 +237,7 @@
         "skills": {
           "abjuration": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -245,6 +246,7 @@
           },
           "alteration": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -253,6 +255,7 @@
           },
           "ancient languages": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -261,6 +264,7 @@
           },
           "animal handling": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -269,6 +273,7 @@
           },
           "appraisal": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -277,6 +282,7 @@
           },
           "axe": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -285,6 +291,7 @@
           },
           "blacksmithing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -293,6 +300,7 @@
           },
           "bludgeon": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -301,6 +309,7 @@
           },
           "bow": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -309,6 +318,7 @@
           },
           "bowyery": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -317,6 +327,7 @@
           },
           "calligraphy": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -325,6 +336,7 @@
           },
           "climbing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -333,6 +345,7 @@
           },
           "conjuration": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -341,6 +354,7 @@
           },
           "cookery": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -349,6 +363,7 @@
           },
           "crossbow": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -357,6 +372,7 @@
           },
           "curved sword": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -365,6 +381,7 @@
           },
           "dagger": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -373,6 +390,7 @@
           },
           "dancing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -381,6 +399,7 @@
           },
           "deception": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -389,6 +408,7 @@
           },
           "demonlore": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -397,6 +417,7 @@
           },
           "disarm trap": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -405,6 +426,7 @@
           },
           "disguise": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -413,6 +435,7 @@
           },
           "divination": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -421,6 +444,7 @@
           },
           "enchantment": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -429,6 +453,7 @@
           },
           "etiquette": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -437,6 +462,7 @@
           },
           "evocation": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -445,6 +471,7 @@
           },
           "farming": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -453,6 +480,7 @@
           },
           "firecraft": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -461,6 +489,7 @@
           },
           "fishing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -469,6 +498,7 @@
           },
           "foraging": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -477,6 +507,7 @@
           },
           "forgery": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -485,6 +516,7 @@
           },
           "hand-to-hand": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -493,6 +525,7 @@
           },
           "handgonne": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -501,6 +534,7 @@
           },
           "heraldry": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -509,6 +543,7 @@
           },
           "herbalism": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -517,6 +552,7 @@
           },
           "herblore": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -525,6 +561,7 @@
           },
           "hiding": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -533,6 +570,7 @@
           },
           "history": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -541,6 +579,7 @@
           },
           "hunting": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -549,6 +588,7 @@
           },
           "illusion": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -557,6 +597,7 @@
           },
           "intimidation": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -565,6 +606,7 @@
           },
           "leatherworking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -573,6 +615,7 @@
           },
           "listening": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -581,6 +624,7 @@
           },
           "magica": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -589,6 +633,7 @@
           },
           "music": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -597,6 +642,7 @@
           },
           "navigation": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -605,6 +651,7 @@
           },
           "necromancy": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -613,6 +660,7 @@
           },
           "one-handed straight sword": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -621,6 +669,7 @@
           },
           "one-handed curved sword": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -629,6 +678,7 @@
           },
           "persuasion": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -637,6 +687,7 @@
           },
           "physica": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -645,6 +696,7 @@
           },
           "lockpicking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -653,6 +705,7 @@
           },
           "pickpocketing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -661,6 +714,7 @@
           },
           "poetry": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -669,6 +723,7 @@
           },
           "poisonlore": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -677,6 +732,7 @@
           },
           "poison_handling": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -685,6 +741,7 @@
           },
           "polearm": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -693,6 +750,7 @@
           },
           "religion": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -701,6 +759,7 @@
           },
           "riding": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -709,6 +768,7 @@
           },
           "running": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -717,6 +777,7 @@
           },
           "runecarving": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -725,6 +786,7 @@
           },
           "runelore": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -733,6 +795,7 @@
           },
           "sailing": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -741,6 +804,7 @@
           },
           "searching": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -749,6 +813,7 @@
           },
           "sling": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -757,6 +822,7 @@
           },
           "sneaking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -765,6 +831,7 @@
           },
           "spear": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -773,6 +840,7 @@
           },
           "spiked bludgeon": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -781,6 +849,7 @@
           },
           "staff": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -789,6 +858,7 @@
           },
           "stoneworking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -797,6 +867,7 @@
           },
           "swimming": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -805,6 +876,7 @@
           },
           "tailoring": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -813,6 +885,7 @@
           },
           "tracking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -821,6 +894,7 @@
           },
           "trading": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -829,6 +903,7 @@
           },
           "two-handed straight sword": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -837,6 +912,7 @@
           },
           "two-handed curved sword": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -845,6 +921,7 @@
           },
           "whip": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -853,6 +930,7 @@
           },
           "woodworking": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -861,6 +939,7 @@
           },
           "wound treatment": {
             "lvl": 0,
+            "target": 0,
             "adv_req": {
               "value": 0,
               "min": 0,
@@ -874,19 +953,19 @@
           "value": 8,
           "min": 0,
           "max": 8,
-          "right_arm": {
+          "main_arm": {
             "value": 0,
             "min": 0
           },
-          "left_arm": {
+          "off_arm": {
             "value": 0,
             "min": 0
           },
-          "right_leg": {
+          "main_leg": {
             "value": 0,
             "min": 0
           },
-          "left_leg": {
+          "off_leg": {
             "value": 0,
             "min": 0
           },
@@ -907,6 +986,7 @@
     },
     "character": {
       "templates": ["props", "actor", "humanoid", "resistances", "languages", "skills"],
+      "right_handed": true,
       "gender": "M",
       "size": "M",
       "age": 0,
@@ -1317,7 +1397,7 @@
       "trade_good",
       "recipe",
       "rune",
-      "ingredient",
+      "food",
       "jewelry",
       "shield",
       "melee_weapon",
@@ -1398,10 +1478,10 @@
               "value": 20,
               "max": 20
             },
-            "item_saving_throw_type": {
+            "item_save_material": {
               "dtype": "String",
-              "group": "",
-              "label": "Item Saving Throw Type",
+              "group": "admin",
+              "label": "Item Save Material",
               "value": "wood"
             }
           }
@@ -1449,6 +1529,18 @@
             "label": "Damage",
             "value": "d6"
           },
+          "dmg_vs_l": {
+            "dtype": "String",
+            "group": "",
+            "label": "Damage vs. Large",
+            "value": "d6"
+          },
+          "dmg_mod": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Damage Mod.",
+            "value": 0
+          },
           "admin": {
             "magic": {
               "dtype": "Boolean",
@@ -1459,97 +1551,10 @@
           }
         }
       },
-      "melee_weapon": {
-        "atk_mode": "",
-        "atk_height": "mid",
-        "atk_style": "standard",
-        "atk_timing": "standard",
-        "atk_grip": "standard",
-        "attributes": {
-          "atk_modes": {
-            "dtype": "String",
-            "group": "",
-            "label": "Attack Modes",
-            "value": "swi(S)"
-          },
-          "atk_mod": {
-            "dtype": "Number",
-            "group": "",
-            "label": "To-Hit Mod.",
-            "value": 0
-          },
-          "dmg": {
-            "dtype": "String",
-            "group": "",
-            "label": "Damage",
-            "value": "d6"
-          },
-          "skill": {
-            "dtype": "String",
-            "group": "",
-            "label": "Skill",
-            "value": ""
-          },
-          "reach": {
-            "dtype": "String",
-            "group": "",
-            "label": "Reach",
-            "value": "0,1"
-          },
-          "range": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Throwing Range (ft.)",
-            "value": 0
-          },
-          "size": {
-            "dtype": "String",
-            "group": "",
-            "label": "Size",
-            "value": "M"
-          },
-          "cutting": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Cutting Power",
-            "value": 0
-          },
-          "penetration": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Armor Penetration",
-            "value": 0
-          },
-          "impact": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Impact",
-            "value": 0
-          },
-          "speed": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Speed",
-            "value": 0
-          },
-          "parry": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Parry",
-            "value": 0
-          },
-          "special_props": {
-            "dtype": "String",
-            "group": "",
-            "label": "Special Properties",
-            "value": ""
-          }
-        }
-      },
       "missile_weapon": {
         "reload": 0,
         "attributes": {
-          "atk_mod": {
+          "to_hit_mod": {
             "dtype": "Number",
             "group": "",
             "label": "To-Hit Mod.",
@@ -1565,7 +1570,7 @@
             "dtype": "String",
             "group": "",
             "label": "Missile Type",
-            "value": "quarrel"
+            "value": "arrow"
           },
           "rof": {
             "dtype": "String",
@@ -1591,58 +1596,64 @@
         "groups": {
           "magic_dmg": {
             "dtype": "String",
-            "label": "Magic Damage Bonus"
+            "label": "Magic Damage"
           }
         },
         "attributes": {
           "magic_dmg": {
-            "dmg_magic": {
-              "dtype": "String",
+            "dmg_silver": {
+              "dtype": "Boolean",
               "group": "magic_dmg",
-              "label": "Magic",
-              "value": ""
+              "label": "Silver",
+              "value": false
+            },
+            "dmg_cold_iron": {
+              "dtype": "Boolean",
+              "group": "magic_dmg",
+              "label": "Cold Iron",
+              "value": false
             },
             "dmg_acid": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Acid",
-              "value": ""
+              "value": false
             },
             "dmg_fire": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Fire",
-              "value": ""
+              "value": false
             },
             "dmg_cold": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Cold",
-              "value": ""
+              "value": false
             },
             "dmg_elec": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Electricity",
-              "value": ""
+              "value": false
             },
             "dmg_holy": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Holy",
-              "value": ""
+              "value": false
             },
             "dmg_poison": {
-              "dtype": "String",
+              "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Poison",
-              "value": ""
+              "value": false
             }
           }
         }
       },
       "garment": {
-        "cp": {
+        "hp": {
           "value": 8,
           "min": 0,
           "max": 8
@@ -1697,12 +1708,6 @@
           "label": "Linked Actor",
           "value": ""
         },
-        "material": {
-          "dtype": "String",
-          "group": "",
-          "label": "Material",
-          "value": "wood"
-        },
         "load_red_factor": {
           "dtype": "Number",
           "group": "",
@@ -1727,11 +1732,6 @@
       "templates": ["props", "item", "container"]
     },
     "scroll": {
-      "copy_progress": {
-        "value": 0,
-        "min": 0,
-        "max": 1
-      },
       "templates": ["props", "item"],
       "macro": "",
       "attributes": {
@@ -1746,6 +1746,22 @@
           "group": "",
           "label": "Spell",
           "value": ""
+        },
+        "admin": {
+          "progress": {
+            "dtype": "Resource",
+            "group": "admin",
+            "label": "Learn Spell Successes",
+            "value": 0,
+            "min": 0,
+            "max": 1
+          },
+          "failures": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Learn Spell Failures",
+            "value": 0
+          }
         }
       }
     },
@@ -1757,6 +1773,12 @@
           "group": "",
           "label": "Coverage",
           "value": "chest,gut"
+        },
+        "ac_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "AC Mod.",
+          "value": 0
         }
       }
     },
@@ -1791,6 +1813,14 @@
           "group": "",
           "label": "Coverage",
           "value": "chest,gut"
+        },
+        "admin": {
+          "wet": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Wet",
+            "value": false
+          }
         }
       }
     },
@@ -1836,7 +1866,7 @@
         }
       }
     },
-    "ingredient": {
+    "food": {
       "templates": ["props", "item"],
       "macro": "game.brigandine.Macro.eatFood(itemId,options)",
       "attributes": {
@@ -1845,13 +1875,7 @@
             "dtype": "Boolean",
             "group": "admin",
             "label": "Holdable",
-            "value": false
-          },
-          "edible": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Edible",
-            "value": false
+            "value": true
           },
           "spoiled": {
             "dtype": "Boolean",
@@ -1873,17 +1897,29 @@
     "recipe": {
       "templates": ["props"],
       "attributes": {
+        "skill": {
+          "dtype": "String",
+          "group": "",
+          "label": "Skill",
+          "value": "herbalism"
+        },
+        "time": {
+          "dtype": "String",
+          "group": "",
+          "label": "Time",
+          "value": "4d6 minutes"
+        },
         "ingredient": {
           "dtype": "String",
           "group": "",
           "label": "Required Ingredient(s)",
-          "value": "none"
+          "value": ""
         },
         "tool": {
           "dtype": "String",
           "group": "",
           "label": "Required Tool(s)",
-          "value": "none"
+          "value": ""
         }
       }
     },
@@ -1894,7 +1930,7 @@
           "dtype": "String",
           "group": "",
           "label": "Prerequisites",
-          "value": "none"
+          "value": ""
         }
       }
     },
@@ -1924,7 +1960,97 @@
       }
     },
     "melee_weapon": {
-      "templates": ["props", "item", "weapon", "melee_weapon", "magic_dmg"]
+      "templates": ["props", "item", "weapon", "magic_dmg"],
+      "atk_mode": "",
+      "atk_height": "mid",
+      "atk_style": "standard",
+      "atk_timing": "standard",
+      "atk_grip": "standard",
+      "hp": {
+        "value": 2,
+        "min": 0,
+        "max": 2
+      },
+      "attributes": {
+        "atk_modes": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Modes",
+          "value": "swi(S)"
+        },
+        "to_hit_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "To-Hit Mod.",
+          "value": 0
+        },
+        "dmg": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage",
+          "value": "d6"
+        },
+        "dmg_vs_l": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage vs. Large",
+          "value": "d6"
+        },
+        "dmg_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Damage Mod.",
+          "value": 0
+        },
+        "skill": {
+          "dtype": "String",
+          "group": "",
+          "label": "Skill",
+          "value": ""
+        },
+        "reach": {
+          "dtype": "String",
+          "group": "",
+          "label": "Reach",
+          "value": "0,1"
+        },
+        "range": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Throwing Range (ft.)",
+          "value": 0
+        },
+        "size": {
+          "dtype": "String",
+          "group": "",
+          "label": "Size",
+          "value": "M"
+        },
+        "impact": {
+          "dtype": "String",
+          "group": "",
+          "label": "Impact",
+          "value": "d6"
+        },
+        "speed": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Speed",
+          "value": 0
+        },
+        "parry": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Parry",
+          "value": 0
+        },
+        "special_props": {
+          "dtype": "String",
+          "group": "",
+          "label": "Special Properties",
+          "value": ""
+        }
+      }
     },
     "missile_weapon": {
       "templates": ["props", "item", "weapon", "missile_weapon"]
@@ -1932,16 +2058,16 @@
     "bow": {
       "templates": ["props", "item", "weapon", "missile_weapon"],
       "attributes": {
-        "req_str": {
+        "str_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Strength Required",
-          "value": 3
+          "label": "Strength Required for Full Draw",
+          "value": 0
         },
         "dmg_bonus": {
           "dtype": "Number",
           "group": "",
-          "label": "Damage Bonus",
+          "label": "Full Draw Damage Bonus",
           "value": 0
         }
       }
@@ -1969,29 +2095,29 @@
           "label": "Damage",
           "value": "1d6"
         },
+        "dmg_vs_l": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage vs. Large",
+          "value": "d6"
+        },
+        "dmg_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Damage Mod.",
+          "value": 0
+        },
         "dmg_type": {
           "dtype": "String",
           "group": "",
           "label": "Damage Type",
-          "value": "Pierce"
-        },
-        "cutting": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Cutting Power",
-          "value": 0
-        },
-        "penetration": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Penetration",
-          "value": 0
+          "value": "P"
         },
         "impact": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
           "label": "Impact",
-          "value": 0
+          "value": "d3"
         }
       }
     },
@@ -2046,7 +2172,7 @@
         "range": {
           "dtype": "String",
           "group": "",
-          "label": "Range",
+          "label": "Range (ft.)",
           "value": ""
         },
         "duration": {
@@ -2082,7 +2208,7 @@
         "save_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Save Modifier",
+          "label": "Save Mod.",
           "value": 0
         }
       }
@@ -2115,23 +2241,17 @@
           "label": "Attack Modes",
           "value": "swi(S)"
         },
-        "cutting": {
+        "to_hit_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Cutting Power",
-          "value": 0
-        },
-        "penetration": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Penetration",
+          "label": "To-Hit Mod.",
           "value": 0
         },
         "impact": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
           "label": "Impact",
-          "value": 0
+          "value": "d8"
         },
         "speed": {
           "dtype": "Number",
@@ -2143,7 +2263,7 @@
           "dtype": "String",
           "group": "",
           "label": "Reach",
-          "value": ""
+          "value": "G/1"
         }
       }
     },
@@ -2153,7 +2273,7 @@
         "range": {
           "dtype": "Number",
           "group": "",
-          "label": "Range",
+          "label": "Range (ft.)",
           "value": 60
         },
         "rof": {
@@ -2162,23 +2282,17 @@
           "label": "Rate of Fire",
           "value": "1"
         },
-        "cutting": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Cutting Power",
-          "value": 0
-        },
-        "penetration": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Penetration",
-          "value": 0
-        },
         "impact": {
           "dtype": "Number",
           "group": "",
           "label": "Impact",
           "value": 0
+        },
+        "dmg_type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Type",
+          "value": "P"
         }
       }
     },
@@ -2200,7 +2314,7 @@
         "check_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Check Modifier",
+          "label": "Check Mod.",
           "value": 0
         }
       }
@@ -2225,6 +2339,36 @@
             "group": "admin",
             "label": "Apply Damage to Main HP",
             "value": true
+          },
+          "hit_weight": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Hit Weight",
+            "value": 10
+          },
+          "dmg_multi": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Impale Damage Multiplier",
+            "value": 1
+          },
+          "crit_chance_multi": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Crit. Chance Multiplier",
+            "value": 1
+          },
+          "max_impale": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Max. Impale",
+            "value": 2
+          },
+          "injury_desc": {
+            "dtype": "String",
+            "group": "admin",
+            "label": "Injury Description",
+            "value": ""
           }
         },
         "name": {
@@ -2244,30 +2388,6 @@
           "group": "",
           "label": "Hide",
           "value": ""
-        },
-        "hit_weight": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Hit Weight",
-          "value": 10
-        },
-        "dmg_multi": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Impale Damage Multiplier",
-          "value": 1
-        },
-        "crit_chance_multi": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Crit Chance Multiplier",
-          "value": 1
-        },
-        "max_impale": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Max. Impale",
-          "value": 2
         }
       }
     }

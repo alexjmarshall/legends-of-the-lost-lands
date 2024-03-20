@@ -300,7 +300,7 @@ export const HIT_LOCATIONS = {
           text: ` and crushes the ${ranToe()} toe`, // types of injuries and stat affected: leg (MV), arm,
         },
         serious: {
-          text: ' and breaks the ankle', // heal interval, heal DC (Con check), effect (active Effect format)
+          text: ' and breaks the ankle', // heal interval, heal TN (Con check), effect (active Effect format)
           dmgEffect: lowCompFract(),
         },
         critical: {
@@ -797,7 +797,7 @@ export const HIT_LOCATIONS = {
     weights: [6, 4, 6, 4, 4, 2, 6, 4],
     bilateral: true,
     crit_chance_multi: 1,
-    max_impale: 1,
+    max_impale: 0,
     injury: {
       blunt: {
         light: {

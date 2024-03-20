@@ -98,7 +98,8 @@ export class Ranger extends BaseClass {
   static description = 'A warrior and woodsman with a profound destiny.';
   static featureDescriptions = Object.freeze([
     '+1 damage every 3 levels against evil humanoids',
-    'Immune to backstabs and +4 to avoid surprise',
+    'Immune to backstabs',
+    "Reduces the party's chance of being surprised",
     'Cast druid spells (level 6)',
     'Cast magic spells (level 7)',
     'Read magic scrolls (level 7)',
@@ -148,7 +149,8 @@ export class VampireHunter extends Ranger {
   static description = 'An implacable hunter of the most terrible undead.';
   static featureDescriptions = Object.freeze([
     '+1 damage every 3 levels against the undead',
-    'Immune to backstabs and +4 to avoid surprise',
+    'Immune to backstabs',
+    "Reduces the party's chance of being surprised",
     '+4 bonus to saving throws vs. energy drain',
     'Cast druid spells (level 6)',
     'Cast magic spells (level 7)',

@@ -92,6 +92,8 @@ const clericSpells = deepFreeze({
     'Speak With Dead',
   ],
   4: [
+    // TODO add a spell to resist fatigue and potion to reduce
+    // Spare the Dying to stabilize characters in Shock
     'Abjure',
     'Cloak of Fear',
     'Cure Serious Wounds',
