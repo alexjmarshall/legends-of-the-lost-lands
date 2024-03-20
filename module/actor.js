@@ -14,17 +14,36 @@ export class SimpleActor extends Actor {
     // no access to embedded entities here
     // this is also before active effects are applied
     // therefore derivations here should not use character items or any attributes that are modified by active effects
-    // TODO derive character location max hp here
+    // however, this is a good place to derive data that will be modified by active effects
+    // TODO when healing applied to location HP, always cap at max. When healing applied to general HP, cap at max if max HP is suppressed by fatigue.
     super.prepareBaseData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
     const actorData = this.data;
 
-    this._prepareCharacterBaseData(); // TODO if 0, derive XP value of characters
+    this._prepareCharacterBaseData(actorData);
+    this._prepareHumanoidBaseData(actorData);
   }
 
-  _prepareCharacterBaseData() {
-    // skills
+  _addHumanoidLocationMaxHp(actorData) {
+    const hp = actorData.data.hp;
+    // derive location max hp from total max hp
+    const totalMaxHp = hp.max;
+    hp.head.max = Math.floor(totalMaxHp * 0.36);
+    hp.main_arm.max = hp.off_arm.max = Math.floor(totalMaxHp * 0.27);
+    hp.upper_torso.max = Math.floor(totalMaxHp * 0.45);
+    hp.lower_torso.max = Math.floor(totalMaxHp * 0.36);
+    hp.main_leg.max = hp.off_leg.max = Math.floor(totalMaxHp * 0.36);
+  }
+
+  _prepareCharacterBaseData(actorData) {
+    if (actorData.type !== 'character') return;
+    this._addHumanoidLocationMaxHp(actorData);
+  }
+
+  _prepareHumanoidBaseData(actorData) {
+    if (actorData.type !== 'humanoid') return;
+    this._addHumanoidLocationMaxHp(actorData);
   }
 
   /** @override */
@@ -32,16 +51,17 @@ export class SimpleActor extends Actor {
     // TODO note skill target in actor derived data
     super.prepareDerivedData();
     const actorData = this.data;
-    console.log('Preparing actor data', actorData);
 
-    // this._prepareCharacterData(actorData);
+    this._prepareCharacterData(actorData);
     // this._prepareHumanoidData(actorData);
-    // TODO derive monster natrural weapon atk mode from first atk_mode
+    // TODO derive monster natural weapon atk mode from first atk_mode
     // this._prepareMonsterData(actorData);
     // this._prepareStorageData(actorData);
     // // merchant?
     // this._preparePartyData(actorData);
     // // TODO fix shield shape/size coverage
+    //     TODO when character goes invisible, remove any targets on it
+    // TODO need at least 1 hand free for Somatic spells
   }
 
   _prepareCharacterData(actorData) {
@@ -50,6 +70,7 @@ export class SimpleActor extends Actor {
       return;
     }
 
+    // CONTINUE
     const charData = actorData.data;
     const { items } = actorData;
     const wornItems = items.filter((i) => i.data.data.worn);

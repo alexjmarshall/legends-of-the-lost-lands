@@ -678,6 +678,10 @@ export class CreateActorSheet extends ActorSheet {
     formData['data.fp.value'] = startingFp;
     formData['data.fp.max'] = startingFp;
 
+    // determine handedness
+    const leftHanded = Math.random() < 0.1;
+    if (leftHanded) formData['data.right_handed'] = false;
+
     const firstLevelUpdates = getLevelUpdates(this.actor, 1, formData);
 
     // add SP item
@@ -695,7 +699,6 @@ export class CreateActorSheet extends ActorSheet {
       ...formData,
       ...firstLevelUpdates.actor,
     };
-    console.log('formData', formData);
 
     const yesCallback = async () => {
       this.actor.sheet.close();
@@ -711,8 +714,5 @@ export class CreateActorSheet extends ActorSheet {
     );
 
     return;
-    // TODO
-    // actor derived data!!!
-    // TODO give max HP to every char at first lvl?
   }
 }

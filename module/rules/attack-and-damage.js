@@ -5,8 +5,8 @@ export const PHYSICAL_DMG_TYPES = {
   // TODO rend?
 };
 
-export const ENERGY_DMG_TYPES = {
-  MAGIC: 'magic', // M
+export const MAGIC_DMG_TYPES = {
+  HOLY: 'holy', // H
   FIRE: 'fire', // F
   COLD: 'cold', // C
   ELECTRICITY: 'electricity', // E

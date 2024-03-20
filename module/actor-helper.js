@@ -91,6 +91,7 @@ const addSkills = (updateData, actor, classInstance) => {
       ui.notifications.error(`Could not find ${skill.name} in actor skills!`);
       continue;
     }
+    skillUpdate.target = skill.target;
     if (actor.data.data.attributes.admin.use_target_skill_lvl.value) {
       skillUpdate.lvl = skill.target;
     } else {
@@ -167,25 +168,22 @@ const addSpellSlotsToSpellType = (updateData, spellSlots, spellType) => {
   }
 };
 
-const addSpellSlots = (updateData, actor, classInstance) => {
+const addSpellSlots = (updateData, classInstance, wisScore) => {
   let magicSpellSlots = classInstance.magicSpellSlots;
   let clericSpellSlots = classInstance.clericSpellSlots;
   let druidSpellSlots = classInstance.druidSpellSlots;
 
-  // remove if actor already has the same spell slots
-  if (actor) {
-    const magicSlots = actor.data.magic_spell_slots;
-    const clericSlots = actor.data.cleric_spell_slots;
-    const druidSlots = actor.data.druid_spell_slots;
-    if (magicSlots === magicSpellSlots) {
-      magicSpellSlots = [];
-    }
-    if (clericSlots === clericSpellSlots) {
-      clericSpellSlots = [];
-    }
-    if (druidSlots === druidSpellSlots) {
-      druidSpellSlots = [];
-    }
+  const bonusClericSpellSlots = [];
+  if (wisScore >= 18) {
+    bonusClericSpellSlots.push([1, 1, 1]);
+  } else if (wisScore >= 16) {
+    bonusClericSpellSlots.push([1, 1]);
+  } else if (wisScore >= 13) {
+    bonusClericSpellSlots.push([1]);
+  }
+  // add bonus cleric spell slots
+  for (const slots of bonusClericSpellSlots) {
+    clericSpellSlots = clericSpellSlots.map((s, i) => s + (slots[i] ?? 0));
   }
 
   addSpellSlotsToSpellType(updateData, magicSpellSlots, 'magic');
@@ -206,6 +204,7 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   const origin = formData['data.origin'] ?? actorData.origin;
   const classInstance = getClassInstance(className, lvl, origin);
   const int = formData['data.attributes.ability_scores.int.value'] ?? actorData.attributes.ability_scores.int.value;
+  const wis = formData['data.attributes.ability_scores.wis.value'] ?? actorData.attributes.ability_scores.wis.value;
   const actorRace = RACES[race];
   const itemData = {
     create: [],
@@ -238,8 +237,8 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   }
 
   addFeatures(itemData, classInstance, actorRace, actor);
-  addSpellsKnown(itemData, classInstance);
-  addSpellSlots(actorUpdates, actor, classInstance);
+  addSpellsKnown(itemData, classInstance, actor);
+  addSpellSlots(actorUpdates, classInstance, wis);
 
   return {
     actor: actorUpdates,
