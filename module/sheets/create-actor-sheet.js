@@ -311,12 +311,16 @@ export class CreateActorSheet extends ActorSheet {
   }
 
   _getStartingHp(origin, className, size, conScore) {
+    let parentClassName = Object.getPrototypeOf(CLASSES[className].prototype).constructor.name;
+    if (parentClassName !== 'BaseClass') {
+      className = parentClassName;
+    }
     const firstLvlHp = className.includes('/')
       ? this._getMultiClassFirstLvlHp(className)
       : CLASSES[className].firstLvlHp;
     const conMod = getScoreMod(conScore);
-    const hpGetter = () => Math.floor(rollDice(firstLvlHp) + origins[origin].hpBonus + sizes[size].hpModifier + conMod);
-    return this._getOrSetFlag(`hp_${origin}${className}${size}${conScore}`, hpGetter);
+    const hpGetter = () => Math.floor(rollDice(firstLvlHp));
+    return this._getOrSetFlag(`hp_${className}`, hpGetter) + origins[origin].hpBonus + sizes[size].hpModifier + conMod;
   }
 
   _getStartingFp(className) {
@@ -701,10 +705,16 @@ export class CreateActorSheet extends ActorSheet {
     };
 
     const yesCallback = async () => {
-      this.actor.sheet.close();
-      this.actor._sheet = null;
-      await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
-      await updateLevel(this.actor, formData, firstLevelUpdates.item);
+      // this.actor.sheet.close();
+      // this.actor._sheet = null;
+      // await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
+      // await updateLevel(this.actor, formData, firstLevelUpdates.item);
+
+      const item = game.items.getName('Test Item');
+
+      await actor.createEmbeddedDocuments('Item', item);
+      // await actor.deleteEmbeddedDocuments('Item', itemUpdates.delete);
+      // await actor.createEmbeddedDocuments('Item', itemUpdates.create);
     };
     // confirm with user
     confirmDialog(
