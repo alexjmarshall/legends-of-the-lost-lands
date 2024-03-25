@@ -45,21 +45,29 @@ export class BaseClass {
     return this.#addNSpellSlotsPerLevel(spellSlots, -1);
   }
 
+  static onePlusOnePerNLevels(lvl, n) {
+    return 1 + this.onePerNLevels(lvl, n);
+  }
+
   /**
    * Calculate the number of times an event occurs per every 'n' levels after the first 'lvl' level.
    *
    * @param {number} lvl - The current level (should be at least 1).
    * @param {number} n - The interval between occurrences (should be greater than 0).
    */
-  static onePerNLevelsAfterFirst(lvl, n) {
+  static onePerNLevels(lvl, n) {
     return Math.floor((lvl - 1) / n);
   }
 
   static multiattackFeature(twiceLvl, thriceLvl) {
     return (lvl) => {
       if (lvl < twiceLvl) return null;
-      if (lvl < thriceLvl) return new FeatureConfig(features.MULTIATTACK_TWO, twiceLvl);
-      return new FeatureConfig(features.MULTIATTACK_THREE, thriceLvl);
+      if (lvl < thriceLvl) {
+        return new FeatureConfig(multiAttack, twiceLvl);
+      }
+      const multiAttack = foundry.utils.deepClone(features.MULTIATTACK);
+      multiAttack.effectData.changes[0].value = 3;
+      return new FeatureConfig(multiAttack, thriceLvl);
     };
   }
 
@@ -129,7 +137,6 @@ export class BaseClass {
       .filter((featureConfig) => featureConfig != null && featureConfig.reqLvl <= this.lvl)
       .map((featureConfig) => ({
         ...featureConfig.feature,
-        ...(featureConfig.usesPerDay !== undefined ? { usesPerDay: featureConfig.usesPerDay } : {}),
       }));
   }
 

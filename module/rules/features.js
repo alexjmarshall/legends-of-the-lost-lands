@@ -4,10 +4,17 @@ export const FEATURE_SOURCE = Object.freeze({
 });
 
 export class FeatureConfig {
-  constructor(feature, reqLvl, usesPerDay) {
-    this.feature = feature;
+  constructor(feature, reqLvl, options = { usesPerDay: undefined, changes: [] }) {
+    const { usesPerDay, changes } = options;
+    this.feature = {
+      ...feature,
+      usesPerDay,
+      effectData: {
+        ...effectData,
+        changes,
+      },
+    };
     this.reqLvl = reqLvl;
-    this.usesPerDay = usesPerDay;
   }
 }
 
@@ -22,34 +29,17 @@ export const features = Object.freeze({
     name: 'Chain Attack',
     type: FEATURE_TYPE.ABILITY,
   },
-  MULTIATTACK_TWO: {
-    name: 'Multiattack - 2',
-    baseName: 'Multiattack',
+  MULTIATTACK: {
+    name: 'Multiattack',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Multiattack',
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attacks',
+          key: 'data.derived.attacks',
           mode: 4,
           value: 2,
-        },
-      ],
-    },
-  },
-  MULTIATTACK_THREE: {
-    name: 'Multiattack - 3',
-    baseName: 'Multiattack',
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Multiattack',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.attacks',
-          mode: 4,
-          value: 3,
         },
       ],
     },
@@ -105,6 +95,37 @@ export const features = Object.freeze({
   DUELLIST: {
     name: 'Duellist',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Duellist',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.attributes.base_ac.value',
+          mode: 2,
+          value: 1,
+        },
+        {
+          key: 'data.derived.riposte_to_hit_mod',
+          mode: 2,
+          value: 1,
+        },
+        {
+          key: 'data.derived.riposte_dmg_mod',
+          mode: 2,
+          value: 1,
+        },
+        {
+          key: 'data.derived.counter_to_hit_mod',
+          mode: 2,
+          value: 1,
+        },
+        {
+          key: 'data.derived.counter_dmg_mod',
+          mode: 2,
+          value: 1,
+        },
+      ],
+    },
   },
   STEAL_SPELL: {
     name: 'Steal Spell',
@@ -128,7 +149,7 @@ export const features = Object.freeze({
   },
   SPECIALIST_FOCUS: {
     name: 'Specialist Focus',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.INHERENT, // TODO decide what derived attributes this will affect
   },
   FEARLESS: {
     name: 'Fearless',
@@ -154,6 +175,7 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
   SENSE_DANGER: {
+    // roll Listen
     name: 'Sense Danger',
     type: FEATURE_TYPE.INHERENT,
   },
@@ -261,8 +283,8 @@ export const features = Object.freeze({
     name: 'Energy Drain Resistance',
     type: FEATURE_TYPE.INHERENT,
   },
-  GREATER_EVASION: {
-    name: 'Greater Evasion',
+  IMPROVED_EVASION: {
+    name: 'Improved Evasion',
     type: FEATURE_TYPE.INHERENT,
   },
   IDENTIFY_PURE_WATER: {

@@ -26,7 +26,7 @@ export class Paladin extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.LAY_ON_HANDS, 1, 1),
+    new FeatureConfig(features.LAY_ON_HANDS, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.HOLY_PROTECTION, 1),
     new FeatureConfig(features.DETECT_EVIL, 1),
     new FeatureConfig(features.ASCETIC, 1),
@@ -111,11 +111,11 @@ export class Inquisitor extends Paladin {
     new FeatureConfig(features.DETECT_EVIL, 1),
     new FeatureConfig(features.DETECT_LIE, 1),
     new FeatureConfig(features.ASCETIC, 1),
-    (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 3, 1 + super.onePerNLevelsAfterFirst(lvl - 2, 4)),
+    (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 3, { usesPerDay: super.onePlusOnePerNLevels(lvl - 2, 4) }),
     new FeatureConfig(features.PALADIN_STEED, 4),
     new FeatureConfig(features.AURA_OF_PROTECTION, 6),
-    (lvl) => new FeatureConfig(features.TRUE_SIGHT, 7, 1 + super.onePerNLevelsAfterFirst(lvl - 6, 3)),
-    super.multiattackFeature(9, 17),
+    (lvl) => new FeatureConfig(features.TRUE_SIGHT, 7, { usesPerDay: super.onePlusOnePerNLevels(lvl - 6, 3) }),
+    super.multiattackFeature(7, 13),
   ]);
 
   static abilityReqs = [

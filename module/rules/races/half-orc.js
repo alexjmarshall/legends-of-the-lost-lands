@@ -16,12 +16,12 @@ export class HalfOrc extends BaseRace {
     [ABILITIES.CHA]: 0,
   };
 
-  static description = 'Cursed with an awareness of their bestial nature.';
+  static description = 'Some resist and some embrace their bestial nature.';
 
   static featureDescriptions = [
     '+1 Strength, -1 Intelligence.',
     "60' infravision.",
-    '+2 to intimidation and -1 to reaction rolls.',
+    '+2 to intimidation and -1 to reaction.',
     '+2 to-hit injured or bleeding opponents.',
     'Size Medium.',
   ];

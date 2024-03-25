@@ -1,6 +1,6 @@
 {
   "Actor": {
-    "types": ["character", "npc", "humanoid", "monster", "storage", "merchant", "party"],
+    "types": ["character", "humanoid", "monster", "storage", "merchant", "party"],
     "templates": {
       "props": {
         "description": "",
@@ -97,49 +97,49 @@
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Fire",
-              "value": 0
+              "value": 1
             },
             "cold": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Cold",
-              "value": 0
+              "value": 1
             },
             "electricity": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Electricity",
-              "value": 0
+              "value": 1
             },
             "acid": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Acid",
-              "value": 0
+              "value": 1
             },
             "holy": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Holy",
-              "value": 0
+              "value": 1
             },
             "blunt": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Blunt",
-              "value": 0
+              "value": 1
             },
             "piercing": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Piercing",
-              "value": 0
+              "value": 1
             },
             "slashing": {
               "dtype": "Number",
               "group": "dmg_multi",
               "label": "Slashing",
-              "value": 0
+              "value": 1
             }
           }
         }
@@ -159,18 +159,6 @@
       },
       "monster": {
         "attributes": {
-          "mv": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Movement Rate",
-            "value": 15
-          },
-          "ac": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Armor Class",
-            "value": 15
-          },
           "size": {
             "dtype": "String",
             "group": "",
@@ -180,26 +168,20 @@
           "infravision": {
             "dtype": "String",
             "group": "",
-            "label": "Infravision",
+            "label": "Infravision (ft.)",
             "value": 60
           },
           "hd": {
             "dtype": "String",
             "group": "",
             "label": "Hit Dice",
-            "value": "1+1"
+            "value": ""
           },
           "type": {
             "dtype": "String",
             "group": "",
             "label": "Type",
-            "value": ""
-          },
-          "subtype": {
-            "dtype": "String",
-            "group": "",
-            "label": "Subtype",
-            "value": ""
+            "value": "aberration"
           },
           "xp_multi": {
             "dtype": "Number",
@@ -230,6 +212,18 @@
             "group": "",
             "label": "Intelligence",
             "value": "non"
+          },
+          "stealth": {
+            "dtype": "String",
+            "group": "",
+            "label": "Stealth",
+            "value": "mid"
+          },
+          "morale": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Morale",
+            "value": "mid"
           }
         }
       },
@@ -658,24 +652,6 @@
               "max": 1000
             }
           },
-          "one-handed straight sword": {
-            "lvl": 0,
-            "target": 0,
-            "adv_req": {
-              "value": 0,
-              "min": 0,
-              "max": 1000
-            }
-          },
-          "one-handed curved sword": {
-            "lvl": 0,
-            "target": 0,
-            "adv_req": {
-              "value": 0,
-              "min": 0,
-              "max": 1000
-            }
-          },
           "persuasion": {
             "lvl": 0,
             "target": 0,
@@ -838,15 +814,6 @@
               "max": 1000
             }
           },
-          "spiked bludgeon": {
-            "lvl": 0,
-            "target": 0,
-            "adv_req": {
-              "value": 0,
-              "min": 0,
-              "max": 1000
-            }
-          },
           "staff": {
             "lvl": 0,
             "target": 0,
@@ -857,6 +824,15 @@
             }
           },
           "stoneworking": {
+            "lvl": 0,
+            "target": 0,
+            "adv_req": {
+              "value": 0,
+              "min": 0,
+              "max": 1000
+            }
+          },
+          "straight sword": {
             "lvl": 0,
             "target": 0,
             "adv_req": {
@@ -901,24 +877,6 @@
               "max": 1000
             }
           },
-          "two-handed straight sword": {
-            "lvl": 0,
-            "target": 0,
-            "adv_req": {
-              "value": 0,
-              "min": 0,
-              "max": 1000
-            }
-          },
-          "two-handed curved sword": {
-            "lvl": 0,
-            "target": 0,
-            "adv_req": {
-              "value": 0,
-              "min": 0,
-              "max": 1000
-            }
-          },
           "whip": {
             "lvl": 0,
             "target": 0,
@@ -953,19 +911,19 @@
           "value": 8,
           "min": 0,
           "max": 8,
-          "main_arm": {
+          "right_arm": {
             "value": 0,
             "min": 0
           },
-          "off_arm": {
+          "left_arm": {
             "value": 0,
             "min": 0
           },
-          "main_leg": {
+          "right_leg": {
             "value": 0,
             "min": 0
           },
-          "off_leg": {
+          "left_leg": {
             "value": 0,
             "min": 0
           },
@@ -980,6 +938,26 @@
           "head": {
             "value": 0,
             "min": 0
+          }
+        },
+        "attributes": {
+          "base_mv": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Base Movement Rate",
+            "value": 12
+          },
+          "base_ac": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Base Armor Class",
+            "value": 10
+          },
+          "type": {
+            "dtype": "String",
+            "group": "",
+            "label": "Type",
+            "value": "humanoid"
           }
         }
       }
@@ -1015,10 +993,6 @@
         "ability_scores": {
           "dtype": "Number",
           "label": "Ability Scores"
-        },
-        "alignment": {
-          "dtype": "Number",
-          "label": "Alignment"
         },
         "spellcasting_cleric": {
           "dtype": "Resource",
@@ -1059,27 +1033,19 @@
             "dtype": "String",
             "group": "retainer",
             "label": "Master",
-            "value": ""
+            "value": "none"
           },
           "loyalty": {
             "dtype": "Number",
             "group": "retainer",
             "label": "Loyalty",
             "value": 10
-          }
-        },
-        "alignment": {
-          "lawfulness": {
-            "dtype": "Number",
-            "group": "alignment",
-            "label": "Chaotic/Lawful",
-            "value": 10
           },
-          "goodness": {
-            "dtype": "Number",
-            "group": "alignment",
-            "label": "Evil/Good",
-            "value": 10
+          "morale": {
+            "dtype": "String",
+            "group": "retainer",
+            "label": "Morale",
+            "value": "mid"
           }
         },
         "ability_scores": {
@@ -1277,6 +1243,12 @@
             "value": 0,
             "max": 0
           }
+        },
+        "alignment": {
+          "dtype": "Number",
+          "group": "alignment",
+          "label": "Alignment (Chaotic Evil to Lawful Good)",
+          "value": 10
         }
       }
     },
@@ -1291,6 +1263,18 @@
           "group": "",
           "label": "Attack Routine",
           "value": "claw, claw, bite"
+        },
+        "mv": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Movement Rate",
+          "value": 15
+        },
+        "ac": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Class",
+          "value": 15
         }
       }
     },
@@ -1355,8 +1339,8 @@
         "money": {
           "dtype": "Number",
           "group": "",
-          "label": "Money (SPs)",
-          "value": 2400
+          "label": "Money (CPs)",
+          "value": 24000
         }
       }
     },
@@ -1395,9 +1379,9 @@
       "clothing",
       "gem",
       "trade_good",
+      "food",
       "recipe",
       "rune",
-      "food",
       "jewelry",
       "shield",
       "melee_weapon",
@@ -1409,15 +1393,23 @@
       "feature",
       "natural_weapon",
       "natural_missile_weapon",
-      "hit_location"
+      "grappling_maneuver",
+      "hit_location",
+      "injury",
+      "disease"
     ],
     "templates": {
       "props": {
         "description": "",
         "notes": "",
         "attributes": {},
-        "groups": {},
-        "macro": ""
+        "macro": "",
+        "groups": {
+          "admin": {
+            "dtype": "Boolean",
+            "label": "Admin"
+          }
+        }
       },
       "item": {
         "worn": false,
@@ -1426,12 +1418,6 @@
         "value": 0,
         "quantity": 1,
         "weight": 0,
-        "groups": {
-          "admin": {
-            "dtype": "Boolean",
-            "label": "Admin"
-          }
-        },
         "attributes": {
           "admin": {
             "identified": {
@@ -1464,6 +1450,12 @@
               "label": "Wearable",
               "value": false
             },
+            "edible": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Edible",
+              "value": false
+            },
             "improvised_weapon": {
               "dtype": "Boolean",
               "group": "admin",
@@ -1475,8 +1467,8 @@
               "group": "admin",
               "label": "Charges",
               "min": 0,
-              "value": 20,
-              "max": 20
+              "value": 0,
+              "max": 0
             },
             "item_save_material": {
               "dtype": "String",
@@ -1489,16 +1481,16 @@
       },
       "container": {
         "attributes": {
-          "base_weight": {
+          "inner_item_wgt": {
             "dtype": "Number",
             "group": "",
-            "label": "Base Weight",
+            "label": "Inner Item Weight",
             "value": 1
           },
-          "inner_qty": {
+          "inner_item_qty": {
             "dtype": "Resource",
             "group": "",
-            "label": "Inner Quantity",
+            "label": "Inner Item Quantity",
             "min": 0,
             "value": 3,
             "max": 3
@@ -1516,12 +1508,6 @@
         }
       },
       "natural_weapon": {
-        "groups": {
-          "admin": {
-            "dtype": "Boolean",
-            "label": "Admin"
-          }
-        },
         "attributes": {
           "dmg": {
             "dtype": "String",
@@ -1564,7 +1550,7 @@
             "dtype": "String",
             "group": "",
             "label": "Skill",
-            "value": ""
+            "value": "bow"
           },
           "missile_type": {
             "dtype": "String",
@@ -1756,7 +1742,7 @@
             "min": 0,
             "max": 1
           },
-          "failures": {
+          "learn_failures": {
             "dtype": "Number",
             "group": "admin",
             "label": "Learn Spell Failures",
@@ -1772,7 +1758,7 @@
           "dtype": "String",
           "group": "",
           "label": "Coverage",
-          "value": "chest,gut"
+          "value": "chest,abdomen"
         },
         "ac_mod": {
           "dtype": "Number",
@@ -1812,7 +1798,7 @@
           "dtype": "String",
           "group": "",
           "label": "Coverage",
-          "value": "chest,gut"
+          "value": "chest,abdomen"
         },
         "admin": {
           "wet": {
@@ -1877,6 +1863,12 @@
             "label": "Holdable",
             "value": true
           },
+          "edible": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Edible",
+            "value": true
+          },
           "spoiled": {
             "dtype": "Boolean",
             "group": "admin",
@@ -1909,7 +1901,7 @@
           "label": "Time",
           "value": "4d6 minutes"
         },
-        "ingredient": {
+        "ingredients": {
           "dtype": "String",
           "group": "",
           "label": "Required Ingredient(s)",
@@ -2006,7 +1998,7 @@
           "dtype": "String",
           "group": "",
           "label": "Skill",
-          "value": ""
+          "value": "axe"
         },
         "reach": {
           "dtype": "String",
@@ -2388,6 +2380,106 @@
           "group": "",
           "label": "Hide",
           "value": ""
+        }
+      }
+    },
+    "injury": {
+      "templates": ["props"],
+      "attributes": {
+        "severity": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Severity",
+          "min": 0,
+          "value": 1,
+          "max": 1
+        },
+        "location": {
+          "dtype": "String",
+          "group": "",
+          "label": "Location",
+          "value": ""
+        },
+        "bleeding": {
+          "dtype": "String",
+          "group": "",
+          "label": "Bleeding",
+          "value": "none"
+        },
+        "wound": {
+          "dtype": "String",
+          "group": "",
+          "label": "Wound",
+          "value": "closed"
+        },
+        "healed": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Healed",
+          "value": false
+        },
+        "amputation": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Amputation",
+          "value": false
+        },
+        "admin": {
+          "healing_tn": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Healing TN",
+            "value": 12
+          },
+          "healing_mod": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Healing Mod.",
+            "value": 0
+          },
+          "heal_failures": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Healing Failures",
+            "value": 0
+          }
+        }
+      }
+    },
+    "disease": {
+      "templates": ["props"],
+      "attributes": {
+        "symptoms": {
+          "dtype": "String",
+          "group": "",
+          "label": "Symptoms",
+          "value": ""
+        },
+        "virulence": {
+          "dtype": "String",
+          "group": "",
+          "label": "Virulence",
+          "value": "d4"
+        },
+        "incubation_period": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Incubation Period (Days)",
+          "value": 1
+        },
+        "damage_interval": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Damage Interval (Days)",
+          "value": 1
+        },
+        "admin": {
+          "confirmed": {
+            "dtype": "Boolean",
+            "group": "",
+            "label": "Confirmed",
+            "value": false
+          }
         }
       }
     }

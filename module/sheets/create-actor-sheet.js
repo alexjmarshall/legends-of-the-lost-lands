@@ -10,7 +10,7 @@ import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
 import { skills, SKILL_CATEGORIES } from '../rules/skills.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
-import { alignmentDescriptions } from '../rules/alignments.js';
+import { alignmentDescriptions, minScore } from '../rules/alignments.js';
 import { portraits, basePath } from '../portrait.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 import { cloneItem } from '../item-helper.js';
@@ -164,23 +164,14 @@ export class CreateActorSheet extends ActorSheet {
       let parentName = '';
       let childName = '';
       let insertFirst = false;
-      // get the base class name from a class we know has the base class as its immediate parent
-      const baseClassName = Object.getPrototypeOf(CLASSES.Fighter.prototype).constructor.name;
 
       if (!cls) {
         childName = className;
         parentName = 'Multi-Class';
       } else {
         childName = cls.name;
-        // to find the parent name, keep going up the prototype chain
-        // until we find either a playable class or the base class
-        do {
-          cls = Object.getPrototypeOf(cls.prototype).constructor;
-          parentName = cls.name;
-        } while (!CLASSES[parentName] && parentName !== baseClassName);
-
-        if (parentName === baseClassName) {
-          parentName = childName;
+        parentName = this._getPlayableParentClassName(childName);
+        if (parentName === childName) {
           insertFirst = true;
         }
       }
@@ -307,17 +298,37 @@ export class CreateActorSheet extends ActorSheet {
     const classes = multiClass.split('/');
     const hp1 = CLASSES[classes[0]]?.firstLvlHp || '0';
     const hp2 = CLASSES[classes[1]]?.firstLvlHp || '0';
-    return `(${hp1} + ${hp2}) / 2`;
+    const hp3 = CLASSES[classes[2]]?.firstLvlHp || '0';
+    return `(${hp1} + ${hp2} + ${hp3}) / ${classes.length}`;
+  }
+
+  _getPlayableParentClassName(className) {
+    // get the base class name from a class we know has the base class as its immediate parent
+    const baseClassName = Object.getPrototypeOf(CLASSES.Fighter.prototype).constructor.name;
+    let cls = CLASSES[className];
+    if (!cls) return className;
+    let parentName;
+    // to find the parent name, keep going up the prototype chain
+    // until we find either a playable class or the base class
+    do {
+      cls = Object.getPrototypeOf(cls.prototype).constructor;
+      parentName = cls.name;
+    } while (!CLASSES[parentName] && parentName !== baseClassName);
+
+    if (parentName === baseClassName) {
+      return className;
+    }
+    return parentName;
   }
 
   _getStartingHp(origin, className, size, conScore) {
-    let parentClassName = Object.getPrototypeOf(CLASSES[className].prototype).constructor.name;
-    if (parentClassName !== 'BaseClass') {
-      className = parentClassName;
+    let firstLvlHp;
+    if (className.includes('/')) {
+      firstLvlHp = this._getMultiClassFirstLvlHp(className);
+    } else {
+      className = this._getPlayableParentClassName(className);
+      firstLvlHp = CLASSES[className].firstLvlHp;
     }
-    const firstLvlHp = className.includes('/')
-      ? this._getMultiClassFirstLvlHp(className)
-      : CLASSES[className].firstLvlHp;
     const conMod = getScoreMod(conScore);
     const hpGetter = () => Math.floor(rollDice(firstLvlHp));
     return this._getOrSetFlag(`hp_${className}`, hpGetter) + origins[origin].hpBonus + sizes[size].hpModifier + conMod;
@@ -699,22 +710,19 @@ export class CreateActorSheet extends ActorSheet {
     }
     delete formData['sp'];
 
+    // add alignment score
+    formData['data.attributes.alignment.value'] = minScore[formData['data.alignment']];
+
     formData = {
       ...formData,
       ...firstLevelUpdates.actor,
     };
 
     const yesCallback = async () => {
-      // this.actor.sheet.close();
-      // this.actor._sheet = null;
-      // await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
-      // await updateLevel(this.actor, formData, firstLevelUpdates.item);
-
-      const item = game.items.getName('Test Item');
-
-      await actor.createEmbeddedDocuments('Item', item);
-      // await actor.deleteEmbeddedDocuments('Item', itemUpdates.delete);
-      // await actor.createEmbeddedDocuments('Item', itemUpdates.create);
+      this.actor.sheet.close();
+      this.actor._sheet = null;
+      await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
+      await updateLevel(this.actor, formData, firstLevelUpdates.item);
     };
     // confirm with user
     confirmDialog(

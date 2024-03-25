@@ -79,7 +79,7 @@ export class Cleric extends BaseClass {
 
   static shieldsDescription = 'any';
   static armorDescription = 'any';
-  static weaponDescription = 'simple bludgeons, slings, staffs and whips';
+  static weaponDescription = 'bludgeons, slings, staffs and whips';
   static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static abilityReqs = [

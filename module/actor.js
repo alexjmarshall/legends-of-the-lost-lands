@@ -30,10 +30,10 @@ export class SimpleActor extends Actor {
     // derive location max hp from total max hp
     const totalMaxHp = hp.max;
     hp.head.max = Math.floor(totalMaxHp * 0.36);
-    hp.main_arm.max = hp.off_arm.max = Math.floor(totalMaxHp * 0.27);
+    hp.right_arm.max = hp.left_arm.max = Math.floor(totalMaxHp * 0.27);
     hp.upper_torso.max = Math.floor(totalMaxHp * 0.45);
     hp.lower_torso.max = Math.floor(totalMaxHp * 0.36);
-    hp.main_leg.max = hp.off_leg.max = Math.floor(totalMaxHp * 0.36);
+    hp.right_leg.max = hp.left_leg.max = Math.floor(totalMaxHp * 0.36);
   }
 
   _prepareCharacterBaseData(actorData) {
@@ -52,7 +52,7 @@ export class SimpleActor extends Actor {
     super.prepareDerivedData();
     const actorData = this.data;
 
-    this._prepareCharacterData(actorData);
+    // this._prepareCharacterData(actorData);
     // this._prepareHumanoidData(actorData);
     // TODO derive monster natural weapon atk mode from first atk_mode
     // this._prepareMonsterData(actorData);
@@ -65,6 +65,7 @@ export class SimpleActor extends Actor {
   }
 
   _prepareCharacterData(actorData) {
+    // TODO derive alignment from lawfulness and goodness
     const { type } = actorData;
     if (type !== 'character') {
       return;

@@ -41,7 +41,7 @@ function addFeatures(itemData, classInstance, race, actor) {
     const actorFeature = actor?.data.items.find(featureFinder);
     if (actorFeature) {
       const actorFeatureData = actorFeature?.data.data;
-      // if they do, only update if the usesPerDay is different
+      // if the feature type is inherent or limited use ability, delete the old feature
       if (
         feature.usesPerDay &&
         actorFeatureData.attributes.uses_per_day.value !== feature.usesPerDay &&
@@ -194,7 +194,7 @@ const addSpellSlots = (updateData, classInstance, wisScore) => {
 const addLanguages = (updateData, classInstance, int) => {
   const currentLang = classInstance.languages;
   const updateLang = getExtraLanguages(currentLang, int);
-  updateData['data.attributes.languages.values'] = updateLang.join(', ').trim();
+  updateData['data.attributes.languages.value'] = updateLang.join(', ').trim();
 };
 
 export function getLevelUpdates(actor, lvl, formData = {}) {

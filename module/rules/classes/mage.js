@@ -73,7 +73,7 @@ export class Mage extends BaseClass {
   ]);
   static shieldsDescription = 'none';
   static armorDescription = 'none';
-  static weaponDescription = 'simple daggers, slings and staffs';
+  static weaponDescription = 'daggers, slings and staffs';
   static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static abilityReqs = [
