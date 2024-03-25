@@ -26,3 +26,11 @@ export const lawfulAlignments = [ALIGNMENTS.LG, ALIGNMENTS.LE];
 export const goodAlignments = [ALIGNMENTS.LG, ALIGNMENTS.CG];
 
 export const evilAlignments = [ALIGNMENTS.LE, ALIGNMENTS.CE];
+
+export const minScore = {
+  [ALIGNMENTS.LG]: 17,
+  [ALIGNMENTS.CG]: 13,
+  [ALIGNMENTS.N]: 9,
+  [ALIGNMENTS.LE]: 5,
+  [ALIGNMENTS.CE]: 1,
+};

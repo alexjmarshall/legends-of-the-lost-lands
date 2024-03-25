@@ -607,7 +607,7 @@ export async function attack(attacker, target, options) {
       let hitLoc = '';
       // const maxImpaleAreas = ['chest','skull','eye'];
       const doubleBleedAreas = ['neck', 'groin', 'armpit'];
-      const intBleedAreas = ['knee', 'hip', 'gut', 'chest', 'shoulder', 'elbow', 'skull'];
+      const intBleedAreas = ['knee', 'hip', 'abdomen', 'chest', 'shoulder', 'elbow', 'skull'];
       const easyBleedAreas = ['neck', 'jaw', 'nose', 'skull', 'eye', 'forearm', 'hand', 'foot', 'armpit'];
       const doubleKnockdownAreas = ['skull', 'nose', 'eye', 'jaw', 'knee', 'shin', 'foot'];
       const helmetAreas = ['skull', 'nose', 'eye', 'jaw'];
@@ -925,7 +925,7 @@ export async function attack(attacker, target, options) {
               knockDesc += knockdownDesc;
               skipWeaps = true;
             } else {
-              if (['gut', 'chest'].includes(coverageArea)) {
+              if (['abdomen', 'chest'].includes(coverageArea)) {
                 knockDesc += knockWindDesc;
               } else {
                 knockDesc += staggerDesc;
@@ -1363,16 +1363,16 @@ function getPenInchesDesc(
   const targetSizeMulti =
     targetSize === 0 ? 1 / 2 : targetSize === 1 ? 2 / 3 : targetSize === 2 ? 1 : targetSize === 3 ? 3 / 2 : 2;
 
-  const isFat = Util.stringMatch(coverageArea, 'gut');
+  const isFat = Util.stringMatch(coverageArea, 'abdomen');
   const isTorso = Constant.AIM_AREAS.torso.includes(coverageArea);
   const isHead = Constant.AIM_AREAS.head.includes(coverageArea);
   // handle all fatal head excluding neck injuries as skull
   if (fatal && isHead && !Util.stringMatch(coverageArea, 'neck')) {
     coverageArea = 'skull';
   }
-  // handle all gruesome torso injuries as gut
+  // handle all gruesome torso injuries as abdomen
   if (gruesome && isTorso) {
-    coverageArea = 'gut';
+    coverageArea = 'abdomen';
   }
 
   const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;

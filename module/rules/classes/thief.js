@@ -1,4 +1,4 @@
-import { allShields, lightArmors } from '../armors.js';
+import { lightArmors } from '../armors.js';
 import { allCombatSkills, allThieverySkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
@@ -40,12 +40,13 @@ export class Thief extends BaseClass {
   ]);
 
   static proficientSkills = Object.freeze([
-    SKILLS.ONE_HANDED_STRAIGHT_SWORD,
-    SKILLS.ONE_HANDED_CURVED_SWORD,
+    SKILLS.STRAIGHT_SWORD,
+    SKILLS.CURVED_SWORD,
     SKILLS.DAGGER,
     SKILLS.BLUDGEON,
     SKILLS.HAND_TO_HAND,
     SKILLS.SLING,
+    SKILLS.BOW,
     SKILLS.CROSSBOW,
     SKILLS.ANCIENT_LANGUAGES,
   ]);
@@ -61,13 +62,14 @@ export class Thief extends BaseClass {
   static description = 'A master of stealth and guile.';
   static featureDescriptions = Object.freeze([
     'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
+    'Skilled with ancient languages',
     'Read magic scrolls (4th level)',
     'Requires Dexterity 9+ and cannot be Lawful Good alignment',
   ]);
-  static shieldsDescription = 'none';
+  static shieldsDescription = 'buckler only';
   static armorDescription = 'light';
-  static weaponDescription = 'one-handed swords, daggers, bludgeons, slings and crossbows';
-  static weaponClass = WEAPON_CLASS.MARTIAL;
+  static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
+  static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static abilityReqs = [
     {
@@ -107,7 +109,7 @@ export class Assassin extends Thief {
     'Assassinate surprised foes (save or die)',
     'Requires Dexterity 9+ and evil alignment',
   ]);
-  static shieldsDescription = 'any';
+  static shieldsDescription = 'buckler only';
   static weaponDescription = 'any';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
@@ -115,25 +117,54 @@ export class Assassin extends Thief {
 
   constructor(lvl, origin) {
     super(lvl, origin, Assassin);
-    this.shields = [...allShields];
+    this.shields = [];
   }
 }
 
 export class Swashbuckler extends Thief {
   static featuresConfig = deepFreeze(
-    new FeatureConfig(features.DUELLIST, 1),
-    new FeatureConfig(features.GREATER_EVASION, 1) // no damage on successful Evasion saves
+    (lvl) =>
+      new FeatureConfig(features.DUELLIST, 1, {
+        changes: [
+          {
+            key: 'data.attributes.base_ac.value',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 4),
+          },
+          {
+            key: 'data.derived.riposte_to_hit_mod',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+          {
+            key: 'data.derived.riposte_dmg_mod',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+          {
+            key: 'data.derived.counter_to_hit_mod',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+          {
+            key: 'data.derived.counter_dmg_mod',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+        ],
+      }),
+    new FeatureConfig(features.IMPROVED_EVASION, 1)
   );
 
   static description = 'A master of the blade and the art of the duel.';
   static featureDescriptions = Object.freeze([
-    '+1 natural AC every 3 levels',
-    '+1 to-hit and damage every 3 levels when parrying or countering',
-    'Takes no damage on successful evasion saves',
+    '+1 natural AC every 4 levels',
+    '+1 to-hit and damage when riposting or countering every 3 levels',
+    '+3 to evasion saving throws',
     'Requires Strength 9+ and Dexterity 9+',
   ]);
-  static shieldsDescription = 'none';
-  static weaponDescription = 'one-handed swords, daggers, bludgeons, slings and crossbows';
+  static shieldsDescription = 'buckler only';
+  static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
   static abilityReqs = [

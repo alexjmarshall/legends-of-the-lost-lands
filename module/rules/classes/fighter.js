@@ -65,7 +65,7 @@ export class Berserker extends Fighter {
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.CHAIN_ATTACK, 1),
-    (lvl) => new FeatureConfig(features.BERSERK, 1, 1 + super.onePerNLevelsAfterFirst(lvl, 4)),
+    (lvl) => new FeatureConfig(features.BERSERK, 1, { usesPerDay: 1 + super.onePerNLevels(lvl, 4) }),
     super.multiattackFeature(7, 13),
   ]);
 

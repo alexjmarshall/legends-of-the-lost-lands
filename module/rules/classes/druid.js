@@ -61,14 +61,13 @@ export class Druid extends BaseClass {
     new FeatureConfig(features.IDENTIFY_PURE_WATER, 3),
     new FeatureConfig(features.PASS_WITHOUT_TRACE, 3),
     new FeatureConfig(features.SYLVAN_CHARM_IMMUNITY, 7),
-    new FeatureConfig(features.ANIMAL_FORM, 7, 3),
+    new FeatureConfig(features.ANIMAL_FORM, 7, { usesPerDay: 3 }),
   ]);
 
   static specializedSkills = Object.freeze([...allSpellSkills, SKILLS.HERBLORE, SKILLS.ANIMAL_HANDLING]);
 
   static proficientSkills = Object.freeze([
-    SKILLS.ONE_HANDED_CURVED_SWORD,
-    SKILLS.TWO_HANDED_CURVED_SWORD,
+    SKILLS.CURVED_SWORD,
     SKILLS.POLEARM,
     SKILLS.BLUDGEON,
     SKILLS.HAND_TO_HAND,
@@ -98,7 +97,7 @@ export class Druid extends BaseClass {
   ]);
   static shieldsDescription = 'non-metal only';
   static armorDescription = 'non-metal only';
-  static weaponDescription = 'simple curved swords, polearms, slings, staffs, daggers and spears';
+  static weaponDescription = 'sickles, scythes, slings, staffs, daggers and spears';
   static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static abilityReqs = [

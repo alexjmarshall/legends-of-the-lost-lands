@@ -22,7 +22,7 @@ export class HalfOgre extends BaseRace {
     '+3 Strength, -2 Intelligence, -3 Charisma.',
     'Can consume raw meat, rotten food or unclean water without risk of disease.',
     "60' infravision.",
-    '+4 to intimidation and -2 penalty to reaction rolls.',
+    '+4 to intimidation and -2 to reaction.',
     'Size Large.',
   ];
 

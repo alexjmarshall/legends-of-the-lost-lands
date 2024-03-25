@@ -33,7 +33,7 @@ export class Barbarian extends BaseClass {
     new FeatureConfig(features.WIZARD_SLAYER, 1),
     new FeatureConfig(features.FIRST_ATTACK_FEROCITY, 1),
     new FeatureConfig(features.SENSE_DANGER, 1),
-    super.multiattackFeature(7, 13),
+    super.multiattackFeature(8, 15),
   ]);
 
   static specializedSkills = Object.freeze([...allCombatSkills]);

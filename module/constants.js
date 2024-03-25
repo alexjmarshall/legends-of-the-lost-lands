@@ -42,39 +42,39 @@ export const ATTITUDE_BUY_ADJ = {
 export const SHIELD_TYPES = {
   round: {
     L: {
-      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut', // TODO make shield high guard -4 atk for being blind
-      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh', // TODO make sure weight is always computed from M coverage
-      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin',
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen', // TODO make shield high guard -4 atk for being blind
+      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin,hip,thigh', // TODO make sure weight is always computed from M coverage
+      low: 'elbow,forearm,hand,abdomen,groin,hip,thigh,knee,shin',
     },
     M: {
       high: 'skull,eye,ear,nose,jaw,neck,shoulder,forearm,hand',
-      mid: 'armpit,upper arm,elbow,forearm,hand,chest,gut',
-      low: 'elbow,forearm,hand,gut,groin,hip,thigh',
+      mid: 'armpit,upper arm,elbow,forearm,hand,chest,abdomen',
+      low: 'elbow,forearm,hand,abdomen,groin,hip,thigh',
     },
   },
   kite: {
     L: {
-      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin',
-      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,thigh,knee',
-      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot',
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin',
+      mid: 'jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin,thigh,knee',
+      low: 'elbow,forearm,hand,abdomen,groin,hip,thigh,knee,shin,foot',
     },
     M: {
       high: 'skull,eye,ear,nose,jaw,neck,shoulder,forearm,hand,chest',
-      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin',
-      low: 'elbow,forearm,hand,gut,groin,thigh',
+      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin',
+      low: 'elbow,forearm,hand,abdomen,groin,thigh',
     },
   },
   tower: {
     L: {
       // TODO can't be used on horseback
-      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip',
-      mid: 'neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip,thigh,knee',
-      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee,shin,foot',
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin,hip',
+      mid: 'neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin,hip,thigh,knee',
+      low: 'elbow,forearm,hand,abdomen,groin,hip,thigh,knee,shin,foot',
     },
     M: {
-      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut',
-      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,gut,groin,hip',
-      low: 'elbow,forearm,hand,gut,groin,hip,thigh,knee',
+      high: 'skull,eye,ear,nose,jaw,neck,shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen',
+      mid: 'shoulder,armpit,upper arm,elbow,forearm,hand,chest,abdomen,groin,hip',
+      low: 'elbow,forearm,hand,abdomen,groin,hip,thigh,knee',
     },
   },
 };
@@ -257,7 +257,7 @@ const ranThighMuscle = () => ranChoice(['quadriceps', 'quadriceps', 'hamstrings'
 const ranChestBone = () => ranChoice(['a rib', 'the sternum']);
 const ranOrgan = () => ranChoice(['the liver', 'the spleen', 'a kidney', 'the bowels', 'the spine']);
 const ranChestOrgan = () => ranChoice(['a lung', 'the heart']);
-const ranGutBone = () => ranChoice(['a rib', 'the back']);
+const ranAbdomenBone = () => ranChoice(['a rib', 'the back']);
 const lowBrainBleed = (organ = null) =>
   Math.random() < 0.25 ? ` and blood streams from the ${organ || ranOrifice()}` : '';
 const highBrainBleed = (organ = null) =>
@@ -601,7 +601,7 @@ export const HIT_LOCATIONS = {
   },
   groin: {
     // TODO blunt hit save or be stunned by pain for male chars
-    // female chars treat groin shot as gut and don't display on sheet
+    // female chars treat groin shot as abdomen and don't display on sheet
     // also move knockdown/bleed bonii here
     weights: [2, 8, 0, 3, 3, 12, 2, 4],
     crit_chance_multi: 3,
@@ -664,7 +664,7 @@ export const HIT_LOCATIONS = {
       },
     },
   },
-  gut: {
+  abdomen: {
     weights: [8, 16, 4, 9, 12, 16, 6, 12],
     crit_chance_multi: 2,
     crit_dmg_multi: 2,
@@ -673,15 +673,15 @@ export const HIT_LOCATIONS = {
       blunt: {
         light: {
           text: ` and bruises ${ranOrgan()}`,
-          dmgEffect: lowIntBleed('gut'),
+          dmgEffect: lowIntBleed('abdomen'),
         },
         serious: {
-          text: ` and breaks ${ranGutBone()}`,
-          dmgEffect: lowIntBleed('gut'),
+          text: ` and breaks ${ranAbdomenBone()}`,
+          dmgEffect: lowIntBleed('abdomen'),
         },
         critical: {
           text: ` and crushes the ribs into ${ranOrgan()}`,
-          dmgEffect: highIntBleed('gut'),
+          dmgEffect: highIntBleed('abdomen'),
         },
         gruesome: {
           text: ' and breaks the back severing the spine', // TODO paralysis desc
@@ -689,36 +689,36 @@ export const HIT_LOCATIONS = {
       },
       pierce: {
         light: {
-          text: ' and gouges the gut',
+          text: ' and gouges the abdomen',
           dmgEffect: lowMinBleed(),
         },
         serious: {
-          text: ' and penetrates the gut and gouges the bowels',
-          dmgEffect: lowMinBleed() || lowIntBleed('gut'),
+          text: ' and penetrates the abdomen and gouges the bowels',
+          dmgEffect: lowMinBleed() || lowIntBleed('abdomen'),
         },
         critical: {
-          text: ` and penetrates the gut and pierces ${ranOrgan()}`,
-          dmgEffect: lowWeapStuck() + highIntBleed('gut'),
+          text: ` and penetrates the abdomen and pierces ${ranOrgan()}`,
+          dmgEffect: lowWeapStuck() + highIntBleed('abdomen'),
         },
         gruesome: {
-          text: ` and pierces them from the gut through ${ranOrgan()} and out the back`,
+          text: ` and pierces them from the abdomen through ${ranOrgan()} and out the back`,
           fatal: true,
-          dmgEffect: highWeapStuck() + highIntBleed('gut'),
+          dmgEffect: highWeapStuck() + highIntBleed('abdomen'),
         },
       },
       slash: {
         light: {
-          text: ' and gashes the gut',
+          text: ' and gashes the abdomen',
           dmgEffect: highMinBleed(),
         },
         serious: {
-          text: ' and tears through the gut gashing the bowels',
-          dmgEffect: highMinBleed() || lowIntBleed('gut'),
+          text: ' and tears through the abdomen gashing the bowels',
+          dmgEffect: highMinBleed() || lowIntBleed('abdomen'),
         },
         critical: {
-          text: ` and cleaves into the gut and eviscerates ${ranOrgan()}`,
+          text: ` and cleaves into the abdomen and eviscerates ${ranOrgan()}`,
           fatal: true,
-          dmgEffect: lowIntBleed('gut') || highMinBleed(),
+          dmgEffect: lowIntBleed('abdomen') || highMinBleed(),
         },
         gruesome: {
           text: ' and cleaves the body in two at the waist',
@@ -971,7 +971,7 @@ export const HIT_LOCATIONS = {
           dmgEffect: highMajBleed(),
         },
         gruesome: {
-          text: ' and cleaves through the arm at the elbow and into the gut!',
+          text: ' and cleaves through the arm at the elbow and into the abdomen!',
           removal: true,
           dmgEffect: highMajBleed(),
         },
@@ -1622,7 +1622,7 @@ export const AIM_AREAS = {
     'right forearm',
     'right hand',
   ],
-  torso: ['chest', 'gut'],
+  torso: ['chest', 'abdomen'],
   pelvis: ['left hip', 'groin', 'right hip'],
   legs: ['left thigh', 'left knee', 'left shin', 'left foot', 'right thigh', 'right knee', 'right shin', 'right foot'],
 };
@@ -1630,7 +1630,7 @@ export const AIM_AREAS_UNILATERAL = {
   head: ['skull', 'eye', 'ear', 'nose', 'jaw', 'neck'],
   shoulders: ['shoulder', 'armpit'],
   arms: ['upper arm', 'elbow', 'forearm', 'hand'],
-  torso: ['chest', 'gut'],
+  torso: ['chest', 'abdomen'],
   pelvis: ['hip', 'groin'],
   legs: ['thigh', 'knee', 'shin', 'foot'],
 };
@@ -1685,7 +1685,7 @@ export const AIM_AREA_PENALTIES = Object.fromEntries(
 );
 export const HEIGHT_AREAS = {
   low: ['foot', 'shin', 'knee', 'thigh', 'hip', 'groin'],
-  mid: ['gut', 'chest', 'hand', 'forearm', 'elbow', 'upper arm'],
+  mid: ['abdomen', 'chest', 'hand', 'forearm', 'elbow', 'upper arm'],
   high: ['armpit', 'shoulder', 'neck', 'jaw', 'nose', 'eye', 'ear', 'skull'],
 };
 export const MERCHANT_SUBTYPES = [
