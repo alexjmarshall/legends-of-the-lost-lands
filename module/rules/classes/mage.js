@@ -148,7 +148,6 @@ class BaseSpecialist extends Mage {
     'Read magic scrolls',
     'Scribe magic scrolls',
   ]);
-  static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.SPECIALIST_FOCUS, 1)]);
 
   static MAGIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Mage.MAGIC_SPELL_SLOTS)]);
 
@@ -166,6 +165,20 @@ export class Abjurer extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast alteration spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.abjuration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Abjurer);
   }
@@ -180,6 +193,20 @@ export class Conjurer extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast divination spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.conjuration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Conjurer);
   }
@@ -194,6 +221,20 @@ export class Diviner extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast conjuration spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.divination.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Diviner);
   }
@@ -208,6 +249,20 @@ export class Enchanter extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast evocation spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.enchantment.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Enchanter);
   }
@@ -222,6 +277,20 @@ export class Evoker extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast enchantment spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.evocation.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Evoker);
   }
@@ -236,6 +305,20 @@ export class Illusionist extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast necromancy spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.illusion.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Illusionist);
   }
@@ -250,6 +333,20 @@ export class Necromancer extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast illusion spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.necromancy.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Necromancer);
   }
@@ -264,6 +361,20 @@ export class Transmuter extends BaseSpecialist {
     'Scribe magic scrolls',
     'Cannot cast abjuration spells',
   ]);
+
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SPECIALIST_FOCUS, 1, {
+      changes: [
+        {
+          key: 'data.skills.alteration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    }),
+  ]);
+
   constructor(lvl, origin) {
     super(lvl, origin, Transmuter);
   }

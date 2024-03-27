@@ -92,7 +92,7 @@ export class Druid extends BaseClass {
     'Identify pure water (level 3)',
     'Pass through woodland areas without a trail (level 3)',
     'Immune to charm by sylvan creatures (level 7)',
-    'Transform into an animal (level 7, 3/day)',
+    'Transform into an reptile, bird or mammal (level 7, each type 1/day)',
     'Requires Wisdom 12+ and Charisma 13+',
   ]);
   static shieldsDescription = 'non-metal only';
