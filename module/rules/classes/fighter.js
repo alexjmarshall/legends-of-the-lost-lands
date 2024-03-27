@@ -59,13 +59,13 @@ export class Berserker extends Fighter {
   static featureDescriptions = Object.freeze([
     'Extra attack after killing an enemy',
     'Attack 2x at 7th level, 3x at 13th level',
-    'Berserk rage (+2 to-hit & damage, +4 to saving throws vs. mental attacks, physical damage resistance, immune to bleeding)',
+    'Berserk rage (+2 to-hit & damage, +4 to mental saving throws, 5 + 2/level temporary HP, immune to bleeding and fear)',
     'Requires Strength 11+ and Wisdom no greater than 11',
   ]);
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.CHAIN_ATTACK, 1),
-    (lvl) => new FeatureConfig(features.BERSERK, 1, { usesPerDay: 1 + super.onePerNLevels(lvl, 4) }),
+    (lvl) => new FeatureConfig(features.BERSERK, 1, { usesPerDay: super.onePlusOnePerNLevels(lvl, 4) }),
     super.multiattackFeature(7, 13),
   ]);
 

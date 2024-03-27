@@ -28,12 +28,13 @@ export class Paladin extends BaseClass {
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.LAY_ON_HANDS, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.HOLY_PROTECTION, 1),
+    new FeatureConfig(features.FEARLESS, 1),
     new FeatureConfig(features.DETECT_EVIL, 1),
     new FeatureConfig(features.ASCETIC, 1),
     new FeatureConfig(features.REBUKE_UNDEAD, 3),
     new FeatureConfig(features.PALADIN_STEED, 4),
     new FeatureConfig(features.AURA_OF_PROTECTION, 6),
-    new FeatureConfig(features.BANISH_EVIL, 7),
+    new FeatureConfig(features.BANISH_EVIL, 8),
     super.multiattackFeature(7, 13),
   ]);
 
@@ -48,15 +49,16 @@ export class Paladin extends BaseClass {
   static description = 'A warrior bold and pure.';
   static featureDescriptions = Object.freeze([
     'Lay on hands to heal 2 HP/level (1/day)',
-    '+2 to saving throws and AC vs. evil enemies',
-    'Detect evil creatures and enchantments',
+    '+2 to saving throws and AC',
+    'Immune to fear',
     'Immune to disease',
+    'Detect evil creatures and enchantments',
     'Continually gives away excess wealth',
-    'Turn undead by striking them in combat (level 3)',
+    'Turn the undead (level 3, requires a holy sword)',
     'Summons an intelligent warhorse (level 4)',
-    'Protects allies from evil creatures (level 6)',
-    'Banish summoned/extraplanar creatures by striking them in combat (level 7)',
+    "+2 to saving throws & AC, +4 to saving throws vs. fear for allies in a 10' radius (level 6)",
     'Attack 2x at 7th level, 3x at 13th level',
+    'Banish summoned/extraplanar creatures (level 8, requires a holy sword)',
     'Requires Strength 12+, Wisdom 9+, Charisma 17+ and Lawful Good alignment',
   ]);
   static shieldsDescription = 'any';
@@ -93,28 +95,30 @@ export class Paladin extends BaseClass {
 export class Inquisitor extends Paladin {
   static description = 'A remorseless upholder of the law.';
   static featureDescriptions = Object.freeze([
-    '+2 to saving throws and AC vs. evil enemies',
+    '+2 to saving throws and AC',
+    'Immune to fear',
+    'Immune to disease',
     'Detect evil creatures and enchantments',
     'Detect lies',
-    'Immune to disease',
     'Continually gives away excess wealth',
-    'Dispel magic (level 3)',
-    'Summons an intelligent warhorse (level 4)',
-    'Protects allies from evil creatures (level 6)',
-    'True sight (level 7)',
+    'Turn the undead (level 3, requires a holy sword)',
+    'Dispel magic (level 5, 1/day every 4 levels)',
+    'True sight (level 5, 1/day every 4 levels)',
     'Attack 2x at 7th level, 3x at 13th level',
+    'Banish summoned/extraplanar creatures (level 8, requires a holy sword)',
     'Requires Strength 9+, Wisdom 13+, Charisma 16+ and Lawful alignment',
   ]);
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.HOLY_PROTECTION, 1),
+    new FeatureConfig(features.FEARLESS, 1),
     new FeatureConfig(features.DETECT_EVIL, 1),
     new FeatureConfig(features.DETECT_LIE, 1),
     new FeatureConfig(features.ASCETIC, 1),
-    (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 3, { usesPerDay: super.onePlusOnePerNLevels(lvl - 2, 4) }),
-    new FeatureConfig(features.PALADIN_STEED, 4),
-    new FeatureConfig(features.AURA_OF_PROTECTION, 6),
-    (lvl) => new FeatureConfig(features.TRUE_SIGHT, 7, { usesPerDay: super.onePlusOnePerNLevels(lvl - 6, 3) }),
+    new FeatureConfig(features.REBUKE_UNDEAD, 3),
+    (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 5, { usesPerDay: super.onePlusOnePerNLevels(lvl - 4, 4) }),
+    (lvl) => new FeatureConfig(features.TRUE_SIGHT, 5, { usesPerDay: super.onePlusOnePerNLevels(lvl - 4, 4) }),
+    new FeatureConfig(features.BANISH_EVIL, 8),
     super.multiattackFeature(7, 13),
   ]);
 

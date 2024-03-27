@@ -45,6 +45,7 @@ export const features = Object.freeze({
     },
   },
   BERSERK: {
+    // TODO +2 HP/level reduces to +1 after name level
     name: 'Berserk',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
@@ -149,7 +150,18 @@ export const features = Object.freeze({
   },
   SPECIALIST_FOCUS: {
     name: 'Specialist Focus',
-    type: FEATURE_TYPE.INHERENT, // TODO decide what derived attributes this will affect
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Specialist Focus',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.abjuration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
   },
   FEARLESS: {
     name: 'Fearless',
@@ -187,14 +199,9 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.hp.max',
-          mode: 2,
-          value: 10,
-        },
-        {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: 1,
+          value: 2,
         },
       ],
     },
@@ -204,15 +211,18 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
   KILLER_INSTINCT: {
+    // TODO code in attack macro
     name: 'Killer Instinct',
     type: FEATURE_TYPE.INHERENT,
   },
   LAY_ON_HANDS: {
+    // TODO +2 HP/level reduces to +1 after name level
     name: 'Lay on Hands',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   HOLY_PROTECTION: {
-    // +2 AC & +2 saves vs. evil creatures, immunity to disease
+    // +2 AC, +2 saves, immune to disease and fear
+    // TODO
     name: 'Holy Protection',
     type: FEATURE_TYPE.INHERENT,
   },
@@ -233,6 +243,7 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   REBUKE_UNDEAD: {
+    // requires holy sword
     name: 'Rebuke Undead',
     type: FEATURE_TYPE.ABILITY,
   },
@@ -241,10 +252,12 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
   AURA_OF_PROTECTION: {
+    // requires holy sword
     name: 'Aura of Protection',
     type: FEATURE_TYPE.INHERENT,
   },
   BANISH_EVIL: {
+    // requires holy sword
     name: 'Banish Evil',
     type: FEATURE_TYPE.ABILITY,
   },
