@@ -6,8 +6,8 @@ import { defaultLanguages } from '../languages.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { progressions } from '../helper.js';
 import { removeDuplicates } from '../../helper.js';
-import { allOrigins } from '../origin.js';
-import { origins } from '../origin.js';
+import { allOrigins, origins } from '../origin.js';
+import { FULL_ABILITIES } from '../abilities.js';
 
 const BASE_AC_DEFAULT = 10;
 const MAX_LVL = 20;
@@ -62,10 +62,12 @@ export class BaseClass {
   static multiattackFeature(twiceLvl, thriceLvl) {
     return (lvl) => {
       if (lvl < twiceLvl) return null;
+      const multiAttack = foundry.utils.deepClone(features.MULTIATTACK);
+      multiAttack.description = `Attack twice at ${twiceLvl}th level, thrice at ${thriceLvl}th level`;
       if (lvl < thriceLvl) {
+        multiAttack.effectData.changes[0].value = 3;
         return new FeatureConfig(multiAttack, twiceLvl);
       }
-      const multiAttack = foundry.utils.deepClone(features.MULTIATTACK);
       multiAttack.effectData.changes[0].value = 3;
       return new FeatureConfig(multiAttack, thriceLvl);
     };
@@ -167,6 +169,8 @@ export class BaseClass {
 
   static firstLvlHp = 'd4+2';
 
+  static describeFirstLvlHp = false;
+
   static fpReserve = 5;
 
   static hitDie = 'd6';
@@ -186,6 +190,12 @@ export class BaseClass {
   static languages = [];
 
   static startingRecipes = [];
+
+  static shieldsDescription = 'any';
+
+  static armorDescription = 'any';
+
+  static weaponDescription = 'any';
 
   // property defaults
   lvl = 0;

@@ -7,7 +7,9 @@
 // ^ maybe targets of 2/4/6/8/10 and d3/d4/d6/d8/d10/d12 dice
 // -- update weapon spreadsheet
 
-// TODO write lil monte carlo script to estimate heal/spell learn odds
+// write lil monte carlo script to estimate heal/spell learn odds
+// -- good for learn spell!
+// -- for heal, use 11 or 14 for untreated TN, and add 3-9 for treatment
 // remember when deleting injuries/disease items, have to delete TimeQ events too -- make button that does both
 // when cuts heal, rename as scar
 

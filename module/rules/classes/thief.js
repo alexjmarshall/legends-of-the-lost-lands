@@ -10,9 +10,11 @@ import { allExceptLawfulGood, evilAlignments } from '../alignments.js';
 import { RARE_LANGUAGES } from '../languages.js';
 
 export class Thief extends BaseClass {
+  static description = 'A rogue who uses stealth and guile to liberate treasure.';
+
   static XP_REQS = Object.freeze([0, 600, 1800, 4200, 10000, 20000, 40000, 70000, 110000, 160000]);
 
-  static XP_REQ_AFTER_NAME_LVL = 140000;
+  static XP_REQ_AFTER_NAME_LVL = 120000;
 
   static TITLES = Object.freeze([
     'Apprentice',
@@ -59,24 +61,10 @@ export class Thief extends BaseClass {
   static fpReserve = 10;
   static hitDie = 'd4';
   static afterNameHp = 1;
-  static description = 'A master of stealth and guile.';
-  static featureDescriptions = Object.freeze([
-    'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
-    'Skilled with ancient languages',
-    'Read magic scrolls (4th level)',
-    'Requires Dexterity 9+ and cannot be Lawful Good alignment',
-  ]);
   static shieldsDescription = 'buckler only';
   static armorDescription = 'light';
   static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
   static weaponClass = WEAPON_CLASS.SIMPLE;
-
-  static abilityReqs = [
-    {
-      name: ABILITIES.DEX,
-      min: 9,
-    },
-  ];
 
   static primeReqs = [ABILITIES.DEX];
 
@@ -90,7 +78,12 @@ export class Thief extends BaseClass {
 }
 
 export class Assassin extends Thief {
-  static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.ASSASSINATE, 1)]);
+  static description = 'The antithesis of weal.';
+
+  static featuresConfig = deepFreeze([
+    new FeatureConfig(features.BACKSTAB, 1),
+    new FeatureConfig(features.ASSASSINATE, 1),
+  ]);
 
   static specializedSkills = Object.freeze([SKILLS.POISONLORE, SKILLS.POISON_HANDLING]);
 
@@ -101,19 +94,20 @@ export class Assassin extends Thief {
     ...allCombatSkills,
     ...allThieverySkills.filter((s) => s !== SKILLS.APPRAISAL && s !== SKILLS.PICKPOCKETING),
   ]);
-
-  static description = 'The antithesis of weal.';
-  static featureDescriptions = Object.freeze([
-    'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
-    'Read magic scrolls (4th level)',
-    'Assassinate surprised foes (save or die)',
-    'Requires Dexterity 9+ and evil alignment',
-  ]);
   static shieldsDescription = 'buckler only';
-  static weaponDescription = 'any';
   static weaponClass = WEAPON_CLASS.MARTIAL;
-
   static alignments = evilAlignments;
+
+  static abilityReqs = [
+    {
+      name: ABILITIES.DEX,
+      min: 12,
+    },
+    {
+      name: ABILITIES.INT,
+      min: 11,
+    },
+  ];
 
   constructor(lvl, origin) {
     super(lvl, origin, Assassin);
@@ -122,7 +116,9 @@ export class Assassin extends Thief {
 }
 
 export class Swashbuckler extends Thief {
-  static featuresConfig = deepFreeze(
+  static description = 'A master of the blade and the art of the duel.';
+
+  static featuresConfig = deepFreeze([
     (lvl) =>
       new FeatureConfig(features.DUELLIST, 1, {
         changes: [
@@ -153,16 +149,12 @@ export class Swashbuckler extends Thief {
           },
         ],
       }),
-    new FeatureConfig(features.IMPROVED_EVASION, 1)
-  );
-
-  static description = 'A master of the blade and the art of the duel.';
-  static featureDescriptions = Object.freeze([
-    '+1 natural AC every 4 levels',
-    '+1 to-hit and damage when riposting or countering every 3 levels',
-    '+3 to evasion saving throws',
-    'Requires Strength 9+ and Dexterity 9+',
+    new FeatureConfig(features.AMBIDEXTROUS, 1),
+    new FeatureConfig(features.IMPROVED_EVASION, 1),
   ]);
+
+  static proficientSkills = Thief.proficientSkills.filter((s) => s !== SKILLS.ANCIENT_LANGUAGES);
+
   static shieldsDescription = 'buckler only';
   static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
   static weaponClass = WEAPON_CLASS.MARTIAL;
@@ -170,11 +162,11 @@ export class Swashbuckler extends Thief {
   static abilityReqs = [
     {
       name: ABILITIES.DEX,
-      min: 9,
+      min: 12,
     },
     {
       name: ABILITIES.STR,
-      min: 9,
+      min: 12,
     },
   ];
 
