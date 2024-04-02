@@ -10,7 +10,7 @@ import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
 import { skills, SKILL_CATEGORIES } from '../rules/skills.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
-import { alignmentDescriptions, minScore } from '../rules/alignments.js';
+import { alignmentDescriptions, minScore, allAlignments } from '../rules/alignments.js';
 import { portraits, basePath } from '../portrait.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 import { cloneItem } from '../item-helper.js';
@@ -106,6 +106,23 @@ export class CreateActorSheet extends ActorSheet {
     return context;
   }
 
+  _getAbilityReqsDescription(abilityReqs) {
+    if (!abilityReqs.length) return '';
+    let desc = 'Requires ';
+    desc += abilityReqs
+      .map(
+        (req) =>
+          `${FULL_ABILITIES[req.name]}${req.min ? ` ${req.min}+` : ''}${req.max ? ` no greater than ${req.max}` : ''}`
+      )
+      .join(', ');
+    return desc;
+  }
+
+  _getAlignmentReqsDescription(alignments) {
+    if (!alignments.length || alignments.length === allAlignments.length) return '';
+    return `Requires ${alignments.join(' or ')} alignment`;
+  }
+
   _getClassDescription(className) {
     if (className.includes('/')) {
       return {
@@ -127,13 +144,24 @@ export class CreateActorSheet extends ActorSheet {
         : ''
     }
     <p><label>XP required:</label> ${selectedClass.XP_REQS[1]}</p>
-    <p><label>Starting HP:</label> ${selectedClass.firstLvlHp}</p>
     <p><label>Hit die:</label> ${selectedClass.hitDie}</p>
     <p><label>Armor:</label> ${selectedClass.armorDescription}</p>
     <p><label>Shields:</label> ${selectedClass.shieldsDescription}</p>
     <p><label>Weapons:</label> ${selectedClass.weaponDescription}</p>
     `;
-    const featureListItems = selectedClass.featureDescriptions?.map((desc) => `<li>${desc}</li>`).join('') || '';
+    let featuresDescriptions = selectedClass.featuresConfig.flatMap((f) => {
+      const feature = typeof f === 'function' ? f(99).feature : f.feature;
+      const descArr = Array.isArray(feature.description) ? feature.description : [feature.description];
+      return descArr.map((d) => `${d}${f.reqLvl && f.reqLvl > 1 ? ` (level ${f.reqLvl})` : ''}`);
+    });
+    featuresDescriptions.push(this._getAbilityReqsDescription(selectedClass.abilityReqs));
+    featuresDescriptions.push(this._getAlignmentReqsDescription(selectedClass.alignments));
+    if (selectedClass.describeFirstLvlHp) featuresDescriptions.unshift(`${selectedClass.firstLvlHp} starting HP`);
+    featuresDescriptions = featuresDescriptions.filter((x) => x);
+    const featureListItems = featuresDescriptions
+      .filter((x) => x)
+      .map((desc) => `<li>${desc}</li>`)
+      .join('');
     const nonCombatOrSpellSkill = (s) =>
       skills[s].category !== SKILL_CATEGORIES.COMBAT && skills[s].category !== SKILL_CATEGORIES.SPELLS;
     const nonCombatSpecializedSkills = selectedClass.specializedSkills?.filter(nonCombatOrSpellSkill);
@@ -251,10 +279,18 @@ export class CreateActorSheet extends ActorSheet {
       }
       return true;
     };
+    const meetsMultiPrimeRequirements = (cls) => {
+      const reqs = CLASSES[cls].primeReqs || [];
+      for (const ability of reqs) {
+        const abilityScore = abilitySet.find((s) => s.name === ability).score;
+        if (abilityScore < CLASSES.MultiClass.minPrimeReqScore) return false;
+      }
+      return true;
+    };
+
     const playableClasses = racialClasses.filter(meetsAbilityRequirements);
-    const validMultiClasses = race.allowedMultiClasses.filter(
-      (multi) => playableClasses.includes(multi[0]) && playableClasses.includes(multi[1])
-    );
+    const validMultiClass = (cls) => playableClasses.includes(cls) && meetsMultiPrimeRequirements(cls);
+    const validMultiClasses = race.allowedMultiClasses.filter((multi) => multi.every((cls) => validMultiClass(cls)));
     return [...playableClasses, ...validMultiClasses.map((multi) => multi.join('/'))];
   }
 
@@ -331,7 +367,8 @@ export class CreateActorSheet extends ActorSheet {
     }
     const conMod = getScoreMod(conScore);
     const hpGetter = () => Math.floor(rollDice(firstLvlHp));
-    return this._getOrSetFlag(`hp_${className}`, hpGetter) + origins[origin].hpBonus + sizes[size].hpModifier + conMod;
+    const sizeMod = sizes[size].hpModifier * 2;
+    return this._getOrSetFlag(`hp_${className}`, hpGetter) + origins[origin].hpBonus + sizeMod + conMod;
   }
 
   _getStartingFp(className) {
@@ -462,7 +499,6 @@ export class CreateActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @inheritdoc */
-  // TODO check for reciprocal updaters
   activateListeners(html) {
     super.activateListeners(html);
 

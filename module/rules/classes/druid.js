@@ -10,11 +10,13 @@ import { ALIGNMENTS } from '../alignments.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Druid extends BaseClass {
+  static description = 'Followers of the Old Ways serve as mystic conduits to the forces of nature.';
+
   static XP_REQS = Object.freeze([
-    0, 900, 3200, 7000, 11000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 675000,
+    0, 900, 2700, 6000, 12000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 670000,
   ]);
 
-  static MULTICLASS_XP_AFTER_NAME_LVL = 225000;
+  static MULTICLASS_XP_AFTER_NAME_LVL = 220000;
 
   static TITLES = Object.freeze([
     'Aspirant',
@@ -86,15 +88,6 @@ export class Druid extends BaseClass {
   static fpReserve = 10;
   static hitDie = 'd6';
   static afterNameHp = 0;
-  static description = 'Serves the forces of nature and balance.';
-  static featureDescriptions = Object.freeze([
-    'Cast druid spells',
-    'Identify pure water (level 3)',
-    'Pass through woodland areas without a trail (level 3)',
-    'Immune to charm by sylvan creatures (level 7)',
-    'Transform into an reptile, bird or mammal (level 7, each type 1/day)',
-    'Requires Wisdom 12+ and Charisma 13+',
-  ]);
   static shieldsDescription = 'non-metal only';
   static armorDescription = 'non-metal only';
   static weaponDescription = 'sickles, scythes, slings, staffs, daggers and spears';
@@ -121,3 +114,5 @@ export class Druid extends BaseClass {
     this.shields = [SHIELD_TYPES.MEDIUM];
   }
 }
+
+// TODO Witch subclass?

@@ -59,14 +59,6 @@ export class Elf extends BaseRace {
     CLASS.Fighter.name,
     CLASS.Cleric.name,
     CLASS.Mage.name,
-    CLASS.Abjurer.name,
-    CLASS.Conjurer.name,
-    CLASS.Diviner.name,
-    CLASS.Enchanter.name,
-    CLASS.Evoker.name,
-    CLASS.Illusionist.name,
-    CLASS.Necromancer.name,
-    CLASS.Transmuter.name,
     CLASS.Thief.name,
     CLASS.Assassin.name,
   ]);
@@ -86,14 +78,6 @@ export class Elf extends BaseRace {
         return 200 + rollDice('5d10');
       case CLASS.Mage.name:
       case CLASS.Incantatrix.name:
-      case CLASS.Abjurer.name:
-      case CLASS.Conjurer.name:
-      case CLASS.Diviner.name:
-      case CLASS.Enchanter.name:
-      case CLASS.Evoker.name:
-      case CLASS.Illusionist.name:
-      case CLASS.Necromancer.name:
-      case CLASS.Transmuter.name:
         return 150 + rollDice('5d6');
       case CLASS.Thief.name:
       case CLASS.Assassin.name:

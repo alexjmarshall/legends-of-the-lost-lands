@@ -1,5 +1,5 @@
 import { allArmors, allShields } from '../armors.js';
-import { allCombatSkills, allSurvivalSkills, SKILLS } from '../skills.js';
+import { allCombatSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
@@ -10,7 +10,9 @@ import { goodAlignments } from '../alignments.js';
 import { RECIPES } from '../recipes.js';
 
 export class Ranger extends BaseClass {
-  static XP_REQS = Object.freeze([0, 1100, 3300, 7700, 16500, 40000, 90000, 150000, 220000, 320000]);
+  static description = 'A warrior and woodsman with a profound destiny.';
+
+  static XP_REQS = Object.freeze([0, 1200, 3600, 8400, 18000, 40000, 90000, 150000, 220000, 320000]);
 
   static XP_REQ_AFTER_NAME_LVL = 200000;
 
@@ -64,55 +66,40 @@ export class Ranger extends BaseClass {
     [2, 1],
     [2, 2],
     [2, 2],
-    [2, 2, 1],
-    [2, 2, 2],
-    [2, 2, 2],
-    [2, 2, 2],
-    [2, 2, 2],
-    [2, 2, 2],
-    [2, 2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2],
   ]);
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.ANCIENT_HATRED, 1),
     new FeatureConfig(features.ALERT, 1),
+    new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
     new FeatureConfig(features.CAST_MAGIC_SPELLS, 7),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
-    new FeatureConfig(features.SCRIBE_MAGIC_SCROLLS, 7),
     new FeatureConfig(features.MASTERY_OF_THE_STONE, 7),
     new FeatureConfig(features.RELUCTANT_LEADER, 8),
-    super.multiattackFeature(8, 15),
+    super.multiattackFeature(5, 9),
   ]);
 
   static specializedSkills = Object.freeze([...allCombatSkills, SKILLS.TRACKING, SKILLS.HERBALISM]);
 
-  static proficientSkills = Object.freeze([SKILLS.HIDING, SKILLS.SNEAKING, SKILLS.HERBLORE, ...allSurvivalSkills]);
+  static proficientSkills = Object.freeze([SKILLS.HIDING, SKILLS.SNEAKING, SKILLS.HERBLORE, SKILLS.LISTENING]);
 
   static saveProgressions = saveBases.ranger;
 
-  static firstLvlHp = 'd6+6';
+  static startingRecipes = [RECIPES.POULTICE_TO_NEUTRALIZE_POISON];
+
+  static firstLvlHp = '2d8';
+  static describeFirstLvlHp = true;
   static fpReserve = 15;
   static hitDie = 'd8';
   static afterNameHp = 3;
-  static description = 'A warrior and woodsman with a profound destiny.';
-  static featureDescriptions = Object.freeze([
-    '+1 damage every 3 levels against evil humanoids',
-    'Immune to backstabs',
-    "Reduces the party's chance of being surprised",
-    'Cast druid spells (level 6)',
-    'Cast magic spells (level 7)',
-    'Read magic scrolls (level 7)',
-    'Scribe magic scrolls (level 7)',
-    'Employ magic items pertaining to clairaudience, clairvoyance, ESP, and telepathy (level 7)',
-    'Cannot lead retainers or followers until level 8',
-    'Attack 2x at 8th level, 3x at 15th level',
-    'Requires Strength 13+, Intelligence 13+, Wisdom 14+, Constitution 12+ and Good alignment',
-  ]);
-  static startingRecipes = [RECIPES.POULTICE_TO_SLOW_POISON];
-  static shieldsDescription = 'any';
-  static armorDescription = 'any';
-  static weaponDescription = 'any';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
   static abilityReqs = [
@@ -146,34 +133,21 @@ export class Ranger extends BaseClass {
 }
 
 export class VampireHunter extends Ranger {
-  static description = 'An implacable hunter of the most terrible undead.';
-  static featureDescriptions = Object.freeze([
-    '+1 damage every 3 levels against the undead',
-    'Immune to backstabs',
-    "Reduces the party's chance of being surprised",
-    '+4 bonus to saving throws vs. energy drain',
-    'Cast druid spells (level 6)',
-    'Cast magic spells (level 7)',
-    'Read magic scrolls (level 7)',
-    'Scribe magic scrolls (level 7)',
-    'Employ magic items pertaining to clairaudience, clairvoyance, ESP, and telepathy (level 7)',
-    'Cannot lead retainers or followers until level 8',
-    'Attack 2x at 8th level, 3x at 15th level',
-    'Requires Strength 13+, Intelligence 13+, Wisdom 14+, Constitution 12+ and Good alignment',
-  ]);
+  static description = 'An implacable hunter of the undead.';
 
   static startingRecipes = [RECIPES.WARD_AGAINST_VAMPIRES, RECIPES.WARD_AGAINST_LYCANTHROPES];
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.ANCIENT_HATRED, 1),
+    new FeatureConfig(features.ANCIENT_HATRED_UNDEAD, 1),
     new FeatureConfig(features.ALERT, 1),
+    new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.ENERGY_DRAIN_RESISTANCE, 1),
-    new FeatureConfig(features.CAST_MAGIC_SPELLS, 4),
-    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
-    new FeatureConfig(features.SCRIBE_MAGIC_SCROLLS, 4),
+    new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
+    new FeatureConfig(features.CAST_MAGIC_SPELLS, 7),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
     new FeatureConfig(features.MASTERY_OF_THE_STONE, 7),
     new FeatureConfig(features.RELUCTANT_LEADER, 8),
-    super.multiattackFeature(8, 15),
+    super.multiattackFeature(5, 9),
   ]);
 
   constructor(lvl, origin) {

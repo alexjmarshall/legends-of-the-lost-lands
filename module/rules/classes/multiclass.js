@@ -9,6 +9,8 @@ export class MultiClass {
     return Math.max(...classes.map((c) => c.fpReserve));
   }
 
+  static minPrimeReqScore = 12;
+
   constructor(classes, lvl, origin) {
     this.classes = classes;
     const classInstances = classes.map((c) => new c(lvl, origin));

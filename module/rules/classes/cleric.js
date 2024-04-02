@@ -8,9 +8,11 @@ import { deepFreeze } from '../../helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Cleric extends BaseClass {
+  static description = 'A holy warrior who wields divine power to mend wounds and smite foes.';
+
   static XP_REQS = Object.freeze([0, 800, 2400, 5600, 12000, 25000, 55000, 110000]);
 
-  static XP_REQ_AFTER_NAME_LVL = 120000;
+  static XP_REQ_AFTER_NAME_LVL = 110000;
 
   static TITLES = Object.freeze([
     'Initiate',
@@ -48,6 +50,7 @@ export class Cleric extends BaseClass {
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.TURN_UNDEAD, 1),
+    new FeatureConfig(features.BLUNT_DAMAGE_ONLY, 1),
     new FeatureConfig(features.CAST_CLERIC_SPELLS, 1),
     new FeatureConfig(features.READ_CLERIC_SCROLLS, 1),
   ]);
@@ -63,32 +66,12 @@ export class Cleric extends BaseClass {
   ]);
 
   static saveProgressions = saveBases.cleric;
-
   static firstLvlHp = 'd4+2';
   static fpReserve = 10;
   static hitDie = 'd6';
   static afterNameHp = 2;
-  static description = 'A holy warrior of the divine.';
-  static featureDescriptions = Object.freeze([
-    'Turn undead with holy symbol',
-    'Cast cleric spells',
-    'Read cleric scrolls',
-    'Can inflict blunt weapon damage only',
-    'Requires Wisdom 9+',
-  ]);
-
-  static shieldsDescription = 'any';
-  static armorDescription = 'any';
   static weaponDescription = 'bludgeons, slings, staffs and whips';
   static weaponClass = WEAPON_CLASS.SIMPLE;
-
-  static abilityReqs = [
-    {
-      name: ABILITIES.WIS,
-      min: 9,
-    },
-  ];
-
   static primeReqs = [ABILITIES.WIS];
 
   constructor(lvl, origin, Class = Cleric) {
@@ -99,32 +82,20 @@ export class Cleric extends BaseClass {
 }
 
 export class CloisteredCleric extends Cleric {
+  static description = 'A scholar of the divine who studies the ancient texts of the gods.';
   static specializedSkills = Object.freeze([...super.specializedSkills, SKILLS.ANCIENT_LANGUAGES]);
-
-  static featuresConfig = deepFreeze([...super.featuresConfig, new FeatureConfig(features.SCRIBE_CLERIC_SCROLLS, 1)]);
-
-  static CLERIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Cleric.CLERIC_SPELL_SLOTS)]);
-
-  static description = 'A scholar of the divine, who studies the ancient texts and languages of the gods.';
-  static featureDescriptions = Object.freeze([
-    'Turn undead with holy symbol',
-    'Cast cleric spells (1 additional slot per level)',
-    'Read cleric scrolls',
-    'Scribe cleric scrolls',
-    'Can inflict blunt weapon damage only',
-    'Requires Wisdom 9+ and Intelligence 9+',
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.SCRIBE_CLERIC_SCROLLS, 1),
+    new FeatureConfig(features.ENHANCED_SPELLCASTING, 1),
   ]);
+  static CLERIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Cleric.CLERIC_SPELL_SLOTS)]);
   static shieldsDescription = 'none';
   static armorDescription = 'none';
-
   static abilityReqs = [
     {
-      name: ABILITIES.WIS,
-      min: 9,
-    },
-    {
       name: ABILITIES.INT,
-      min: 9,
+      min: 11,
     },
   ];
 
@@ -136,24 +107,12 @@ export class CloisteredCleric extends Cleric {
 }
 
 export class Runepriest extends Cleric {
-  static description = 'A holy warrior who carves magic runes to channel divine power.';
-  static featureDescriptions = Object.freeze([
-    'Turn undead with holy symbol',
-    'Carve magic runes',
-    'Requires Intelligence 9+ and Wisdom 13+',
-  ]);
-  static weaponDescription = 'any';
+  static description = 'Worshippers of Wotan shape magic runes to channel divine power.';
   static armorDescription = 'medium';
-
-  static featuresConfig = deepFreeze([
-    new FeatureConfig(features.TURN_UNDEAD, 1),
-    new FeatureConfig(features.RUNE_MAGIC, 1),
-  ]);
-
+  static featuresConfig = deepFreeze([new FeatureConfig(features.RUNE_MAGIC, 1)]);
   static specializedSkills = Object.freeze([SKILLS.RUNELORE, SKILLS.RUNECARVING]);
-
   static proficientSkills = Object.freeze([...allCombatSkills]);
-
+  static weaponDescription = 'any';
   static abilityReqs = [
     {
       name: ABILITIES.INT,
@@ -161,12 +120,13 @@ export class Runepriest extends Cleric {
     },
     {
       name: ABILITIES.WIS,
-      min: 13,
+      min: 11,
     },
   ];
 
   constructor(lvl, origin) {
     super(lvl, origin, Runepriest);
     this.armors = [...lightArmors, ...mediumArmors];
+    this.weapons = [...allCombatSkills];
   }
 }

@@ -1,5 +1,4 @@
 import { deepFreeze, randomChoice, removeDuplicates } from '../helper.js';
-import { RARITY } from './item.js';
 import { SKILLS } from './skills.js';
 
 export const TOOLS = Object.freeze({
@@ -16,7 +15,7 @@ export const RECIPE_TYPES = Object.freeze({
 });
 
 export const RECIPES = Object.freeze({
-  POULTICE_TO_SLOW_POISON: 'Poultice to Slow Poison',
+  POULTICE_TO_NEUTRALIZE_POISON: 'Poultice to Neutralize Poison',
   WARD_AGAINST_VAMPIRES: 'Ward Against Vampires',
   WARD_AGAINST_LYCANTHROPES: 'Ward Against Lycanthropes',
   ELIXIR_FOR_LYCANTHROPY: 'Elixir for Lycanthropy',
@@ -34,87 +33,75 @@ export const RECIPES = Object.freeze({
 // TODO recipes that treat disease symptoms do not cure the disease itself but restore some fatigue damage
 // TODO recipes that treat injuries do not heal the injury itself but reduce its severity
 export const recipes = deepFreeze({
-  [RECIPES.POULTICE_TO_SLOW_POISON]: {
+  [RECIPES.POULTICE_TO_NEUTRALIZE_POISON]: {
     ingredients: ['Kingsfoil', 'Bandage'],
     tools: [TOOLS.MORTAR_AND_PESTLE],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.RARE,
+    magic: true,
   },
   [RECIPES.WARD_AGAINST_VAMPIRES]: {
     ingredients: ['Garlic', 'String'],
     tools: [],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.UNCOMMON,
   },
   [RECIPES.WARD_AGAINST_LYCANTHROPES]: {
     ingredients: ['Wolfsbane', 'String'],
     tools: [],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.UNCOMMON,
   },
   [RECIPES.ELIXIR_FOR_LYCANTHROPY]: {
     ingredients: ['Belladonna', 'Powdered Silver'],
     tools: [TOOLS.ALEMBIC],
     type: [RECIPE_TYPES.ALCHEMICAL],
-    rarity: RARITY.UNCOMMON,
   },
   [RECIPES.ELIXIR_FOR_NAUSEA]: {
     ingredients: ['Adrue'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_COUGH]: {
     ingredients: ['Mallow'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_FEVER]: {
     ingredients: ['Feverfew'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_DIARRHEA]: {
-    ingredients: ['Nutmeg'],
+    ingredients: ['Nutmeg'], // TODO replace
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_PAIN]: {
     ingredients: ['Willow Bark'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_GUT_PAIN]: {
     ingredients: ['Anise'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_HEADACHE]: {
     ingredients: ['Butterbur'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_INSOMNIA]: {
     ingredients: ['Valerian'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
   [RECIPES.ELIXIR_FOR_FATIGUE]: {
-    ingredients: ['Ginseng'],
+    ingredients: ['Ginseng'], // TODO replace
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
-    rarity: RARITY.COMMON,
   },
 });
 
-export const commonRecipes = Object.keys(recipes).filter((recipe) => recipes[recipe].rarity === RARITY.COMMON);
+export const commonRecipes = Object.keys(recipes).filter((recipe) => recipes[recipe].magic !== true);
 
 export const getStartingRecipesKnown = (classInstance) => {
   // return the class instance's startingRecipes
@@ -126,3 +113,5 @@ export const getStartingRecipesKnown = (classInstance) => {
   }
   return removeDuplicates(startingRecipes);
 };
+
+// TODO ingredients with rarities and terrain where can be found

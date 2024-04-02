@@ -60,14 +60,6 @@ export class Human extends BaseRace {
     CLASS.Barbarian.name,
     CLASS.Mage.name,
     CLASS.Incantatrix.name,
-    CLASS.Abjurer.name,
-    CLASS.Conjurer.name,
-    CLASS.Diviner.name,
-    CLASS.Enchanter.name,
-    CLASS.Evoker.name,
-    CLASS.Illusionist.name,
-    CLASS.Necromancer.name,
-    CLASS.Transmuter.name,
   ];
 
   static allowedMultiClasses = [];
@@ -97,14 +89,6 @@ export class Human extends BaseRace {
         return 14 + rollDice('d4');
       case CLASS.Mage.name:
       case CLASS.Incantatrix.name:
-      case CLASS.Abjurer.name:
-      case CLASS.Conjurer.name:
-      case CLASS.Diviner.name:
-      case CLASS.Enchanter.name:
-      case CLASS.Evoker.name:
-      case CLASS.Illusionist.name:
-      case CLASS.Necromancer.name:
-      case CLASS.Transmuter.name:
         return 20 + rollDice('2d6');
       default:
         return 16 + rollDice('d4');

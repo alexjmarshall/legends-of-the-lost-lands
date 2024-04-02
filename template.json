@@ -22,7 +22,7 @@
         "groups": {
           "immunities": {
             "dtype": "Boolean",
-            "label": "Damage Effect Immunities"
+            "label": "Immunities"
           },
           "dmg_multi": {
             "dtype": "Number",
@@ -230,6 +230,18 @@
             "group": "",
             "label": "Morale",
             "value": "mid"
+          },
+          "rarity": {
+            "dtype": "String",
+            "group": "",
+            "label": "Rarity",
+            "value": "common"
+          },
+          "terrain": {
+            "dtype": "String",
+            "group": "",
+            "label": "Terrain",
+            "value": "grassland"
           }
         }
       },
@@ -1021,10 +1033,22 @@
             "label": "Is Retainer",
             "value": false
           },
-          "apply_fatigue": {
+          "apply_fatigue_cold": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Fatigue Damage",
+            "label": "Apply Cold Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_hunger": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Hunger Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_thirst": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Thirst Fatigue Damage",
             "value": true
           },
           "use_target_skill_lvl": {
@@ -1387,6 +1411,7 @@
       "trade_good",
       "food",
       "recipe",
+      "herb",
       "rune",
       "jewelry",
       "shield",
@@ -1740,7 +1765,7 @@
           "value": ""
         },
         "admin": {
-          "progress": {
+          "learn_successes": {
             "dtype": "Resource",
             "group": "admin",
             "label": "Learn Spell Successes",
@@ -1889,6 +1914,23 @@
               "value": 0
             }
           }
+        }
+      }
+    },
+    "herb": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "rarity": {
+          "dtype": "String",
+          "group": "",
+          "label": "Rarity",
+          "value": "common"
+        },
+        "terrain": {
+          "dtype": "String",
+          "group": "",
+          "label": "Terrain",
+          "value": "grassland"
         }
       }
     },
@@ -2431,12 +2473,6 @@
           "value": false
         },
         "admin": {
-          "healing_tn": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Healing TN",
-            "value": 12
-          },
           "healing_mod": {
             "dtype": "Number",
             "group": "admin",
