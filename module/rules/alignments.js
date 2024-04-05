@@ -8,7 +8,8 @@ export const ALIGNMENTS = {
 
 export const alignmentDescriptions = {
   [ALIGNMENTS.LG]: 'Highly principled. Will not lie or steal and strives to protect the innocent.',
-  [ALIGNMENTS.CG]: 'Good-hearted but tends to believe that the end justifies the means.',
+  [ALIGNMENTS.CG]:
+    'Believes a good heart is a better guide than rigid law. Tends to believe that the end justifies the means.',
   [ALIGNMENTS.N]: 'Believes in balance, or that one should simply follow the laws and customs of their society.',
   [ALIGNMENTS.LE]:
     'Out to gain for themselves even at cost to others. May believe it is the right of the strong to rule the weak.',

@@ -39,6 +39,8 @@ export class SimpleActor extends Actor {
   _prepareCharacterBaseData(actorData) {
     if (actorData.type !== 'character') return;
     this._addHumanoidLocationMaxHp(actorData);
+    actorData.data.derived = {};
+    actorData.data.derived.attacks = 1;
   }
 
   _prepareHumanoidBaseData(actorData) {

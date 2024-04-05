@@ -26,11 +26,7 @@ export class Pixie extends BaseRace {
     'Size Tiny.',
   ];
 
-  static features = Object.freeze([
-    { ...features.PIXIE_DUST, usesPerDay: 3 },
-    features.NATURAL_INVISIBILITY,
-    features.NATURAL_FLIGHT,
-  ]);
+  static features = Object.freeze([features.PIXIE_DUST, features.NATURAL_INVISIBILITY, features.NATURAL_FLIGHT]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 60,

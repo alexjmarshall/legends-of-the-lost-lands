@@ -37,44 +37,22 @@ function addFeatures(itemData, classInstance, race, actor) {
       ui.notifications.error(`Could not find ${feature.name} in game items!`);
       continue;
     }
-    // if actor, check whether they already have this feature
+    // check if the actor already has this feature
     const actorFeature = actor?.data.items.find(featureFinder);
-    if (actorFeature) {
-      const actorFeatureData = actorFeature?.data.data;
-      // if the feature type is inherent or limited use ability, delete the old feature
-      if (
-        feature.usesPerDay &&
-        actorFeatureData.attributes.uses_per_day.value !== feature.usesPerDay &&
-        actorFeatureData.attributes.uses_per_day.value !== feature.usesPerDay
-      ) {
-        itemData.update.push({
-          _id: actorFeature._id,
-          'data.attributes.uses_per_day.value': feature.usesPerDay,
-          'data.attributes.uses_per_day.max': feature.usesPerDay,
-        });
-      }
-    } else {
-      // check if the feature already has a feature with the same baseName
-      // this means the feature must be *replaced* with the new version
-      // probably because it's not possible to update an embedded feature's activeEffects
-      // add the old feature's id to the delete list
-      const baseName = feature.baseName;
-      if (baseName) {
-        const otherFeaturesWithBaseName = Object.values(rulesFeatures).filter(
-          (f) => f.baseName === baseName && f.name !== feature.name
-        );
-        for (const otherFeature of otherFeaturesWithBaseName) {
-          const otherFeatureItem = actor?.data.items.find((i) => i.type === 'feature' && i.name === otherFeature.name);
-          if (otherFeatureItem) {
-            itemData.delete.push(otherFeatureItem._id);
-          }
-        }
-      }
-
+    // if the feature type is inherent or limited use ability, delete the old feature
+    const needsDelete = actorFeature && (!!feature.usesPerDay || !!feature.effectData?.changes?.length);
+    if (needsDelete) {
+      itemData.delete.push(actorFeature._id);
+    }
+    // add new feature if the actor doesn't have it or if we're deleting the old one
+    if (!actorFeature || needsDelete) {
       const featureData = cloneItem(featureItem);
       if (feature.usesPerDay) {
         featureData.data.attributes.uses_per_day.value = feature.usesPerDay;
         featureData.data.attributes.uses_per_day.max = feature.usesPerDay;
+      }
+      if (feature.effectData?.changes?.length) {
+        featureData.effects = [feature.effectData];
       }
       itemData.create.push(featureData);
     }

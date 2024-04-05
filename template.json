@@ -2256,11 +2256,17 @@
     "feature": {
       "templates": ["props"],
       "attributes": {
+        "source": {
+          "dtype": "String",
+          "group": "",
+          "label": "Source",
+          "value": "class"
+        },
         "type": {
           "dtype": "String",
           "group": "",
           "label": "Type",
-          "value": ""
+          "value": "inherent"
         },
         "uses_per_day": {
           "dtype": "Resource",
