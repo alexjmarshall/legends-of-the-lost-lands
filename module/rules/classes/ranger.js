@@ -76,7 +76,16 @@ export class Ranger extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.ANCIENT_HATRED, 1),
+    (lvl) =>
+      new FeatureConfig(features.ANCIENT_HATRED, 1, {
+        changes: [
+          {
+            key: 'data.derived.dmg_bonus_humanoid',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+        ],
+      }),
     new FeatureConfig(features.ALERT, 1),
     new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
@@ -138,7 +147,16 @@ export class VampireHunter extends Ranger {
   static startingRecipes = [RECIPES.WARD_AGAINST_VAMPIRES, RECIPES.WARD_AGAINST_LYCANTHROPES];
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.ANCIENT_HATRED_UNDEAD, 1),
+    (lvl) =>
+      new FeatureConfig(features.ANCIENT_HATRED_UNDEAD, 1, {
+        changes: [
+          {
+            key: 'data.derived.dmg_bonus_undead',
+            mode: 2,
+            value: super.onePlusOnePerNLevels(lvl, 3),
+          },
+        ],
+      }),
     new FeatureConfig(features.ALERT, 1),
     new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
     new FeatureConfig(features.ENERGY_DRAIN_RESISTANCE, 1),

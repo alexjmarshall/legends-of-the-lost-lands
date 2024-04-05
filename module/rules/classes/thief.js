@@ -10,7 +10,7 @@ import { allExceptLawfulGood, evilAlignments } from '../alignments.js';
 import { RARE_LANGUAGES } from '../languages.js';
 
 export class Thief extends BaseClass {
-  static description = 'A rogue who uses stealth and guile to liberate treasure.';
+  static description = "A rogue who uses stealth and guile to liberate the underworld's treasures.";
 
   static XP_REQS = Object.freeze([0, 600, 1800, 4200, 10000, 20000, 40000, 70000, 110000, 160000]);
 
@@ -125,7 +125,7 @@ export class Swashbuckler extends Thief {
           {
             key: 'data.attributes.base_ac.value',
             mode: 2,
-            value: super.onePlusOnePerNLevels(lvl, 4),
+            value: super.negativeOneMinusOnePerNLevels(lvl, 4),
           },
           {
             key: 'data.derived.riposte_to_hit_mod',

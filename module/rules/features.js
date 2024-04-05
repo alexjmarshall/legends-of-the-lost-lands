@@ -114,7 +114,7 @@ export const features = Object.freeze({
   },
   DUELLIST: {
     name: 'Duellist',
-    description: '+1 to-hit and damage every 3 levels when riposting or countering',
+    description: ['-1 AC every 4 levels', '+1 to-hit and damage every 3 levels when riposting or countering'],
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Duellist',
@@ -123,7 +123,7 @@ export const features = Object.freeze({
         {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: 1,
+          value: -1,
         },
         {
           key: 'data.derived.riposte_to_hit_mod',
@@ -236,7 +236,7 @@ export const features = Object.freeze({
         {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: 2,
+          value: -2,
         },
       ],
     },
@@ -260,23 +260,82 @@ export const features = Object.freeze({
   },
   HOLY_PROTECTION: {
     name: 'Holy Protection',
-    description: '+2 to saving throws and AC',
+    description: '+2 to saving throws and -2 AC',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Holy Protection',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.attributes.base_ac.value',
+          mode: 2,
+          value: -2,
+        },
+        {
+          key: 'data.derived.save_physical',
+          mode: 2,
+          value: -2,
+        },
+        {
+          key: 'data.derived.save_mental',
+          mode: 2,
+          value: -2,
+        },
+        {
+          key: 'data.derived.save_evasion',
+          mode: 2,
+          value: -2,
+        },
+      ],
+    },
   },
   DISEASE_IMMUNITY: {
     name: 'Disease Immunity',
     description: 'Immune to disease',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Disease Immunity',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.attributes.immunities.immune_disease.value',
+          mode: 5,
+          value: true,
+        },
+      ],
+    },
   },
   BACKSTAB_IMMUNITY: {
     name: 'Backstab Immunity',
     description: 'Cannot be backstabbed',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Backstab Immunity',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.attributes.immunities.immune_backstab.value',
+          mode: 5,
+          value: true,
+        },
+      ],
+    },
   },
   BLEED_IMMUNITY: {
     name: 'Bleed Immunity',
     description: 'Immune to bleeding',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Bleed Immunity',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.attributes.immunities.immune_bleed.value',
+          mode: 5,
+          value: true,
+        },
+      ],
+    },
   },
   ASCETIC: {
     name: 'Ascetic',
@@ -290,12 +349,12 @@ export const features = Object.freeze({
   DETECT_EVIL: {
     name: 'Detect Evil',
     description: 'Detect evil creatures and enchantments',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   DETECT_LIE: {
     name: 'Detect Lie',
     description: 'Detect lies',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   DISPEL_MAGIC: {
     name: 'Dispel Magic',
@@ -325,20 +384,49 @@ export const features = Object.freeze({
   ANCIENT_HATRED: {
     name: 'Ancient Hatred',
     description: '+1 damage every 3 levels against evil humanoids',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.INHERENT, // TODO program in attack macro
+    effectData: {
+      label: 'Damage Bonus vs. Humanoids',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.derived.dmg_bonus_humanoid',
+          mode: 2,
+          value: 1,
+        },
+      ],
+    },
   },
   ANCIENT_HATRED_UNDEAD: {
     name: 'Ancient Hatred',
     description: '+1 damage every 3 levels against the undead',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Damage Bonus vs. Undead',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.derived.dmg_bonus_undead',
+          mode: 2,
+          value: 1,
+        },
+      ],
+    },
   },
   ALERT: {
     name: 'Alert',
     description: "Reduces the party's chance of being surprised",
     type: FEATURE_TYPE.INHERENT,
     effectData: {
-      label: 'Alert',
+      label: 'Passive Listening Bonus',
       icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.derived.passive_listen',
+          mode: 2,
+          value: 4,
+        },
+      ],
     },
   },
   NEUTRALIZE_POISON: {
@@ -347,7 +435,8 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   AMBIDEXTROUS: {
-    name: 'Ambidextrous',
+    // TODO derive in actor.js from ability scores if have this feature
+    name: 'Ambidextrous', // TODO use derived penalties in attack macro
     description: 'Halved two-weapon fighting penalties',
     type: FEATURE_TYPE.INHERENT,
   },
@@ -359,7 +448,7 @@ export const features = Object.freeze({
   MASTERY_OF_THE_STONE: {
     name: 'Mastery of the Stone',
     description: 'Employ magic items pertaining to clairaudience, clairvoyance and telepathy',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   ENERGY_DRAIN_RESISTANCE: {
     name: 'Energy Drain Resistance',
@@ -370,16 +459,27 @@ export const features = Object.freeze({
     name: 'Improved Evasion',
     description: '+3 to evasion saving throws',
     type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Improved Evasion',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.derived.save_evasion',
+          mode: 2,
+          value: 3,
+        },
+      ],
+    },
   },
   IDENTIFY_PURE_WATER: {
     name: 'Identify Pure Water',
     description: 'Identify pure water',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   PASS_WITHOUT_TRACE: {
     name: 'Pass Without Trace',
     description: 'Pass without trace through woodland areas',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   SYLVAN_CHARM_IMMUNITY: {
     name: 'Sylvan Charm Immunity',
@@ -392,6 +492,7 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   QUICK_TO_MASTER: {
+    // TODO derive in actor.js from ability scores if have this feature
     name: 'Quick to Master',
     description: 'Quick to master',
     type: FEATURE_TYPE.INHERENT,
@@ -497,7 +598,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.missile_atk_bonus',
+          key: 'data.derived.atk_bonus_missile',
           mode: 2,
           value: 2,
         },
@@ -576,15 +677,16 @@ export const features = Object.freeze({
     name: 'Pixie Dust',
     description: 'Pixie Dust',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPerDay: 3,
   },
   NATURAL_INVISIBILITY: {
     name: 'Natural Invisibility',
     description: 'Natural Invisibility',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
   NATURAL_FLIGHT: {
     name: 'Natural Flight',
     description: 'Natural Flight',
-    type: FEATURE_TYPE.INHERENT,
+    type: FEATURE_TYPE.ABILITY,
   },
 });
