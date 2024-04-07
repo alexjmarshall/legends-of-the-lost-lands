@@ -125,7 +125,7 @@ export class Swashbuckler extends Thief {
           {
             key: 'data.attributes.base_ac.value',
             mode: 2,
-            value: super.negativeOneMinusOnePerNLevels(lvl, 4),
+            value: super.onePlusOnePerNLevels(lvl, 4),
           },
           {
             key: 'data.derived.riposte_to_hit_mod',

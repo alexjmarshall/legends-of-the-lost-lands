@@ -49,10 +49,6 @@ export class BaseClass {
     return 1 + this.onePerNLevels(lvl, n);
   }
 
-  static negativeOneMinusOnePerNLevels(lvl, n) {
-    return -1 - this.onePerNLevels(lvl, n);
-  }
-
   /**
    * Calculate the number of times an event occurs per every 'n' levels after the first 'lvl' level.
    *

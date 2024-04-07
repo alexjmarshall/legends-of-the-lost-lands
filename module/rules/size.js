@@ -11,15 +11,27 @@ export const SIZES = {
 export const sizes = Object.freeze({
   [SIZES.TINY]: {
     hpModifier: -1,
+    name: 'Tiny',
   },
   [SIZES.SMALL]: {
     hpModifier: 0,
+    name: 'Small',
   },
   [SIZES.MEDIUM]: {
     hpModifier: 0,
+    name: 'Medium',
   },
   [SIZES.LARGE]: {
     hpModifier: 1,
+    name: 'Large',
+  },
+  [SIZES.HUGE]: {
+    hpModifier: 2,
+    name: 'Huge',
+  },
+  [SIZES.GARGANTUAN]: {
+    hpModifier: 3,
+    name: 'Gargantuan',
   },
 });
 

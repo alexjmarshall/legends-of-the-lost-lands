@@ -18,15 +18,12 @@ export class Halfling extends BaseRace {
 
   static description = 'Often underestimated and capable of great bravery.';
 
-  static featureDescriptions = [
-    '+2 Dexterity, -2 Strength.',
-    '+2 to-hit with missile weapons.',
-    '+4 to hiding.',
-    '+4 to saving throws vs. fear.',
-    'Size Small.',
-  ];
-
-  static features = Object.freeze([features.UNCANNY_SHOT, features.DIMINUTIVE, features.STOUTHEARTED]);
+  static features = Object.freeze([
+    features.LITTLE_FINGERS,
+    features.UNCANNY_SHOT,
+    features.DIMINUTIVE,
+    features.STOUTHEARTED,
+  ]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 33,

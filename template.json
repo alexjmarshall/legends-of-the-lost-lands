@@ -1023,6 +1023,10 @@
         "spellcasting_druid": {
           "dtype": "Resource",
           "label": "Druid Spells"
+        },
+        "saves": {
+          "dtype": "Number",
+          "label": "Saves"
         }
       },
       "attributes": {
@@ -1279,6 +1283,26 @@
           "group": "alignment",
           "label": "Alignment (Chaotic Evil to Lawful Good)",
           "value": 10
+        },
+        "saves": {
+          "physical": {
+            "dtype": "Number",
+            "group": "saves",
+            "label": "Physical Save",
+            "value": 0
+          },
+          "mental": {
+            "dtype": "Number",
+            "group": "saves",
+            "label": "Mental Save",
+            "value": 0
+          },
+          "evasion": {
+            "dtype": "Number",
+            "group": "saves",
+            "label": "Evasion Save",
+            "value": 0
+          }
         }
       }
     },

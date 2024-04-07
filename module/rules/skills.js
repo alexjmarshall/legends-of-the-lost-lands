@@ -420,14 +420,14 @@ export const skills = deepFreeze({
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
-  [SKILLS.HANDGONNE]: {
-    ability: DEX,
-    expert: true,
-    proficientArmorPenalty: 0,
-    nonproficientArmorPenalty: 1,
-    category: COMBAT,
-    advancementBase: CONTINUAL,
-  },
+  // [SKILLS.HANDGONNE]: {
+  //   ability: DEX,
+  //   expert: true,
+  //   proficientArmorPenalty: 0,
+  //   nonproficientArmorPenalty: 1,
+  //   category: COMBAT,
+  //   advancementBase: CONTINUAL,
+  // },
   [SKILLS.HERALDRY]: {
     ability: INT,
     expert: true,
@@ -788,7 +788,7 @@ export const allCombatSkills = Object.keys(skills).filter((s) => skills[s].categ
 
 export const allSurvivalSkills = Object.keys(skills).filter((s) => skills[s].category === SURVIVAL);
 
-export const allMissileWeaponSkills = [SKILLS.BOW, SKILLS.CROSSBOW, SKILLS.HANDGONNE, SKILLS.SLING];
+export const allMissileWeaponSkills = [SKILLS.BOW, SKILLS.CROSSBOW, SKILLS.SLING]; //SKILLS.HANDGONNE
 
 export const allMeleeWeaponSkills = Object.keys(skills).filter(
   (s) => skills[s].category === COMBAT && !allMissileWeaponSkills.includes(s)

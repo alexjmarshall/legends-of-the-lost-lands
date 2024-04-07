@@ -93,7 +93,7 @@ export class Ranger extends BaseClass {
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
     new FeatureConfig(features.MASTERY_OF_THE_STONE, 7),
     new FeatureConfig(features.RELUCTANT_LEADER, 8),
-    super.multiattackFeature(5, 9),
+    super.multiattackFeature(8, 15),
   ]);
 
   static specializedSkills = Object.freeze([...allCombatSkills, SKILLS.TRACKING, SKILLS.HERBALISM]);
@@ -165,7 +165,7 @@ export class VampireHunter extends Ranger {
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
     new FeatureConfig(features.MASTERY_OF_THE_STONE, 7),
     new FeatureConfig(features.RELUCTANT_LEADER, 8),
-    super.multiattackFeature(5, 9),
+    super.multiattackFeature(8, 15),
   ]);
 
   constructor(lvl, origin) {

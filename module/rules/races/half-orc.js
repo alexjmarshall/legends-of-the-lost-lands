@@ -18,15 +18,12 @@ export class HalfOrc extends BaseRace {
 
   static description = 'Some resist and some embrace their bestial nature.';
 
-  static featureDescriptions = [
-    '+1 Strength, -1 Intelligence.',
-    "60' infravision.",
-    '+2 to intimidation and -1 to reaction.',
-    '+2 to-hit injured or bleeding opponents.',
-    'Size Medium.',
-  ];
-
-  static features = Object.freeze([features.INFRAVISION, features.BEASTMARKED, features.KILLER_INSTINCT]);
+  static features = Object.freeze([
+    features.BRUTAL,
+    features.INFRAVISION,
+    features.BEASTMARKED,
+    features.KILLER_INSTINCT,
+  ]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 15,
