@@ -6,7 +6,6 @@ import { getExtraLanguages } from './rules/languages.js';
 import { getClericSpellsKnown, getDruidSpellsKnown, getStartingMagicSpellsKnown, SPELL_TYPES } from './rules/spells.js';
 import { getStartingRunesKnown } from './rules/runes.js';
 import { getStartingRecipesKnown } from './rules/recipes.js';
-import { features as rulesFeatures } from './rules/features.js';
 import { rollDice } from './dice.js';
 
 export function getTokenFromActor(actor) {
@@ -175,6 +174,48 @@ const addLanguages = (updateData, classInstance, int) => {
   updateData['data.attributes.languages.value'] = updateLang.join(', ').trim();
 };
 
+const getPrimeReqBonus = (actorData, classInstance) => {
+  // bonus is 1.2 if all prime reqs are > 17, 1.1 of all are > 15
+  const primeReqs = CLASSES[classInstance.constructor.name].primeReqs;
+  const abilityScores = actorData.attributes.ability_scores;
+  if (primeReqs.length === 0) {
+    return 1;
+  }
+  if (primeReqs.every((req) => abilityScores[req].value > 17)) {
+    return 1.2;
+  }
+  if (primeReqs.every((req) => abilityScores[req].value > 15)) {
+    return 1.1;
+  }
+  return 1;
+};
+
+const addXp = (actorData, actorUpdates, classInstance, actorRace) => {
+  let reqXp = classInstance.reqXp;
+  if (actorRace === RACES.Human) {
+    const primeReqBonus = getPrimeReqBonus(actorData, classInstance);
+    reqXp = Math.ceil(classInstance.reqXp / primeReqBonus);
+  }
+  const leftoverXp = Math.max(0, actorData.xp_req.value - actorData.xp_req.max);
+  actorUpdates['data.xp_req.value'] = leftoverXp;
+  actorUpdates['data.xp_req.max'] = reqXp;
+};
+
+const addHpAndFp = (actorData, actorUpdates, classInstance) => {
+  const rolledHp = rollDice(`${classInstance.thisLevelHp}`);
+  actorUpdates['data.hp.max'] = actorData.hp.max + rolledHp;
+  actorUpdates['data.hp.value'] = actorData.hp.value + rolledHp;
+  actorUpdates['data.fp.max'] = actorData.fp.max + rolledHp;
+  actorUpdates['data.fp.value'] = actorData.fp.value + rolledHp;
+};
+
+const addSaves = (actorUpdates, classInstance) => {
+  const saves = classInstance.saves;
+  for (const save of Object.keys(saves)) {
+    actorUpdates[`data.attributes.saves.${save}.value`] = saves[save];
+  }
+};
+
 export function getLevelUpdates(actor, lvl, formData = {}) {
   const actorData = actor.data.data;
   const className = formData['data.class'] ?? actorData.class;
@@ -190,21 +231,17 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
     delete: [],
   };
 
-  const leftoverXp = Math.max(0, actorData.xp_req.value - actorData.xp_req.max);
   const actorUpdates = {
     'data.lvl': lvl,
-    'data.xp_req.value': leftoverXp,
-    'data.xp_req.max': classInstance.reqXp,
   };
+
+  addXp(actorData, actorUpdates, classInstance, actorRace);
   addSkills(actorUpdates, actor, classInstance);
+  addSaves(actorUpdates, classInstance);
 
   // update HP & FP if the character is past first level and incrementing level
   if (lvl > 1 && lvl === actorData.lvl + 1) {
-    const rolledHp = rollDice(`${classInstance.thisLevelHp}`);
-    actorUpdates['data.hp.max'] = actorData.hp.max + rolledHp;
-    actorUpdates['data.hp.value'] = actorData.hp.value + rolledHp;
-    actorUpdates['data.fp.max'] = actorData.fp.max + rolledHp;
-    actorUpdates['data.fp.value'] = actorData.fp.value + rolledHp;
+    addHpAndFp(actorData, actorUpdates, classInstance);
   }
 
   // add starting languages, recipes and runes if the character is being created

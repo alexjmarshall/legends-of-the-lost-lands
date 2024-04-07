@@ -18,15 +18,12 @@ export class Pixie extends BaseRace {
 
   static description = 'Mischievous and naive. Fascinated by things novel or intricate.';
 
-  static featureDescriptions = [
-    '+3 Dexterity, -2 Wisdom, -3 Strength.',
-    'Thrice per day, can blow magic dust upon a creature to make them either: invisible for 1 turn, fly for 1d4 rounds, or fall asleep.',
-    'Chooses which creatures may see them.',
-    'Can fly at will at their normal movement rate.',
-    'Size Tiny.',
-  ];
-
-  static features = Object.freeze([features.PIXIE_DUST, features.NATURAL_INVISIBILITY, features.NATURAL_FLIGHT]);
+  static features = Object.freeze([
+    features.FLIGHTY,
+    features.PIXIE_DUST,
+    features.NATURAL_INVISIBILITY,
+    features.NATURAL_FLIGHT,
+  ]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 60,

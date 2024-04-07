@@ -49,7 +49,7 @@ export const features = Object.freeze({
   BERSERK: {
     // TODO +2 HP/level reduces to +1 after name level and immune to bleeding
     name: 'Berserk',
-    description: 'Berserk rage (+2 to-hit & damage, -2 AC, +4 to mental saving throws, 5 + 2/level temporary HP)',
+    description: 'Berserk rage (+2 to-hit, damage and AC, +4 to mental saving throws, 5 + 2/level temporary HP)',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   TURN_UNDEAD: {
@@ -114,7 +114,7 @@ export const features = Object.freeze({
   },
   DUELLIST: {
     name: 'Duellist',
-    description: ['-1 AC every 4 levels', '+1 to-hit and damage every 3 levels when riposting or countering'],
+    description: ['+1 AC every 4 levels', '+1 to-hit and damage every 3 levels when riposting or countering'],
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Duellist',
@@ -123,7 +123,7 @@ export const features = Object.freeze({
         {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: -1,
+          value: 1,
         },
         {
           key: 'data.derived.riposte_to_hit_mod',
@@ -236,7 +236,7 @@ export const features = Object.freeze({
         {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: -2,
+          value: 2,
         },
       ],
     },
@@ -249,7 +249,7 @@ export const features = Object.freeze({
   KILLER_INSTINCT: {
     // TODO code in attack macro
     name: 'Killer Instinct',
-    description: 'Killer instinct',
+    description: '+2 to-hit injured or bleeding opponents',
     type: FEATURE_TYPE.INHERENT,
   },
   LAY_ON_HANDS: {
@@ -260,7 +260,7 @@ export const features = Object.freeze({
   },
   HOLY_PROTECTION: {
     name: 'Holy Protection',
-    description: '+2 to saving throws and -2 AC',
+    description: '+2 to saving throws and AC',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Holy Protection',
@@ -269,22 +269,22 @@ export const features = Object.freeze({
         {
           key: 'data.attributes.base_ac.value',
           mode: 2,
-          value: -2,
+          value: 2,
         },
         {
-          key: 'data.derived.save_physical',
+          key: 'data.attributes.save_physical.value',
           mode: 2,
-          value: -2,
+          value: 2,
         },
         {
-          key: 'data.derived.save_mental',
+          key: 'data.attributes.save_mental.value',
           mode: 2,
-          value: -2,
+          value: 2,
         },
         {
-          key: 'data.derived.save_evasion',
+          key: 'data.attributes.save_evasion.value',
           mode: 2,
-          value: -2,
+          value: 2,
         },
       ],
     },
@@ -464,7 +464,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.save_evasion',
+          key: 'data.attributes.save_evasion.value',
           mode: 2,
           value: 3,
         },
@@ -494,27 +494,32 @@ export const features = Object.freeze({
   QUICK_TO_MASTER: {
     // TODO derive in actor.js from ability scores if have this feature
     name: 'Quick to Master',
-    description: 'Quick to master',
+    description: 'Prime requisite XP bonus',
     type: FEATURE_TYPE.INHERENT,
   },
   COMMANDING: {
     name: 'Commanding',
-    description: 'Commanding',
+    description: '+1 Strength, +1 Charisma',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  COMELY: {
+    name: 'Comely',
+    description: '+1 Charisma, -1 Constitution',
     type: FEATURE_TYPE.INHERENT,
   },
   INFRAVISION: {
     name: 'Infravision',
-    description: 'Infravision',
+    description: "Infravision 60'",
     type: FEATURE_TYPE.INHERENT,
   },
   BRUTAL: {
     name: 'Brutal',
-    description: 'Brutal',
+    description: '+1 Strength, -1 Intelligence',
     type: FEATURE_TYPE.INHERENT,
   },
   BEASTMARKED: {
     name: 'Beastmarked',
-    description: 'Beastmarked',
+    description: '+2 to intimidation and -2 to persuasion',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Beastmarked',
@@ -535,17 +540,17 @@ export const features = Object.freeze({
   },
   GRACILE: {
     name: 'Gracile',
-    description: 'Gracile',
+    description: '+1 Dexterity, +1 Intelligence, -2 Constitution',
     type: FEATURE_TYPE.INHERENT,
   },
   ENIGMATIC_MIND: {
     name: 'Enigmatic Mind',
-    description: 'Enigmatic Mind',
+    description: "Immune to magical sleep, charm and ghoul's paralysis",
     type: FEATURE_TYPE.INHERENT,
   },
   KEEN_SIGHT: {
     name: 'Keen Sight',
-    description: 'Keen Sight',
+    description: '+4 to searching and passively searches for secret doors',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Keen Sight',
@@ -561,22 +566,22 @@ export const features = Object.freeze({
   },
   PARTING_GIFT: {
     name: 'Parting Gift',
-    description: 'Parting Gift',
+    description: 'Begins with a valuable item',
     type: FEATURE_TYPE.INHERENT,
   },
   WORLDBOUND: {
     name: 'Worldbound',
-    description: 'Worldbound',
+    description: 'Cannot be raised from the dead',
     type: FEATURE_TYPE.INHERENT,
   },
   HARDY: {
     name: 'Hardy',
-    description: 'Hardy',
+    description: ['+2 Constitution, -2 Charisma', '+4 to saving throws vs. poison and petrification'],
     type: FEATURE_TYPE.INHERENT,
   },
   DUNGEON_NAVIGATOR: {
     name: 'Dungeon Navigator',
-    description: 'Dungeon Navigator',
+    description: 'Senses depth underground and passively searches for pits traps, falling blocks and shifting walls',
     type: FEATURE_TYPE.INHERENT,
   },
   ANCESTRAL_TREASURE: {
@@ -586,12 +591,12 @@ export const features = Object.freeze({
   },
   SMALL_ARMS: {
     name: 'Small Arms',
-    description: 'Small Arms',
+    description: ['Cannot wield greatswords or longbows', 'Maximum 9 movement rate'],
     type: FEATURE_TYPE.INHERENT,
   },
   UNCANNY_SHOT: {
     name: 'Uncanny Shot',
-    description: 'Uncanny Shot',
+    description: '+3 to-hit with missile weapons',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Uncanny Shot',
@@ -600,14 +605,14 @@ export const features = Object.freeze({
         {
           key: 'data.derived.atk_bonus_missile',
           mode: 2,
-          value: 2,
+          value: 3,
         },
       ],
     },
   },
   DIMINUTIVE: {
     name: 'Diminutive',
-    description: 'Diminutive',
+    description: '+4 to hiding',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Diminuitive',
@@ -623,17 +628,27 @@ export const features = Object.freeze({
   },
   STOUTHEARTED: {
     name: 'Stouthearted',
-    description: 'Stouthearted',
+    description: '+4 to saving throws vs. fear',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  LITTLE_FINGERS: {
+    name: 'Little fingers',
+    description: '+2 Dexterity, -2 Strength',
     type: FEATURE_TYPE.INHERENT,
   },
   IRON_STOMACH: {
     name: 'Iron Stomach',
-    description: 'Iron Stomach',
+    description: 'Can consume raw meat, rotten food or unclean water without risk of disease',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  MONSTROUS: {
+    name: 'Monstrous',
+    description: '+3 Strength, -2 Intelligence, -3 Charisma',
     type: FEATURE_TYPE.INHERENT,
   },
   FELL_COUNTENANCE: {
     name: 'Fell Countenance',
-    description: 'Fell Countenance',
+    description: '+4 to intimidation and -4 to persuasion',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Fell Countenance',
@@ -654,12 +669,12 @@ export const features = Object.freeze({
   },
   SUPPLE_MIND: {
     name: 'Supple Mind',
-    description: 'Supple Mind',
+    description: '+4 to saving throws vs. magical sleep and charm',
     type: FEATURE_TYPE.INHERENT,
   },
   SHARP_SIGHT: {
     name: 'Sharp Sight',
-    description: 'Sharp Sight',
+    description: '+2 to searching',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Sharp Sight',
@@ -675,18 +690,24 @@ export const features = Object.freeze({
   },
   PIXIE_DUST: {
     name: 'Pixie Dust',
-    description: 'Pixie Dust',
+    description:
+      'Thrice per day, can blow magic dust upon a creature to make them either: invisible for 1 turn, fly for 1d4 rounds, or fall asleep',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
     usesPerDay: 3,
   },
   NATURAL_INVISIBILITY: {
     name: 'Natural Invisibility',
-    description: 'Natural Invisibility',
+    description: 'Chooses which creatures may see them',
+    type: FEATURE_TYPE.ABILITY,
+  },
+  FLIGHTY: {
+    name: 'Flighty',
+    description: '+3 Dexterity, -2 Wisdom, -3 Strength',
     type: FEATURE_TYPE.ABILITY,
   },
   NATURAL_FLIGHT: {
     name: 'Natural Flight',
-    description: 'Natural Flight',
+    description: 'Can fly at will',
     type: FEATURE_TYPE.ABILITY,
   },
 });

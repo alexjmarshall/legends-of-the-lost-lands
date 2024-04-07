@@ -15,7 +15,7 @@ describe('Berserker variant', () => {
 
   it.each(expectedLevels)('constructs a Berserker of level %i with the correct properties', (lvl) => {
     const actual = new Berserker(lvl, 'Innkeeper');
-    console.log(actual.features);
+    console.log(actual);
     //expect(actual).toEqual(expected[lvl]);
   });
 });

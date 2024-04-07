@@ -35,7 +35,7 @@ export class Paladin extends BaseClass {
     new FeatureConfig(features.PALADIN_STEED, 4),
     new FeatureConfig(features.AURA_OF_PROTECTION, 6),
     new FeatureConfig(features.BANISH_EVIL, 8),
-    super.multiattackFeature(5, 9),
+    super.multiattackFeature(7, 13),
   ]);
 
   static specializedSkills = Object.freeze([...allCombatSkills]);
@@ -87,7 +87,7 @@ export class Inquisitor extends Paladin {
     (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 3, { usesPerDay: super.onePlusOnePerNLevels(lvl - 2, 4) }),
     new FeatureConfig(features.PALADIN_STEED, 4),
     (lvl) => new FeatureConfig(features.TRUE_SIGHT, 5, { usesPerDay: super.onePlusOnePerNLevels(lvl - 4, 4) }),
-    super.multiattackFeature(5, 9),
+    super.multiattackFeature(7, 13),
   ]);
 
   static abilityReqs = [

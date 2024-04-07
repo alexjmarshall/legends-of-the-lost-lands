@@ -18,15 +18,12 @@ export class HalfOgre extends BaseRace {
 
   static description = 'Foul-tempered and individualistic. Relishes mortal combat.';
 
-  static featureDescriptions = [
-    '+3 Strength, -2 Intelligence, -3 Charisma.',
-    'Can consume raw meat, rotten food or unclean water without risk of disease.',
-    "60' infravision.",
-    '+4 to intimidation and -2 to reaction.',
-    'Size Large.',
-  ];
-
-  static features = Object.freeze([features.IRON_STOMACH, features.INFRAVISION, features.FELL_COUNTENANCE]);
+  static features = Object.freeze([
+    features.MONSTROUS,
+    features.IRON_STOMACH,
+    features.INFRAVISION,
+    features.FELL_COUNTENANCE,
+  ]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 18,

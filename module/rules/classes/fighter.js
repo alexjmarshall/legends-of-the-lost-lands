@@ -27,7 +27,7 @@ export class Fighter extends BaseClass {
     'Lord',
   ]);
 
-  static featuresConfig = deepFreeze([new FeatureConfig(features.CHAIN_ATTACK, 1), super.multiattackFeature(4, 8)]);
+  static featuresConfig = deepFreeze([new FeatureConfig(features.CHAIN_ATTACK, 1), super.multiattackFeature(7, 13)]);
   static specializedSkills = Object.freeze([...allCombatSkills]);
   static saveProgressions = saveBases.fighter;
   static firstLvlHp = 'd6+2';
@@ -50,7 +50,7 @@ export class Berserker extends Fighter {
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.CHAIN_ATTACK, 1),
     (lvl) => new FeatureConfig(features.BERSERK, 1, { usesPerDay: super.onePlusOnePerNLevels(lvl, 4) }),
-    super.multiattackFeature(5, 9),
+    super.multiattackFeature(7, 13),
   ]);
 
   static armorDescription = 'medium';

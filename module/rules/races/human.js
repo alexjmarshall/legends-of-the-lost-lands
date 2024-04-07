@@ -18,9 +18,7 @@ export class Human extends BaseRace {
 
   static description = 'Ardent for power and dominion. The heralds of a new age.';
 
-  static featureDescriptions = ['+1 Strength, +1 Charisma.', 'Prime requisite XP bonus.', 'Size Medium.'];
-
-  static features = Object.freeze([features.QUICK_TO_MASTER]);
+  static features = Object.freeze([features.COMMANDING, features.QUICK_TO_MASTER]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 20,
@@ -37,7 +35,7 @@ export class Human extends BaseRace {
 
   static weightModifier = 1;
 
-  static size = () => SIZES.MEDIUM;
+  static size = (height, weight) => (height > 78 && weight > 299 ? SIZES.LARGE : SIZES.MEDIUM);
 
   static modifiedAbilityScores(abilityScores) {
     return BaseRace.modifiedAbilityScores(Human, abilityScores);

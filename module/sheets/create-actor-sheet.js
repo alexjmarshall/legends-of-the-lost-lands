@@ -147,7 +147,7 @@ export class CreateActorSheet extends ActorSheet {
     <p><label>Hit die:</label> ${selectedClass.hitDie}</p>
     <p><label>Armor:</label> ${selectedClass.armorDescription}</p>
     <p><label>Shields:</label> ${selectedClass.shieldsDescription}</p>
-    <p><label>Weapons:</label> ${selectedClass.weaponDescription}</p>
+    <p><label>Weapon class:</label> ${selectedClass.weaponClass}</p>
     `;
     let featuresDescriptions = selectedClass.featuresConfig.flatMap((f) => {
       const feature = typeof f === 'function' ? f(99).feature : f.feature;
@@ -162,15 +162,21 @@ export class CreateActorSheet extends ActorSheet {
       .filter((x) => x)
       .map((desc) => `<li>${desc}</li>`)
       .join('');
-    const nonCombatOrSpellSkill = (s) =>
-      skills[s].category !== SKILL_CATEGORIES.COMBAT && skills[s].category !== SKILL_CATEGORIES.SPELLS;
-    const nonCombatSpecializedSkills = selectedClass.specializedSkills?.filter(nonCombatOrSpellSkill);
-    const nonCombatProficientSkills = selectedClass.proficientSkills?.filter(nonCombatOrSpellSkill);
-    const specializedSkillsDesc = nonCombatSpecializedSkills?.length
-      ? '<label>Specialized skills:</label> ' + nonCombatSpecializedSkills.join(', ').trim()
+    // const nonCombatOrSpellSkill = (s) =>
+    //   skills[s].category !== SKILL_CATEGORIES.COMBAT && skills[s].category !== SKILL_CATEGORIES.SPELLS;
+    // const nonCombatSpecializedSkills = selectedClass.specializedSkills?.filter(nonCombatOrSpellSkill);
+    // const nonCombatProficientSkills = selectedClass.proficientSkills?.filter(nonCombatOrSpellSkill);
+    const sortedSpecializedSkills = selectedClass.specializedSkills?.length
+      ? [...selectedClass.specializedSkills].sort()
+      : [];
+    const sortedProficientSkills = selectedClass.proficientSkills?.length
+      ? [...selectedClass.proficientSkills].sort()
+      : [];
+    const specializedSkillsDesc = sortedSpecializedSkills?.length
+      ? '<label>Specialized skills:</label> ' + sortedSpecializedSkills.join(', ').trim()
       : '';
-    const proficientSkillsDesc = nonCombatProficientSkills?.length
-      ? '<label>Proficient skills:</label> ' + nonCombatProficientSkills.join(', ').trim()
+    const proficientSkillsDesc = sortedProficientSkills?.length
+      ? '<label>Proficient skills:</label> ' + sortedProficientSkills.join(', ').trim()
       : '';
 
     return {
@@ -426,7 +432,10 @@ export class CreateActorSheet extends ActorSheet {
   _getRaceDescription(race) {
     const selectedRace = RACES[race];
     const raceDescription = selectedRace.description;
-    const listItems = selectedRace.featureDescriptions?.map((desc) => `<li>${desc}</li>`).join('') || '';
+    const featuresDescriptions = selectedRace.features.flatMap((f) => f.description);
+    // add size description
+    featuresDescriptions.push(`Size ${sizes[selectedRace.size()].name}`);
+    const listItems = featuresDescriptions?.map((desc) => `<li>${desc}</li>`).join('') || '';
     return { raceDescription, listItems };
   }
 

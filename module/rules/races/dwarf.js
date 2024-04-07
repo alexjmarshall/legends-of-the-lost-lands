@@ -26,16 +26,6 @@ export class Dwarf extends BaseRace {
 
   static description = 'Dour and clannish but deeply loyal.';
 
-  static featureDescriptions = [
-    '+2 Constitution, -2 Charisma.',
-    '+4 to saving throws vs. poison and petrification.',
-    "Infravision 60'.",
-    'Senses depth underground and passively searches for pits traps, falling blocks and shifting walls.',
-    'Cannot wield greatswords or longbows.',
-    'Maximum 9 movement rate.',
-    'Size Medium.',
-  ];
-
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 50,
     [AGE_CATEGORIES.MATURE]: 150,

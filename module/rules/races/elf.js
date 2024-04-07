@@ -18,16 +18,8 @@ export class Elf extends BaseRace {
 
   static description = 'An ancient race, aloof and preoccupied by their fate.';
 
-  static featureDescriptions = [
-    '+1 Dexterity, +1 Intelligence, -2 Constitution.',
-    "Immune to magical sleep, charm and ghoul's paralysis.",
-    '+4 to searching and passively searches for secret doors.',
-    'Begins with a valuable item.',
-    'Cannot be raised from the dead.',
-    'Size Medium.',
-  ];
-
   static features = Object.freeze([
+    features.GRACILE,
     features.ENIGMATIC_MIND,
     features.KEEN_SIGHT,
     features.PARTING_GIFT,

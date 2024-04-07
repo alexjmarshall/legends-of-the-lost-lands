@@ -1,5 +1,6 @@
 // TODO
-// update char code to use negative AC and roll over skill values and show all skills for classes incl. weapon/spells
+// update char code to use negative AC and roll over skill values and all feature descriptions. -- Nahhhh....
+//     -- use negative AC and Saving throw bonuses. Always refer to bonus or penalty to be clear whether the negative is good.
 // reduce range of weapon impacts to Combat & Tactics scale? maybe d20 for maul
 // ^ maybe targets of 2/4/6/8/10 and d3/d4/d6/d8/d10/d12 dice
 // -- update weapon spreadsheet

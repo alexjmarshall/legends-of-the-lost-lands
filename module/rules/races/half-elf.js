@@ -18,14 +18,7 @@ export class HalfElf extends BaseRace {
 
   static description = 'A restive wanderlust makes them natural explorers.';
 
-  static featureDescriptions = [
-    '+1 Charisma, -1 Constitution.',
-    '+4 to saving throws vs. magical sleep and charm.',
-    '+2 to searching.',
-    'Size Medium.',
-  ];
-
-  static features = Object.freeze([features.SUPPLE_MIND, features.SHARP_SIGHT]);
+  static features = Object.freeze([features.COMELY, features.SUPPLE_MIND, features.SHARP_SIGHT]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 40,
