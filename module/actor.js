@@ -40,7 +40,17 @@ export class SimpleActor extends Actor {
     if (actorData.type !== 'character') return;
     this._addHumanoidLocationMaxHp(actorData);
     actorData.data.derived = {};
-    actorData.data.derived.attacks = 1;
+    const derived = actorData.data.derived;
+    derived.attacks = 1;
+    derived.riposte_to_hit_mod = 0;
+    derived.riposte_dmg_mod = 0;
+    derived.counter_to_hit_mod = 0;
+    derived.counter_dmg_mod = 0;
+    derived.dmg_bonus_humanoid = 0;
+    derived.dmg_bonus_undead = 0;
+    derived.passive_listening = 0;
+    derived.passive_searching = 0;
+    derived.atk_bonus_missile = 0;
   }
 
   _prepareHumanoidBaseData(actorData) {

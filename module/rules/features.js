@@ -422,7 +422,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.passive_listen',
+          key: 'data.derived.passive_listening',
           mode: 2,
           value: 4,
         },
@@ -492,7 +492,6 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   QUICK_TO_MASTER: {
-    // TODO derive in actor.js from ability scores if have this feature
     name: 'Quick to Master',
     description: 'Prime requisite XP bonus',
     type: FEATURE_TYPE.INHERENT,
