@@ -174,26 +174,30 @@ const addLanguages = (updateData, classInstance, int) => {
   updateData['data.attributes.languages.value'] = updateLang.join(', ').trim();
 };
 
-const getPrimeReqBonus = (actorData, classInstance) => {
+const getPrimeReqBonus = (actorData, formData, classInstance) => {
   // bonus is 1.2 if all prime reqs are > 17, 1.1 of all are > 15
   const primeReqs = CLASSES[classInstance.constructor.name].primeReqs;
   const abilityScores = actorData.attributes.ability_scores;
   if (primeReqs.length === 0) {
     return 1;
   }
-  if (primeReqs.every((req) => abilityScores[req].value > 17)) {
+  if (
+    primeReqs.every((req) => (formData[`data.attributes.ability_scores.${req}.value`] ?? abilityScores[req].value) > 17)
+  ) {
     return 1.2;
   }
-  if (primeReqs.every((req) => abilityScores[req].value > 15)) {
+  if (
+    primeReqs.every((req) => (formData[`data.attributes.ability_scores.${req}.value`] ?? abilityScores[req].value) > 15)
+  ) {
     return 1.1;
   }
   return 1;
 };
 
-const addXp = (actorData, actorUpdates, classInstance, actorRace) => {
+const addXp = (actorData, formData, actorUpdates, classInstance, actorRace) => {
   let reqXp = classInstance.reqXp;
   if (actorRace === RACES.Human) {
-    const primeReqBonus = getPrimeReqBonus(actorData, classInstance);
+    const primeReqBonus = getPrimeReqBonus(actorData, formData, classInstance);
     reqXp = Math.ceil(classInstance.reqXp / primeReqBonus);
   }
   const leftoverXp = Math.max(0, actorData.xp_req.value - actorData.xp_req.max);
@@ -235,7 +239,7 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
     'data.lvl': lvl,
   };
 
-  addXp(actorData, actorUpdates, classInstance, actorRace);
+  addXp(actorData, formData, actorUpdates, classInstance, actorRace);
   addSkills(actorUpdates, actor, classInstance);
   addSaves(actorUpdates, classInstance);
 
