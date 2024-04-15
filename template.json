@@ -993,6 +993,11 @@
         "min": 0,
         "max": 1000
       },
+      "saves": {
+        "evasion": 0,
+        "physical": 0,
+        "mental": 0
+      },
       "groups": {
         "retainer": {
           "dtype": "String",
@@ -1270,9 +1275,9 @@
             "max": 0
           }
         },
-        "alignment": {
+        "alignment_score": {
           "dtype": "Number",
-          "group": "alignment",
+          "group": "",
           "label": "Alignment (Chaotic Evil to Lawful Good)",
           "value": 10
         }

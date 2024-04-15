@@ -240,7 +240,7 @@ export class CreateActorSheet extends ActorSheet {
 
   _getAlignmentOptions(allowedAlignments) {
     const options = allowedAlignments
-      .map((a, idx) => `<option ${idx === 0 ? 'selected' : ''} value='${a}'>${a}</option>`)
+      .map((a, idx) => `<option ${idx === 0 ? 'selected' : ''} value='${minScore[a]}'>${a}</option>`)
       .join('');
     return {
       options,
@@ -754,13 +754,11 @@ export class CreateActorSheet extends ActorSheet {
     }
     delete formData['sp'];
 
-    // add alignment score
-    formData['data.attributes.alignment.value'] = minScore[formData['data.alignment']];
-
     formData = {
       ...formData,
       ...firstLevelUpdates.actor,
     };
+    console.log(formData);
 
     const yesCallback = async () => {
       this.actor.sheet.close();

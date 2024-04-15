@@ -45,16 +45,19 @@ export class SimpleActor extends Actor {
     if (actorData.type !== 'character') return;
     this._addHumanoidLocationMaxHp(actorData);
     const charData = actorData.data;
-    charData.attacks = 1;
-    charData.riposte_to_hit_mod = 0;
-    charData.riposte_dmg_mod = 0;
-    charData.counter_to_hit_mod = 0;
-    charData.counter_dmg_mod = 0;
-    charData.dmg_bonus_humanoid = 0;
-    charData.dmg_bonus_undead = 0;
-    charData.passive_listening_mod = 0; // TODO passiveListening in derived data below, this plus skill value
-    charData.passive_searching_mod = 0;
-    charData.atk_bonus_missile = 0;
+    charData.combat = {};
+    const combat = charData.combat;
+    combat.attacks = 1;
+    combat.riposte_to_hit_mod = 0;
+    combat.riposte_dmg_mod = 0;
+    combat.counter_to_hit_mod = 0;
+    combat.counter_dmg_mod = 0;
+    combat.dmg_bonus_humanoid = 0;
+    combat.dmg_bonus_undead = 0;
+    combat.passive_listening_mod = 0; // TODO passiveListening in derived data below, this plus skill value
+    combat.passive_searching_mod = 0;
+    combat.missile_to_hit_mod = 0;
+    combat.melee_to_hit_mod = 0;
   }
 
   _prepareHumanoidBaseData(actorData) {
@@ -91,7 +94,7 @@ export class SimpleActor extends Actor {
   }
 
   _prepareCharacterData(actorData) {
-    // TODO derive alignment from lawfulness and goodness
+    // TODO derive alignment string from alignment score
     const { type } = actorData;
     if (type !== 'character') {
       return;
