@@ -41,6 +41,8 @@ export class Dwarf extends BaseRace {
 
   static weightModifier = 2.2;
 
+  static encModifier = 1.2;
+
   static size = () => SIZES.MEDIUM;
 
   static modifiedAbilityScores(abilityScores) {

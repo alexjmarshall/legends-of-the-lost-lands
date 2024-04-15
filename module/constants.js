@@ -1607,7 +1607,7 @@ export const PREP_MODS = {
   },
 };
 export const WEAP_BREAK_CHANCE = 5;
-export const GRID_SIZE = 5;
+
 export const ATK_HEIGHTS = ['high', 'mid', 'low'];
 export const AIM_AREAS = {
   head: ['skull', 'left eye', 'right eye', 'left ear', 'right ear', 'nose', 'jaw', 'neck'],

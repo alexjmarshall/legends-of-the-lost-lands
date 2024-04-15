@@ -80,7 +80,7 @@ export class Ranger extends BaseClass {
       new FeatureConfig(features.ANCIENT_HATRED, 1, {
         changes: [
           {
-            key: 'data.derived.dmg_bonus_humanoid',
+            key: 'data.dmg_bonus_humanoid',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
@@ -151,7 +151,7 @@ export class VampireHunter extends Ranger {
       new FeatureConfig(features.ANCIENT_HATRED_UNDEAD, 1, {
         changes: [
           {
-            key: 'data.derived.dmg_bonus_undead',
+            key: 'data.dmg_bonus_undead',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
