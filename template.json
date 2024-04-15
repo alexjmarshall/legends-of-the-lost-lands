@@ -1,6 +1,6 @@
 {
   "Actor": {
-    "types": ["character", "humanoid", "monster", "storage", "merchant", "party"],
+    "types": ["character", "humanoid", "monster", "pack_animal", "storage", "merchant", "party"],
     "templates": {
       "props": {
         "description": "",
@@ -161,7 +161,13 @@
           "min": 0,
           "max": 50
         },
-        "xp": 0
+        "xp": 0,
+        "groups": {
+          "admin": {
+            "dtype": "Boolean",
+            "label": "Admin"
+          }
+        }
       },
       "monster": {
         "attributes": {
@@ -230,18 +236,6 @@
             "group": "",
             "label": "Morale",
             "value": "mid"
-          },
-          "rarity": {
-            "dtype": "String",
-            "group": "",
-            "label": "Rarity",
-            "value": "common"
-          },
-          "terrain": {
-            "dtype": "String",
-            "group": "",
-            "label": "Terrain",
-            "value": "grassland"
           }
         }
       },
@@ -1004,10 +998,6 @@
           "dtype": "String",
           "label": "Retainer"
         },
-        "admin": {
-          "dtype": "Boolean",
-          "label": "Admin"
-        },
         "ability_scores": {
           "dtype": "Number",
           "label": "Ability Scores"
@@ -1023,10 +1013,6 @@
         "spellcasting_druid": {
           "dtype": "Resource",
           "label": "Druid Spells"
-        },
-        "saves": {
-          "dtype": "Number",
-          "label": "Saves"
         }
       },
       "attributes": {
@@ -1037,10 +1023,16 @@
             "label": "Is Retainer",
             "value": false
           },
-          "apply_fatigue_cold": {
+          "apply_fatigue_exposure": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Cold Fatigue Damage",
+            "label": "Apply Exposure Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_sleep": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Sleep Fatigue Damage",
             "value": true
           },
           "apply_fatigue_hunger": {
@@ -1067,7 +1059,7 @@
             "dtype": "String",
             "group": "retainer",
             "label": "Master",
-            "value": "none"
+            "value": ""
           },
           "loyalty": {
             "dtype": "Number",
@@ -1283,26 +1275,6 @@
           "group": "alignment",
           "label": "Alignment (Chaotic Evil to Lawful Good)",
           "value": 10
-        },
-        "saves": {
-          "physical": {
-            "dtype": "Number",
-            "group": "saves",
-            "label": "Physical Save",
-            "value": 0
-          },
-          "mental": {
-            "dtype": "Number",
-            "group": "saves",
-            "label": "Mental Save",
-            "value": 0
-          },
-          "evasion": {
-            "dtype": "Number",
-            "group": "saves",
-            "label": "Evasion Save",
-            "value": 0
-          }
         }
       }
     },
@@ -1329,6 +1301,79 @@
           "group": "",
           "label": "Armor Class",
           "value": 15
+        }
+      }
+    },
+    "pack_animal": {
+      "templates": ["props", "actor", "monster", "resistances", "languages"],
+      "attributes": {
+        "admin": {
+          "apply_fatigue_exposure": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Exposure Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_sleep": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Sleep Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_hunger": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Hunger Fatigue Damage",
+            "value": true
+          },
+          "apply_fatigue_thirst": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Thirst Fatigue Damage",
+            "value": true
+          },
+          "apply_enc": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Encumbrance to MV",
+            "value": true
+          }
+        },
+        "atk_routine": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Routine",
+          "value": "kick, bite"
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "rouncy"
+        },
+        "weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Weight",
+          "value": 1000
+        },
+        "base_mv": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Base Movement Rate",
+          "value": 15
+        },
+        "ac": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Class",
+          "value": 15
+        },
+        "rider_token": {
+          "dtype": "String",
+          "group": "",
+          "label": "Rider Token",
+          "value": ""
         }
       }
     },
@@ -1570,12 +1615,6 @@
             "label": "Damage",
             "value": "d6"
           },
-          "dmg_vs_l": {
-            "dtype": "String",
-            "group": "",
-            "label": "Damage vs. Large",
-            "value": "d6"
-          },
           "dmg_mod": {
             "dtype": "Number",
             "group": "",
@@ -1588,6 +1627,12 @@
               "group": "admin",
               "label": "Magic",
               "value": false
+            },
+            "non_metal_head": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Non-Metal Head",
+              "value": true
             }
           }
         }
@@ -2036,6 +2081,14 @@
         "max": 2
       },
       "attributes": {
+        "admin": {
+          "non_metal_head": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Non-Metal Head",
+            "value": false
+          }
+        },
         "atk_modes": {
           "dtype": "String",
           "group": "",
@@ -2145,6 +2198,12 @@
             "group": "admin",
             "label": "Wearable",
             "value": true
+          },
+          "non_metal_head": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Non-Metal Head",
+            "value": false
           }
         },
         "type": {

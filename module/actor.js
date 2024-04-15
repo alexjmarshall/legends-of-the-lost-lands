@@ -1,6 +1,10 @@
 import { EntitySheetHelper } from './helper.js';
 import * as ActorUtil from './actor-helper.js';
 import * as Constant from './constants.js';
+import * as SIZE from './rules/size.js';
+import * as RACE from './rules/races/index.js';
+import * as CANVAS from './canvas.js';
+import { PACK_ANIMALS } from './rules/pack-animals.js';
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -21,6 +25,7 @@ export class SimpleActor extends Actor {
     this.data.data.attributes = this.data.data.attributes || {};
     const actorData = this.data;
 
+    console.log('preparing data1!!');
     this._prepareCharacterBaseData(actorData);
     this._prepareHumanoidBaseData(actorData);
   }
@@ -39,18 +44,17 @@ export class SimpleActor extends Actor {
   _prepareCharacterBaseData(actorData) {
     if (actorData.type !== 'character') return;
     this._addHumanoidLocationMaxHp(actorData);
-    actorData.data.derived = {};
-    const derived = actorData.data.derived;
-    derived.attacks = 1;
-    derived.riposte_to_hit_mod = 0;
-    derived.riposte_dmg_mod = 0;
-    derived.counter_to_hit_mod = 0;
-    derived.counter_dmg_mod = 0;
-    derived.dmg_bonus_humanoid = 0;
-    derived.dmg_bonus_undead = 0;
-    derived.passive_listening = 0;
-    derived.passive_searching = 0;
-    derived.atk_bonus_missile = 0;
+    const charData = actorData.data;
+    charData.attacks = 1;
+    charData.riposte_to_hit_mod = 0;
+    charData.riposte_dmg_mod = 0;
+    charData.counter_to_hit_mod = 0;
+    charData.counter_dmg_mod = 0;
+    charData.dmg_bonus_humanoid = 0;
+    charData.dmg_bonus_undead = 0;
+    charData.passive_listening_mod = 0; // TODO passiveListening in derived data below, this plus skill value
+    charData.passive_searching_mod = 0;
+    charData.atk_bonus_missile = 0;
   }
 
   _prepareHumanoidBaseData(actorData) {
@@ -60,11 +64,12 @@ export class SimpleActor extends Actor {
 
   /** @override */
   prepareDerivedData() {
-    // TODO note skill target in actor derived data
+    // "character","humanoid","monster","storage","merchant","party"
     super.prepareDerivedData();
     const actorData = this.data;
 
-    // this._prepareCharacterData(actorData);
+    this._prepareCharacterData(actorData);
+    this._preparePackAnimalData(actorData);
     // this._prepareHumanoidData(actorData);
     // TODO derive monster natural weapon atk mode from first atk_mode
     // this._prepareMonsterData(actorData);
@@ -76,6 +81,15 @@ export class SimpleActor extends Actor {
     // TODO need at least 1 hand free for Somatic spells
   }
 
+  _preparePackAnimalData(actorData) {
+    const { type } = actorData;
+    if (type !== 'pack_animal') return;
+
+    if (!+actorData.data.attributes.weight.value && PACK_ANIMALS[actorData.data.attributes.type.value]) {
+      actorData.data.attributes.weight.value = PACK_ANIMALS[actorData.data.attributes.type.value].weight;
+    }
+  }
+
   _prepareCharacterData(actorData) {
     // TODO derive alignment from lawfulness and goodness
     const { type } = actorData;
@@ -83,31 +97,31 @@ export class SimpleActor extends Actor {
       return;
     }
 
-    // CONTINUE
     const charData = actorData.data;
     const { items } = actorData;
-    const wornItems = items.filter((i) => i.data.data.worn);
+    // const wornItems = items.filter((i) => i.data.data.worn);
     const attrs = charData.attributes;
-    const abilities = attrs.ability_scores || {};
-    const size = attrs.size.value.toUpperCase().trim();
-    const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-    const AGILITY_PENALTY_THRESHOLD = 5;
-    const AGILITY_PENALTY_FACTOR = 3;
-    const armor_check_penalty_THRESHOLD = 2;
-    const SPELL_FAILURE_FACTOR = 5 / 2;
-    const DEFAULT_STR = 10;
-    const ENC_BASE = 20 / 3;
-    const ENC_FACTOR = 2 / 3;
-    const BASE_MV = {
-      default: 12,
-      dwarf: 9,
-      barbarian: 15,
-    };
-    const BASE_SV = {
-      default: 0,
-      paladin: 2,
-    };
-    const BASE_AC = 10;
+    // const abilities = attrs.ability_scores || {};
+
+    // const size = attrs.size.value.toUpperCase().trim();
+    // const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
+    // const AGILITY_PENALTY_THRESHOLD = 5;
+    // const AGILITY_PENALTY_FACTOR = 3;
+    // const armor_check_penalty_THRESHOLD = 2;
+    // const SPELL_FAILURE_FACTOR = 5 / 2;
+    // const DEFAULT_STR = 10;
+    // const ENC_BASE = 20 / 3;
+    // const ENC_FACTOR = 2 / 3;
+    // const BASE_MV = {
+    //   default: 12,
+    //   dwarf: 9,
+    //   barbarian: 15,
+    // };
+    // const BASE_SV = {
+    //   default: 0,
+    //   paladin: 2,
+    // };
+    // const BASE_AC = 10;
 
     // retainer loyalty
     if (attrs.admin.is_retainer.value) {
@@ -116,17 +130,11 @@ export class SimpleActor extends Actor {
     }
 
     // encumbrance
-    charData.enc = this._getEnc(items);
+    this._addEnc(charData, items);
 
     // mv & speed
-    const str = abilities.str.value ?? DEFAULT_STR;
-    const encStr = Math.round(ActorUtil.sizeMulti(str, sizeVal));
-    const baseMv =
-      BASE_MV[attrs.race.value?.toLowerCase()] ?? BASE_MV[attrs.class.value?.toLowerCase()] ?? BASE_MV.default;
-    const mvPenalty = Math.floor(((charData.enc / (ENC_BASE + encStr * ENC_FACTOR)) * baseMv) / DEFAULT_BASE_MV);
-    const mv = Math.max(0, baseMv - mvPenalty);
-    charData.mv = mv;
-    charData.speed = mv * Constant.GRID_SIZE;
+    this._addMvSpeed(actorData);
+    return;
 
     // ability score mods
     this._addAbilityScoreMods(abilities);
@@ -375,11 +383,36 @@ export class SimpleActor extends Actor {
     charData.removedLocs = removedLocations;
   }
 
-  _getEnc(items) {
+  _addEnc(charData, items) {
     const wgtItems = items.filter((i) => +i.data.data.total_weight > 0);
     const sumItemWeight = (a, b) => a + b.data.data.total_weight;
     const enc = Math.round(wgtItems.reduce(sumItemWeight, 0) * 10) / 10;
-    return enc;
+    console.log('enc', enc);
+    charData.enc = enc;
+  }
+
+  _addMvSpeed(actorData) {
+    // TODO test char and pack animal
+    const size = actorData.data.size || actorData.data.attributes.size?.value || SIZE.SIZES.MEDIUM;
+    const bodyweight =
+      (actorData.type === 'pack_animal' ? +actorData.data.attributes.weight.value : +actorData.data.weight) ||
+      SIZE.defaultWeight[size];
+    const encMod =
+      (actorData.type === 'pack_animal'
+        ? +PACK_ANIMALS[actorData.data.attributes.type?.value]?.encMod
+        : +RACE[actorData.data.race]?.encModifier) || 1;
+    const encBodyweight = bodyweight * encMod;
+
+    const load = +actorData.data.enc || 0;
+    const maxLoad = Math.floor(1.2 * encBodyweight);
+    const relativeLoad = load / maxLoad;
+
+    const mv = +actorData.data.attributes.base_mv?.value || +actorData.data.attributes.mv?.value || 12;
+    const wgtMv = Math.ceil((1 - relativeLoad) * mv);
+
+    actorData.data.mv = wgtMv;
+    actorData.data.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
+    console.log('basemv, mv, speed', mv, wgtMv, actorData.data.speed);
   }
 
   _getMonsterXP(hdVal, hpMax, xpMulti) {

@@ -29,8 +29,8 @@ export class Human extends BaseRace {
   });
 
   static averageHeight = {
-    M: 69,
-    F: 64,
+    M: 70,
+    F: 65,
   };
 
   static weightModifier = 1;

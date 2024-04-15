@@ -46,24 +46,58 @@ export const SIZE_VALUES = {
   default: 2,
 };
 
+export const defaultWeight = Object.freeze({
+  [SIZES.TINY]: 30,
+  [SIZES.SMALL]: 50,
+  [SIZES.MEDIUM]: 150,
+  [SIZES.LARGE]: 300,
+  [SIZES.HUGE]: 600,
+  [SIZES.GARGANTUAN]: 1200,
+  [SIZES.COLOSSAL]: 2400,
+});
+
 /**
- * Adjusts the size of a value based on the provided character size.
+ * Adjusts a value based on the provided character size.
  * @param {number} val - The value to adjust.
- * @param {number} charSize - The character size factor.
- * @returns {number} - The adjusted size.
+ * @param {number} charSize - The character size value.
+ * @returns {number} - The adjusted value.
  */
 export function sizeMulti(val, charSize) {
-  if (charSize > 2) {
-    // If charSize is greater than 2, increase the size by 50%.
+  if (charSize > SIZE_VALUES.MEDIUM) {
+    // If charSize is greater than M, increase the value by half.
     return (val * 3) / 2;
-  } else if (charSize === 1) {
-    // If charSize is 1, decrease the size by 1/3.
-    return (val * 2) / 3;
-  } else if (charSize < 1) {
-    // If charSize is less than 1, decrease the size by 50%.
-    return val / 2;
-  } else {
-    // For other cases, return the original size.
-    return val;
   }
+  if (charSize === SIZE_VALUES.SMALL) {
+    // If charSize is S, decrease the value by half.
+    return val / 2;
+  }
+  if (charSize < SIZE_VALUES.SMALL) {
+    // If charSize is less than S, decrease the value by 2/3.
+    return val / 3;
+  }
+  // For other cases, return the original size.
+  return val;
+}
+
+/**
+ * Adjusts a limit for encumbrance based on the provided character size.
+ * @param {number} val - The limit to adjust.
+ * @param {number} charSize - The character size value.
+ * @returns {number} - The adjusted value.
+ */
+export function sizeEncMulti(val, charSize) {
+  if (charSize > SIZE_VALUES.MEDIUM) {
+    // If charSize is greater than M, decrease the value by a third.
+    return (val * 2) / 3;
+  }
+  if (charSize === SIZE_VALUES.SMALL) {
+    // If charSize is S, increase the value by half.
+    return (val * 3) / 2;
+  }
+  if (charSize < SIZE_VALUES.SMALL) {
+    // If charSize is less than S, double the value.
+    return val * 2;
+  }
+  // For other cases, return the original size.
+  return val;
 }

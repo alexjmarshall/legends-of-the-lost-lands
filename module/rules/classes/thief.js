@@ -128,22 +128,22 @@ export class Swashbuckler extends Thief {
             value: super.onePlusOnePerNLevels(lvl, 4),
           },
           {
-            key: 'data.derived.riposte_to_hit_mod',
+            key: 'data.riposte_to_hit_mod',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
           {
-            key: 'data.derived.riposte_dmg_mod',
+            key: 'data.riposte_dmg_mod',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
           {
-            key: 'data.derived.counter_to_hit_mod',
+            key: 'data.counter_to_hit_mod',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
           {
-            key: 'data.derived.counter_dmg_mod',
+            key: 'data.counter_dmg_mod',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },

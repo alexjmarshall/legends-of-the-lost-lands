@@ -41,6 +41,8 @@ export class Elf extends BaseRace {
 
   static weightModifier = 0.91;
 
+  static encModifier = 0.94;
+
   static size = () => SIZES.MEDIUM;
 
   static modifiedAbilityScores(abilityScores) {

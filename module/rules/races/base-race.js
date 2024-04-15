@@ -369,4 +369,6 @@ export class BaseRace {
       value: score.value + Race.abilityScoreModifiers[score.name],
     }));
   }
+
+  static encModifier = 1;
 }

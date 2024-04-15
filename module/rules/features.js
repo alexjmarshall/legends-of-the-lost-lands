@@ -39,7 +39,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.attacks',
+          key: 'data.attacks',
           mode: 4,
           value: 2,
         },
@@ -126,22 +126,22 @@ export const features = Object.freeze({
           value: 1,
         },
         {
-          key: 'data.derived.riposte_to_hit_mod',
+          key: 'data.riposte_to_hit_mod',
           mode: 2,
           value: 1,
         },
         {
-          key: 'data.derived.riposte_dmg_mod',
+          key: 'data.riposte_dmg_mod',
           mode: 2,
           value: 1,
         },
         {
-          key: 'data.derived.counter_to_hit_mod',
+          key: 'data.counter_to_hit_mod',
           mode: 2,
           value: 1,
         },
         {
-          key: 'data.derived.counter_dmg_mod',
+          key: 'data.counter_dmg_mod',
           mode: 2,
           value: 1,
         },
@@ -390,7 +390,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.dmg_bonus_humanoid',
+          key: 'data.dmg_bonus_humanoid',
           mode: 2,
           value: 1,
         },
@@ -406,7 +406,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.dmg_bonus_undead',
+          key: 'data.dmg_bonus_undead',
           mode: 2,
           value: 1,
         },
@@ -422,7 +422,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.passive_listening',
+          key: 'data.passive_listening_mod',
           mode: 2,
           value: 4,
         },
@@ -602,7 +602,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.derived.atk_bonus_missile',
+          key: 'data.atk_bonus_missile',
           mode: 2,
           value: 3,
         },
