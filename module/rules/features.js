@@ -602,7 +602,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.atk_bonus_missile',
+          key: 'data.missile_to_hit_mod',
           mode: 2,
           value: 3,
         },

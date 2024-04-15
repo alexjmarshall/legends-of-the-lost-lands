@@ -216,7 +216,7 @@ const addHpAndFp = (actorData, actorUpdates, classInstance) => {
 const addSaves = (actorUpdates, classInstance) => {
   const saves = classInstance.saves;
   for (const save of Object.keys(saves)) {
-    actorUpdates[`data.attributes.saves.${save}.value`] = saves[save];
+    actorUpdates[`data.saves.${save}`] = saves[save];
   }
 };
 
