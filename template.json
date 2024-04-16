@@ -1366,7 +1366,7 @@
           "dtype": "Number",
           "group": "",
           "label": "Base Movement Rate",
-          "value": 15
+          "value": 0
         },
         "ac": {
           "dtype": "Number",
