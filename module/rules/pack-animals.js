@@ -24,7 +24,7 @@ export const PACK_ANIMALS = Object.freeze({
     weight: 1250,
   },
   destrier: {
-    baseMv: 15,
+    baseMv: 16,
     reqFoodMod: 1,
     reqWaterMod: 1,
     reqCloMod: 1,
@@ -32,7 +32,7 @@ export const PACK_ANIMALS = Object.freeze({
     weight: 1500,
   },
   palfrey: {
-    baseMv: 21,
+    baseMv: 20,
     reqFoodMod: 1.1,
     reqWaterMod: 1.1,
     reqCloMod: 1,
@@ -40,7 +40,7 @@ export const PACK_ANIMALS = Object.freeze({
     weight: 1000,
   },
   draughthorse: {
-    baseMv: 15,
+    baseMv: 14,
     reqFoodMod: 1,
     reqWaterMod: 1,
     reqCloMod: 0.9,
@@ -48,7 +48,7 @@ export const PACK_ANIMALS = Object.freeze({
     weight: 1500,
   },
   pony: {
-    baseMv: 18,
+    baseMv: 16,
     reqFoodMod: 1,
     reqWaterMod: 1,
     reqCloMod: 1,
@@ -56,7 +56,7 @@ export const PACK_ANIMALS = Object.freeze({
     weight: 600,
   },
   mule: {
-    baseMv: 15,
+    baseMv: 14,
     reqFoodMod: 0.9,
     reqWaterMod: 0.9,
     reqCloMod: 1.1,

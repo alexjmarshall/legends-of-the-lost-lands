@@ -4,6 +4,7 @@ import * as Constant from './constants.js';
 import * as SIZE from './rules/size.js';
 import * as RACE from './rules/races/index.js';
 import * as ALIGNMENT from './rules/alignment.js';
+import * as ABILITIES from './rules/abilities.js';
 import * as CANVAS from './canvas.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
 
@@ -87,10 +88,23 @@ export class SimpleActor extends Actor {
   _preparePackAnimalData(actorData) {
     const { type } = actorData;
     if (type !== 'pack_animal') return;
+    const charData = actorData.data;
+    const animalType = charData.attributes.type.value;
 
-    if (!+actorData.data.attributes.weight.value && PACK_ANIMALS[actorData.data.attributes.type.value]) {
-      actorData.data.attributes.weight.value = PACK_ANIMALS[actorData.data.attributes.type.value].weight;
+    if (!+charData.attributes.weight.value && PACK_ANIMALS[animalType]) {
+      charData.attributes.weight.value = PACK_ANIMALS[animalType].weight;
     }
+
+    if (!+charData.attributes.base_mv.value && PACK_ANIMALS[animalType]) {
+      charData.attributes.base_mv.value = PACK_ANIMALS[animalType].baseMv;
+    }
+
+    // encumbrance
+    const { items } = actorData;
+    this._addEnc(charData, items);
+
+    // mv & speed
+    this._addMvSpeed(actorData);
   }
 
   _prepareCharacterData(actorData) {
@@ -111,7 +125,7 @@ export class SimpleActor extends Actor {
     const attrs = charData.attributes;
     if (attrs.admin.is_retainer.value) {
       const loyalty = attrs.retainer.loyalty || {};
-      if (loyalty.value) loyalty.mod = this._getScoreMod(loyalty.value);
+      if (loyalty.value) loyalty.mod = ABILITIES.getScoreMod(loyalty.value);
     }
 
     // encumbrance
@@ -121,11 +135,13 @@ export class SimpleActor extends Actor {
     // mv & speed
     this._addMvSpeed(actorData);
 
+    // ability score mods
+    const abilities = attrs.ability_scores || {};
+    this._addAbilityScoreMods(abilities);
+
     return;
 
     // const wornItems = items.filter((i) => i.data.data.worn);
-
-    // const abilities = attrs.ability_scores || {};
 
     // const size = attrs.size.value.toUpperCase().trim();
     // const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
@@ -146,9 +162,6 @@ export class SimpleActor extends Actor {
     //   paladin: 2,
     // };
     // const BASE_AC = 10;
-
-    // ability score mods
-    this._addAbilityScoreMods(abilities);
 
     // set remove body part locations
     this._updateRemovedLocations(charData);
@@ -395,7 +408,6 @@ export class SimpleActor extends Actor {
   }
 
   _addEnc(charData, items) {
-    // TODO test after item derived data done
     const wgtItems = items.filter((i) => +i.data.data.total_weight > 0);
     const sumItemWeight = (a, b) => a + b.data.data.total_weight;
     const enc = Math.round(wgtItems.reduce(sumItemWeight, 0) * 10) / 10;
@@ -403,7 +415,6 @@ export class SimpleActor extends Actor {
   }
 
   _addMvSpeed(actorData) {
-    // TODO test char and pack animal
     const charData = actorData.data;
     const size = charData.size || charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
     const bodyweight =
@@ -424,6 +435,8 @@ export class SimpleActor extends Actor {
 
     charData.mv = wgtMv;
     charData.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
+    // round charData.speed to the nearest 5
+    charData.speed = Math.ceil(charData.speed / 5) * 5;
   }
 
   _getMonsterXP(hdVal, hpMax, xpMulti) {
@@ -432,12 +445,10 @@ export class SimpleActor extends Actor {
   }
 
   _addAbilityScoreMods(abilities) {
-    if (abilities.str) abilities.str.mod = this._getScoreMod(+abilities.str.value);
-    if (abilities.int) abilities.int.mod = this._getScoreMod(+abilities.int.value);
-    if (abilities.wis) abilities.wis.mod = this._getScoreMod(+abilities.wis.value);
-    if (abilities.dex) abilities.dex.mod = this._getScoreMod(+abilities.dex.value);
-    if (abilities.con) abilities.con.mod = this._getScoreMod(+abilities.con.value);
-    if (abilities.cha) abilities.cha.mod = this._getScoreMod(+abilities.cha.value);
+    for (const ability of Object.values(ABILITIES.ABILITIES)) {
+      if (!abilities[ability]) continue;
+      abilities[ability].mod = ABILITIES.getScoreMod(+abilities[ability].value);
+    }
   }
 
   _getHighestMagicVal(items, key) {
