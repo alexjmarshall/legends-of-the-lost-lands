@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
-import { goodAlignments } from '../alignments.js';
+import { goodAlignments } from '../alignment.js';
 import { RECIPES } from '../recipes.js';
 
 export class Ranger extends BaseClass {

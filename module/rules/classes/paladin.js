@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
-import { ALIGNMENTS, lawfulAlignments } from '../alignments.js';
+import { ALIGNMENTS, lawfulAlignments } from '../alignment.js';
 
 export class Paladin extends BaseClass {
   static XP_REQS = Object.freeze([0, 1400, 4200, 10000, 22000, 45000, 95000, 170000, 350000]);

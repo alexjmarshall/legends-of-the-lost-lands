@@ -418,11 +418,11 @@ export const features = Object.freeze({
     description: "Reduces the party's chance of being surprised",
     type: FEATURE_TYPE.INHERENT,
     effectData: {
-      label: 'Passive Listening Bonus',
+      label: 'Passive Perception Bonus',
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.passive_listening_mod',
+          key: 'data.passive_perception_mod',
           mode: 2,
           value: 4,
         },
