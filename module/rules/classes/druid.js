@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { deepFreeze } from '../../helper.js';
 import { RARE_LANGUAGES } from '../languages.js';
-import { ALIGNMENTS } from '../alignments.js';
+import { ALIGNMENTS } from '../alignment.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Druid extends BaseClass {

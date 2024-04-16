@@ -7,26 +7,51 @@ import * as Constant from './constants.js';
  * @extends {Item}
  */
 export class SimpleItem extends Item {
+  /** @override*/
+  prepareBaseData() {
+    super.prepareBaseData();
+    this.data.data.groups = this.data.data.groups || {};
+    this.data.data.attributes = this.data.data.attributes || {};
+  }
+
   /** @inheritdoc */
   async prepareDerivedData() {
     // item types:
-    //  armor, clothing, shield, helmet, jewelry
-    //  spell_magic, spell_cleric, spell_druid
-    //  feature, skill, natural_weapon, grapple_maneuver
-    //  melee_weapon, throw_weapon, missile_weapon, bow, ammo
-    //  potion, charged_item, scroll, item
-    //  currency, gem, trade_good
+    /*
+      "item",
+      "storage",
+      "container",
+      "scroll",
+      "armor",
+      "helmet",
+      "clothing",
+      "gem",
+      "trade_good",
+      "food",
+      "recipe",
+      "herb",
+      "rune",
+      "jewelry",
+      "shield",
+      "melee_weapon",
+      "missile_weapon",
+      "bow",
+      "missile",
+      "currency",
+      "spell",
+      "feature",
+      "natural_weapon",
+      "natural_missile_weapon",
+      "grappling_maneuver",
+      "hit_location",
+      "injury",
+      "disease"
+      */
 
     super.prepareDerivedData();
-    this.data.data.groups = this.data.data.groups || {};
-    this.data.data.attributes = this.data.data.attributes || {};
     const itemData = this.data;
-    const { data } = itemData;
 
-    // // calculate total weight -- may be overridden below
-    // if (!isNaN(data.weight) && !isNaN(data.quantity)) {
-    //   data.total_weight = Math.round(data.weight * data.quantity * 10) / 10;
-    // }
+    this._prepareItemData(itemData);
 
     // // armor, clothing, shield, helmet
     // this._prepareGarmentData(itemData);
@@ -37,6 +62,15 @@ export class SimpleItem extends Item {
     // this._prepareMeleeWeaponData(itemData);
     // this._prepareMissileWeaponData(itemData);
     // this._prepareSkillData(itemData);
+  }
+
+  _addTotalWeight(itemData) {
+    itemData.total_weight = Math.round(itemData.weight * itemData.quantity * 10) / 10;
+  }
+
+  _prepareItemData(itemData) {
+    const { data } = itemData;
+    this._addTotalWeight(data);
   }
 
   _prepareSkillData(itemData) {

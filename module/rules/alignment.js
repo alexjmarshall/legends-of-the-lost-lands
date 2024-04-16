@@ -35,3 +35,11 @@ export const minScore = {
   [ALIGNMENTS.LE]: 5,
   [ALIGNMENTS.CE]: 1,
 };
+
+export const alignmentByScore = (score) => {
+  if (score >= minScore[ALIGNMENTS.LG]) return ALIGNMENTS.LG;
+  if (score >= minScore[ALIGNMENTS.CG]) return ALIGNMENTS.CG;
+  if (score >= minScore[ALIGNMENTS.N]) return ALIGNMENTS.N;
+  if (score >= minScore[ALIGNMENTS.LE]) return ALIGNMENTS.LE;
+  return ALIGNMENTS.CE;
+};

@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
-import { chaoticAlignments } from '../alignments.js';
+import { chaoticAlignments } from '../alignment.js';
 
 export class Fighter extends BaseClass {
   static description = 'A stalwart champion of the battlefield.';

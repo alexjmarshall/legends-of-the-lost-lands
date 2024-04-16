@@ -6,7 +6,7 @@ import { BaseClass } from './base-class.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
-import { allExceptLawfulGood, evilAlignments } from '../alignments.js';
+import { allExceptLawfulGood, evilAlignments } from '../alignment.js';
 import { RARE_LANGUAGES } from '../languages.js';
 
 export class Thief extends BaseClass {

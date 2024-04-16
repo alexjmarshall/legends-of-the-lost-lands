@@ -3,7 +3,7 @@ import { allCombatSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
-import { chaoticAlignments } from '../alignments.js';
+import { chaoticAlignments } from '../alignment.js';
 import { ABILITIES } from '../abilities.js';
 import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';

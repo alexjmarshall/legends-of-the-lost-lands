@@ -3,6 +3,7 @@ import * as ActorUtil from './actor-helper.js';
 import * as Constant from './constants.js';
 import * as SIZE from './rules/size.js';
 import * as RACE from './rules/races/index.js';
+import * as ALIGNMENT from './rules/alignment.js';
 import * as CANVAS from './canvas.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
 
@@ -54,10 +55,9 @@ export class SimpleActor extends Actor {
     combat.counter_dmg_mod = 0;
     combat.dmg_bonus_humanoid = 0;
     combat.dmg_bonus_undead = 0;
-    combat.passive_listening_mod = 0; // TODO passiveListening in derived data below, this plus skill value
-    combat.passive_searching_mod = 0;
     combat.missile_to_hit_mod = 0;
     combat.melee_to_hit_mod = 0;
+    charData.passive_perception_mod = 0;
   }
 
   _prepareHumanoidBaseData(actorData) {
@@ -94,16 +94,37 @@ export class SimpleActor extends Actor {
   }
 
   _prepareCharacterData(actorData) {
-    // TODO derive alignment string from alignment score
     const { type } = actorData;
     if (type !== 'character') {
       return;
     }
 
+    // alignment
     const charData = actorData.data;
-    const { items } = actorData;
-    // const wornItems = items.filter((i) => i.data.data.worn);
+    charData.alignment = ALIGNMENT.alignmentByScore(charData.attributes.alignment_score.value);
+
+    // passive perception
+    const skills = charData.skills || {};
+    charData.passive_perception = Number(10 + skills.listening.lvl + charData.passive_perception_mod) || 10;
+
+    // retainer loyalty
     const attrs = charData.attributes;
+    if (attrs.admin.is_retainer.value) {
+      const loyalty = attrs.retainer.loyalty || {};
+      if (loyalty.value) loyalty.mod = this._getScoreMod(loyalty.value);
+    }
+
+    // encumbrance
+    const { items } = actorData;
+    this._addEnc(charData, items);
+
+    // mv & speed
+    this._addMvSpeed(actorData);
+
+    return;
+
+    // const wornItems = items.filter((i) => i.data.data.worn);
+
     // const abilities = attrs.ability_scores || {};
 
     // const size = attrs.size.value.toUpperCase().trim();
@@ -125,19 +146,6 @@ export class SimpleActor extends Actor {
     //   paladin: 2,
     // };
     // const BASE_AC = 10;
-
-    // retainer loyalty
-    if (attrs.admin.is_retainer.value) {
-      const loyalty = attrs.retainer.loyalty || {};
-      if (loyalty.value) loyalty.mod = this._getScoreMod(loyalty.value);
-    }
-
-    // encumbrance
-    this._addEnc(charData, items);
-
-    // mv & speed
-    this._addMvSpeed(actorData);
-    return;
 
     // ability score mods
     this._addAbilityScoreMods(abilities);
@@ -387,35 +395,35 @@ export class SimpleActor extends Actor {
   }
 
   _addEnc(charData, items) {
+    // TODO test after item derived data done
     const wgtItems = items.filter((i) => +i.data.data.total_weight > 0);
     const sumItemWeight = (a, b) => a + b.data.data.total_weight;
     const enc = Math.round(wgtItems.reduce(sumItemWeight, 0) * 10) / 10;
-    console.log('enc', enc);
     charData.enc = enc;
   }
 
   _addMvSpeed(actorData) {
     // TODO test char and pack animal
-    const size = actorData.data.size || actorData.data.attributes.size?.value || SIZE.SIZES.MEDIUM;
+    const charData = actorData.data;
+    const size = charData.size || charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
     const bodyweight =
-      (actorData.type === 'pack_animal' ? +actorData.data.attributes.weight.value : +actorData.data.weight) ||
+      (actorData.type === 'pack_animal' ? +charData.attributes.weight.value : +charData.weight) ||
       SIZE.defaultWeight[size];
     const encMod =
       (actorData.type === 'pack_animal'
-        ? +PACK_ANIMALS[actorData.data.attributes.type?.value]?.encMod
-        : +RACE[actorData.data.race]?.encModifier) || 1;
+        ? +PACK_ANIMALS[charData.attributes.type?.value]?.encMod
+        : +RACE[charData.race]?.encModifier) || 1;
     const encBodyweight = bodyweight * encMod;
 
-    const load = +actorData.data.enc || 0;
+    const load = +charData.enc || 0;
     const maxLoad = Math.floor(1.2 * encBodyweight);
     const relativeLoad = load / maxLoad;
 
-    const mv = +actorData.data.attributes.base_mv?.value || +actorData.data.attributes.mv?.value || 12;
-    const wgtMv = Math.ceil((1 - relativeLoad) * mv);
+    const mv = +charData.attributes.base_mv?.value || +charData.attributes.mv?.value || 12;
+    const wgtMv = Math.max(0, Math.ceil((1 - relativeLoad) * mv));
 
-    actorData.data.mv = wgtMv;
-    actorData.data.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
-    console.log('basemv, mv, speed', mv, wgtMv, actorData.data.speed);
+    charData.mv = wgtMv;
+    charData.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
   }
 
   _getMonsterXP(hdVal, hpMax, xpMulti) {

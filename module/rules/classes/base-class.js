@@ -1,4 +1,4 @@
-import { allAlignments } from '../alignments.js';
+import { allAlignments } from '../alignment.js';
 import { SAVES } from '../saves.js';
 import { skills, allSkills, SKILL_PROFS } from '../skills.js';
 import { FeatureConfig, features } from '../features.js';

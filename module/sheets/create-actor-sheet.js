@@ -9,7 +9,7 @@ import { sizes } from '../rules/size.js';
 import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
-import { alignmentDescriptions, minScore, allAlignments } from '../rules/alignments.js';
+import { alignmentDescriptions, minScore, allAlignments } from '../rules/alignment.js';
 import { portraits, basePath } from '../portrait.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 import { cloneItem } from '../item-helper.js';
