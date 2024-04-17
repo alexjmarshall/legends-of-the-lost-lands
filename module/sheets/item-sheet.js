@@ -25,22 +25,23 @@ export class SimpleItemSheet extends ItemSheet {
     const context = super.getData();
     EntitySheetHelper.getAttributeData(context.data);
     context.systemData = context.data.data;
+    console.log(context.systemData);
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
 
     context.showValue = context.isGM || context.data.type === 'currency';
-    const identified = context.systemData.attributes.admin?.identified.value;
-    context.identified = context.isGM || identified == null || identified === true;
+    // const identified = context.systemData.attributes.admin?.identified.value;
+    // context.identified = context.isGM || identified == null || identified === true;
 
     // hide empty and hidden groups from players
-    const isMagic = context.systemData.attributes.admin?.magic.value;
-    Object.keys(context.systemData.groups).forEach((k) => {
-      const hideMagic = context.isPlayer && !isMagic && Constant.MAGIC_GROUPS.includes(k);
-      const hideHidden = context.isPlayer && Constant.HIDDEN_GROUPS.includes(k);
-      const hideEmpty = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
-      context.systemData.groups[k].hide = hideMagic || hideHidden || hideEmpty;
-    });
+    // const isMagic = context.systemData.attributes.admin?.magic.value;
+    // Object.keys(context.systemData.groups).forEach((k) => {
+    //   const hideMagic = context.isPlayer && !isMagic && Constant.MAGIC_GROUPS.includes(k);
+    //   const hideHidden = context.isPlayer && Constant.HIDDEN_GROUPS.includes(k);
+    //   const hideEmpty = context.isPlayer && !Object.keys(context.systemData.groups[k].attributes).length;
+    //   context.systemData.groups[k].hide = hideMagic || hideHidden || hideEmpty;
+    // });
 
     context.effects = context.item.getEmbeddedCollection('ActiveEffect').contents;
     context.showEffects = context.isGM;
