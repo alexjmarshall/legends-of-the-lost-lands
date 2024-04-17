@@ -7,6 +7,8 @@ import * as ALIGNMENT from './rules/alignment.js';
 import * as ABILITIES from './rules/abilities.js';
 import * as CANVAS from './canvas.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
+import { HIT_LOCATIONS } from './rules/hit-locations.js';
+import { removeDuplicates } from './helper.js';
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -139,6 +141,9 @@ export class SimpleActor extends Actor {
     const abilities = attrs.ability_scores || {};
     this._addAbilityScoreMods(abilities);
 
+    // set removed body part locations
+    this._addRemovedLocations(charData, items);
+
     return;
 
     // const wornItems = items.filter((i) => i.data.data.worn);
@@ -162,9 +167,6 @@ export class SimpleActor extends Actor {
     //   paladin: 2,
     // };
     // const BASE_AC = 10;
-
-    // set remove body part locations
-    this._updateRemovedLocations(charData);
 
     // spell failure, skill check penalty & max dex mod // TODO go back to max dex mod from agility penalty
     const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
@@ -382,29 +384,26 @@ export class SimpleActor extends Actor {
     }
   }
 
-  // TODO test
-  _updateRemovedLocations(charData) {
-    const injuryArr = Util.getArrFromCSL(charData.injuries || '');
-    const removedLocations = injuryArr
+  _addRemovedLocations(charData, items) {
+    const injuryItems = items.filter((i) => i.type === 'injury' && i.data.data.attributes.amputation?.value === true);
+    if (!injuryItems.length) return;
+    const removedLocations = injuryItems
       .map((i) => {
-        let loc = i.toLowerCase();
-        if (!loc.includes('severed')) {
-          return null;
-        }
-        loc = loc.replace('severed', '').trim();
-        if (Object.keys(Constant.HIT_LOCATIONS).includes(loc)) {
-          return loc;
-        }
+        let loc = i.data.data.attributes.location.value?.toLowerCase();
         const side = loc.includes('right') ? 'right' : loc.includes('left') ? 'left' : null;
+        let removedLocs;
         if (!side) {
-          return null;
+          if (HIT_LOCATIONS[loc]?.bilateral) return [];
+          removedLocs = HIT_LOCATIONS[loc]?.amputated || [loc];
+        } else {
+          loc = loc.replace(side, '').trim();
+          const locs = HIT_LOCATIONS[loc]?.amputated || [loc];
+          removedLocs = locs.map((l) => `${side} ${l}`);
         }
-        const limbGroup = Constant.LIMB_GROUPS[loc.replace(side, '').trim()];
-        return limbGroup ? limbGroup.map((l) => `${side} ${l}`) : loc;
+        return removedLocs;
       })
       .flat();
-
-    charData.removedLocs = removedLocations;
+    charData.removedLocs = removeDuplicates(removedLocations);
   }
 
   _addEnc(charData, items) {
