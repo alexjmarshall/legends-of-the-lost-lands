@@ -24,10 +24,41 @@ function getClassInstance(className, lvl, origin) {
   return new actorClass(lvl, origin);
 }
 
-function addFeatures(itemData, classInstance, race, actor) {
+function addNewFeature(itemData, feature, featureItem) {
+  const featureData = cloneItem(featureItem);
+  if (feature.usesPerDay) {
+    featureData.data.attributes.uses_per_day.value = feature.usesPerDay;
+    featureData.data.attributes.uses_per_day.max = feature.usesPerDay;
+  }
+  if (feature.effectData?.changes?.length) {
+    featureData.effects = [feature.effectData];
+  }
+  itemData.create.push(featureData);
+}
+
+function updateFeature(itemData, feature, actorFeature) {
+  // no need to update if the feature doesn't have uses per day or effect data
+  if (!feature.usesPerDay && !feature.effectData?.changes?.length) {
+    return;
+  }
+  const featureData = {
+    _id: actorFeature._id,
+  };
+  if (feature.usesPerDay && feature.usesPerDay !== actorFeature.data.data.attributes.uses_per_day.value) {
+    featureData['data.attributes.uses_per_day.value'] = feature.usesPerDay;
+    featureData['data.attributes.uses_per_day.max'] = feature.usesPerDay;
+  }
+  if (feature.effectData?.changes?.length) {
+    featureData.effects = [feature.effectData];
+  }
+  itemData.update.push(featureData);
+}
+
+function addFeatures(itemData, classInstance, race, actor, removeFeatures = false) {
   const classFeatures = classInstance.features ?? [];
   const raceFeatures = race.features ?? [];
   const features = [...classFeatures, ...raceFeatures];
+  const actorFeatures = actor?.data.items.filter((i) => i.type === 'feature');
 
   for (const feature of features) {
     const featureFinder = (i) => i.type === 'feature' && i.name === feature.name;
@@ -36,25 +67,19 @@ function addFeatures(itemData, classInstance, race, actor) {
       ui.notifications.error(`Could not find ${feature.name} in game items!`);
       continue;
     }
-    // check if the actor already has this feature
-    const actorFeature = actor?.data.items.find(featureFinder);
-    // if the feature type is inherent or limited use ability, delete the old feature
-    const needsDelete = actorFeature && (!!feature.usesPerDay || !!feature.effectData?.changes?.length);
-    if (needsDelete) {
-      itemData.delete.push(actorFeature._id);
+
+    const actorFeature = actorFeatures.find(featureFinder);
+    if (actorFeature) {
+      updateFeature(itemData, feature, actorFeature);
+      continue;
     }
-    // add new feature if the actor doesn't have it or if we're deleting the old one
-    if (!actorFeature || needsDelete) {
-      const featureData = cloneItem(featureItem);
-      if (feature.usesPerDay) {
-        featureData.data.attributes.uses_per_day.value = feature.usesPerDay;
-        featureData.data.attributes.uses_per_day.max = feature.usesPerDay;
-      }
-      if (feature.effectData?.changes?.length) {
-        featureData.effects = [feature.effectData];
-      }
-      itemData.create.push(featureData);
-    }
+    addNewFeature(itemData, feature, featureItem);
+  }
+
+  if (removeFeatures) {
+    // remove any features in the actor's list that aren't in the class/race list
+    const featuresToDelete = actorFeatures.filter((i) => !features.some((f) => f.name === i.name));
+    itemData.delete.push(...featuresToDelete.map((i) => i._id));
   }
 }
 
@@ -266,6 +291,57 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
 }
 
 export async function updateLevel(actor, actorUpdates, itemUpdates) {
+  if (actorUpdates['data.lvl'] > 1) {
+    // inform the player of the level updates
+    // list the Features Gained, and the Features Improved, and Skills Improved
+    // TODO sort actor/item types in template.json in alphabetical order
+    // TODO improve ability scores based on skills improved and note here
+    const featuresGained = itemUpdates.create.map((i) => i.name);
+    const skillsImproved = Object.keys(actorUpdates['data.skills'])
+      .map((skillName) => {
+        const skill = actorUpdates['data.skills'][skillName];
+        const oldSkillLevel = actor.data._source.data.skills[skillName]?.lvl ?? 0;
+        const newSkillLevel = skill.lvl;
+        return {
+          name: skillName,
+          oldValue: oldSkillLevel,
+          newValue: newSkillLevel,
+        };
+      })
+      .filter((skill) => skill.newValue > skill.oldValue);
+
+    new Dialog({
+      title: `Level Gained`,
+      content: `
+      <p style="text-align:center;">${actor.name} grows stronger...</p>
+      <p>Level: ${actorUpdates['data.lvl']}</p>
+      <p>HP: +${actorUpdates['data.hp.max'] - actor.data._source.data.hp.max}</p>
+      ${
+        featuresGained.length
+          ? `<p>Features:</p>
+      <ul>
+        ${featuresGained.map((f) => `<li>${f}</li>`).join('')}
+      </ul>`
+          : ''
+      }
+      ${
+        skillsImproved.length
+          ? `<p>Skills:</p>
+      <ul>
+        ${skillsImproved.map((s) => `<li>${s.name}: ${s.oldValue} > ${s.newValue}</li>`).join('')}
+      </ul>`
+          : ''
+      }
+    `,
+      buttons: {
+        one: {
+          icon: '<i class="fas fa-check"></i>',
+          label: 'OK',
+        },
+      },
+    }).render(true);
+  }
+
   await actor.update(actorUpdates);
   if (itemUpdates.delete.length > 0) {
     await actor.deleteEmbeddedDocuments('Item', itemUpdates.delete);
