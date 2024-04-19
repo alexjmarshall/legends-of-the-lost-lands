@@ -9,7 +9,7 @@ import { sizes } from '../rules/size.js';
 import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
 import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
-import { alignmentDescriptions, minScore, allAlignments } from '../rules/alignment.js';
+import { alignmentDescriptions, minScore, alignmentByScore, allAlignments } from '../rules/alignment.js';
 import { portraits, basePath } from '../portrait.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
 import { cloneItem } from '../item-helper.js';
@@ -626,7 +626,8 @@ export class CreateActorSheet extends ActorSheet {
 
     // Select-alignment changes
     alignmentSelect.change((event) => {
-      const alignment = event.target.value;
+      const alignmentScore = event.target.value;
+      const alignment = alignmentByScore(alignmentScore);
       // update alignment description
       const alignmentDescription = alignmentDescriptions[alignment];
       html.find('div.alignment-description').text(alignmentDescription);
@@ -768,7 +769,7 @@ export class CreateActorSheet extends ActorSheet {
     };
     // confirm with user
     confirmDialog(
-      'Confirm Character Creation',
+      'Create Character',
       `Are you sure you want to create ${formData.name || 'this character'} and begin the game?`,
       yesCallback
     );
