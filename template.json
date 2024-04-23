@@ -1,6 +1,6 @@
 {
   "Actor": {
-    "types": ["character", "humanoid", "monster", "pack_animal", "storage", "merchant", "party"],
+    "types": ["character", "humanoid", "merchant", "monster", "pack_animal", "party", "storage"],
     "templates": {
       "props": {
         "description": "",
@@ -1286,6 +1286,55 @@
     "humanoid": {
       "templates": ["props", "actor", "humanoid", "monster", "resistances", "languages"]
     },
+    "merchant": {
+      "templates": ["props"],
+      "groups": {
+        "trade_goods": {
+          "dtype": "String",
+          "label": "Trade Goods"
+        }
+      },
+      "attributes": {
+        "trade_goods": {
+          "demand": {
+            "dtype": "String",
+            "group": "trade_goods",
+            "label": "Demand",
+            "value": ""
+          },
+          "surplus": {
+            "dtype": "String",
+            "group": "trade_goods",
+            "label": "Surplus",
+            "value": ""
+          }
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": ""
+        },
+        "buy_factor": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Buy Price Factor",
+          "value": 0.8
+        },
+        "sell_factor": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Sell Price Factor",
+          "value": 1.2
+        },
+        "money": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Money (CPs)",
+          "value": 24000
+        }
+      }
+    },
     "monster": {
       "templates": ["props", "actor", "monster", "resistances", "languages"],
       "attributes": {
@@ -1382,72 +1431,6 @@
         }
       }
     },
-    "storage": {
-      "templates": ["props"],
-      "attributes": {
-        "wgt_limit": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Weight Limit",
-          "value": 50
-        },
-        "item_type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Item Type",
-          "value": "any"
-        }
-      }
-    },
-    "merchant": {
-      "templates": ["props"],
-      "groups": {
-        "trade_goods": {
-          "dtype": "String",
-          "label": "Trade Goods"
-        }
-      },
-      "attributes": {
-        "trade_goods": {
-          "demand": {
-            "dtype": "String",
-            "group": "trade_goods",
-            "label": "Demand",
-            "value": ""
-          },
-          "surplus": {
-            "dtype": "String",
-            "group": "trade_goods",
-            "label": "Surplus",
-            "value": ""
-          }
-        },
-        "type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Type",
-          "value": ""
-        },
-        "buy_factor": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Buy Price Factor",
-          "value": 0.8
-        },
-        "sell_factor": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Sell Price Factor",
-          "value": 1.2
-        },
-        "money": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Money (CPs)",
-          "value": 24000
-        }
-      }
-    },
     "party": {
       "templates": ["props"],
       "attributes": {
@@ -1470,38 +1453,55 @@
           "value": 10
         }
       }
+    },
+    "storage": {
+      "templates": ["props"],
+      "attributes": {
+        "wgt_limit": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Weight Limit",
+          "value": 50
+        },
+        "item_type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Item Type",
+          "value": "any"
+        }
+      }
     }
   },
   "Item": {
     "types": [
       "item",
-      "storage",
-      "container",
-      "scroll",
       "armor",
-      "helmet",
-      "clothing",
-      "gem",
-      "trade_good",
-      "food",
-      "recipe",
-      "herb",
-      "rune",
-      "jewelry",
-      "shield",
-      "melee_weapon",
-      "missile_weapon",
       "bow",
-      "missile",
+      "clothing",
+      "container",
       "currency",
-      "spell",
+      "disease",
       "feature",
-      "natural_weapon",
-      "natural_missile_weapon",
+      "food",
+      "gem",
       "grappling_maneuver",
+      "helmet",
       "hit_location",
+      "ingredient",
       "injury",
-      "disease"
+      "jewelry",
+      "melee_weapon",
+      "missile",
+      "missile_weapon",
+      "natural_missile_weapon",
+      "natural_weapon",
+      "recipe",
+      "rune",
+      "scroll",
+      "shield",
+      "spell",
+      "storage",
+      "trade_good"
     ],
     "templates": {
       "props": {
@@ -1782,80 +1782,6 @@
     "item": {
       "templates": ["props", "item"]
     },
-    "storage": {
-      "templates": ["props", "item"],
-      "attributes": {
-        "admin": {
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": false
-          }
-        },
-        "linked_actor": {
-          "dtype": "String",
-          "group": "",
-          "label": "Linked Actor",
-          "value": ""
-        },
-        "load_red_factor": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Load Reduction Factor",
-          "value": 1
-        },
-        "base_weight": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Base Weight",
-          "value": 1
-        },
-        "max_weight": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Max. Weight",
-          "value": 50
-        }
-      }
-    },
-    "container": {
-      "templates": ["props", "item", "container"]
-    },
-    "scroll": {
-      "templates": ["props", "item"],
-      "macro": "",
-      "attributes": {
-        "material": {
-          "dtype": "String",
-          "group": "",
-          "label": "Material",
-          "value": "parchment"
-        },
-        "spell": {
-          "dtype": "String",
-          "group": "",
-          "label": "Spell",
-          "value": ""
-        },
-        "admin": {
-          "learn_successes": {
-            "dtype": "Resource",
-            "group": "admin",
-            "label": "Learn Spell Successes",
-            "value": 0,
-            "min": 0,
-            "max": 1
-          },
-          "learn_failures": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Learn Spell Failures",
-            "value": 0
-          }
-        }
-      }
-    },
     "armor": {
       "templates": ["props", "item", "garment"],
       "attributes": {
@@ -1873,26 +1799,20 @@
         }
       }
     },
-    "helmet": {
-      "templates": ["props", "item", "garment"],
+    "bow": {
+      "templates": ["props", "item", "weapon", "missile_weapon"],
       "attributes": {
-        "coverage": {
-          "dtype": "String",
+        "str_mod": {
+          "dtype": "Number",
           "group": "",
-          "label": "Coverage",
-          "value": "skull"
+          "label": "Strength Required for Full Draw",
+          "value": 0
         },
-        "fixed": {
-          "dtype": "Boolean",
-          "group": "helmet",
-          "label": "Fixed",
-          "value": false
-        },
-        "closed": {
-          "dtype": "Boolean",
-          "group": "helmet",
-          "label": "Closed",
-          "value": false
+        "dmg_bonus": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Full Draw Damage Bonus",
+          "value": 0
         }
       }
     },
@@ -1915,24 +1835,10 @@
         }
       }
     },
-    "gem": {
-      "templates": ["props", "item"],
-      "attributes": {
-        "type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Type",
-          "value": "semi-precious"
-        },
-        "quality": {
-          "dtype": "String",
-          "group": "",
-          "label": "Quality",
-          "value": "B"
-        }
-      }
+    "container": {
+      "templates": ["props", "item", "container"]
     },
-    "trade_good": {
+    "currency": {
       "templates": ["props", "item"],
       "attributes": {
         "admin": {
@@ -1941,19 +1847,87 @@
             "group": "admin",
             "label": "Holdable",
             "value": false
+          },
+          "treasure": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Treasure",
+            "value": true
           }
-        },
-        "type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Type",
-          "value": "cloth"
         },
         "material": {
           "dtype": "String",
           "group": "",
           "label": "Material",
-          "value": "wool"
+          "value": "silver"
+        },
+        "purity": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Purity",
+          "value": 1
+        }
+      }
+    },
+    "disease": {
+      "templates": ["props"],
+      "attributes": {
+        "symptoms": {
+          "dtype": "String",
+          "group": "",
+          "label": "Symptoms",
+          "value": ""
+        },
+        "virulence": {
+          "dtype": "String",
+          "group": "",
+          "label": "Virulence",
+          "value": "d4"
+        },
+        "incubation_period": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Incubation Period (Days)",
+          "value": 1
+        },
+        "damage_interval": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Damage Interval (Days)",
+          "value": 1
+        },
+        "admin": {
+          "confirmed": {
+            "dtype": "Boolean",
+            "group": "",
+            "label": "Confirmed",
+            "value": false
+          }
+        }
+      }
+    },
+    "feature": {
+      "templates": ["props"],
+      "attributes": {
+        "source": {
+          "dtype": "String",
+          "group": "",
+          "label": "Source",
+          "value": "class"
+        },
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "inherent"
+        },
+        "uses_per_day": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Uses Per Day",
+          "min": 0,
+          "value": 0,
+          "max": 0
         }
       }
     },
@@ -1991,7 +1965,148 @@
         }
       }
     },
-    "herb": {
+    "gem": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "semi-precious"
+        },
+        "quality": {
+          "dtype": "String",
+          "group": "",
+          "label": "Quality",
+          "value": "B"
+        }
+      }
+    },
+    "grappling_maneuver": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
+      "attributes": {
+        "req_status": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Status",
+          "value": ""
+        },
+        "inflicts_status": {
+          "dtype": "String",
+          "group": "",
+          "label": "Inflicts Status",
+          "value": ""
+        },
+        "check_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Check Mod.",
+          "value": 0
+        }
+      }
+    },
+    "helmet": {
+      "templates": ["props", "item", "garment"],
+      "attributes": {
+        "coverage": {
+          "dtype": "String",
+          "group": "",
+          "label": "Coverage",
+          "value": "skull"
+        },
+        "ac_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "AC Mod.",
+          "value": 0
+        },
+        "fixed": {
+          "dtype": "Boolean",
+          "group": "helmet",
+          "label": "Fixed",
+          "value": false
+        },
+        "closed": {
+          "dtype": "Boolean",
+          "group": "helmet",
+          "label": "Closed",
+          "value": false
+        }
+      }
+    },
+    "hit_location": {
+      "templates": ["props"],
+      "hp": {
+        "value": 10,
+        "min": 0,
+        "max": 10
+      },
+      "attributes": {
+        "admin": {
+          "use_loc_hp": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Use Location HP",
+            "value": false
+          },
+          "apply_main_hp": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Apply Damage to Main HP",
+            "value": true
+          },
+          "hit_weight": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Hit Weight",
+            "value": 10
+          },
+          "dmg_multi": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Impale Damage Multiplier",
+            "value": 1
+          },
+          "crit_chance_multi": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Crit. Chance Multiplier",
+            "value": 1
+          },
+          "max_impale": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Max. Impale",
+            "value": 2
+          },
+          "injury_desc": {
+            "dtype": "String",
+            "group": "admin",
+            "label": "Injury Description",
+            "value": ""
+          }
+        },
+        "name": {
+          "dtype": "String",
+          "group": "",
+          "label": "Name",
+          "value": ""
+        },
+        "ac": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Armor Class",
+          "value": 10
+        },
+        "hide": {
+          "dtype": "String",
+          "group": "",
+          "label": "Hide",
+          "value": ""
+        }
+      }
+    },
+    "ingredient": {
       "templates": ["props", "item"],
       "attributes": {
         "rarity": {
@@ -1999,52 +2114,63 @@
           "group": "",
           "label": "Rarity",
           "value": "common"
-        },
-        "terrain": {
-          "dtype": "String",
-          "group": "",
-          "label": "Terrain",
-          "value": "grassland"
         }
       }
     },
-    "recipe": {
+    "injury": {
       "templates": ["props"],
       "attributes": {
-        "skill": {
-          "dtype": "String",
+        "severity": {
+          "dtype": "Resource",
           "group": "",
-          "label": "Skill",
-          "value": "herbalism"
+          "label": "Severity",
+          "min": 0,
+          "value": 1,
+          "max": 1
         },
-        "time": {
+        "location": {
           "dtype": "String",
           "group": "",
-          "label": "Time",
-          "value": "4d6 minutes"
-        },
-        "ingredients": {
-          "dtype": "String",
-          "group": "",
-          "label": "Required Ingredient(s)",
+          "label": "Location",
           "value": ""
         },
-        "tool": {
+        "bleeding": {
           "dtype": "String",
           "group": "",
-          "label": "Required Tool(s)",
-          "value": ""
-        }
-      }
-    },
-    "rune": {
-      "templates": ["props"],
-      "attributes": {
-        "prereqs": {
+          "label": "Bleeding",
+          "value": "none"
+        },
+        "wound": {
           "dtype": "String",
           "group": "",
-          "label": "Prerequisites",
-          "value": ""
+          "label": "Wound",
+          "value": "closed"
+        },
+        "healed": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Healed",
+          "value": false
+        },
+        "amputation": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Amputation",
+          "value": false
+        },
+        "admin": {
+          "healing_mod": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Healing Mod.",
+            "value": 0
+          },
+          "heal_failures": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Healing Failures",
+            "value": 0
+          }
         }
       }
     },
@@ -2058,18 +2184,6 @@
             "label": "Wearable",
             "value": true
           }
-        }
-      }
-    },
-    "shield": {
-      "templates": ["props", "item", "garment"],
-      "held_height": "mid",
-      "attributes": {
-        "shape": {
-          "dtype": "String",
-          "group": "",
-          "label": "Shape",
-          "value": "round"
         }
       }
     },
@@ -2174,26 +2288,6 @@
         }
       }
     },
-    "missile_weapon": {
-      "templates": ["props", "item", "weapon", "missile_weapon"]
-    },
-    "bow": {
-      "templates": ["props", "item", "weapon", "missile_weapon"],
-      "attributes": {
-        "str_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Strength Required for Full Draw",
-          "value": 0
-        },
-        "dmg_bonus": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Full Draw Damage Bonus",
-          "value": 0
-        }
-      }
-    },
     "missile": {
       "templates": ["props", "item", "magic_dmg", "container"],
       "attributes": {
@@ -2249,34 +2343,156 @@
         }
       }
     },
-    "currency": {
-      "templates": ["props", "item"],
+    "missile_weapon": {
+      "templates": ["props", "item", "weapon", "missile_weapon"]
+    },
+    "natural_missile_weapon": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
       "attributes": {
-        "admin": {
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": false
-          },
-          "treasure": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Treasure",
-            "value": true
-          }
+        "range": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Range (ft.)",
+          "value": 60
         },
+        "rof": {
+          "dtype": "String",
+          "group": "",
+          "label": "Rate of Fire",
+          "value": "1"
+        },
+        "impact": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impact",
+          "value": 0
+        },
+        "dmg_type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Damage Type",
+          "value": "P"
+        }
+      }
+    },
+    "natural_weapon": {
+      "templates": ["props", "natural_weapon", "magic_dmg"],
+      "attributes": {
+        "atk_modes": {
+          "dtype": "String",
+          "group": "",
+          "label": "Attack Modes",
+          "value": "swi(S)"
+        },
+        "to_hit_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "To-Hit Mod.",
+          "value": 0
+        },
+        "impact": {
+          "dtype": "String",
+          "group": "",
+          "label": "Impact",
+          "value": "d8"
+        },
+        "speed": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Speed",
+          "value": 0
+        },
+        "reach": {
+          "dtype": "String",
+          "group": "",
+          "label": "Reach",
+          "value": "G/1"
+        }
+      }
+    },
+    "recipe": {
+      "templates": ["props"],
+      "attributes": {
+        "skill": {
+          "dtype": "String",
+          "group": "",
+          "label": "Skill",
+          "value": "herbalism"
+        },
+        "time": {
+          "dtype": "String",
+          "group": "",
+          "label": "Time",
+          "value": "4d6 minutes"
+        },
+        "ingredients": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Ingredient(s)",
+          "value": ""
+        },
+        "tool": {
+          "dtype": "String",
+          "group": "",
+          "label": "Required Tool(s)",
+          "value": ""
+        }
+      }
+    },
+    "rune": {
+      "templates": ["props"],
+      "attributes": {
+        "prereqs": {
+          "dtype": "String",
+          "group": "",
+          "label": "Prerequisites",
+          "value": ""
+        }
+      }
+    },
+    "scroll": {
+      "templates": ["props", "item"],
+      "macro": "",
+      "attributes": {
         "material": {
           "dtype": "String",
           "group": "",
           "label": "Material",
-          "value": "silver"
+          "value": "parchment"
         },
-        "purity": {
-          "dtype": "Number",
+        "spell": {
+          "dtype": "String",
           "group": "",
-          "label": "Purity",
-          "value": 1
+          "label": "Spell",
+          "value": ""
+        },
+        "admin": {
+          "learn_successes": {
+            "dtype": "Resource",
+            "group": "admin",
+            "label": "Learn Spell Successes",
+            "value": 0,
+            "min": 0,
+            "max": 1
+          },
+          "learn_failures": {
+            "dtype": "Number",
+            "group": "admin",
+            "label": "Learn Spell Failures",
+            "value": 0
+          }
+        }
+      }
+    },
+    "shield": {
+      "templates": ["props", "item", "garment"],
+      "held_height": "mid",
+      "attributes": {
+        "shape": {
+          "dtype": "String",
+          "group": "",
+          "label": "Shape",
+          "value": "round"
         }
       }
     },
@@ -2341,281 +2557,65 @@
         }
       }
     },
-    "feature": {
-      "templates": ["props"],
+    "storage": {
+      "templates": ["props", "item"],
       "attributes": {
-        "source": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          }
+        },
+        "linked_actor": {
           "dtype": "String",
           "group": "",
-          "label": "Source",
-          "value": "class"
+          "label": "Linked Actor",
+          "value": ""
+        },
+        "load_red_factor": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Load Reduction Factor",
+          "value": 1
+        },
+        "base_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Base Weight",
+          "value": 1
+        },
+        "max_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Max. Weight",
+          "value": 50
+        }
+      }
+    },
+    "trade_good": {
+      "templates": ["props", "item"],
+      "attributes": {
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          }
         },
         "type": {
           "dtype": "String",
           "group": "",
           "label": "Type",
-          "value": "inherent"
+          "value": "cloth"
         },
-        "uses_per_day": {
-          "dtype": "Resource",
-          "group": "",
-          "label": "Uses Per Day",
-          "min": 0,
-          "value": 0,
-          "max": 0
-        }
-      }
-    },
-    "natural_weapon": {
-      "templates": ["props", "natural_weapon", "magic_dmg"],
-      "attributes": {
-        "atk_modes": {
+        "material": {
           "dtype": "String",
           "group": "",
-          "label": "Attack Modes",
-          "value": "swi(S)"
-        },
-        "to_hit_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "To-Hit Mod.",
-          "value": 0
-        },
-        "impact": {
-          "dtype": "String",
-          "group": "",
-          "label": "Impact",
-          "value": "d8"
-        },
-        "speed": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Speed",
-          "value": 0
-        },
-        "reach": {
-          "dtype": "String",
-          "group": "",
-          "label": "Reach",
-          "value": "G/1"
-        }
-      }
-    },
-    "natural_missile_weapon": {
-      "templates": ["props", "natural_weapon", "magic_dmg"],
-      "attributes": {
-        "range": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Range (ft.)",
-          "value": 60
-        },
-        "rof": {
-          "dtype": "String",
-          "group": "",
-          "label": "Rate of Fire",
-          "value": "1"
-        },
-        "impact": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Impact",
-          "value": 0
-        },
-        "dmg_type": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage Type",
-          "value": "P"
-        }
-      }
-    },
-    "grappling_maneuver": {
-      "templates": ["props", "natural_weapon", "magic_dmg"],
-      "attributes": {
-        "req_status": {
-          "dtype": "String",
-          "group": "",
-          "label": "Required Status",
-          "value": ""
-        },
-        "inflicts_status": {
-          "dtype": "String",
-          "group": "",
-          "label": "Inflicts Status",
-          "value": ""
-        },
-        "check_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Check Mod.",
-          "value": 0
-        }
-      }
-    },
-    "hit_location": {
-      "templates": ["props"],
-      "hp": {
-        "value": 10,
-        "min": 0,
-        "max": 10
-      },
-      "attributes": {
-        "admin": {
-          "use_loc_hp": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Use Location HP",
-            "value": false
-          },
-          "apply_main_hp": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Apply Damage to Main HP",
-            "value": true
-          },
-          "hit_weight": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Hit Weight",
-            "value": 10
-          },
-          "dmg_multi": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Impale Damage Multiplier",
-            "value": 1
-          },
-          "crit_chance_multi": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Crit. Chance Multiplier",
-            "value": 1
-          },
-          "max_impale": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Max. Impale",
-            "value": 2
-          },
-          "injury_desc": {
-            "dtype": "String",
-            "group": "admin",
-            "label": "Injury Description",
-            "value": ""
-          }
-        },
-        "name": {
-          "dtype": "String",
-          "group": "",
-          "label": "Name",
-          "value": ""
-        },
-        "ac": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Class",
-          "value": 10
-        },
-        "hide": {
-          "dtype": "String",
-          "group": "",
-          "label": "Hide",
-          "value": ""
-        }
-      }
-    },
-    "injury": {
-      "templates": ["props"],
-      "attributes": {
-        "severity": {
-          "dtype": "Resource",
-          "group": "",
-          "label": "Severity",
-          "min": 0,
-          "value": 1,
-          "max": 1
-        },
-        "location": {
-          "dtype": "String",
-          "group": "",
-          "label": "Location",
-          "value": ""
-        },
-        "bleeding": {
-          "dtype": "String",
-          "group": "",
-          "label": "Bleeding",
-          "value": "none"
-        },
-        "wound": {
-          "dtype": "String",
-          "group": "",
-          "label": "Wound",
-          "value": "closed"
-        },
-        "healed": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Healed",
-          "value": false
-        },
-        "amputation": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Amputation",
-          "value": false
-        },
-        "admin": {
-          "healing_mod": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Healing Mod.",
-            "value": 0
-          },
-          "heal_failures": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Healing Failures",
-            "value": 0
-          }
-        }
-      }
-    },
-    "disease": {
-      "templates": ["props"],
-      "attributes": {
-        "symptoms": {
-          "dtype": "String",
-          "group": "",
-          "label": "Symptoms",
-          "value": ""
-        },
-        "virulence": {
-          "dtype": "String",
-          "group": "",
-          "label": "Virulence",
-          "value": "d4"
-        },
-        "incubation_period": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Incubation Period (Days)",
-          "value": 1
-        },
-        "damage_interval": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Damage Interval (Days)",
-          "value": 1
-        },
-        "admin": {
-          "confirmed": {
-            "dtype": "Boolean",
-            "group": "",
-            "label": "Confirmed",
-            "value": false
-          }
+          "label": "Material",
+          "value": "wool"
         }
       }
     }
