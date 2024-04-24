@@ -67,29 +67,29 @@ export class Human extends BaseRace {
       case CLASS.Cleric.name:
       case CLASS.Druid.name:
       case CLASS.CloisteredCleric.name:
-        return 18 + rollDice('d4');
+        return 20 + rollDice('d4');
       case CLASS.Fighter.name:
       case CLASS.Berserker.name:
-        return 15 + rollDice('d4');
+        return 17 + rollDice('d4');
       case CLASS.Paladin.name:
       case CLASS.Inquisitor.name:
       case CLASS.Runepriest.name:
-        return 17 + rollDice('d4');
+        return 19 + rollDice('d4');
       case CLASS.Ranger.name:
       case CLASS.VampireHunter.name:
-        return 20 + rollDice('d4');
+        return 23 + rollDice('d4');
       case CLASS.Thief.name:
       case CLASS.Swashbuckler.name:
         return 18 + rollDice('d4');
       case CLASS.Assassin.name:
         return 20 + rollDice('d4');
       case CLASS.Barbarian.name:
-        return 14 + rollDice('d4');
+        return 15 + rollDice('d4');
       case CLASS.Mage.name:
       case CLASS.Incantatrix.name:
         return 20 + rollDice('2d6');
       default:
-        return 16 + rollDice('d4');
+        return 17 + rollDice('d4');
     }
   }
 
