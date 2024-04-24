@@ -1,7 +1,7 @@
 import * as CLASSES from './rules/classes/index.js';
 import * as RACES from './rules/races/index.js';
 import { cloneItem } from './item-helper.js';
-import { getAdvancementPointsRequired } from './rules/skills.js';
+import { getAdvancementPointsRequired, skills } from './rules/skills.js';
 import { getExtraLanguages } from './rules/languages.js';
 import { getClericSpellsKnown, getDruidSpellsKnown, getStartingMagicSpellsKnown, SPELL_TYPES } from './rules/spells.js';
 import { getStartingRunesKnown } from './rules/runes.js';
@@ -290,13 +290,58 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   };
 }
 
+function addImprovedAbilityScores(actorUpdates, actor, skillsImproved) {
+  const abilityScoresImproved = {};
+
+  for (const [ability, score] of Object.entries(actor.data.data.attributes.ability_scores)) {
+    abilityScoresImproved[ability] = {
+      oldValue: score.value,
+      newValue: score.value,
+      skillsIncreases: 0,
+    };
+  }
+
+  // count number of skill improvements for each ability
+  for (const skill of skillsImproved) {
+    const ability = skills[skill.name]?.ability;
+    if (!ability) {
+      continue;
+    }
+    abilityScoresImproved[ability].skillsIncreases += skill.newValue - skill.oldValue;
+  }
+
+  // improve ability scores based on skill improvements
+  for (const [ability, { oldValue, skillsIncreases }] of Object.entries(abilityScoresImproved)) {
+    const chanceImprove = 1 - Math.pow(0.5, skillsIncreases);
+
+    // improve score if chanceImprove is met and a d20 roll is equal or greater than the old value
+    if (Math.random() < chanceImprove && rollDice('d20') >= oldValue) {
+      const newValue = oldValue + 1;
+      abilityScoresImproved[ability].newValue = newValue;
+      actorUpdates[`data.attributes.ability_scores.${ability}.value`] = newValue;
+    }
+  }
+
+  // return only the ability scores that were improved
+  return Object.entries(abilityScoresImproved)
+    .map(([ability, { oldValue, newValue }]) => ({
+      name: ability,
+      oldValue,
+      newValue,
+    }))
+    .filter(({ oldValue, newValue }) => newValue > oldValue);
+}
+
 export async function updateLevel(actor, actorUpdates, itemUpdates) {
   if (actorUpdates['data.lvl'] > 1) {
     // inform the player of the level updates
-    // list the Features Gained, and the Features Improved, and Skills Improved
-    // TODO sort actor/item types in template.json in alphabetical order
-    // TODO improve ability scores based on skills improved and note here
+    // TEST
+    // TODO increase starting ages
+    // TODO split max hp into base max hp and derived attribute which adds con mod x level
+    // fatigue damage affects CON not max HP
+    // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor
     const featuresGained = itemUpdates.create.map((i) => i.name);
+
     const skillsImproved = Object.keys(actorUpdates['data.skills'])
       .map((skillName) => {
         const skill = actorUpdates['data.skills'][skillName];
@@ -309,6 +354,8 @@ export async function updateLevel(actor, actorUpdates, itemUpdates) {
         };
       })
       .filter((skill) => skill.newValue > skill.oldValue);
+
+    const abilityScoresImproved = addImprovedAbilityScores(actorUpdates, actor, skillsImproved);
 
     new Dialog({
       title: `Level Gained`,
@@ -329,6 +376,14 @@ export async function updateLevel(actor, actorUpdates, itemUpdates) {
           ? `<p>Skills:</p>
       <ul>
         ${skillsImproved.map((s) => `<li>${s.name}: ${s.oldValue} > ${s.newValue}</li>`).join('')}
+      </ul>`
+          : ''
+      }
+      ${
+        abilityScoresImproved.length
+          ? `<p>Ability Scores:</p>
+      <ul> 
+        ${abilityScoresImproved.map((a) => `<li>${a.name}: ${a.oldValue} > ${a.newValue}</li>`).join('')}
       </ul>`
           : ''
       }
