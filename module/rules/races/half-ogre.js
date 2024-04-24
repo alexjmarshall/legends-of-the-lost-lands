@@ -62,15 +62,15 @@ export class HalfOgre extends BaseRace {
   static randomStartingAge(Class) {
     switch (Class) {
       case CLASS.Fighter.name:
-        return 15 + rollDice('d4');
+        return 16 + rollDice('d4');
       case CLASS.Cleric.name:
         return 20 + rollDice('d4');
       case CLASS.Thief.name:
         return 18 + rollDice('d4');
       case CLASS.Barbarian.name:
-        return 14 + rollDice('d4');
-      default:
         return 15 + rollDice('d4');
+      default:
+        return 16 + rollDice('d4');
     }
   }
 
