@@ -334,9 +334,6 @@ function addImprovedAbilityScores(actorUpdates, actor, skillsImproved) {
 
 export async function updateLevel(actor, actorUpdates, itemUpdates) {
   if (actorUpdates['data.lvl'] > 1) {
-    // inform the player of the level updates
-    // TEST
-    // TODO increase starting ages
     // TODO split max hp into base max hp and derived attribute which adds con mod x level
     // fatigue damage affects CON not max HP
     // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor

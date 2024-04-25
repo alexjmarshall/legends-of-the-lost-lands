@@ -53,7 +53,7 @@ const { STR, INT, WIS, DEX, CON, CHA } = ABILITIES;
  * @param {number} lvl - The target level for which you want to calculate the advancement points.
  * @returns {number} The advancement points required to reach the specified level.
  */
-export const getAdvancementPointsRequired = (lvl) => Math.max(1000, Number(lvl) * 1000);
+export const getAdvancementPointsRequired = (lvl) => Math.max(1000, (Number(lvl) + 1) * 1000);
 
 /**
  * Calculates the advancement points per use based on the given parameters.
