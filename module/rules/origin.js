@@ -33,7 +33,7 @@ export const origins = deepFreeze({
     startingWealth: () => rollDice('1d6') * 10,
   },
   [ORIGINS.URCHIN]: {
-    description: 'You grew up a homeless street child, learning to survive by any means necessary.',
+    description: 'You grew up on the streets, learning to survive by any means necessary.',
     skills: [SKILLS.INTIMIDATION, SKILLS.DECEPTION, SKILLS.SNEAKING, SKILLS.HAND_TO_HAND],
     hpBonus: 2,
     startingSp: '1d6 x 10',
@@ -147,7 +147,7 @@ export const origins = deepFreeze({
     startingWealth: () => rollDice('4d6') * 10,
   },
   [ORIGINS.COURTIER]: {
-    description: 'You were an attendant in a noble court, learning to navigate the intrigues of court life.',
+    description: 'You were an attendant at court, learning to navigate the intrigues of the nobility.',
     skills: [SKILLS.CALLIGRAPHY, SKILLS.PERSUASION, SKILLS.ETIQUETTE, SKILLS.FORGERY],
     hpBonus: -1,
     startingSp: '4d6 x 10',
