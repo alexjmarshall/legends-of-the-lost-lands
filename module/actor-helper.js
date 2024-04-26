@@ -2,6 +2,7 @@ import * as CLASSES from './rules/classes/index.js';
 import * as RACES from './rules/races/index.js';
 import { cloneItem } from './item-helper.js';
 import { getAdvancementPointsRequired, skills } from './rules/skills.js';
+import { getScoreMod } from './rules/abilities.js';
 import { getExtraLanguages } from './rules/languages.js';
 import { getClericSpellsKnown, getDruidSpellsKnown, getStartingMagicSpellsKnown, SPELL_TYPES } from './rules/spells.js';
 import { getStartingRunesKnown } from './rules/runes.js';
@@ -232,10 +233,12 @@ const addXp = (actorData, formData, actorUpdates, classInstance, actorRace) => {
 
 const addHpAndFp = (actorData, actorUpdates, classInstance) => {
   const rolledHp = rollDice(`${classInstance.thisLevelHp}`);
-  actorUpdates['data.hp.max'] = actorData.hp.max + rolledHp;
-  actorUpdates['data.hp.value'] = actorData.hp.value + rolledHp;
-  actorUpdates['data.fp.max'] = actorData.fp.max + rolledHp;
-  actorUpdates['data.fp.value'] = actorData.fp.value + rolledHp;
+  const conMod = getConMod(actorData, actorUpdates);
+  const baseMaxHpUpdate = Math.max(1 - conMod, rolledHp); // minimum so that con mod doesn't reduce hp
+  actorUpdates['data.hp.base_max'] = actorData.hp.max + baseMaxHpUpdate;
+  actorUpdates['data.hp.value'] = actorData.hp.value + baseMaxHpUpdate + conMod;
+  actorUpdates['data.fp.max'] = actorData.fp.max + baseMaxHpUpdate + conMod;
+  actorUpdates['data.fp.value'] = actorData.fp.value + baseMaxHpUpdate + conMod;
 };
 
 const addSaves = (actorUpdates, classInstance) => {
@@ -265,12 +268,12 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   };
 
   addXp(actorData, formData, actorUpdates, classInstance, actorRace);
-  addSkills(actorUpdates, actor, classInstance);
   addSaves(actorUpdates, classInstance);
+  addSkills(actorUpdates, actor, classInstance);
 
-  // update HP & FP if the character is past first level and incrementing level
   if (lvl > 1 && lvl === actorData.lvl + 1) {
     addHpAndFp(actorData, actorUpdates, classInstance);
+    addAbilityScores(actorUpdates['data.skills'], actor);
   }
 
   // add starting languages, recipes and runes if the character is being created
@@ -290,18 +293,18 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   };
 }
 
-function addImprovedAbilityScores(actorUpdates, actor, skillsImproved) {
+function addAbilityScores(skillUpdates, actor) {
   const abilityScoresImproved = {};
 
-  for (const [ability, score] of Object.entries(actor.data.data.attributes.ability_scores)) {
+  for (const [ability, score] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
     abilityScoresImproved[ability] = {
       oldValue: score.value,
-      newValue: score.value,
       skillsIncreases: 0,
     };
   }
 
   // count number of skill improvements for each ability
+  const skillsImproved = getSkillsImproved(skillUpdates, actor);
   for (const skill of skillsImproved) {
     const ability = skills[skill.name]?.ability;
     if (!ability) {
@@ -317,49 +320,81 @@ function addImprovedAbilityScores(actorUpdates, actor, skillsImproved) {
     // improve score if chanceImprove is met and a d20 roll is equal or greater than the old value
     if (Math.random() < chanceImprove && rollDice('d20') >= oldValue) {
       const newValue = oldValue + 1;
-      abilityScoresImproved[ability].newValue = newValue;
       actorUpdates[`data.attributes.ability_scores.${ability}.value`] = newValue;
     }
   }
-
-  // return only the ability scores that were improved
-  return Object.entries(abilityScoresImproved)
-    .map(([ability, { oldValue, newValue }]) => ({
-      name: ability,
-      oldValue,
-      newValue,
-    }))
-    .filter(({ oldValue, newValue }) => newValue > oldValue);
 }
 
-export async function updateLevel(actor, actorUpdates, itemUpdates) {
-  if (actorUpdates['data.lvl'] > 1) {
-    // TODO split max hp into base max hp and derived attribute which adds con mod x level
-    // fatigue damage affects CON not max HP
-    // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor
-    const featuresGained = itemUpdates.create.map((i) => i.name);
+function getSkillsImproved(skillUpdates, actor) {
+  const skillsImproved = [];
 
-    const skillsImproved = Object.keys(actorUpdates['data.skills'])
-      .map((skillName) => {
-        const skill = actorUpdates['data.skills'][skillName];
-        const oldSkillLevel = actor.data._source.data.skills[skillName]?.lvl ?? 0;
-        const newSkillLevel = skill.lvl;
-        return {
-          name: skillName,
-          oldValue: oldSkillLevel,
-          newValue: newSkillLevel,
-        };
-      })
-      .filter((skill) => skill.newValue > skill.oldValue);
+  for (const [skillName, skill] of Object.entries(skillUpdates)) {
+    const oldValue = actor.data._source.data.skills[skillName]?.lvl || 0;
+    const newValue = skill.lvl;
+    if (oldValue < newValue) {
+      skillsImproved.push({
+        name: skillName,
+        oldValue,
+        newValue,
+      });
+    }
+  }
 
-    const abilityScoresImproved = addImprovedAbilityScores(actorUpdates, actor, skillsImproved);
+  return skillsImproved;
+}
 
-    new Dialog({
-      title: `Level Gained`,
-      content: `
+function getAbilityScoresImproved(actorUpdates, actor) {
+  const abilityScoresImproved = [];
+
+  for (const [ability, score] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
+    const oldValue = score.value;
+    const newValue = actorUpdates[`data.attributes.ability_scores.${ability}.value`] ?? oldValue;
+    if (oldValue < newValue) {
+      abilityScoresImproved.push({
+        name: ability,
+        oldValue,
+        newValue,
+      });
+    }
+  }
+
+  return abilityScoresImproved;
+}
+
+function getConMod(actorData, actorUpdates) {
+  const con = actorData.attributes.ability_scores.con;
+  let conMod = con.mod || getScoreMod(con.value);
+  if (actorUpdates['data.attributes.ability_scores.con.value'] != null) {
+    const newCon = actorData.attributes.ability_scores.con.value + 1;
+    conMod = getScoreMod(newCon);
+  }
+  return conMod;
+}
+
+function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
+  // TODO TEST debug mode level ups
+  // TODO level up button disabled if char has CON damage from fatigue
+  // use the derived max hp for sheet -- non editable, same as max XP required
+  // fatigue damage affects CON not max HP
+  // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor
+  const actorData = actor.data.data;
+
+  const featuresGained = itemUpdates.create.map((i) => i.name);
+
+  const skillsImproved = getSkillsImproved(actorUpdates['data.skills'], actor);
+
+  const abilityScoresImproved = getAbilityScoresImproved(actorUpdates, actor);
+
+  const conMod = getConMod(actorData, actorUpdates);
+
+  const hpGained = actorUpdates['data.hp.base_max'] + conMod - (actorData.hp.max || 0);
+
+  new Dialog({
+    title: `Level Gained`,
+    content: `
       <p style="text-align:center;">${actor.name} grows stronger...</p>
       <p>Level: ${actorUpdates['data.lvl']}</p>
-      <p>HP: +${actorUpdates['data.hp.max'] - actor.data._source.data.hp.max}</p>
+      <p>HP: +${hpGained}</p>
       ${
         featuresGained.length
           ? `<p>Features:</p>
@@ -385,13 +420,18 @@ export async function updateLevel(actor, actorUpdates, itemUpdates) {
           : ''
       }
     `,
-      buttons: {
-        one: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'OK',
-        },
+    buttons: {
+      one: {
+        icon: '<i class="fas fa-check"></i>',
+        label: 'OK',
       },
-    }).render(true);
+    },
+  }).render(true);
+}
+
+export async function updateLevel(actor, actorUpdates, itemUpdates) {
+  if (actorUpdates['data.lvl'] > 1) {
+    showLevelUpNotice(actor, actorUpdates, itemUpdates);
   }
 
   await actor.update(actorUpdates);
