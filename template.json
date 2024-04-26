@@ -129,6 +129,12 @@
               "label": "Holy",
               "value": 1
             },
+            "poison": {
+              "dtype": "Number",
+              "group": "dmg_multi",
+              "label": "Poison",
+              "value": 1
+            },
             "blunt": {
               "dtype": "Number",
               "group": "dmg_multi",
@@ -151,11 +157,6 @@
         }
       },
       "actor": {
-        "hp": {
-          "value": 8,
-          "min": 0,
-          "max": 8
-        },
         "fp": {
           "value": 0,
           "min": 0,
@@ -170,6 +171,11 @@
         }
       },
       "monster": {
+        "hp": {
+          "value": 8,
+          "min": 0,
+          "max": 8
+        },
         "attributes": {
           "size": {
             "dtype": "String",
@@ -922,7 +928,7 @@
         "hp": {
           "value": 8,
           "min": 0,
-          "max": 8,
+          "base_max": 8,
           "right_arm": {
             "value": 0,
             "min": 0
@@ -1899,8 +1905,14 @@
         "admin": {
           "confirmed": {
             "dtype": "Boolean",
-            "group": "",
+            "group": "admin",
             "label": "Confirmed",
+            "value": false
+          },
+          "identified": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Identified",
             "value": false
           }
         }
@@ -1953,15 +1965,13 @@
             "group": "admin",
             "label": "Spoiled",
             "value": false
-          },
-          "attributes": {
-            "shelf_life": {
-              "dtype": "Number",
-              "group": "",
-              "label": "Shelf Life",
-              "value": 0
-            }
           }
+        },
+        "shelf_life": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Shelf Life",
+          "value": 0
         }
       }
     },
@@ -2022,13 +2032,13 @@
         },
         "fixed": {
           "dtype": "Boolean",
-          "group": "helmet",
+          "group": "",
           "label": "Fixed",
           "value": false
         },
         "closed": {
           "dtype": "Boolean",
-          "group": "helmet",
+          "group": "",
           "label": "Closed",
           "value": false
         }
@@ -2302,6 +2312,12 @@
             "dtype": "Boolean",
             "group": "admin",
             "label": "Non-Metal Head",
+            "value": false
+          },
+          "auto_replenish": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Auto-Replenish",
             "value": false
           }
         },
