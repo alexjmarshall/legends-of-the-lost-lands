@@ -84,12 +84,33 @@ function addFeatures(itemData, classInstance, race, actor, removeFeatures = fals
   }
 }
 
+function handleSkillsIncreases(skill, skillUpdate) {
+  while (skillUpdate.adv_req.value >= skillUpdate.adv_req.max) {
+    skillUpdate.adv_req.value -= skillUpdate.adv_req.max;
+    skillUpdate.lvl++;
+    skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
+  }
+
+  const chanceOfIncrease = skillUpdate.adv_req.value / skillUpdate.adv_req.max;
+
+  if (Math.random() < chanceOfIncrease) {
+    skillUpdate.lvl++;
+    skillUpdate.adv_req.value = 0;
+  }
+
+  if (skillUpdate.lvl < skill.min) {
+    skillUpdate.lvl = skill.min;
+    skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
+  }
+}
+
 const addSkills = (updateData, actor, classInstance) => {
   const allSkills = Object.values(classInstance.skills).flat();
   const skillUpdates = {};
   for (const skill of allSkills) {
     // use the _source value for the current skill lvl, to avoid active effects
     const skillUpdate = foundry.utils.deepClone(actor.data._source.data.skills[skill.name]);
+
     if (!skillUpdate) {
       ui.notifications.error(`Could not find ${skill.name} in actor skills!`);
       continue;
@@ -97,22 +118,11 @@ const addSkills = (updateData, actor, classInstance) => {
     skillUpdate.target = skill.target;
     if (actor.data.data.attributes.admin.use_target_skill_lvl.value) {
       skillUpdate.lvl = skill.target;
+      skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
     } else {
-      while (skillUpdate.adv_req.value >= skillUpdate.adv_req.max) {
-        skillUpdate.adv_req.value -= skillUpdate.adv_req.max;
-        skillUpdate.lvl++;
-        skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
-      }
-      const chanceOfIncrease = skillUpdate.adv_req.value / skillUpdate.adv_req.max;
-      if (Math.random() < chanceOfIncrease) {
-        skillUpdate.lvl++;
-        skillUpdate.adv_req.value = 0;
-      }
+      handleSkillsIncreases(skill, skillUpdate);
     }
-    if (skillUpdate.lvl < skill.min) {
-      skillUpdate.lvl = skill.min;
-    }
-    skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
+
     skillUpdates[`${skill.name}`] = skillUpdate;
   }
   updateData['data.skills'] = skillUpdates;
@@ -231,14 +241,15 @@ const addXp = (actorData, formData, actorUpdates, classInstance, actorRace) => {
   actorUpdates['data.xp_req.max'] = reqXp;
 };
 
-const addHpAndFp = (actorData, actorUpdates, classInstance) => {
+const addHpAndFp = (actorUpdates, classInstance, actor) => {
+  const actorData = actor.data.data;
   const rolledHp = rollDice(`${classInstance.thisLevelHp}`);
-  const conMod = getConMod(actorData, actorUpdates);
-  const baseMaxHpUpdate = Math.max(1 - conMod, rolledHp); // minimum so that con mod doesn't reduce hp
-  actorUpdates['data.hp.base_max'] = actorData.hp.max + baseMaxHpUpdate;
-  actorUpdates['data.hp.value'] = actorData.hp.value + baseMaxHpUpdate + conMod;
-  actorUpdates['data.fp.max'] = actorData.fp.max + baseMaxHpUpdate + conMod;
-  actorUpdates['data.fp.value'] = actorData.fp.value + baseMaxHpUpdate + conMod;
+  const conMod = getConMod(actor, actorUpdates);
+  const hpUpdate = Math.max(1, conMod + rolledHp);
+  actorUpdates['data.hp.max'] = actorData.hp.max + hpUpdate;
+  actorUpdates['data.hp.value'] = actorData.hp.value + hpUpdate;
+  actorUpdates['data.fp.max'] = actorData.fp.max + hpUpdate;
+  actorUpdates['data.fp.value'] = actorData.fp.value + hpUpdate;
 };
 
 const addSaves = (actorUpdates, classInstance) => {
@@ -272,7 +283,7 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   addSkills(actorUpdates, actor, classInstance);
 
   if (lvl > 1 && lvl === actorData.lvl + 1) {
-    addHpAndFp(actorData, actorUpdates, classInstance);
+    addHpAndFp(actorUpdates, classInstance, actor);
     addAbilityScores(actorUpdates['data.skills'], actor);
   }
 
@@ -294,33 +305,33 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
 }
 
 function addAbilityScores(skillUpdates, actor) {
-  const abilityScoresImproved = {};
+  for (const [name, ability] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
+    const abilityData = foundry.utils.deepClone(ability);
 
-  for (const [ability, score] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
-    abilityScoresImproved[ability] = {
-      oldValue: score.value,
-      skillsIncreases: 0,
-    };
-  }
+    // count ability "skill" improvements
+    handleSkillsIncreases(ability, abilityData);
+    let skillsIncreases = abilityData.lvl - ability.lvl;
 
-  // count number of skill improvements for each ability
-  const skillsImproved = getSkillsImproved(skillUpdates, actor);
-  for (const skill of skillsImproved) {
-    const ability = skills[skill.name]?.ability;
-    if (!ability) {
-      continue;
+    // count this ability's skill improvements
+    const skillsImproved = getSkillsImproved(skillUpdates, actor);
+    for (const skill of skillsImproved) {
+      const ability = skills[skill.name]?.ability;
+      if (!ability) {
+        continue;
+      }
+      skillsIncreases += skill.newValue - skill.oldValue;
     }
-    abilityScoresImproved[ability].skillsIncreases += skill.newValue - skill.oldValue;
-  }
 
-  // improve ability scores based on skill improvements
-  for (const [ability, { oldValue, skillsIncreases }] of Object.entries(abilityScoresImproved)) {
+    // improve ability scores based on skill improvements
+    // improve score if chanceImprove is met and a d20 roll is equal or greater than the old value
     const chanceImprove = 1 - Math.pow(0.5, skillsIncreases);
 
-    // improve score if chanceImprove is met and a d20 roll is equal or greater than the old value
-    if (Math.random() < chanceImprove && rollDice('d20') >= oldValue) {
-      const newValue = oldValue + 1;
-      actorUpdates[`data.attributes.ability_scores.${ability}.value`] = newValue;
+    if (Math.random() < chanceImprove && rollDice('d20') >= ability.value) {
+      abilityData.value = ability.value + 1;
+    }
+
+    if (skillsIncreases > 0 || abilityData.value > ability.value) {
+      actorUpdates[`data.attributes.ability_scores.${name}`] = abilityData;
     }
   }
 }
@@ -329,7 +340,7 @@ function getSkillsImproved(skillUpdates, actor) {
   const skillsImproved = [];
 
   for (const [skillName, skill] of Object.entries(skillUpdates)) {
-    const oldValue = actor.data._source.data.skills[skillName]?.lvl || 0;
+    const oldValue = actor.data._source.data.skills[skillName]?.lvl;
     const newValue = skill.lvl;
     if (oldValue < newValue) {
       skillsImproved.push({
@@ -346,12 +357,12 @@ function getSkillsImproved(skillUpdates, actor) {
 function getAbilityScoresImproved(actorUpdates, actor) {
   const abilityScoresImproved = [];
 
-  for (const [ability, score] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
-    const oldValue = score.value;
-    const newValue = actorUpdates[`data.attributes.ability_scores.${ability}.value`] ?? oldValue;
+  for (const [abilityName, ability] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
+    const oldValue = ability.value;
+    const newValue = actorUpdates[`data.attributes.ability_scores.${abilityName}`]?.value;
     if (oldValue < newValue) {
       abilityScoresImproved.push({
-        name: ability,
+        name: abilityName,
         oldValue,
         newValue,
       });
@@ -361,22 +372,22 @@ function getAbilityScoresImproved(actorUpdates, actor) {
   return abilityScoresImproved;
 }
 
-function getConMod(actorData, actorUpdates) {
-  const con = actorData.attributes.ability_scores.con;
-  let conMod = con.mod || getScoreMod(con.value);
+function getConMod(actor, actorUpdates) {
+  const conScore = actor.data._source.data.attributes.ability_scores.con.value;
+  let conMod = getScoreMod(conScore);
   if (actorUpdates['data.attributes.ability_scores.con.value'] != null) {
-    const newCon = actorData.attributes.ability_scores.con.value + 1;
+    const newCon = conScore + 1;
     conMod = getScoreMod(newCon);
   }
   return conMod;
 }
 
 function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
+  // Universal Physical Penalty and Universal Mental Penalty base derived stats -- use armor penalty if non-proficient -- injuries modify these
   // TODO TEST debug mode level ups
-  // TODO level up button disabled if char has CON damage from fatigue
-  // use the derived max hp for sheet -- non editable, same as max XP required
-  // fatigue damage affects CON not max HP
-  // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor
+  // use the max hp for sheet -- non editable, same as max XP required
+  // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor and then remove
+  // for monster xp, use Delta EHD * 100
   const actorData = actor.data.data;
 
   const featuresGained = itemUpdates.create.map((i) => i.name);
@@ -385,9 +396,7 @@ function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
 
   const abilityScoresImproved = getAbilityScoresImproved(actorUpdates, actor);
 
-  const conMod = getConMod(actorData, actorUpdates);
-
-  const hpGained = actorUpdates['data.hp.base_max'] + conMod - (actorData.hp.max || 0);
+  const hpGained = actorUpdates['data.hp.max'] - actorData.hp.max;
 
   new Dialog({
     title: `Level Gained`,
