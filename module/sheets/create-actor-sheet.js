@@ -759,7 +759,6 @@ export class CreateActorSheet extends ActorSheet {
       ...formData,
       ...firstLevelUpdates.actor,
     };
-    console.log(formData);
 
     const yesCallback = async () => {
       this.actor.sheet.close();

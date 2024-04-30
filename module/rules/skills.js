@@ -799,3 +799,64 @@ export const allSpellSkills = Object.keys(skills).filter((s) => skills[s].catego
 export const allThieverySkills = Object.keys(skills).filter((s) => skills[s].category === THIEVERY);
 
 export const allBasicSkills = Object.keys(skills).filter((s) => skills[s].expert === false);
+
+/*
+Minigames:
+
+Lockpicking:
+ - Each lock requires a specific combination of actions: either twist, tap or turn, none of which are used consecutively.
+ - Locks are divided into types, each type has the same combination required.
+ - When they first pick a wrong action, it causes the lock to feel stiff. 
+ - If a wrong action is performed on a stiff lock, the lock is jammed.
+ - Instead of selecting an action, the Thief can "probe" -- roll Thief skill to attempt to determine next correct action.
+   - Critical success: the lock opens immediately.
+   - Major success: identify correct action.
+   - Success: eliminate one incorrect action.
+   - Failure: don't make progress.
+   - Major failure: lock becomes stiff or jams if already stiff.
+   - Critical failure: lock jams immediately.
+
+  Difficulty Levels:
+   - 2 tumblers "simple" - DC 12
+   - 3 tumblers "normal" - DC 15
+   - 4 tumblers "complex" - DC 15
+
+  Difficulty Modifiers: 
+   - "corroded" - first wrong action jams lock, +3 DC
+   - "cracked" - only one incorrect action first step, -3 DC
+
+  Lock Types:
+   - Tin - turn, twist, tap, twist - 4 HP
+   - Copper - tap, twist, tap, turn - 6 HP
+   - Bronze - tap, turn, twist, tap - 8 HP
+   - Brass - tap, turn, tap, twist - 10 HP
+   - Iron - turn, twist, turn, tap - 12 HP
+   - Steel - turn, tap, twist, turn - 14 HP
+   - Mithril - twist, tap, twist, turn - 16 HP
+   - Adamantine - twist, turn, tap, twist - 18 HP
+
+Disarm Trap:
+ - Similar to lockpicking but works slightly differently: actions are depress, hook, pry.
+ - At each step, the listed action is the WRONG one.
+ - The first wrong action causes a "click".
+ - The second wrong action causes the trap to fire.
+ - One of the other two actions does nothing, and one decreases the the trap's DC by 3.
+ - If the trap is primed, PC cannot disengage without firing it.
+ - At any time, the PC can attempt the remove check vs. the DC.
+   - Success: the trap is disabled.
+   - Failure: trap becomes primed or fires if already primed.
+
+   // TODO trap types
+
+Pickpocketing:
+  - Each pocket has a difficulty rating.
+  - The Thief rolls a d20 and adds their Thief skill.
+    - On a critical success, they choose any of the NPC's items.
+    - On a success, the DM chooses an item.
+    - On a failure, they get nothing.
+    - On a critical failure, they are caught and must flee or talk their way out of it.
+
+
+
+
+*/

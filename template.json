@@ -1446,7 +1446,7 @@
       "food",
       "gem",
       "grappling_maneuver",
-      "helmet",
+      "helm",
       "hit_location",
       "ingredient",
       "injury",
@@ -1508,6 +1508,12 @@
               "dtype": "Boolean",
               "group": "admin",
               "label": "Holdable",
+              "value": true
+            },
+            "beltable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Beltable",
               "value": true
             },
             "wearable": {
@@ -1723,6 +1729,12 @@
               "group": "admin",
               "label": "Holdable",
               "value": false
+            },
+            "beltable": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Beltable",
+              "value": false
             }
           },
           "material": {
@@ -1736,6 +1748,12 @@
             "group": "",
             "label": "Size",
             "value": "M"
+          },
+          "slot": {
+            "dtype": "String",
+            "group": "",
+            "label": "Magic Item Slot",
+            "value": ""
           }
         }
       }
@@ -1807,6 +1825,12 @@
             "dtype": "Boolean",
             "group": "admin",
             "label": "Holdable",
+            "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
             "value": false
           },
           "treasure": {
@@ -1903,12 +1927,6 @@
       "macro": "game.brigandine.Macro.eatFood(itemId,options)",
       "attributes": {
         "admin": {
-          "holdable": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Holdable",
-            "value": true
-          },
           "edible": {
             "dtype": "Boolean",
             "group": "admin",
@@ -1970,7 +1988,7 @@
         }
       }
     },
-    "helmet": {
+    "helm": {
       "templates": ["props", "item", "garment"],
       "attributes": {
         "coverage": {
@@ -2079,6 +2097,20 @@
           "group": "",
           "label": "Rarity",
           "value": "common"
+        },
+        "admin": {
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
+            "value": false
+          }
         }
       }
     },
@@ -2148,7 +2180,25 @@
             "group": "admin",
             "label": "Wearable",
             "value": true
+          },
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
+            "value": false
           }
+        },
+        "slot": {
+          "dtype": "String",
+          "group": "",
+          "label": "Magic Item Slot",
+          "value": ""
         }
       }
     },
@@ -2215,6 +2265,12 @@
           "label": "Reach",
           "value": "0,1"
         },
+        "length": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Length (ft.)",
+          "value": 3
+        },
         "range": {
           "dtype": "Number",
           "group": "",
@@ -2262,6 +2318,18 @@
             "group": "admin",
             "label": "Wearable",
             "value": true
+          },
+          "holdable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Holdable",
+            "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
+            "value": false
           },
           "non_metal_head": {
             "dtype": "Boolean",
@@ -2537,6 +2605,12 @@
             "group": "admin",
             "label": "Holdable",
             "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
+            "value": false
           }
         },
         "linked_actor": {
@@ -2573,6 +2647,12 @@
             "dtype": "Boolean",
             "group": "admin",
             "label": "Holdable",
+            "value": false
+          },
+          "beltable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Beltable",
             "value": false
           }
         },

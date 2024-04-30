@@ -7,7 +7,7 @@ import { deepFreeze } from '../../helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Mage extends BaseClass {
-  static description = 'A loremaster who derives great power from arcane mysteries.';
+  static description = 'A loremaster who derives great power from their study of arcane mysteries.';
 
   static XP_REQS = Object.freeze([0, 1200, 3600, 8400, 18000, 35000, 50000, 75000, 100000, 200000, 300000]);
 

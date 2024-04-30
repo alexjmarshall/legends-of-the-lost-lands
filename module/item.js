@@ -23,7 +23,7 @@ export class SimpleItem extends Item {
       "container",
       "scroll",
       "armor",
-      "helmet",
+      "helm",
       "clothing",
       "gem",
       "trade_good",
@@ -53,8 +53,8 @@ export class SimpleItem extends Item {
 
     this._prepareItemData(itemData);
 
-    // // armor, clothing, shield, helmet
-    // this._prepareGarmentData(itemData);
+    // armor, clothing, shield, helm
+    this._prepareGarmentData(itemData);
     // // spell_magic, spell_cleric, spell_druid
     // this._prepareSpellData(itemData);
     // this._prepareCurrencyData(itemData);
@@ -65,6 +65,7 @@ export class SimpleItem extends Item {
   }
 
   _addTotalWeight(itemData) {
+    if (itemData.quantity == null || itemData.weight == null) return;
     itemData.total_weight = Math.round(itemData.weight * itemData.quantity * 10) / 10;
   }
 
@@ -211,9 +212,12 @@ export class SimpleItem extends Item {
   }
 
   _prepareGarmentData(itemData) {
+    // CONTINUE
+    // TODO increase ability scores on level up based on skill increases
+    // show dialog notifying new features, improved features (uses per day or effect data), hp rolled, skill and ability score increases
     if (
       itemData.type !== 'armor' &&
-      itemData.type !== 'helmet' &&
+      itemData.type !== 'helm' &&
       itemData.type !== 'clothing' &&
       itemData.type !== 'shield'
     )

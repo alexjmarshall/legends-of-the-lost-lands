@@ -5,6 +5,7 @@ import * as SIZE from './rules/size.js';
 import * as RACE from './rules/races/index.js';
 import * as ALIGNMENT from './rules/alignment.js';
 import * as ABILITIES from './rules/abilities.js';
+import * as RULES_HELPER from './rules/helper.js';
 import * as CANVAS from './canvas.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
 import { HIT_LOCATIONS } from './rules/hit-locations.js';
@@ -29,43 +30,37 @@ export class SimpleActor extends Actor {
     this.data.data.attributes = this.data.data.attributes || {};
     const actorData = this.data;
 
-    console.log('preparing data1!!');
     this._prepareCharacterBaseData(actorData);
-    this._prepareHumanoidBaseData(actorData);
   }
 
-  _addHumanoidLocationMaxHp(actorData) {
-    const hp = actorData.data.hp;
+  _addHumanoidLocationMaxHp(charData) {
+    const hp = charData.hp;
+
     // derive location max hp from total max hp
     const totalMaxHp = hp.max;
-    hp.head.max = Math.floor(totalMaxHp * 0.36);
-    hp.right_arm.max = hp.left_arm.max = Math.floor(totalMaxHp * 0.27);
-    hp.upper_torso.max = Math.floor(totalMaxHp * 0.45);
-    hp.lower_torso.max = Math.floor(totalMaxHp * 0.36);
-    hp.right_leg.max = hp.left_leg.max = Math.floor(totalMaxHp * 0.36);
+    hp.head.max = Math.max(1, Math.floor(totalMaxHp * 0.36));
+    hp.right_arm.max = hp.left_arm.max = Math.max(1, Math.round(totalMaxHp * 0.27));
+    hp.upper_torso.max = Math.max(1, Math.round(totalMaxHp * 0.45));
+    hp.lower_torso.max = Math.max(1, Math.round(totalMaxHp * 0.36));
+    hp.right_leg.max = hp.left_leg.max = Math.max(1, Math.round(totalMaxHp * 0.36));
   }
 
   _prepareCharacterBaseData(actorData) {
     if (actorData.type !== 'character') return;
-    this._addHumanoidLocationMaxHp(actorData);
     const charData = actorData.data;
-    charData.combat = {};
-    const combat = charData.combat;
-    combat.attacks = 1;
-    combat.riposte_to_hit_mod = 0;
-    combat.riposte_dmg_mod = 0;
-    combat.counter_to_hit_mod = 0;
-    combat.counter_dmg_mod = 0;
-    combat.dmg_bonus_humanoid = 0;
-    combat.dmg_bonus_undead = 0;
-    combat.missile_to_hit_mod = 0;
-    combat.melee_to_hit_mod = 0;
-    charData.passive_perception_mod = 0;
-  }
-
-  _prepareHumanoidBaseData(actorData) {
-    if (actorData.type !== 'humanoid') return;
-    this._addHumanoidLocationMaxHp(actorData);
+    charData.combat = {
+      attacks: 1,
+      riposte_to_hit_mod: 0,
+      riposte_dmg_mod: 0,
+      counter_to_hit_mod: 0,
+      counter_dmg_mod: 0,
+      dmg_bonus_humanoid: 0,
+      dmg_bonus_undead: 0,
+      missile_to_hit_mod: 0,
+      melee_to_hit_mod: 0,
+    };
+    charData.upp = 0;
+    charData.ump = 0;
   }
 
   /** @override */
@@ -115,16 +110,24 @@ export class SimpleActor extends Actor {
       return;
     }
 
-    // alignment
     const charData = actorData.data;
+
+    // ability score mods
+    const attrs = charData.attributes;
+    const abilities = attrs.ability_scores || {};
+    this._addAbilityScoreMods(abilities, charData.lvl);
+
+    // max hp & location hp
+    this._addHumanoidLocationMaxHp(charData);
+
+    // alignment
     charData.alignment = ALIGNMENT.alignmentByScore(charData.attributes.alignment_score.value);
 
     // passive perception
     const skills = charData.skills || {};
-    charData.passive_perception = Number(10 + skills.listening.lvl + charData.passive_perception_mod) || 10;
+    charData.passive_perception = Number(10 + skills.listening.lvl) || 10;
 
     // retainer loyalty
-    const attrs = charData.attributes;
     if (attrs.admin.is_retainer.value) {
       const loyalty = attrs.retainer.loyalty || {};
       if (loyalty.value) loyalty.mod = ABILITIES.getScoreMod(loyalty.value);
@@ -137,23 +140,27 @@ export class SimpleActor extends Actor {
     // mv & speed
     this._addMvSpeed(actorData);
 
-    // ability score mods
-    const abilities = attrs.ability_scores || {};
-    this._addAbilityScoreMods(abilities);
-
     // set removed body part locations
     this._addRemovedLocations(charData, items);
 
-    return;
+    // spell failure, skill check penalty & max dex mod // TODO go back to max dex mod from agility penalty
+    const wornItems = items.filter((i) => i.data.data.worn);
+    const SPELL_FAILURE_FACTOR = 5 / 2;
+    const AGILITY_PENALTY_THRESHOLD = 5;
+    const AGILITY_PENALTY_FACTOR = 3;
+    const ARMOR_CHECK_THRESHOLD = 2;
+    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
+    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE_FACTOR);
+    charData.armor_check_penalty = Math.max(0, Math.floor(totalPenaltyWgt - ARMOR_CHECK_THRESHOLD));
+    charData.agility_penalty = Math.floor(
+      Math.max(0, totalPenaltyWgt - AGILITY_PENALTY_THRESHOLD) / AGILITY_PENALTY_FACTOR
+    );
 
-    // const wornItems = items.filter((i) => i.data.data.worn);
+    return;
 
     // const size = attrs.size.value.toUpperCase().trim();
     // const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-    // const AGILITY_PENALTY_THRESHOLD = 5;
-    // const AGILITY_PENALTY_FACTOR = 3;
-    // const armor_check_penalty_THRESHOLD = 2;
-    // const SPELL_FAILURE_FACTOR = 5 / 2;
+
     // const DEFAULT_STR = 10;
     // const ENC_BASE = 20 / 3;
     // const ENC_FACTOR = 2 / 3;
@@ -167,14 +174,6 @@ export class SimpleActor extends Actor {
     //   paladin: 2,
     // };
     // const BASE_AC = 10;
-
-    // spell failure, skill check penalty & max dex mod // TODO go back to max dex mod from agility penalty
-    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
-    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE_FACTOR);
-    charData.armor_check_penalty = Math.max(0, Math.floor(totalPenaltyWgt - armor_check_penalty_THRESHOLD));
-    charData.agility_penalty = Math.floor(
-      Math.max(0, totalPenaltyWgt - AGILITY_PENALTY_THRESHOLD) / AGILITY_PENALTY_FACTOR
-    );
 
     // save bonuses
     const magicWornClothing = wornItems.filter(
@@ -443,10 +442,12 @@ export class SimpleActor extends Actor {
     return hdVal * hdVal * 10 * xpMulti + hpMax;
   }
 
-  _addAbilityScoreMods(abilities) {
+  _addAbilityScoreMods(abilities, lvl) {
     for (const ability of Object.values(ABILITIES.ABILITIES)) {
       if (!abilities[ability]) continue;
       abilities[ability].mod = ABILITIES.getScoreMod(+abilities[ability].value);
+      abilities[ability].full_mod = ABILITIES.getFullScoreMod(+abilities[ability].value);
+      abilities[ability].min = RULES_HELPER.progressions.medium(lvl).min;
     }
   }
 
@@ -589,7 +590,7 @@ export class SimpleActor extends Actor {
       const coveringItems = wornItems.filter((i) => i.data.data.coverage?.includes(k));
       // can only wear three total armor layers
       const armor = coveringItems
-        .filter((i) => (i.type === 'armor' || i.type === 'helmet') && i.data.data.ac)
+        .filter((i) => (i.type === 'armor' || i.type === 'helm') && i.data.data.ac)
         .slice(0, 3);
       const bulkyArmor = armor.filter((i) => i.data.data.bulky);
       const nonBulkyArmor = armor.filter((i) => !i.data.data.bulky);
@@ -625,7 +626,7 @@ export class SimpleActor extends Actor {
         // no shield dr vs. pierce on forearm or hand
         const appliedShieldDrBonus = ['forearm', 'hand'].includes(k) && dmgType === 'pierce' ? 0 : shieldDrBonus;
 
-        // ignore helmet for pierce on eyes and jaw if open
+        // ignore helm for pierce on eyes and jaw if open
         if (dmgType === 'pierce' && ['eye', 'jaw', 'ear'].includes(k)) {
           appliedArmor = appliedArmor.filter((a) => a.data.data.attributes.closed.value);
         }
@@ -655,11 +656,11 @@ export class SimpleActor extends Actor {
 
     // round total ac & dr values
     for (const v of Object.values(ac.total)) {
-      // TODO helmet must be closed to cover nose/jaw for pierce
-      v.ac = Math.round(v.ac); // crit slash dmg armor must not be shield or helmet
+      // TODO helm must be closed to cover nose/jaw for pierce
+      v.ac = Math.round(v.ac); // crit slash dmg armor must not be shield or helm
       v.dr = Math.round(v.dr); // if closed, must remove to listen/speak
     }
-    ac.mdr = Math.round(ac.mdr); // hinged helmet has a macro to change between open/closed...automatically muffle in character speaking with closed helmet?
+    ac.mdr = Math.round(ac.mdr); // hinged helm has a macro to change between open/closed...automatically muffle in character speaking with closed helm?
 
     data.ac = ac;
   }

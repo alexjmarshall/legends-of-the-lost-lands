@@ -583,7 +583,7 @@ export class SimpleActorSheet extends ActorSheet {
     const attrs = data.attributes;
     const isWorn = !!data.worn;
     const isBulky = !!data.bulky;
-    const isArmor = item.type === 'armor' || item.type === 'helmet';
+    const isArmor = item.type === 'armor' || item.type === 'helm';
     const isClothing = item.type === 'clothing'; // TODO use enum of game item types
     const isContainer = !!attrs.container;
     const wornItems = actorData.items.filter((i) => i.data.data.worn);
@@ -597,7 +597,7 @@ export class SimpleActorSheet extends ActorSheet {
       const itemQty = +item?.data.data.quantity || 0;
       if (itemQty < 1 || itemQty > wearLimit) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
 
-      // can't wear armor, helmet or clothing that is too small
+      // can't wear armor, helm or clothing that is too small
       if (isArmor || isClothing) {
         if (itemSize < charSize) return ui.notifications.error('Item is too small to wear');
       }
@@ -612,7 +612,7 @@ export class SimpleActorSheet extends ActorSheet {
 
       // can't wear armor if any of this item's locations are already covered by more than 2 armors
       if (isArmor) {
-        const wornArmors = wornItems.filter((i) => i.type === 'armor' || i.type === 'helmet');
+        const wornArmors = wornItems.filter((i) => i.type === 'armor' || i.type === 'helm');
         const wornArmorLocations = wornArmors.flatMap((a) => a.data.data.coverage);
         for (const itemLoc of itemLocations) {
           const count = wornArmorLocations.filter((l) => l === itemLoc).length;

@@ -610,9 +610,9 @@ export async function attack(attacker, target, options) {
       const intBleedAreas = ['knee', 'hip', 'abdomen', 'chest', 'shoulder', 'elbow', 'skull'];
       const easyBleedAreas = ['neck', 'jaw', 'nose', 'skull', 'eye', 'forearm', 'hand', 'foot', 'armpit'];
       const doubleKnockdownAreas = ['skull', 'nose', 'eye', 'jaw', 'knee', 'shin', 'foot'];
-      const helmetAreas = ['skull', 'nose', 'eye', 'jaw'];
+      const helmAreas = ['skull', 'nose', 'eye', 'jaw'];
       const dropKnockdownAreas = ['hand', 'forearm'];
-      let sortedWornArmors = []; // TODO remove helmet if open and dmg Type is pierce and hit loc is eye jaw or ear
+      let sortedWornArmors = []; // TODO remove helm if open and dmg Type is pierce and hit loc is eye jaw or ear
       const parry = targetRollData.ac.parry || {};
       let parryItem = targetActor.items.get(parry.parry_item_id);
       let parryItemHeight = parryItem?.data.data.atk_height;
@@ -883,9 +883,9 @@ export async function attack(attacker, target, options) {
         if (isKnockdown) {
           const armor = appliedArmors[0];
           const isShield = !!armor?.data.data.attributes.shape?.value;
-          // knockdown can disarm weapon, knock off helmet, or disarm shield if held in fluid stance
+          // knockdown can disarm weapon, knock off helm, or disarm shield if held in fluid stance
           (() => {
-            if (!!armor && !isShield && helmetAreas.includes(coverageArea)) {
+            if (!!armor && !isShield && helmAreas.includes(coverageArea)) {
               const fixedHelm =
                 armor?.data.data.attributes.coverage?.value.includes('neck') &&
                 !!armor?.data.data.attributes.material?.value.includes('plate');

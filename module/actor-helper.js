@@ -2,7 +2,7 @@ import * as CLASSES from './rules/classes/index.js';
 import * as RACES from './rules/races/index.js';
 import { cloneItem } from './item-helper.js';
 import { getAdvancementPointsRequired, skills } from './rules/skills.js';
-import { getScoreMod } from './rules/abilities.js';
+import { getScoreMod, FULL_ABILITIES } from './rules/abilities.js';
 import { getExtraLanguages } from './rules/languages.js';
 import { getClericSpellsKnown, getDruidSpellsKnown, getStartingMagicSpellsKnown, SPELL_TYPES } from './rules/spells.js';
 import { getStartingRunesKnown } from './rules/runes.js';
@@ -84,7 +84,8 @@ function addFeatures(itemData, classInstance, race, actor, removeFeatures = fals
   }
 }
 
-function handleSkillsIncreases(skill, skillUpdate) {
+function handleSkillsIncreases(skill, skillUpdate, min) {
+  min = min ?? skill.min;
   while (skillUpdate.adv_req.value >= skillUpdate.adv_req.max) {
     skillUpdate.adv_req.value -= skillUpdate.adv_req.max;
     skillUpdate.lvl++;
@@ -93,28 +94,27 @@ function handleSkillsIncreases(skill, skillUpdate) {
 
   const chanceOfIncrease = skillUpdate.adv_req.value / skillUpdate.adv_req.max;
 
-  if (Math.random() < chanceOfIncrease) {
+  if (chanceOfIncrease > 0 && Math.random() < chanceOfIncrease) {
     skillUpdate.lvl++;
     skillUpdate.adv_req.value = 0;
   }
 
-  if (skillUpdate.lvl < skill.min) {
-    skillUpdate.lvl = skill.min;
+  if (skillUpdate.lvl < min) {
+    skillUpdate.lvl = min;
     skillUpdate.adv_req.max = getAdvancementPointsRequired(skillUpdate.lvl);
   }
 }
 
 const addSkills = (updateData, actor, classInstance) => {
   const allSkills = Object.values(classInstance.skills).flat();
-  const skillUpdates = {};
   for (const skill of allSkills) {
     // use the _source value for the current skill lvl, to avoid active effects
-    const skillUpdate = foundry.utils.deepClone(actor.data._source.data.skills[skill.name]);
-
-    if (!skillUpdate) {
+    const actorSkill = actor.data._source.data.skills[skill.name];
+    if (!actorSkill) {
       ui.notifications.error(`Could not find ${skill.name} in actor skills!`);
       continue;
     }
+    const skillUpdate = foundry.utils.deepClone(actorSkill);
     skillUpdate.target = skill.target;
     if (actor.data.data.attributes.admin.use_target_skill_lvl.value) {
       skillUpdate.lvl = skill.target;
@@ -123,9 +123,10 @@ const addSkills = (updateData, actor, classInstance) => {
       handleSkillsIncreases(skill, skillUpdate);
     }
 
-    skillUpdates[`${skill.name}`] = skillUpdate;
+    if (skillUpdate.lvl > actorSkill.lvl) {
+      updateData[`data.skills.${skill.name}`] = skillUpdate;
+    }
   }
-  updateData['data.skills'] = skillUpdates;
 };
 
 const addSpellsKnown = (itemData, classInstance, actor) => {
@@ -284,7 +285,7 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
 
   if (lvl > 1 && lvl === actorData.lvl + 1) {
     addHpAndFp(actorUpdates, classInstance, actor);
-    addAbilityScores(actorUpdates['data.skills'], actor);
+    addAbilityScores(actorUpdates, actor);
   }
 
   // add starting languages, recipes and runes if the character is being created
@@ -304,19 +305,21 @@ export function getLevelUpdates(actor, lvl, formData = {}) {
   };
 }
 
-function addAbilityScores(skillUpdates, actor) {
+function addAbilityScores(actorUpdates, actor) {
   for (const [name, ability] of Object.entries(actor.data._source.data.attributes.ability_scores)) {
     const abilityData = foundry.utils.deepClone(ability);
 
+    const min = actor.data.data.attributes.ability_scores[name].min;
+
     // count ability "skill" improvements
-    handleSkillsIncreases(ability, abilityData);
+    handleSkillsIncreases(ability, abilityData, min);
     let skillsIncreases = abilityData.lvl - ability.lvl;
 
     // count this ability's skill improvements
-    const skillsImproved = getSkillsImproved(skillUpdates, actor);
+    const skillsImproved = getSkillsImproved(actorUpdates, actor);
     for (const skill of skillsImproved) {
       const ability = skills[skill.name]?.ability;
-      if (!ability) {
+      if (!ability || ability !== name) {
         continue;
       }
       skillsIncreases += skill.newValue - skill.oldValue;
@@ -336,12 +339,12 @@ function addAbilityScores(skillUpdates, actor) {
   }
 }
 
-function getSkillsImproved(skillUpdates, actor) {
+function getSkillsImproved(actorUpdates, actor) {
   const skillsImproved = [];
 
-  for (const [skillName, skill] of Object.entries(skillUpdates)) {
-    const oldValue = actor.data._source.data.skills[skillName]?.lvl;
-    const newValue = skill.lvl;
+  for (const [skillName, skill] of Object.entries(actor.data._source.data.skills)) {
+    const oldValue = skill.lvl;
+    const newValue = actorUpdates[`data.skills.${skillName}`]?.lvl;
     if (oldValue < newValue) {
       skillsImproved.push({
         name: skillName,
@@ -383,51 +386,55 @@ function getConMod(actor, actorUpdates) {
 }
 
 function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
-  // Universal Physical Penalty and Universal Mental Penalty base derived stats -- use armor penalty if non-proficient -- injuries modify these
-  // TODO TEST debug mode level ups
+  // TODO Universal Physical Penalty and Universal Mental Penalty base derived stats -- use armor penalty if non-proficient -- injuries modify these and short term fatigue
+  // add UPP and UMP to actor.js base derived, then increment them in derived with armor check penalty/fatigue
+  // remember to apply UPP/UMP to all attack rolls, skill checks, ability checks and saving throws
+  // find better word to distinguish between short term and long term fatigue
   // use the max hp for sheet -- non editable, same as max XP required
   // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor and then remove
   // for monster xp, use Delta EHD * 100
+  // fists/cestus 2 attacks for 1d2 / 1d4 damage each and reach 0. Kick is 1d3 damage reach 0. Improvised weapon is 1d3 damage with reach 1.
+  // melee weapons have length which determines initiative when tied. Min and max length are derived props.
+  // Max length is Math.ceil(length / 5).
+  // Min length is Math.round(length / 5).
+  // Can use while grappling if weapon size is T.
+  // check magic item slot max before applying magic item effect on wear
   const actorData = actor.data.data;
 
   const featuresGained = itemUpdates.create.map((i) => i.name);
 
-  const skillsImproved = getSkillsImproved(actorUpdates['data.skills'], actor);
+  const skillsImproved = getSkillsImproved(actorUpdates, actor);
 
   const abilityScoresImproved = getAbilityScoresImproved(actorUpdates, actor);
 
   const hpGained = actorUpdates['data.hp.max'] - actorData.hp.max;
 
+  // TODO move into dialogs file
   new Dialog({
     title: `Level Gained`,
     content: `
       <p style="text-align:center;">${actor.name} grows stronger...</p>
-      <p>Level: ${actorUpdates['data.lvl']}</p>
-      <p>HP: +${hpGained}</p>
-      ${
-        featuresGained.length
-          ? `<p>Features:</p>
-      <ul>
-        ${featuresGained.map((f) => `<li>${f}</li>`).join('')}
-      </ul>`
-          : ''
-      }
-      ${
+      <div style="display:flex;"><p style="width:50%">Level: ${actorUpdates['data.lvl']}</p>
+      <p>HP: +${hpGained}</p></div>
+      ${featuresGained.length ? `<p>Features: ${featuresGained.map((f) => `${f}`).join(', ')}</p>` : ''}
+      <div style="display:flex;">${
         skillsImproved.length
-          ? `<p>Skills:</p>
+          ? `<div style="width:50%"><p>Skills:</p>
       <ul>
         ${skillsImproved.map((s) => `<li>${s.name}: ${s.oldValue} > ${s.newValue}</li>`).join('')}
-      </ul>`
+      </ul></div>`
           : ''
       }
       ${
         abilityScoresImproved.length
-          ? `<p>Ability Scores:</p>
+          ? `<div><p>Ability Scores:</p>
       <ul> 
-        ${abilityScoresImproved.map((a) => `<li>${a.name}: ${a.oldValue} > ${a.newValue}</li>`).join('')}
-      </ul>`
+        ${abilityScoresImproved
+          .map((a) => `<li>${FULL_ABILITIES[a.name]}: ${a.oldValue} > ${a.newValue}</li>`)
+          .join('')}
+      </ul></div>`
           : ''
-      }
+      }</div>
     `,
     buttons: {
       one: {
