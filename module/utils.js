@@ -255,7 +255,7 @@ export function sortEquipmentByType(items) {
       title: 'Armor',
       condition: (i) =>
         !i.data?.data?.attributes?.admin?.treasure?.value &&
-        (i.type === 'armor' || i.type === 'helmet' || i.type === 'shield'),
+        (i.type === 'armor' || i.type === 'helm' || i.type === 'shield'),
     },
     {
       title: 'Clothing',
