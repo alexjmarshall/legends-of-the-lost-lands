@@ -50,7 +50,7 @@ export class SimpleActor extends Actor {
     const charData = actorData.data;
     charData.combat = {
       attacks: 1,
-      riposte_to_hit_mod: 0,
+      riposte_to_hit_mod: 0, // TODO remove from combat key and make these exceptions instead of properties
       riposte_dmg_mod: 0,
       counter_to_hit_mod: 0,
       counter_dmg_mod: 0,
@@ -59,8 +59,7 @@ export class SimpleActor extends Actor {
       missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
     };
-    charData.upp = 0;
-    charData.ump = 0;
+    charData.universal_penalty = 0;
   }
 
   /** @override */
@@ -101,7 +100,7 @@ export class SimpleActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
-    this._addMvSpeed(actorData);
+    this._addMvSpeedPackAnimal(actorData);
   }
 
   _prepareCharacterData(actorData) {
@@ -138,13 +137,13 @@ export class SimpleActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
-    this._addMvSpeed(actorData);
+    this._addMvSpeedCharacter(actorData);
 
     // set removed body part locations
     this._addRemovedLocations(charData, items);
 
     // spell failure, skill check penalty & max dex mod // TODO go back to max dex mod from agility penalty
-    const wornItems = items.filter((i) => i.data.data.worn);
+    const wornItems = items; //.filter((i) => i.data.data.worn); // TODO worn items
     const SPELL_FAILURE_FACTOR = 5 / 2;
     const AGILITY_PENALTY_THRESHOLD = 5;
     const AGILITY_PENALTY_FACTOR = 3;
@@ -412,28 +411,45 @@ export class SimpleActor extends Actor {
     charData.enc = enc;
   }
 
-  _addMvSpeed(actorData) {
+  _addMvSpeedCharacter(actorData) {
+    // based on strength - TODO
     const charData = actorData.data;
-    const size = charData.size || charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
-    const bodyweight =
-      (actorData.type === 'pack_animal' ? +charData.attributes.weight.value : +charData.weight) ||
-      SIZE.defaultWeight[size];
-    const encMod =
-      (actorData.type === 'pack_animal'
-        ? +PACK_ANIMALS[charData.attributes.type?.value]?.encMod
-        : +RACE[charData.race]?.encModifier) || 1;
+    const size = charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
+    const strScore = +charData.attributes.ability_scores.str?.value || 10;
+    const encMod = +RACE[charData.race]?.encModifier || 1;
+    const encStr = bodyweight * encMod;
+
+    const load = +charData.enc || 0;
+    const maxLoad = Math.floor(100 + encStr * 10);
+    const relativeLoad = load / maxLoad;
+
+    const mv = +charData.attributes.base_mv?.value || 12;
+    const wgtMv = Math.max(0, Math.ceil((1 - relativeLoad) * mv));
+
+    charData.mv = wgtMv;
+    charData.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
+    // round charData.speed to the nearest 5
+    charData.speed = Math.ceil(charData.speed / 5) * 5;
+  }
+
+  _addMvSpeedPackAnimal(actorData) {
+    // based on bodyweight
+    const charData = actorData.data;
+    const size = charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
+    const bodyweight = +charData.attributes.weight.value || SIZE.defaultBodyWeight[size];
+    const encMod = +PACK_ANIMALS[charData.attributes.type?.value]?.encMod || 1;
     const encBodyweight = bodyweight * encMod;
 
     const load = +charData.enc || 0;
     const maxLoad = Math.floor(1.2 * encBodyweight);
     const relativeLoad = load / maxLoad;
 
-    const mv = +charData.attributes.base_mv?.value || +charData.attributes.mv?.value || 12;
+    const mv = +charData.attributes.base_mv?.value || 12;
     const wgtMv = Math.max(0, Math.ceil((1 - relativeLoad) * mv));
 
     charData.mv = wgtMv;
     charData.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
-    // round charData.speed to the nearest 5
+    // round speed to the nearest 5
     charData.speed = Math.ceil(charData.speed / 5) * 5;
   }
 
