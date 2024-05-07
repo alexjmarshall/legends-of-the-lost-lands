@@ -1,4 +1,5 @@
-import { lightArmors, mediumArmors, allShields } from '../armors.js';
+import { lightArmors, mediumArmors } from '../armor-and-clothing.js';
+import { allShields } from '../shields.js';
 import { allCombatSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
