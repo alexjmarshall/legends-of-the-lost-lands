@@ -1365,6 +1365,8 @@ export const hitLocations = {
   // prosthetic item can have ITS OWN active effect! -- removes disabled prop when worn, but adds maluses
 };
 
+export const allHitLocations = Object.keys(hitLocations);
+
 export const AIM_AREAS = {
   head: [SKULL, `left ${EYE}`, `right ${EYE}`, `left ${EAR}`, `right ${EAR}`, NOSE, JAW, NECK],
   left_arm: [`left ${SHOULDER}`, `left ${UPPER_ARM}`, `left ${ELBOW}`, `left ${FOREARM}`, `left ${HAND}`],

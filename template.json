@@ -1479,6 +1479,7 @@
       },
       "item": {
         "worn": false,
+        "belted": false,
         "held_mainhand": false,
         "held_offhand": false,
         "value": 0,

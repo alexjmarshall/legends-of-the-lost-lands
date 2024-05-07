@@ -258,12 +258,12 @@ export async function attack(attacker, target, options) {
     ? Constant.WEAPON_CATEGORIES
     : Array.isArray(attackerRollData.allowed_weap_profs)
     ? attackerRollData.allowed_weap_profs
-    : Util.getArrFromCSL(attackerRollData.allowed_weap_profs || '').map((p) => p.toLowerCase());
+    : Util.getArrFromCSV(attackerRollData.allowed_weap_profs || '').map((p) => p.toLowerCase());
 
   const weapProfs = (
     Array.isArray(attackerRollData.weap_profs)
       ? attackerRollData.weap_profs
-      : Util.getArrFromCSL(attackerRollData.weap_profs || '').map((p) => p.toLowerCase())
+      : Util.getArrFromCSV(attackerRollData.weap_profs || '').map((p) => p.toLowerCase())
   ).filter((p) => allowedWeapProfs.includes(p));
 
   const isProficient = weapProfs.some((a) => Util.stringMatch(a, weapProficiency));
@@ -662,7 +662,7 @@ export async function attack(attacker, target, options) {
         const largeShieldLocs = [
           ...new Set(
             Object.values(Constant.SHIELD_TYPES.round.L)
-              .map((v) => Util.getArrFromCSL(v))
+              .map((v) => Util.getArrFromCSV(v))
               .flat()
           ),
         ];
@@ -675,7 +675,7 @@ export async function attack(attacker, target, options) {
                   i.data.data.worn &&
                   Util.stringMatch(i.data.data.attributes.shape?.value, 'large round') &&
                   i.data.data.held_height &&
-                  Util.getArrFromCSL(Constant.SHIELD_TYPES.round.L[i.data.data.held_height]).includes(coverageArea)
+                  Util.getArrFromCSV(Constant.SHIELD_TYPES.round.L[i.data.data.held_height]).includes(coverageArea)
               )
             )
             .flat();

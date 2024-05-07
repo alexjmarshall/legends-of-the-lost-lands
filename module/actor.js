@@ -202,7 +202,7 @@ export class SimpleActor extends Actor {
 
     // weapons
     const getWeapProfs = (weapCatList) =>
-      Util.getArrFromCSL(weapCatList || '')
+      Util.getArrFromCSV(weapCatList || '')
         .map((p) => p.toLowerCase())
         .filter((p) => Constant.WEAPON_CATEGORIES.includes(p));
     charData.weap_profs = getWeapProfs(attrs.weapons.weap_profs.value);
@@ -371,7 +371,7 @@ export class SimpleActor extends Actor {
     // party MV = slowest member TODO allow DM to hardcode in attrs?
     const membersVal = attrs.members.value || '';
     if (game.actors?.getName) {
-      const members = Util.getArrFromCSL(membersVal)
+      const members = Util.getArrFromCSV(membersVal)
         .map((name) => game.actors.getName(name))
         .filter((a) => a);
       const memberMVs = members.map((a) => +a.data.data.mv).filter((m) => m != null && !isNaN(m));

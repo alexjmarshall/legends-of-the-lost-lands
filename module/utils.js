@@ -45,25 +45,6 @@ export function replacePunc(str) {
   return str.replace(/!+\s*$|\.+\s*$/, '');
 }
 
-export function getArrFromCSL(list) {
-  if (typeof list === 'string' || list instanceof String) {
-    return (
-      [
-        ...new Set(
-          list
-            ?.split(',')
-            .map((t) => t.trim())
-            .filter((t) => t)
-        ),
-      ] || []
-    );
-  } else {
-    const err = 'Input list not a string.';
-    ui.notifications.error(err);
-    throw err;
-  }
-}
-
 export function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
