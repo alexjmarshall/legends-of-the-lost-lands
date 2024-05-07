@@ -46,7 +46,7 @@ export const SIZE_VALUES = {
   default: 2,
 };
 
-export const defaultWeight = Object.freeze({
+export const defaultBodyWeight = Object.freeze({
   [SIZES.TINY]: 30,
   [SIZES.SMALL]: 50,
   [SIZES.MEDIUM]: 150,

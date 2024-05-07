@@ -429,10 +429,3 @@ export const lightArmors = Object.freeze(
 export const mediumArmors = Object.freeze(
   Object.keys(armorMaterials).filter((k) => armorMaterials[k].type === WEIGHT_TYPES.MEDIUM)
 );
-
-export const SHIELD_TYPES = Object.freeze({
-  MEDIUM: 'medium',
-  LARGE: 'large',
-});
-
-export const allShields = Object.freeze(Object.values(SHIELD_TYPES));

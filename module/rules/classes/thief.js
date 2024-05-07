@@ -1,5 +1,6 @@
-import { lightArmors } from '../armors.js';
+import { lightArmors } from '../armor-and-clothing.js';
 import { allCombatSkills, allThieverySkills, SKILLS } from '../skills.js';
+import { allShields } from '../shields.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
@@ -94,7 +95,6 @@ export class Assassin extends Thief {
     ...allCombatSkills,
     ...allThieverySkills.filter((s) => s !== SKILLS.APPRAISAL && s !== SKILLS.PICKPOCKETING),
   ]);
-  static shieldsDescription = 'buckler only';
   static weaponClass = WEAPON_CLASS.MARTIAL;
   static alignments = evilAlignments;
 
@@ -111,7 +111,7 @@ export class Assassin extends Thief {
 
   constructor(lvl, origin) {
     super(lvl, origin, Assassin);
-    this.shields = [];
+    this.shields = [...allShields];
   }
 }
 
