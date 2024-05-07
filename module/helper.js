@@ -698,3 +698,22 @@ export function removeDuplicates(array) {
 }
 
 export const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+export function getArrFromCSV(list) {
+  if (typeof list === 'string' || list instanceof String) {
+    return (
+      [
+        ...new Set(
+          list
+            ?.split(',')
+            .map((t) => t.trim())
+            .filter((t) => t)
+        ),
+      ] || []
+    );
+  } else {
+    const err = 'Input list not a string.';
+    ui.notifications.error(err);
+    throw err;
+  }
+}

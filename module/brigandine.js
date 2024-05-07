@@ -169,7 +169,7 @@ Hooks.on('ready', () => {
     const data = p.data.data;
     const attrs = data.attributes;
     const membersVal = attrs.members.value || '';
-    const members = Util.getArrFromCSL(membersVal)
+    const members = Util.getArrFromCSV(membersVal)
       .map((name) => game.actors.getName(name))
       .filter((a) => a);
     const memberMVs = members.map((a) => +a.data.data.mv).filter((m) => m != null && !isNaN(m));
