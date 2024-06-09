@@ -724,7 +724,7 @@ export const hitLocations = {
     weights: [10, 18, 6, 12, 18, 25, 6, 14],
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 1,
+      [PIERCE]: 1.5,
       [SLASH]: 0.5,
     },
     max_impale: 3,

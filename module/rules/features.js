@@ -500,11 +500,13 @@ export const features = Object.freeze({
     name: 'Commanding',
     description: '+1 Strength, +1 Charisma',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   COMELY: {
     name: 'Comely',
     description: '+1 Charisma, -1 Constitution',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   INFRAVISION: {
     name: 'Infravision',
@@ -515,6 +517,7 @@ export const features = Object.freeze({
     name: 'Brutal',
     description: '+1 Strength, -1 Intelligence',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   BEASTMARKED: {
     name: 'Beastmarked',
@@ -541,6 +544,7 @@ export const features = Object.freeze({
     name: 'Gracile',
     description: '+1 Dexterity, +1 Intelligence, -2 Constitution',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   ENIGMATIC_MIND: {
     name: 'Enigmatic Mind',
@@ -575,8 +579,14 @@ export const features = Object.freeze({
   },
   HARDY: {
     name: 'Hardy',
-    description: ['+2 Constitution, -2 Charisma', '+4 to saving throws vs. poison and petrification'],
+    description: '+4 to saving throws vs. poison and petrification',
     type: FEATURE_TYPE.INHERENT,
+  },
+  STOLID: {
+    name: 'Stolid',
+    description: '+2 Constitution, -2 Charisma',
+    type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   DUNGEON_NAVIGATOR: {
     name: 'Dungeon Navigator',
@@ -634,6 +644,7 @@ export const features = Object.freeze({
     name: 'Little fingers',
     description: '+2 Dexterity, -2 Strength',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   IRON_STOMACH: {
     name: 'Iron Stomach',
@@ -644,6 +655,7 @@ export const features = Object.freeze({
     name: 'Monstrous',
     description: '+3 Strength, -2 Intelligence, -3 Charisma',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   FELL_COUNTENANCE: {
     name: 'Fell Countenance',
@@ -703,6 +715,7 @@ export const features = Object.freeze({
     name: 'Flighty',
     description: '+3 Dexterity, -2 Wisdom, -3 Strength',
     type: FEATURE_TYPE.ABILITY,
+    virtual: true,
   },
   NATURAL_FLIGHT: {
     name: 'Natural Flight',

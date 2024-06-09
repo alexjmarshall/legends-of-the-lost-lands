@@ -18,6 +18,7 @@ export class Dwarf extends BaseRace {
   };
 
   static features = Object.freeze([
+    features.STOLID,
     features.HARDY,
     features.DUNGEON_NAVIGATOR,
     features.INFRAVISION,

@@ -62,6 +62,9 @@ function addFeatures(itemData, classInstance, race, actor, removeFeatures = fals
   const actorFeatures = actor?.data.items.filter((i) => i.type === 'feature');
 
   for (const feature of features) {
+    if (feature.virtual) {
+      continue;
+    }
     const featureFinder = (i) => i.type === 'feature' && i.name === feature.name;
     const featureItem = game.items.find(featureFinder);
     if (!featureItem) {

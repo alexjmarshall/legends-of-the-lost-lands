@@ -30,6 +30,7 @@ export class SimpleActorSheet extends ActorSheet {
 
   /** @inheritdoc */
   getData() {
+    // TODO Weight column rename encumbrance
     const context = super.getData();
     const { data } = context;
     const { type } = data;
@@ -328,7 +329,7 @@ export class SimpleActorSheet extends ActorSheet {
     const lvlControl = html.find('.level-control');
     lvlControl.click(this._onLevelControl.bind(this));
     // hide unless xp_req value >= xp_req max
-    if (this.actor.data.data.xp_req.value < this.actor.data.data.xp_req.max) {
+    if (this.actor.data.data.xp_req?.value < this.actor.data.data.xp_req?.max) {
       lvlControl.hide();
     }
 
