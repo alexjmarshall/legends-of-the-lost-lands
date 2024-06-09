@@ -6,7 +6,7 @@ import * as ALIGNMENT from './rules/alignment.js';
 import * as ABILITIES from './rules/abilities.js';
 import * as RULES_HELPER from './rules/helper.js';
 import * as CANVAS from './canvas.js';
-import * as HP from './rules/hp.js';
+import { addAreaHp } from './rules/hp.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
 import { HIT_LOCATIONS } from './rules/hit-locations.js';
 import { removeDuplicates, roundToDecimal } from './helper.js';
@@ -44,14 +44,8 @@ export class SimpleActor extends Actor {
 
   _addHumanoidLocationMaxHp(charData) {
     const hp = charData.hp;
-
-    // derive location max hp from total max hp
     const totalMaxHp = hp.max;
-    hp.head.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.head);
-    hp.right_arm.max = hp.left_arm.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.arm);
-    hp.upper_torso.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.upper_torso);
-    hp.lower_torso.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.lower_torso);
-    hp.right_leg.max = hp.left_leg.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.leg);
+    addAreaHp(totalMaxHp, hp);
   }
 
   _prepareCharacterBaseData(actorData) {
@@ -68,7 +62,9 @@ export class SimpleActor extends Actor {
       missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
     };
-    charData.universal_penalty = 0;
+    charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
+    charData.armor_penalty = 0; // TODO includes full penalty for all worn armors. Apply to skill checks with armorPenalty > 0
+    charData.combat_armor_penalty = 0; // TODO includes full penalty for worn non-proficient armors and smaller penalty for proficient armors. Apply to combat skill checks and evasion saves.
   }
 
   /** @override */
