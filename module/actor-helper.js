@@ -389,9 +389,6 @@ function getConMod(actor, actorUpdates) {
 }
 
 function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
-  // TODO Universal Physical Penalty and Universal Mental Penalty base derived stats -- use armor penalty if non-proficient -- injuries modify these and short term fatigue
-  // add UPP and UMP to actor.js base derived, then increment them in derived with armor check penalty/fatigue
-  // remember to apply UPP/UMP to all attack rolls, skill checks, ability checks and saving throws
   // find better word to distinguish between short term and long term fatigue
   // use the max hp for sheet -- non editable, same as max XP required
   // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor and then remove
