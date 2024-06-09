@@ -1,5 +1,4 @@
 import { EntitySheetHelper } from './helper.js';
-import * as ActorUtil from './actor-helper.js';
 import * as Constant from './constants.js';
 import * as SIZE from './rules/size.js';
 import * as RACE from './rules/races/index.js';
@@ -7,9 +6,21 @@ import * as ALIGNMENT from './rules/alignment.js';
 import * as ABILITIES from './rules/abilities.js';
 import * as RULES_HELPER from './rules/helper.js';
 import * as CANVAS from './canvas.js';
+import * as HP from './rules/hp.js';
 import { PACK_ANIMALS } from './rules/pack-animals.js';
 import { HIT_LOCATIONS } from './rules/hit-locations.js';
-import { removeDuplicates } from './helper.js';
+import { removeDuplicates, roundToDecimal } from './helper.js';
+import { sizeMulti } from './rules/size.js';
+
+export const ACTOR_TYPES = Object.freeze({
+  CHARACTER: 'character',
+  HUMANOID: 'humanoid',
+  MERCAHNT: 'merchant',
+  MONSTER: 'monster',
+  PACK_ANIMAL: 'pack_animal',
+  PARTY: 'party',
+  STORAGE: 'storage',
+});
 
 /**
  * Extend the base Actor document to support attributes and groups with a custom template creation dialog.
@@ -17,14 +28,12 @@ import { removeDuplicates } from './helper.js';
  */
 // eslint-disable-next-line no-undef
 export class SimpleActor extends Actor {
-  // "character","humanoid","monster","storage","merchant","party"
   /** @override*/
   prepareBaseData() {
     // no access to embedded entities here
     // this is also before active effects are applied
     // therefore derivations here should not use character items or any attributes that are modified by active effects
     // however, this is a good place to derive data that will be modified by active effects
-    // TODO when healing applied to location HP, always cap at max. When healing applied to general HP, cap at max if max HP is suppressed by fatigue.
     super.prepareBaseData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
@@ -38,19 +47,19 @@ export class SimpleActor extends Actor {
 
     // derive location max hp from total max hp
     const totalMaxHp = hp.max;
-    hp.head.max = Math.max(1, Math.floor(totalMaxHp * 0.36));
-    hp.right_arm.max = hp.left_arm.max = Math.max(1, Math.round(totalMaxHp * 0.27));
-    hp.upper_torso.max = Math.max(1, Math.round(totalMaxHp * 0.45));
-    hp.lower_torso.max = Math.max(1, Math.round(totalMaxHp * 0.36));
-    hp.right_leg.max = hp.left_leg.max = Math.max(1, Math.round(totalMaxHp * 0.36));
+    hp.head.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.head);
+    hp.right_arm.max = hp.left_arm.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.arm);
+    hp.upper_torso.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.upper_torso);
+    hp.lower_torso.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.lower_torso);
+    hp.right_leg.max = hp.left_leg.max = HP.getAreaHp(totalMaxHp, HP.HP_AREAS.leg);
   }
 
   _prepareCharacterBaseData(actorData) {
-    if (actorData.type !== 'character') return;
+    if (actorData.type !== ACTOR_TYPES.CHARACTER) return;
     const charData = actorData.data;
     charData.combat = {
       attacks: 1,
-      riposte_to_hit_mod: 0, // TODO remove from combat key and make these exceptions instead of properties
+      riposte_to_hit_mod: 0,
       riposte_dmg_mod: 0,
       counter_to_hit_mod: 0,
       counter_dmg_mod: 0,
@@ -64,7 +73,6 @@ export class SimpleActor extends Actor {
 
   /** @override */
   prepareDerivedData() {
-    // "character","humanoid","monster","storage","merchant","party"
     super.prepareDerivedData();
     const actorData = this.data;
 
@@ -82,16 +90,16 @@ export class SimpleActor extends Actor {
   }
 
   _preparePackAnimalData(actorData) {
-    const { type } = actorData;
-    if (type !== 'pack_animal') return;
-    const charData = actorData.data;
-    const animalType = charData.attributes.type.value;
+    if (actorData.type !== ACTOR_TYPES.PACK_ANIMAL) return;
 
-    if (!+charData.attributes.weight.value && PACK_ANIMALS[animalType]) {
-      charData.attributes.weight.value = PACK_ANIMALS[animalType].weight;
+    const charData = actorData.data;
+    const animalType = PACK_ANIMALS[charData.attributes.type.value];
+
+    if (!+charData.attributes.weight.value && animalType) {
+      charData.attributes.weight.value = animalType.weight;
     }
 
-    if (!+charData.attributes.base_mv.value && PACK_ANIMALS[animalType]) {
+    if (!+charData.attributes.base_mv.value && animalType) {
       charData.attributes.base_mv.value = PACK_ANIMALS[animalType].baseMv;
     }
 
@@ -100,14 +108,11 @@ export class SimpleActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
-    this._addMvSpeedPackAnimal(actorData);
+    this._addMvSpeedPackAnimal(charData);
   }
 
   _prepareCharacterData(actorData) {
-    const { type } = actorData;
-    if (type !== 'character') {
-      return;
-    }
+    if (actorData.type !== ACTOR_TYPES.CHARACTER) return;
 
     const charData = actorData.data;
 
@@ -137,7 +142,7 @@ export class SimpleActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
-    this._addMvSpeedCharacter(actorData);
+    this._addMvSpeedCharacter(charData);
 
     // set removed body part locations
     this._addRemovedLocations(charData, items);
@@ -407,21 +412,21 @@ export class SimpleActor extends Actor {
   _addEnc(charData, items) {
     const wgtItems = items.filter((i) => +i.data.data.total_weight > 0);
     const sumItemWeight = (a, b) => a + b.data.data.total_weight;
-    const enc = Math.round(wgtItems.reduce(sumItemWeight, 0) * 10) / 10;
-    charData.enc = enc;
+    const enc = wgtItems.reduce(sumItemWeight, 0);
+    charData.enc = roundToDecimal(enc, 1);
   }
 
-  _addMvSpeedCharacter(actorData) {
-    // based on strength - TODO
-    const charData = actorData.data;
-    const size = charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
+  _addMvSpeedCharacter(charData) {
+    const size = charData.size;
+    const sizeVal = SIZE.SIZE_VALUES[size] || SIZE.SIZE_VALUES.default;
     const strScore = +charData.attributes.ability_scores.str?.value || 10;
     const encMod = +RACE[charData.race]?.encModifier || 1;
-    const encStr = bodyweight * encMod;
+    const encStr = strScore * encMod;
 
     const load = +charData.enc || 0;
     const maxLoad = Math.floor(100 + encStr * 10);
-    const relativeLoad = load / maxLoad;
+    const sizeAdjustedMaxLoad = sizeMulti(maxLoad, sizeVal);
+    const relativeLoad = load / sizeAdjustedMaxLoad;
 
     const mv = +charData.attributes.base_mv?.value || 12;
     const wgtMv = Math.max(0, Math.ceil((1 - relativeLoad) * mv));
@@ -432,10 +437,9 @@ export class SimpleActor extends Actor {
     charData.speed = Math.ceil(charData.speed / 5) * 5;
   }
 
-  _addMvSpeedPackAnimal(actorData) {
+  _addMvSpeedPackAnimal(charData) {
     // based on bodyweight
-    const charData = actorData.data;
-    const size = charData.attributes.size?.value || SIZE.SIZES.MEDIUM;
+    const size = charData.attributes.size?.value || SIZE.SIZES.LARGE;
     const bodyweight = +charData.attributes.weight.value || SIZE.defaultBodyWeight[size];
     const encMod = +PACK_ANIMALS[charData.attributes.type?.value]?.encMod || 1;
     const encBodyweight = bodyweight * encMod;

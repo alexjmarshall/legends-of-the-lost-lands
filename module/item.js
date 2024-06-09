@@ -1,9 +1,42 @@
 import { EntitySheetHelper } from './helper.js';
 import * as Constant from './constants.js';
-import { SIZE_VALUES } from './rules/size.js';
-import { SHIELD_COVERAGE } from './rules/shields.js';
-import { getArrFromCSV } from './helper.js';
+import { SIZES, SIZE_VALUES, sizeMulti } from './rules/size.js';
+import { SHIELD_COVERAGE, SHIELD_WEIGHT_WORN_MULTI } from './rules/shields.js';
+import { getArrFromCSV, roundToDecimal } from './helper.js';
 import { allHitLocations, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
+import { garmentMaterials, armorMaterials, GARMENT_MATERIALS, armorVsDmgType } from './rules/armor-and-clothing.js';
+import { physicalDmgTypes } from './rules/attack-and-damage.js';
+
+export const ITEM_TYPES = Object.freeze({
+  ITEM: 'item',
+  ARMOR: 'armor',
+  BOW: 'bow',
+  CLOTHING: 'clothing',
+  CONTAINER: 'container',
+  CURRENCY: 'currency',
+  DISEASE: 'disease',
+  FEATURE: 'feature',
+  FOOD: 'food',
+  GEM: 'gem',
+  GRAPPLING_MANEUVER: 'grappling_maneuver',
+  HELM: 'helm',
+  HIT_LOCATION: 'hit_location',
+  INGREDIENT: 'ingredient',
+  INJURY: 'injury',
+  JEWELRY: 'jewelry',
+  MELEE_WEAPON: 'melee_weapon',
+  MISSILE: 'missile',
+  MISSILE_WEAPON: 'missile_weapon',
+  NATURAL_MISSILE_WEAPON: 'natural_missile_weapon',
+  NATURAL_WEAPON: 'natural_weapon',
+  RECIPE: 'recipe',
+  RUNE: 'rune',
+  SCROLL: 'scroll',
+  SHIELD: 'shield',
+  SPELL: 'spell',
+  STORAGE: 'storage',
+  TRADE_GOOD: 'trade_good',
+});
 
 /**
  * Extend the base Item document to support attributes and groups with a custom template creation dialog.
@@ -19,38 +52,6 @@ export class SimpleItem extends Item {
 
   /** @inheritdoc */
   async prepareDerivedData() {
-    // item types:
-    /*
-      "item",
-      "armor",
-      "bow",
-      "clothing",
-      "container",
-      "currency",
-      "disease",
-      "feature",
-      "food",
-      "gem",
-      "grappling_maneuver",
-      "helm",
-      "hit_location",
-      "ingredient",
-      "injury",
-      "jewelry",
-      "melee_weapon",
-      "missile",
-      "missile_weapon",
-      "natural_missile_weapon",
-      "natural_weapon",
-      "recipe",
-      "rune",
-      "scroll",
-      "shield",
-      "spell",
-      "storage",
-      "trade_good"
-      */
-
     super.prepareDerivedData();
     const itemData = this.data;
 
@@ -68,9 +69,9 @@ export class SimpleItem extends Item {
     // this._prepareSkillData(itemData);
   }
 
-  _addTotalWeight(itemData) {
-    if (itemData.quantity == null || itemData.weight == null) return;
-    itemData.total_weight = Math.round(itemData.weight * itemData.quantity * 10) / 10;
+  _addTotalWeight(data) {
+    if (data.quantity == null || data.weight == null) return;
+    data.total_weight = roundToDecimal(data.weight * data.quantity, 1);
   }
 
   _prepareItemData(itemData) {
@@ -78,42 +79,119 @@ export class SimpleItem extends Item {
     this._addTotalWeight(data);
   }
 
-  _addShieldCoverage(data, size) {
-    const shape = attrs.shape.value.toLowerCase();
-    const height = data.held_height;
-    const coverage = SHIELD_COVERAGE[shape]?.[size]?.[height] || '';
-    const coverageArr = getArrFromCSV(coverage).filter((l) => allHitLocations.includes(l.toLowerCase())) || [];
+  _getShieldCoverage(itemData) {
+    if (itemData.type !== ITEM_TYPES.SHIELD) return '';
+    const data = itemData.data;
+    const shape = data.attributes.shape.value;
+    const size = data.attributes.size.value;
+    return SHIELD_COVERAGE[shape]?.[size]?.mid || '';
+  }
+
+  _addCoverage(itemData) {
+    const data = itemData.data;
+    const isShield = itemData.type === ITEM_TYPES.SHIELD;
+    const coverageArr = isShield
+      ? this._getShieldCoverage(itemData)
+      : getArrFromCSV(data.attributes.coverage?.value).filter((l) => allHitLocations.includes(l.toLowerCase())) || [];
     data.coverage = coverageArr;
   }
 
-  _addCoverage(data) {
-    const coverage = attrs.coverage?.value || '';
-    const coverageArr = getArrFromCSV(coverage).filter((l) => allHitLocations.includes(l.toLowerCase())) || [];
-    data.coverage = coverageArr;
-  }
+  _addWeight(itemData) {
+    const data = itemData.data;
+    const isShield = itemData.type === ITEM_TYPES.SHIELD;
+    const material = data.attributes.material.value;
+    const isMagic = data.attributes.admin?.magic.value;
+    let materialWgt = garmentMaterials[material]?.weight || 0;
+    if (isMagic) materialWgt = Math.round(materialWgt / 2);
+    const size = data.attributes.size.value;
+    const sizeVal = SIZE_VALUES[size] || SIZE_VALUES.default;
 
-  _addWeightIfNullOrUndefined(data, material, size) {
-    if (data.weight != null) return;
-    
-    const unwornWgtIdx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-    const locUnwornWgt = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[unwornWgtIdx], 0);
-    const materialBaseWgt = materialProps.weight || 1;
-
-    if (isShield) {
-      materialBaseWgt = Math.round((materialBaseWgt / 2) * 10) / 10;
-      if (size >= Constant.SIZE_VALUES.L)
-        materialBaseWgt = Math.round(materialBaseWgt * Constant.SHIELD_WEIGHT_MULTI.large * 10) / 10;
-      if (isWorn) locWornWgt = Math.round(locWornWgt * Constant.SHIELD_WEIGHT_MULTI.worn * 10) / 10;
+    // unworn weight
+    if (!data.weight) {
+      const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+      const unwornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
+      let unwornWeight = sizeMulti(materialWgt * unwornWgtProportion, sizeVal);
+      if (isShield) {
+        // divide weight in half since a shield only covers half the body
+        unwornWeight = Math.round(unwornWeight / 2);
+        const shape = data.attributes.shape.value;
+        const weightMulti = SHIELD_COVERAGE[shape]?.[size]?.weight_multi || 1;
+        unwornWeight *= weightMulti;
+      }
+      data.weight = roundToDecimal(unwornWeight, 1);
     }
 
-    const materialWgt = isMagic ? Math.round(materialBaseWgt / 2) : materialBaseWgt;
+    // worn weight
+    if (isShield) {
+      data.worn_weight = roundToDecimal(data.weight * SHIELD_WEIGHT_WORN_MULTI, 1);
+      return;
+    }
+    const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN;
+    const wornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
+    const wornWeight = sizeMulti(materialWgt * wornWgtProportion, sizeVal);
+    data.worn_weight = roundToDecimal(wornWeight, 1);
 
-    const getTotalWeight = (locWgt, matWgt) => Math.round(Util.sizeMulti(matWgt * locWgt, size) / 10) / 10;
-    const unwornWeight = getTotalWeight(locUnwornWgt, materialWgt);
+    // total weight
+    const isWorn = !!data.worn;
+    const totalWeight = isWorn ? data.worn_weight * data.quantity : data.weight * data.quantity;
+    data.total_weight = roundToDecimal(totalWeight, 1);
+
+    // penalty weight
+    const extraBulky = material === GARMENT_MATERIALS.PADDED || material === GARMENT_MATERIALS.WOOD;
+    data.penalty_weight = !isWorn ? 0 : extraBulky ? totalWeight * 2 : totalWeight;
   }
 
-  const baseLocWornWgt = getLocationWgt(Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN);
-    let locWornWgt = attrs.fixed?.value ? Math.round(baseLocWornWgt / 2) : baseLocWornWgt;
+  _addValue(itemData) {
+    const data = itemData.data;
+    if (data.value != null) return;
+
+    const material = data.attributes.material.value;
+    const materialMaxValue = garmentMaterials[material]?.value || 0;
+    const maxWeight = garmentMaterials[material]?.weight || 1;
+    const weightProportion = data.weight / maxWeight;
+    const materialValue = roundToDecimal(materialMaxValue * weightProportion, 1);
+    data.value = materialValue;
+  }
+
+  _addClo(itemData) {
+    const data = itemData.data;
+    const material = data.attributes.material.value;
+    data.clo = garmentMaterials[material]?.clo || 0;
+  }
+
+  _addACandDR(itemData) {
+    if (itemData.type !== 'armor' && itemData.type !== 'helm' && itemData.type !== 'shield') {
+      return;
+    }
+
+    const data = itemData.data;
+    const material = data.attributes.material.value;
+    const materialAcMods = armorVsDmgType[material] || {};
+    const isMagic = !!data.attributes.admin?.magic.value;
+    const acMod = +data.attributes.ac_mod.value || 0;
+
+    const baseAc = (materialAcMods.baseAc || 0) + acMod;
+    const mdr = isMagic ? acMod : 0;
+    const dr = materialAcMods.dr || 0;
+    const metal = armorMaterials[material]?.metal;
+    const bulk = armorMaterials[material]?.bulk;
+
+    data.ac = { mdr, dr, metal, bulk, baseAc };
+    physicalDmgTypes.forEach((dmgType) => {
+      const acMod = +materialAcMods[dmgType] || 0;
+      data.ac[dmgType] = baseAc + acMod;
+    });
+  }
+
+  // TODO list of critical effects with mods for defender saving throw
+  // on critical, auto roll the defender's save, and show the valid effect choices to the attacker!!
+  // start with fumble results, remove fumble rolls
+  // chance for a M shield to move to the attacked/feinted height area
+  // TODO nail down bleeding. Each hit location has min damage for minor/major bleed.
+  // TODO barbarians also immune to impales
+
+  // for polearms you need to thrust to use max reach?
+  // TODO assign penetration resistance values to armors and whether they are cuttable
 
   _prepareGarmentData(itemData) {
     if (
@@ -124,71 +202,23 @@ export class SimpleItem extends Item {
     )
       return;
 
-    const { data } = itemData;
-    const attrs = data.attributes;
-    const material = attrs.material.value.toLowerCase().trim();
-    const size = attrs.size.value.toUpperCase().trim();
-    data.sizeVal = SIZE_VALUES[size] ?? SIZE_VALUES.default;
-
-    // CONTINUE
-    // do value, weight and clo first
-    // coverage
-    if (isShield) _addShieldCoverage(data, size);
-    else _addCoverage(data);
-
-    // weight
-    _addWeightIfNullOrUndefined(data, material, size);
-
-    const isWorn = !!data.worn;
-
-    const wornWeight = getTotalWeight(locWornWgt, materialWgt);
-    const qty = +data.quantity || 0;
-    const totalWeight = isWorn ? wornWeight * qty : unwornWeight * qty;
-
-    const currWeight = data.weight;
-    data.weight = currWeight || unwornWeight;
-    data.total_weight = currWeight ? Math.round(((totalWeight * currWeight) / unwornWeight) * 10) / 10 : totalWeight;
-
-    const paddedOrWood = material === 'padded' || material === 'wood';
-    data.penalty_weight = !isWorn ? 0 : paddedOrWood ? totalWeight * 2 : totalWeight;
-
-    // then do ac and non-proficient weight penalty in separate method for helm armor shields
-
-    // separate worn and unworn weights
+    this._addCoverage(itemData);
+    this._addWeight(itemData);
+    this._addValue(itemData);
+    this._addClo(itemData);
+    this._addACandDR(itemData); // TODO
+    this._addDurability(itemData); // TODO
 
     const materialAcMods = Constant.armorVsDmgType[material] || {};
     const materialProps = Constant.GARMENT_MATERIALS[material] || {};
 
     const isMagic = !!attrs.admin?.magic.value;
     const acMod = isMagic ? +attrs.magic_mods?.ac_mod.value || 0 : 0;
-    const isShield = itemData.type === 'shield';
 
-    // AC mods if not clothing
-    if (itemData.type !== 'clothing') {
-      const baseAc = (materialAcMods.base_AC || 0) + acMod;
-      const mdr = isMagic ? acMod : 0;
-      data.metal = !!materialProps.metal;
-      data.bulky = !!materialProps.bulky;
-
-      data.ac = { mdr, base_ac: baseAc };
-      Constant.DMG_TYPES.forEach((dmgType) => {
-        data.ac[dmgType] = {
-          ac: baseAc + (materialAcMods[dmgType]?.ac || 0),
-          dr: materialAcMods[dmgType]?.dr,
-        };
-      });
-    }
-
-    // clo
-    data.clo = materialProps.clo;
-
-    // value
-    const materialValue = materialProps.value || 0;
-    const valueWgt = getTotalWeight(locUnwornWgt, materialBaseWgt);
-    const maxWeight = materialProps.weight || valueWgt || 1;
-    const ratio = valueWgt / maxWeight;
-    const baseValue = Math.round(materialValue * ratio);
-    data.value = data.value || baseValue;
+    // TODO armor hp from durability
+    // TODO weapons get stuck if they impale and do >= 2x max damage total
+    // TODO Rapier is Reach 1 but does have a lunge attack -- step forward and back
+    // TODO don't need extra damage for slash/pierce vs unarmored, impale and bleed covers it
   }
 
   _prepareMeleeWeaponData(itemData) {

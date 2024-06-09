@@ -1023,6 +1023,8 @@ export async function buyMacro(item, priceInCp, merchant, qty, options = {}) {
   // if any change, return in higher value currencies first
   if (changeInCp) {
     // TODO TESTTTT buying AND selling thoroughly
+    // TODO lower buy value for damaged armor/weapons
+    // TODO is there code duplication here and in foundry.js?
     const expandedPriceObj = Util.expandPrice(changeInCp);
     const keyToItemName = {
       gp: Constant.CURRENCY.gp.name,

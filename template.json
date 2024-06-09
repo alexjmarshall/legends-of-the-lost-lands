@@ -25,133 +25,133 @@
             "label": "Immunities"
           },
           "dmg_multi": {
-            "dtype": "Number",
-            "label": "Damage Type Multiplier"
+            "dtype": "String",
+            "label": "Damage Resistances/Vulnerabilities"
           }
         },
         "attributes": {
           "immunities": {
-            "immune_disease": {
+            "disease": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Disease",
               "value": false
             },
-            "immune_crits": {
+            "crits": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Critical Hits",
+              "label": "Critical Hit",
               "value": false
             },
-            "immune_backstab": {
+            "backstab": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Backstabs",
+              "label": "Backstab",
               "value": false
             },
-            "immune_bleed": {
+            "bleed": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Bleed",
               "value": false
             },
-            "immune_knockdown": {
+            "knockdown": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Knockdown",
               "value": false
             },
-            "immune_impale": {
+            "impale": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Impale",
               "value": false
             },
-            "immune_injury": {
+            "injury": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Injury",
               "value": false
             },
-            "immune_grappling": {
+            "grappling": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Grapples",
               "value": false
             },
-            "immune_silver_weap": {
+            "silver": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Silver Weapons",
+              "label": "Silver",
               "value": false
             },
-            "immune_cold_iron": {
+            "cold_iron": {
               "dtype": "Boolean",
               "group": "immunities",
-              "label": "Cold Iron Weapons",
+              "label": "Cold Iron",
               "value": false
             },
-            "req_magic_weap": {
-              "dtype": "Number",
+            "non_magical": {
+              "dtype": "Boolean",
               "group": "immunities",
-              "label": "Requires Magic Weapon Value",
-              "value": 0
+              "label": "Non-Magical Weapon",
+              "value": false
+            },
+            "poison": {
+              "dtype": "Boolean",
+              "group": "immunities",
+              "label": "Poison",
+              "value": false
             }
           },
           "dmg_multi": {
             "fire": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Fire",
-              "value": 1
+              "value": "standard"
             },
             "cold": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Cold",
-              "value": 1
+              "value": "standard"
             },
             "electricity": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Electricity",
-              "value": 1
+              "value": "standard"
             },
             "acid": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Acid",
-              "value": 1
+              "value": "standard"
             },
             "holy": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Holy",
-              "value": 1
-            },
-            "poison": {
-              "dtype": "Number",
-              "group": "dmg_multi",
-              "label": "Poison",
-              "value": 1
+              "value": "standard"
             },
             "blunt": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Blunt",
-              "value": 1
+              "value": "standard"
             },
             "piercing": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Piercing",
-              "value": 1
+              "value": "standard"
             },
             "slashing": {
-              "dtype": "Number",
+              "dtype": "String",
               "group": "dmg_multi",
               "label": "Slashing",
-              "value": 1
+              "value": "standard"
             }
           }
         }
@@ -181,7 +181,7 @@
             "dtype": "String",
             "group": "",
             "label": "Size",
-            "value": "M"
+            "value": "L"
           },
           "infravision": {
             "dtype": "String",
@@ -238,7 +238,7 @@
             "value": "mid"
           },
           "morale": {
-            "dtype": "Number",
+            "dtype": "String",
             "group": "",
             "label": "Morale",
             "value": "mid"
@@ -901,6 +901,12 @@
             "group": "",
             "label": "Type",
             "value": "humanoid"
+          },
+          "size": {
+            "dtype": "String",
+            "group": "",
+            "label": "Size",
+            "value": "M"
           }
         }
       }
@@ -962,25 +968,25 @@
           "apply_fatigue_exposure": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Exposure Fatigue Damage",
+            "label": "Apply Exposure",
             "value": true
           },
           "apply_fatigue_sleep": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Sleep Fatigue Damage",
+            "label": "Apply Sleep",
             "value": true
           },
           "apply_fatigue_hunger": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Hunger Fatigue Damage",
+            "label": "Apply Hunger",
             "value": true
           },
           "apply_fatigue_thirst": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Thirst Fatigue Damage",
+            "label": "Apply Thirst",
             "value": true
           },
           "use_target_skill_lvl": {
@@ -1591,7 +1597,7 @@
           "dmg_mod": {
             "dtype": "Number",
             "group": "",
-            "label": "Damage Mod.",
+            "label": "Damage Bonus",
             "value": 0
           },
           "admin": {
@@ -1616,7 +1622,7 @@
           "to_hit_mod": {
             "dtype": "Number",
             "group": "",
-            "label": "To-Hit Mod.",
+            "label": "To-Hit Bonus",
             "value": 0
           },
           "skill": {
@@ -1736,6 +1742,12 @@
               "group": "admin",
               "label": "Beltable",
               "value": false
+            },
+            "slot": {
+              "dtype": "String",
+              "group": "admin",
+              "label": "Magic Item Slot",
+              "value": ""
             }
           },
           "material": {
@@ -1749,12 +1761,6 @@
             "group": "",
             "label": "Size",
             "value": "M"
-          },
-          "slot": {
-            "dtype": "String",
-            "group": "",
-            "label": "Magic Item Slot",
-            "value": ""
           }
         }
       }
@@ -1774,7 +1780,7 @@
         "ac_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "AC Mod.",
+          "label": "AC Bonus",
           "value": 0
         }
       }
@@ -1984,7 +1990,7 @@
         "check_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Check Mod.",
+          "label": "Check Bonus",
           "value": 0
         }
       }
@@ -2001,7 +2007,7 @@
         "ac_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "AC Mod.",
+          "label": "AC Bonus",
           "value": 0
         },
         "fixed": {
@@ -2160,7 +2166,7 @@
           "healing_mod": {
             "dtype": "Number",
             "group": "admin",
-            "label": "Healing Mod.",
+            "label": "Healing Bonus",
             "value": 0
           },
           "heal_failures": {
@@ -2193,13 +2199,13 @@
             "group": "admin",
             "label": "Beltable",
             "value": false
+          },
+          "slot": {
+            "dtype": "String",
+            "group": "admin",
+            "label": "Magic Item Slot",
+            "value": ""
           }
-        },
-        "slot": {
-          "dtype": "String",
-          "group": "",
-          "label": "Magic Item Slot",
-          "value": ""
         }
       }
     },
@@ -2233,7 +2239,7 @@
         "to_hit_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "To-Hit Mod.",
+          "label": "To-Hit Bonus",
           "value": 0
         },
         "dmg": {
@@ -2251,7 +2257,7 @@
         "dmg_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Damage Mod.",
+          "label": "Damage Bonus",
           "value": 0
         },
         "skill": {
@@ -2366,7 +2372,7 @@
         "dmg_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Damage Mod.",
+          "label": "Damage Bonus",
           "value": 0
         },
         "dmg_type": {
@@ -2427,7 +2433,7 @@
         "to_hit_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "To-Hit Mod.",
+          "label": "To-Hit Bonus",
           "value": 0
         },
         "impact": {
@@ -2533,6 +2539,12 @@
           "group": "",
           "label": "Shape",
           "value": "round"
+        },
+        "ac_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "AC Bonus",
+          "value": 0
         }
       }
     },
@@ -2583,17 +2595,11 @@
           "label": "Components",
           "value": "V,S"
         },
-        "casting_time": {
-          "dtype": "String",
-          "group": "",
-          "label": "Casting Time",
-          "value": ""
-        },
-        "save_mod": {
+        "casting_speed": {
           "dtype": "Number",
           "group": "",
-          "label": "Save Mod.",
-          "value": 0
+          "label": "Casting Speed",
+          "value": 1
         }
       }
     },

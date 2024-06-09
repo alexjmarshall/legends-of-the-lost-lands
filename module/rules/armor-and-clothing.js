@@ -14,106 +14,157 @@ const { LIGHT, MEDIUM, HEAVY } = WEIGHT_TYPES;
 export const MAX_DR = 3;
 
 // worn armor layer bulk levels must be less than or equal to 5
-export const bulkLevels = Object.freeze({
+export const BULK_LEVELS = Object.freeze({
   NON: 1,
   SEMI: 2,
   BULKY: 3,
 });
 
-const { NON, SEMI, BULKY } = bulkLevels;
+const { NON, SEMI, BULKY } = BULK_LEVELS;
+
+export const GARMENT_MATERIALS = Object.freeze({
+  BONE: 'bone',
+  WOOD: 'wood',
+  BURLAP: 'burlap',
+  LINEN: 'linen',
+  WOOL: 'wool',
+  SILK: 'silk',
+  FURS: 'furs',
+  AKETON: 'aketon',
+  GAMBESON: 'gambeson',
+  LEATHER: 'leather',
+  CUIR_BOUILLI: 'cuir bouilli',
+  BRIGANDINE: 'brigandine',
+  SCALE: 'scale',
+  MAIL: 'mail',
+  ELVEN_MAIL: 'elven mail',
+  PLATED_MAIL: 'plated mail',
+  LAMELLAR: 'lamellar',
+  SPLINT: 'splint',
+  IRON_PLATE: 'iron plate',
+  STEEL_PLATE: 'steel plate',
+});
+
+const {
+  BONE,
+  WOOD,
+  BURLAP,
+  LINEN,
+  WOOL,
+  SILK,
+  FURS,
+  AKETON,
+  GAMBESON,
+  LEATHER,
+  CUIR_BOUILLI,
+  BRIGANDINE,
+  SCALE,
+  MAIL,
+  ELVEN_MAIL,
+  PLATED_MAIL,
+  LAMELLAR,
+  SPLINT,
+  IRON_PLATE,
+  STEEL_PLATE,
+} = GARMENT_MATERIALS;
 
 export const garmentMaterials = deepFreeze({
-  bone: {
+  [BONE]: {
     weight: 36,
     clo: 10,
     value: 210,
   },
-  wood: {
+  [WOOD]: {
     weight: 40,
     clo: 10,
     value: 120,
   },
-  burlap: {
+  [BURLAP]: {
     weight: 8,
     clo: 5,
     value: 6,
   },
-  linen: {
+  [LINEN]: {
     weight: 4,
     clo: 8,
     value: 60,
   },
-  wool: {
+  [WOOL]: {
     weight: 8,
     clo: 16,
     value: 144,
   },
-  silk: {
+  [SILK]: {
     weight: 2,
     clo: 11,
     value: 1080,
   },
-  fur: {
+  [FURS]: {
     weight: 24,
     clo: 32,
     value: 600,
   },
-  padded: {
+  [AKETON]: {
+    weight: 12,
+    clo: 11,
+    value: 150,
+  },
+  [GAMBESON]: {
     weight: 20,
     clo: 18,
-    value: 234,
+    value: 216,
   },
-  leather: {
+  [LEATHER]: {
     weight: 16,
     clo: 10,
-    value: 288,
+    value: 264,
   },
-  'cuir bouilli': {
+  [CUIR_BOUILLI]: {
     weight: 28,
     clo: 9,
     value: 360,
   },
-  brigandine: {
+  [BRIGANDINE]: {
     weight: 60,
     clo: 16,
-    value: 1600,
+    value: 1800,
   },
-  scale: {
+  [SCALE]: {
     weight: 64,
     clo: 13,
-    value: 952,
+    value: 1100,
   },
-  mail: {
+  [MAIL]: {
     weight: 48,
     clo: 2,
-    value: 1824,
+    value: 2400,
   },
-  'elven mail': {
+  [ELVEN_MAIL]: {
     weight: 24,
     clo: 1,
-    value: 18240,
+    value: 24000,
   },
-  'plated mail': {
+  [PLATED_MAIL]: {
     weight: 56,
     clo: 4,
-    value: 2552,
+    value: 3000,
   },
-  lamellar: {
+  [LAMELLAR]: {
     weight: 72,
     clo: 11,
-    value: 1408,
+    value: 1400,
   },
-  splint: {
+  [SPLINT]: {
     weight: 68,
     clo: 14,
-    value: 1516,
+    value: 1650,
   },
-  'iron plate': {
+  [IRON_PLATE]: {
     weight: 84,
     clo: 10,
-    value: 2880,
+    value: 3400,
   },
-  'steel plate': {
+  [STEEL_PLATE]: {
     weight: 76,
     clo: 8,
     value: 7200,
@@ -121,336 +172,426 @@ export const garmentMaterials = deepFreeze({
 });
 
 export const armorMaterials = deepFreeze({
-  fur: {
+  [FURS]: {
     metal: false,
     bulk: NON,
     type: LIGHT,
-    durability: 40,
+    durability: 60,
+    cuttable: true,
   },
-  padded: {
+  [AKETON]: {
+    metal: false,
+    bulk: NON,
+    type: LIGHT,
+    durability: 80,
+    cuttable: true,
+  },
+  [GAMBESON]: {
     metal: false,
     bulk: SEMI,
     type: LIGHT,
-    durability: 60,
+    durability: 120,
+    cuttable: true,
   },
-  leather: {
+  [LEATHER]: {
     metal: false,
     bulk: NON,
     type: LIGHT,
-    durability: 50,
+    durability: 150,
+    cuttable: true,
   },
-  'cuir bouilli': {
+  [CUIR_BOUILLI]: {
     metal: false,
     bulk: BULKY,
     type: LIGHT,
-    durability: 80,
+    durability: 130,
+    cuttable: false,
   },
-  wood: {
+  [WOOD]: {
     metal: false,
     bulk: BULKY,
     type: MEDIUM,
     durability: 120,
+    cuttable: false,
   },
-  bone: {
+  [BONE]: {
     metal: false,
     bulk: BULKY,
     type: MEDIUM,
-    durability: 70,
+    durability: 100,
+    cuttable: false,
   },
-  scale: {
+  [SCALE]: {
     metal: true,
     bulk: SEMI,
     type: MEDIUM,
     durability: 130,
+    cuttable: false,
   },
-  brigandine: {
+  [BRIGANDINE]: {
     metal: true,
     bulk: SEMI,
     type: MEDIUM,
     durability: 170,
+    cuttable: false,
   },
-  mail: {
+  [MAIL]: {
     metal: true,
     bulk: NON,
     type: MEDIUM,
     durability: 230,
+    cuttable: false,
   },
-  'elven mail': {
+  [ELVEN_MAIL]: {
     metal: true,
     bulk: NON,
     type: LIGHT,
     durability: 2300,
+    cuttable: false,
   },
-  'plated mail': {
+  [PLATED_MAIL]: {
     metal: true,
     bulk: SEMI,
     type: MEDIUM,
     durability: 200,
+    cuttable: false,
   },
-  lamellar: {
+  [LAMELLAR]: {
     metal: true,
     bulk: SEMI,
     type: HEAVY,
     durability: 140,
+    cuttable: false,
   },
-  splint: {
+  [SPLINT]: {
     metal: true,
-    bulk: BULKY,
+    bulk: SEMI,
     type: HEAVY,
     durability: 160,
+    cuttable: false,
   },
-  'iron plate': {
+  [IRON_PLATE]: {
     metal: true,
     bulk: BULKY,
     type: HEAVY,
     durability: 180,
+    cuttable: false,
   },
-  'steel plate': {
+  [STEEL_PLATE]: {
     metal: true,
     bulk: BULKY,
     type: HEAVY,
     durability: 220,
+    cuttable: false,
   },
 });
 
+// TODO for each dmg type, need AC mod, pen TN and DR
+// pen is in secondary effects, ac mod and dr in weapon vs armor
 export const armorVsDmgType = deepFreeze({
   none: {
-    base_AC: 0,
+    baseAc: 0,
     [BLUNT]: {
+      ac: 0,
+      pen: 0,
+      dr: 0,
+    },
+    [PIERCE]: {
       ac: 1,
+      pen: 0,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: 0,
+      pen: 0,
+      dr: 0,
+    },
+  },
+  [FURS]: {
+    baseAc: 2,
+    [BLUNT]: {
+      ac: 0,
+      pen: 8,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 1,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: -1,
+      pen: 2,
+      dr: 0,
+    },
+  },
+  [AKETON]: {
+    baseAc: 2,
+    [BLUNT]: {
+      ac: 0,
+      pen: 9,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 1,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: -1,
+      pen: 2,
+      dr: 0,
+    },
+  },
+  [GAMBESON]: {
+    baseAc: 2,
+    [BLUNT]: {
+      ac: 0,
+      pen: 9,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 2,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 0,
+      pen: 4,
+      dr: 1,
+    },
+  },
+  [LEATHER]: {
+    baseAc: 2,
+    [BLUNT]: {
+      ac: 0,
+      pen: 8,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: 1,
+      pen: 2,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: -1,
+      pen: 3,
+      dr: 1,
+    },
+  },
+  [CUIR_BOUILLI]: {
+    baseAc: 3,
+    [BLUNT]: {
+      ac: 0,
+      pen: 6,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: 1,
+      pen: 3,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: -1,
+      pen: 5,
+      dr: 0,
+    },
+  },
+  [WOOD]: {
+    baseAc: 3,
+    [BLUNT]: {
+      ac: 0,
+      pen: 7,
       dr: 0,
     },
     [PIERCE]: {
       ac: 0,
+      pen: 3,
       dr: 0,
     },
     [SLASH]: {
+      ac: -1,
+      pen: 4,
+      dr: 0,
+    },
+  },
+  [BONE]: {
+    baseAc: 3,
+    [BLUNT]: {
+      ac: 0,
+      pen: 7,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 3,
+      dr: 0,
+    },
+    [SLASH]: {
+      ac: 0,
+      pen: 5,
+      dr: 0,
+    },
+  },
+  [SCALE]: {
+    baseAc: 4,
+    [BLUNT]: {
+      ac: -1,
+      pen: 10,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: -1,
+      pen: 4,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 1,
+      pen: 6,
+      dr: 1,
+    },
+  },
+  [BRIGANDINE]: {
+    baseAc: 4,
+    [BLUNT]: {
+      ac: -1,
+      pen: 11,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 1,
+      pen: 5,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 0,
+      pen: 7,
+      dr: 1,
+    },
+  },
+  [MAIL]: {
+    baseAc: 3,
+    [BLUNT]: {
+      ac: 0,
+      pen: 12,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: -1,
+      pen: 5,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 1,
+      pen: 8,
+      dr: 1,
+    },
+  },
+  [ELVEN_MAIL]: {
+    baseAc: 3,
+    [BLUNT]: {
+      ac: 0,
+      pen: 16,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: -1,
+      pen: 9,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 1,
+      pen: 12,
+      dr: 1,
+    },
+  },
+  [PLATED_MAIL]: {
+    baseAc: 4,
+    [BLUNT]: {
+      ac: 0,
+      pen: 11,
+      dr: 0,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 6,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 1,
+      pen: 9,
+      dr: 1,
+    },
+  },
+  [LAMELLAR]: {
+    baseAc: 4,
+    [BLUNT]: {
+      ac: 0,
+      pen: 11,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 6,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 0,
+      pen: 8,
+      dr: 1,
+    },
+  },
+  [SPLINT]: {
+    baseAc: 5,
+    [BLUNT]: {
+      ac: -1,
+      pen: 10,
+      dr: 1,
+    },
+    [PIERCE]: {
+      ac: 0,
+      pen: 4,
+      dr: 1,
+    },
+    [SLASH]: {
+      ac: 1,
+      pen: 7,
+      dr: 1,
+    },
+  },
+  [IRON_PLATE]: {
+    baseAc: 7,
+    [BLUNT]: {
       ac: -2,
-      dr: 0,
-    },
-  },
-  fur: {
-    base_AC: 1,
-    [BLUNT]: {
-      ac: 1,
+      pen: 8,
       dr: 0,
     },
     [PIERCE]: {
       ac: 1,
+      pen: 7,
       dr: 0,
     },
     [SLASH]: {
+      ac: 0,
+      pen: 9,
+      dr: 1,
+    },
+  },
+  [STEEL_PLATE]: {
+    baseAc: 8,
+    [BLUNT]: {
       ac: -2,
-      dr: 0,
-    },
-  },
-  leather: {
-    base_AC: 1,
-    [BLUNT]: {
-      ac: 1,
+      pen: 10,
       dr: 0,
     },
     [PIERCE]: {
       ac: 1,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 0,
-      dr: 0,
-    },
-  },
-  padded: {
-    base_AC: 1,
-    [BLUNT]: {
-      ac: 1,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: -1,
+      pen: 9,
       dr: 0,
     },
     [SLASH]: {
       ac: 0,
-      dr: 0,
-    },
-  },
-  'cuir bouilli': {
-    base_AC: 2,
-    [BLUNT]: {
-      ac: 1,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 1,
-      dr: 0,
-    },
-    [SLASH]: {
-      ac: 0,
-      dr: 0,
-    },
-  },
-  wood: {
-    base_AC: 2,
-    [BLUNT]: {
-      ac: 0,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 2,
-      dr: 0,
-    },
-    [SLASH]: {
-      ac: 0,
-      dr: 0,
-    },
-  },
-  bone: {
-    base_AC: 2,
-    [BLUNT]: {
-      ac: 0,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 1,
-      dr: 0,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 0,
-    },
-  },
-  scale: {
-    base_AC: 3,
-    [BLUNT]: {
-      ac: 1,
-      dr: 0,
-    },
-    [PIERCE]: {
-      ac: 0,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 2,
-      dr: 0,
-    },
-  },
-  brigandine: {
-    base_AC: 3,
-    [BLUNT]: {
-      ac: 0,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 0,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 1,
-    },
-  },
-  mail: {
-    base_AC: 3,
-    [BLUNT]: {
-      ac: 0,
-      dr: 0,
-    },
-    [PIERCE]: {
-      ac: -1,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 1,
-    },
-  },
-  'elven mail': {
-    base_AC: 3,
-    [BLUNT]: {
-      ac: 0,
-      dr: 0,
-    },
-    [PIERCE]: {
-      ac: -1,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 1,
-    },
-  },
-  'plated mail': {
-    base_AC: 4,
-    [BLUNT]: {
-      ac: 0,
-      dr: 0,
-    },
-    [PIERCE]: {
-      ac: 0,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 1,
-    },
-  },
-  lamellar: {
-    base_AC: 4,
-    [BLUNT]: {
-      ac: 0,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 0,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 0,
-      dr: 1,
-    },
-  },
-  splint: {
-    base_AC: 5,
-    [BLUNT]: {
-      ac: -1,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 0,
-      dr: 1,
-    },
-    [SLASH]: {
-      ac: 1,
-      dr: 1,
-    },
-  },
-  'iron plate': {
-    base_AC: 5,
-    [BLUNT]: {
-      ac: -1,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 1,
-      dr: 0,
-    },
-    [SLASH]: {
-      ac: 2,
-      dr: 1,
-    },
-  },
-  'steel plate': {
-    base_AC: 6,
-    [BLUNT]: {
-      ac: -1,
-      dr: 1,
-    },
-    [PIERCE]: {
-      ac: 1,
-      dr: 0,
-    },
-    [SLASH]: {
-      ac: 3,
+      pen: 12,
       dr: 1,
     },
   },

@@ -1,3 +1,5 @@
+// TODO double blade costs
+
 export const WEAPON_SPECIAL_PROPS = Object.freeze({
   BACK_RANK: 'back rank', // TODO needed? or only spears
   BALANCED: 'balanced', // TODO needed?

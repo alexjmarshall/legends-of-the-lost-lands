@@ -717,3 +717,11 @@ export function getArrFromCSV(list) {
     throw err;
   }
 }
+
+export function roundToNearest(num, nearest) {
+  return Math.round(num / nearest) * nearest;
+}
+
+export function roundToDecimal(num, places) {
+  return Math.round(num * 10 ** places) / 10 ** places;
+}
