@@ -48,6 +48,10 @@ export class SimpleItem extends Item {
     super.prepareBaseData();
     this.data.data.groups = this.data.data.groups || {};
     this.data.data.attributes = this.data.data.attributes || {};
+
+    const itemData = this.data;
+    this._addCoverage(itemData);
+    this._addDurability(itemData);
   }
 
   /** @inheritdoc */
@@ -71,7 +75,7 @@ export class SimpleItem extends Item {
 
   _addTotalWeight(data) {
     if (data.quantity == null || data.weight == null) return;
-    data.total_weight = roundToDecimal(data.weight * data.quantity, 1);
+    data.total_weight = Math.max(0, roundToDecimal(data.weight * data.quantity, 1));
   }
 
   _prepareItemData(itemData) {
@@ -88,6 +92,9 @@ export class SimpleItem extends Item {
   }
 
   _addCoverage(itemData) {
+    if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD, ITEM_TYPES.CLOTHING].includes(itemData.type) === false) {
+      return;
+    }
     const data = itemData.data;
     const isShield = itemData.type === ITEM_TYPES.SHIELD;
     const coverageArr = isShield
@@ -137,8 +144,11 @@ export class SimpleItem extends Item {
     data.total_weight = roundToDecimal(totalWeight, 1);
 
     // penalty weight
-    const extraBulky = material === GARMENT_MATERIALS.PADDED || material === GARMENT_MATERIALS.WOOD;
-    data.penalty_weight = !isWorn ? 0 : extraBulky ? totalWeight * 2 : totalWeight;
+    data.penalty_weight = 0;
+    if (isWorn) {
+      const isExtraBulky = [GARMENT_MATERIALS.GAMBESON, GARMENT_MATERIALS.WOOD].includes(material);
+      data.penalty_weight = isExtraBulky ? roundToDecimal(totalWeight * 2, 1) : totalWeight;
+    }
   }
 
   _addValue(itemData) {
@@ -149,7 +159,7 @@ export class SimpleItem extends Item {
     const materialMaxValue = garmentMaterials[material]?.value || 0;
     const maxWeight = garmentMaterials[material]?.weight || 1;
     const weightProportion = data.weight / maxWeight;
-    const materialValue = roundToDecimal(materialMaxValue * weightProportion, 1);
+    const materialValue = Math.round(materialMaxValue * weightProportion);
     data.value = materialValue;
   }
 
@@ -160,27 +170,47 @@ export class SimpleItem extends Item {
   }
 
   _addACandDR(itemData) {
-    if (itemData.type !== 'armor' && itemData.type !== 'helm' && itemData.type !== 'shield') {
+    if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD].includes(itemData.type) === false) {
       return;
     }
 
     const data = itemData.data;
     const material = data.attributes.material.value;
     const materialAcMods = armorVsDmgType[material] || {};
+
     const isMagic = !!data.attributes.admin?.magic.value;
     const acMod = +data.attributes.ac_mod.value || 0;
-
     const baseAc = (materialAcMods.baseAc || 0) + acMod;
     const mdr = isMagic ? acMod : 0;
-    const dr = materialAcMods.dr || 0;
-    const metal = armorMaterials[material]?.metal;
-    const bulk = armorMaterials[material]?.bulk;
 
-    data.ac = { mdr, dr, metal, bulk, baseAc };
+    data.armor = { mdr, baseAc };
     physicalDmgTypes.forEach((dmgType) => {
-      const acMod = +materialAcMods[dmgType] || 0;
-      data.ac[dmgType] = baseAc + acMod;
+      data.armor[dmgType] = materialAcMods[dmgType];
     });
+  }
+
+  _addDurability(itemData) {
+    if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD, ITEM_TYPES.CLOTHING].includes(itemData.type) === false) {
+      return;
+    }
+
+    const data = itemData.data;
+    const material = data.attributes.material.value;
+    const materialProps = garmentMaterials[material];
+    const maxDurability = materialProps?.durability || 0;
+    const coverageWeight =
+      data.coverage.reduce(
+        (sum, l) =>
+          sum +
+          hitLocations[l].weights[HIT_LOC_WEIGHT_INDEXES.SWING] +
+          hitLocations[l].weights[HIT_LOC_WEIGHT_INDEXES.THRUST],
+        0
+      ) / 200;
+    const durability = Math.max(1, Math.round(maxDurability * coverageWeight));
+
+    data.durability = durability;
+    data.hp.max = durability;
+    data.hp.value = Math.min(data.hp.value, durability);
   }
 
   // TODO list of critical effects with mods for defender saving throw
@@ -194,31 +224,17 @@ export class SimpleItem extends Item {
   // TODO assign penetration resistance values to armors and whether they are cuttable
 
   _prepareGarmentData(itemData) {
-    if (
-      itemData.type !== 'armor' &&
-      itemData.type !== 'helm' &&
-      itemData.type !== 'clothing' &&
-      itemData.type !== 'shield'
-    )
+    if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD, ITEM_TYPES.CLOTHING].includes(itemData.type) === false) {
       return;
+    }
 
-    this._addCoverage(itemData);
     this._addWeight(itemData);
     this._addValue(itemData);
     this._addClo(itemData);
-    this._addACandDR(itemData); // TODO
-    this._addDurability(itemData); // TODO
+    this._addACandDR(itemData);
 
-    const materialAcMods = Constant.armorVsDmgType[material] || {};
-    const materialProps = Constant.GARMENT_MATERIALS[material] || {};
-
-    const isMagic = !!attrs.admin?.magic.value;
-    const acMod = isMagic ? +attrs.magic_mods?.ac_mod.value || 0 : 0;
-
-    // TODO armor hp from durability
     // TODO weapons get stuck if they impale and do >= 2x max damage total
     // TODO Rapier is Reach 1 but does have a lunge attack -- step forward and back
-    // TODO don't need extra damage for slash/pierce vs unarmored, impale and bleed covers it
   }
 
   _prepareMeleeWeaponData(itemData) {
