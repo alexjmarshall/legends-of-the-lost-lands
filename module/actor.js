@@ -11,6 +11,8 @@ import { PACK_ANIMALS } from './rules/pack-animals.js';
 import { HIT_LOCATIONS } from './rules/hit-locations.js';
 import { removeDuplicates, roundToDecimal } from './helper.js';
 import { sizeMulti } from './rules/size.js';
+import { ITEM_TYPES } from './item-helper.js';
+import { features } from './rules/features.js';
 
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
@@ -139,6 +141,8 @@ export class SimpleActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
+    const hasSmallArms = items.some((i) => i.type === ITEM_TYPES.FEATURE && i.data.name === features.SMALL_ARMS.name);
+    charData.max_mv = hasSmallArms ? 9 : 12;
     this._addMvSpeedCharacter(charData);
 
     // set removed body part locations
@@ -428,10 +432,10 @@ export class SimpleActor extends Actor {
     const sizeAdjustedMaxLoad = sizeMulti(maxLoad, sizeVal);
     const relativeLoad = load / sizeAdjustedMaxLoad;
 
-    const mv = +charData.attributes.base_mv?.value || 12;
+    const mv = +charData.base_mv || 12;
     const wgtMv = Math.max(0, Math.ceil((1 - relativeLoad) * mv));
 
-    charData.mv = wgtMv;
+    charData.mv = Math.min(wgtMv, charData.max_mv);
     charData.speed = Math.floor((wgtMv * CANVAS.GRID_SIZE) / 2);
     // round charData.speed to the nearest 5
     charData.speed = Math.ceil(charData.speed / 5) * 5;

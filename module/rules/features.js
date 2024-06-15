@@ -91,6 +91,7 @@ export const features = Object.freeze({
     name: 'Blunt Damage Only',
     description: 'Inflicts blunt weapon damage only',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   CAST_DRUID_SPELLS: {
     name: 'Cast Druid Spells',
