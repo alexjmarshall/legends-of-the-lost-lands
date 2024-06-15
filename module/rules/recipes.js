@@ -27,10 +27,10 @@ export const RECIPES = Object.freeze({
   ELIXIR_FOR_GUT_PAIN: 'Elixir for Gut Pain',
   ELIXIR_FOR_HEADACHE: 'Elixir for Headache',
   ELIXIR_FOR_INSOMNIA: 'Elixir for Insomnia',
-  ELIXIR_FOR_FATIGUE: 'Elixir for Fatigue',
+  ELIXIR_FOR_EXHAUSTION: 'Elixir for Exhaustion',
 });
 
-// TODO recipes that treat disease symptoms do not cure the disease itself but restore some fatigue damage
+// TODO recipes that treat disease symptoms do not cure the disease itself but restore some exhaustion damage
 // TODO recipes that treat injuries do not heal the injury itself but reduce its severity
 export const recipes = deepFreeze({
   [RECIPES.POULTICE_TO_NEUTRALIZE_POISON]: {
@@ -94,7 +94,7 @@ export const recipes = deepFreeze({
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],
   },
-  [RECIPES.ELIXIR_FOR_FATIGUE]: {
+  [RECIPES.ELIXIR_FOR_EXHAUSTION]: {
     ingredients: ['Ginseng'], // TODO replace
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
     type: [RECIPE_TYPES.HERBAL],

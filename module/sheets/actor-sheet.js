@@ -1,7 +1,7 @@
 import { EntitySheetHelper } from '../helper.js';
 import * as Util from '../utils.js';
 import * as Constant from '../constants.js';
-import * as Fatigue from '../fatigue.js';
+import * as Exhaustion from '../exhaustion.js';
 import * as CLASSES from '../rules/classes/index.js';
 import * as RACES from '../rules/races/index.js';
 import { getAdvancementPointsRequired } from '../rules/skills.js';
@@ -21,7 +21,7 @@ export class SimpleActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'items' }],
-      scrollY: ['.description', '.items', '.armors', '.spells', '.features', '.attributes', '.fatigue'],
+      scrollY: ['.description', '.items', '.armors', '.spells', '.features', '.attributes', '.exhaustion'],
       dragDrop: [{ dragSelector: '.item-list .item', dropSelector: null }],
     });
   }
@@ -30,7 +30,8 @@ export class SimpleActorSheet extends ActorSheet {
 
   /** @inheritdoc */
   getData() {
-    // TODO Weight column rename encumbrance
+    // TODO hold/wear buttons and test armor penalties, continue with actor.js
+
     const context = super.getData();
     const { data } = context;
     const { type } = data;
@@ -143,8 +144,8 @@ export class SimpleActorSheet extends ActorSheet {
     //   context.showSoundBoard = context.hasVoice;
     // }
 
-    // // fatigue
-    // if (context.isCharacter) context.fatigue = this._getFatigueData(context.data);
+    // // exhaustion
+    // if (context.isCharacter) context.exhaustion = this._getExhaustionData(context.data);
 
     return context;
   }
@@ -181,53 +182,51 @@ export class SimpleActorSheet extends ActorSheet {
     return armors;
   }
 
-  _getFatigueData(data) {
-    const fatigue = {};
+  _getExhaustionData(data) {
+    const exhaustion = {};
 
     const fahrenheitFromCelsius = (c) => Math.round((c * 9) / 5 + 32);
 
     const tempC = Number(game.settings.get('brigandine', 'temp'));
     const tempF = fahrenheitFromCelsius(tempC);
-    fatigue.tempDesc = `${tempC}°C / ${tempF}°F`;
+    exhaustion.tempDesc = `${tempC}°C / ${tempF}°F`;
 
     const reqClo = 36 - 10 - tempC;
     const wornClo = data.data.clo;
-    fatigue.wornClo = wornClo;
+    exhaustion.wornClo = wornClo;
     const diffClo = wornClo - reqClo;
     const isWarm = data.effects.some((e) => e.label === 'Warm');
-    const exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Fatigue.getExposureCondition(diffClo).desc);
+    const exposureDesc = isWarm ? 'Warm' : Util.upperCaseFirst(Exhaustion.getExposureCondition(diffClo).desc);
     const exposureDamage = +data.flags?.brigandine?.exposure?.maxHpDamage || 0;
-    fatigue.exposureDesc = `${exposureDesc}${exposureDamage ? ` (${exposureDamage})` : ''}`;
+    exhaustion.exposureDesc = `${exposureDesc}${exposureDamage ? ` (${exposureDamage})` : ''}`;
 
     const diseases = Object.entries(data.flags?.brigandine?.disease ?? {});
     const diseaseDmg = diseases.reduce((sum, d) => sum + (Number(d[1]?.maxHpDamage) || 0), 0);
-    const symptoms = diseases.filter((d) => d[1]?.confirmed).flatMap((d) => Fatigue.DISEASES[d[0]].symptoms);
+    const symptoms = diseases.filter((d) => d[1]?.confirmed).flatMap((d) => Exhaustion.DISEASES[d[0]].symptoms);
     const symptomsString = [...new Set(symptoms)].join(', ').replace(/,\s*$/, '');
-    fatigue.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
-    fatigue.diseaseDesc += diseaseDmg > 0 ? ` (${diseaseDmg})` : '';
+    exhaustion.diseaseDesc = Util.upperCaseFirst(symptomsString) || 'No symptoms';
+    exhaustion.diseaseDesc += diseaseDmg > 0 ? ` (${diseaseDmg})` : '';
 
-    const exhaustionStatus = this._getFatigueStatus(data, 'exhaustion');
-    fatigue.exhaustionDesc = `${exhaustionStatus.desc}${
-      exhaustionStatus.damage ? ` (${exhaustionStatus.damage})` : ''
-    }`;
+    const sleepStatus = this._getExhaustionStatus(data, 'sleep');
+    exhaustion.sleepDesc = `${sleepStatus.desc}${sleepStatus.damage ? ` (${sleepStatus.damage})` : ''}`;
 
-    const thirstStatus = this._getFatigueStatus(data, 'thirst');
-    fatigue.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;
+    const thirstStatus = this._getExhaustionStatus(data, 'thirst');
+    exhaustion.thirstDesc = `${thirstStatus.desc}${thirstStatus.damage ? ` (${thirstStatus.damage})` : ''}`;
 
-    const hungerStatus = this._getFatigueStatus(data, 'hunger');
-    fatigue.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;
+    const hungerStatus = this._getExhaustionStatus(data, 'hunger');
+    exhaustion.hungerDesc = `${hungerStatus.desc}${hungerStatus.damage ? ` (${hungerStatus.damage})` : ''}`;
 
-    return fatigue;
+    return exhaustion;
   }
 
-  _getFatigueStatus(data, type) {
+  _getExhaustionStatus(data, type) {
     type = type.toLowerCase();
     const flagData = data.flags?.brigandine?.[type] || {};
 
     const statusDescs = {
-      exhaustion: {
+      sleep: {
         warn: 'Sleepy',
-        damaged: 'Exhausted',
+        damaged: 'Sleep Deprived',
       },
       thirst: {
         warn: 'Thirsty',
@@ -246,7 +245,7 @@ export class SimpleActorSheet extends ActorSheet {
     const isResting = data.effects.some((e) => e.label === 'Rest');
 
     const { startTime } = flagData;
-    const { warningInterval } = Fatigue.CLOCKS[type];
+    const { warningInterval } = Exhaustion.CLOCKS[type];
     const warningIntervalInSeconds = Util.intervalInSeconds(warningInterval);
     const time = Util.now();
     const warn = time >= startTime + warningIntervalInSeconds;

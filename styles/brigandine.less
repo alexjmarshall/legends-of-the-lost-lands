@@ -104,18 +104,6 @@ select {
       }
     }
 
-    .item-resource {
-      width: 33%;
-      height: 38px;
-      margin-top: 8px;
-      float: left;
-      text-align: center;
-      input {
-        width: 55px;
-        height: 28px;
-      }
-    }
-
     .properties {
       display: flex;
       width: 100%;
@@ -383,8 +371,8 @@ select {
     }
   }
 
-  .fatigue-label,
-  .fatigue-value {
+  .exhaustion-label,
+  .exhaustion-value {
     margin: 0 3px;
     padding: 1px;
     height: 28px;
@@ -395,13 +383,13 @@ select {
     border-bottom: 1px solid #aaa;
     overflow: hidden;
   }
-  .fatigue-value:read-only {
+  .exhaustion-value:read-only {
     pointer-events: none;
   }
   .attribute-key-wrapper {
     max-width: 263px;
   }
-  .fatigue-label {
+  .exhaustion-label {
     max-width: 30%;
   }
 
@@ -762,6 +750,21 @@ select {
       flex: 0 0 75px;
       height: 100px;
       max-width: 100px;
+    }
+
+    .item-resources {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+
+      .item-resource {
+        height: 38px;
+        text-align: center;
+        input {
+          width: 55px;
+          height: 28px;
+        }
+      }
     }
   }
 }

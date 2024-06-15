@@ -65,9 +65,9 @@ import * as Constant from './constants.js';
 //  Thirsty
 //  Dead
 //  Diseased
-//  Fatigued
+//  Exhaustiond
 
-export const FATIGUE_DAMAGE_COMMAND = 'applyFatigue(actorId, type, execTime, newTime)';
+export const EXHAUSTION_DAMAGE_COMMAND = 'applyExhaustion(actorId, type, execTime, newTime)';
 export const DISEASE_DAMAGE_COMMAND = 'applyDisease(actorId, disease, execTime, newTime)'; // TODO move combat constants to combat.js
 
 export const REST_TYPES = {
@@ -106,7 +106,7 @@ export const CLOCKS = {
     condition: 'Thirsty',
     warnCondition: (date) => date.second === 0 && date.minute === 0 && date.hour % 1 === 0,
   },
-  exhaustion: {
+  sleep: {
     warningInterval: { hour: 18 },
     warningSound: 'sleepy',
     damageInterval: { day: 2 },
@@ -126,7 +126,7 @@ export const CLOCKS = {
 const SYMPTOMS = Object.freeze({
   COUGH: 'cough', // done
   HEADACHE: 'headache', // done
-  FATIGUE: 'fatigue', // done
+  EXHAUSTION: 'exhaustion', // done
   DIARRHEA: 'diarrhea', // done
   GUT_PAIN: 'gut pain', // done
   RASH: 'rash',
@@ -144,13 +144,13 @@ const SYMPTOMS = Object.freeze({
 export const DISEASES = {
   // TODO add contagiousness value
   grippe: {
-    symptoms: ['cough', 'headache', 'fatigue'],
+    symptoms: ['cough', 'headache', 'exhaustion'],
     virulence: 'd3',
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
   },
   dysentery: {
-    symptoms: ['diarrhea', 'gut pain', 'fatigue'],
+    symptoms: ['diarrhea', 'gut pain', 'exhaustion'],
     virulence: 'd4',
     incubationPeriod: { day: 1 },
     damageInterval: { day: 1 },
@@ -199,7 +199,7 @@ export const DISEASES = {
   },
 };
 
-export async function resetFatigueDamage(actor, type) {
+export async function resetExhaustionDamage(actor, type) {
   const data = actor.getFlag('brigandine', type) || {};
   const damage = data.maxHpDamage;
   if (damage) {
@@ -211,24 +211,24 @@ export async function resetFatigueDamage(actor, type) {
   // condition && await Util.removeCondition(condition, actor);
 }
 
-export async function resetFatigueClock(actor, type, time = Util.now()) {
+export async function resetExhaustionClock(actor, type, time = Util.now()) {
   const data = actor.getFlag('brigandine', type) || {};
   data.startTime = time;
   const { damageInterval } = CLOCKS[type];
   data.intervalId && (await TimeQ.cancel(data.intervalId));
   const scope = { actorId: actor._id, type };
   const macro = await Util.getMacroByCommand(
-    `${FATIGUE_DAMAGE_COMMAND}`,
-    `return game.brigandine.Macro.${FATIGUE_DAMAGE_COMMAND};`
+    `${EXHAUSTION_DAMAGE_COMMAND}`,
+    `return game.brigandine.Macro.${EXHAUSTION_DAMAGE_COMMAND};`
   );
   data.intervalId = await TimeQ.doEvery(damageInterval, time, macro._id, scope);
   await actor.setFlag('brigandine', type, data);
 }
 
-export async function resetFatigueType(actor, type, time = Util.now()) {
+export async function resetExhaustionType(actor, type, time = Util.now()) {
   // TODO combine flag updates into one call
-  await resetFatigueClock(actor, type, time);
-  await resetFatigueDamage(actor, type);
+  await resetExhaustionClock(actor, type, time);
+  await resetExhaustionDamage(actor, type);
 }
 
 export function reqClo(season) {
@@ -237,7 +237,7 @@ export function reqClo(season) {
   return reqClo;
 }
 
-export async function syncFatigueClocks(time, resetClocks = false) {
+export async function syncExhaustionClocks(time, resetClocks = false) {
   const allChars = game.actors.filter((a) => a.type === 'character' && a.hasPlayerOwner);
 
   return Promise.all(
@@ -304,7 +304,7 @@ async function resetDamageAndWarn(char, time) {
     }
 
     if (isResting || beforeWarning || resetExposure) {
-      await resetFatigueDamage(char, type);
+      await resetExhaustionDamage(char, type);
       continue;
     }
 
@@ -391,8 +391,8 @@ async function syncDamageClocks(char, time, override = false) {
     const startTime = Util.prevTime(damageInterval, data.startTime, time);
     const scope = { actorId, type };
     const macro = await Util.getMacroByCommand(
-      `${FATIGUE_DAMAGE_COMMAND}`,
-      `return game.brigandine.Macro.${FATIGUE_DAMAGE_COMMAND};`
+      `${EXHAUSTION_DAMAGE_COMMAND}`,
+      `return game.brigandine.Macro.${EXHAUSTION_DAMAGE_COMMAND};`
     );
     data.intervalId = await TimeQ.doEvery(damageInterval, startTime, macro._id, scope);
 

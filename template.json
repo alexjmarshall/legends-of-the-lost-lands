@@ -965,25 +965,25 @@
             "label": "Is Retainer",
             "value": false
           },
-          "apply_fatigue_exposure": {
+          "apply_exhaustion_exposure": {
             "dtype": "Boolean",
             "group": "admin",
             "label": "Apply Exposure",
             "value": true
           },
-          "apply_fatigue_sleep": {
+          "apply_exhaustion_sleep": {
             "dtype": "Boolean",
             "group": "admin",
             "label": "Apply Sleep",
             "value": true
           },
-          "apply_fatigue_hunger": {
+          "apply_exhaustion_hunger": {
             "dtype": "Boolean",
             "group": "admin",
             "label": "Apply Hunger",
             "value": true
           },
-          "apply_fatigue_thirst": {
+          "apply_exhaustion_thirst": {
             "dtype": "Boolean",
             "group": "admin",
             "label": "Apply Thirst",
@@ -1329,28 +1329,28 @@
       "templates": ["props", "actor", "monster", "resistances", "languages"],
       "attributes": {
         "admin": {
-          "apply_fatigue_exposure": {
+          "apply_exhaustion_exposure": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Exposure Fatigue Damage",
+            "label": "Apply Exposure Exhaustion Damage",
             "value": true
           },
-          "apply_fatigue_sleep": {
+          "apply_exhaustion_sleep": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Sleep Fatigue Damage",
+            "label": "Apply Sleep Exhaustion Damage",
             "value": true
           },
-          "apply_fatigue_hunger": {
+          "apply_exhaustion_hunger": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Hunger Fatigue Damage",
+            "label": "Apply Hunger Exhaustion Damage",
             "value": true
           },
-          "apply_fatigue_thirst": {
+          "apply_exhaustion_thirst": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Thirst Fatigue Damage",
+            "label": "Apply Thirst Exhaustion Damage",
             "value": true
           },
           "apply_enc": {
@@ -1718,11 +1718,6 @@
         }
       },
       "garment": {
-        "hp": {
-          "value": 8,
-          "min": 0,
-          "max": 8
-        },
         "attributes": {
           "admin": {
             "wearable": {
@@ -1749,6 +1744,14 @@
               "label": "Magic Item Slot",
               "value": ""
             }
+          },
+          "hp": {
+            "dtype": "Resource",
+            "group": "",
+            "label": "Hit Points",
+            "min": 0,
+            "value": 8,
+            "max": 8
           },
           "material": {
             "dtype": "String",
@@ -2026,11 +2029,6 @@
     },
     "hit_location": {
       "templates": ["props"],
-      "hp": {
-        "value": 10,
-        "min": 0,
-        "max": 10
-      },
       "attributes": {
         "admin": {
           "use_loc_hp": {
@@ -2075,6 +2073,14 @@
             "label": "Injury Description",
             "value": ""
           }
+        },
+        "hp": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Hit Points",
+          "value": 8,
+          "min": 0,
+          "max": 8
         },
         "name": {
           "dtype": "String",
@@ -2216,11 +2222,6 @@
       "atk_style": "standard",
       "atk_timing": "standard",
       "atk_grip": "standard",
-      "hp": {
-        "value": 2,
-        "min": 0,
-        "max": 2
-      },
       "attributes": {
         "admin": {
           "non_metal_head": {
@@ -2229,6 +2230,14 @@
             "label": "Non-Metal Head",
             "value": false
           }
+        },
+        "hp": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Hit Points",
+          "value": 8,
+          "min": 0,
+          "max": 8
         },
         "atk_modes": {
           "dtype": "String",

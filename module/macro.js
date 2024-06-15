@@ -1,7 +1,7 @@
 import * as Constant from './constants.js';
 import { TimeQ } from './time-queue.js';
 import * as Util from './utils.js';
-import * as Fatigue from './fatigue.js';
+import * as Exhaustion from './exhaustion.js';
 import * as Dialogs from './dialog.js';
 import { attack } from './combat.js';
 
@@ -93,7 +93,7 @@ export function selectRestDice(actor, options = {}) {
     return actor.setFlag('brigandine', 'restDice', choice);
   }
 
-  const choices = Object.entries(Fatigue.REST_TYPES).map((type) => {
+  const choices = Object.entries(Exhaustion.REST_TYPES).map((type) => {
     return {
       label: `${type[0]}<br>${type[1] ? type[1] : 'd2/d3'}`,
       value: type[0],
@@ -219,7 +219,7 @@ export async function cureDisease() {
   const actor = char.actor;
 
   try {
-    return Fatigue.deleteAllDiseases(actor);
+    return Exhaustion.deleteAllDiseases(actor);
   } catch (error) {
     ui.notifications.error(error);
     throw error;
@@ -265,7 +265,7 @@ export async function drinkPotion(itemId, options = {}) {
       }
     }
 
-    await Fatigue.resetFatigueType(actor, 'thirst');
+    await Exhaustion.resetExhaustionType(actor, 'thirst');
   } catch (error) {
     ui.notifications.error(error);
     throw error;
@@ -304,7 +304,7 @@ export async function drinkWater(itemId, options = {}) {
       sound: 'drink_water',
       verb: `drinks from`,
     });
-    await Fatigue.resetFatigueType(actor, 'thirst');
+    await Exhaustion.resetExhaustionType(actor, 'thirst');
   } catch (error) {
     ui.notifications.error(error);
     throw error;
@@ -327,14 +327,14 @@ export async function eatFood(itemId, options = {}) {
       { consumable: true }
     );
 
-    await Fatigue.resetFatigueType(actor, 'hunger');
+    await Exhaustion.resetExhaustionType(actor, 'hunger');
 
     // reset thirst to 12 hours ago if this is later than last drink time
     const twelveHoursAgo = Util.now() - Constant.SECONDS_IN_HOUR * 12;
     const thirstData = actor.getFlag('brigandine', 'thirst') || {};
     const lastDrinkTime = thirstData.startTime;
     if (twelveHoursAgo > lastDrinkTime) {
-      await Fatigue.resetFatigueType(actor, 'thirst', twelveHoursAgo);
+      await Exhaustion.resetExhaustionType(actor, 'thirst', twelveHoursAgo);
     }
   } catch (error) {
     ui.notifications.error(error);
@@ -1124,18 +1124,18 @@ export async function buyMacro(item, priceInCp, merchant, qty, options = {}) {
   }
 }
 
-export async function applyFatigue(actorId, type, execTime, newTime, heal = false) {
+export async function applyExhaustion(actorId, type, execTime, newTime, heal = false) {
   const actor = game.actors.get(actorId);
   if (!actor) return;
 
-  // only apply fatigue damage if actor is in the current scene
+  // only apply exhaustion damage if actor is in the current scene
   const token = Util.getTokenFromActor(actor);
   if (!token) return;
 
   const isResting = actor.data.effects.some((e) => e.label === 'Rest'); // game.cub.hasCondition('Rest', actor, {warn: false});
   if (isResting) return;
 
-  if (Util.stringMatch(type, 'exhaustion')) {
+  if (Util.stringMatch(type, 'sleep')) {
     const isAsleep = actor.data.effects.some((e) => e.label === 'Asleep'); //game.cub.hasCondition('Asleep', actor, {warn: false});
     if (isAsleep) return;
   }
@@ -1147,27 +1147,27 @@ export async function applyFatigue(actorId, type, execTime, newTime, heal = fals
     const isWarm = actor.data.effects.some((e) => e.label === 'Warm'); //game.cub.hasCondition('Warm', actor, {warn: false});
     if (isWarm) return;
 
-    const diffClo = Fatigue.diffClo(actor);
-    const dmgMulti = Fatigue.getExposureCondition(diffClo).dmgMulti;
+    const diffClo = Exhaustion.diffClo(actor);
+    const dmgMulti = Exhaustion.getExposureCondition(diffClo).dmgMulti;
     if (!dmgMulti) return;
     typeString = diffClo < 0 ? 'cold' : 'heat';
   }
 
-  const clock = Fatigue.CLOCKS[type];
+  const clock = Exhaustion.CLOCKS[type];
   const { damageDice, damageInterval } = clock;
   const intervalInSeconds = Util.intervalInSeconds(damageInterval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
   const dice = `${numDice}${damageDice}${dmgMulti ? `*${dmgMulti}` : ''}`;
 
-  const result = await applyFatigueDamage(actor, typeString, dice, heal);
+  const result = await applyExhaustionDamage(actor, typeString, dice, heal);
   const data = actor.getFlag('brigandine', type) || {};
   data.maxHpDamage = data.maxHpDamage + result || result;
 
   await actor.setFlag('brigandine', type, data);
 }
 
-async function applyFatigueDamage(actor, type, dice, heal = false, flavor) {
+async function applyExhaustionDamage(actor, type, dice, heal = false, flavor) {
   const hp = Number(actor.data.data.hp.value);
   const maxHp = Number(actor.data.data.hp.max);
   if (actor && Util.actorIsDead(actor)) return 0;
@@ -1203,7 +1203,7 @@ async function applyRest(actor, wakeTime, sleptTime, restType = 'Rough') {
   const extraDice = Math.max(0, Math.floor(sleptTime / Constant.SECONDS_IN_DAY));
   const numDice = 1 + extraDice;
   const hasBedroll = actor.items.some((i) => i.type === 'item' && Util.stringMatch(i.name, 'Bedroll'));
-  const restDice = Util.stringMatch(restType, 'Rough') ? (hasBedroll ? 'd3' : 'd2') : Fatigue.REST_TYPES[restType];
+  const restDice = Util.stringMatch(restType, 'Rough') ? (hasBedroll ? 'd3' : 'd2') : Exhaustion.REST_TYPES[restType];
   const dice = `${numDice}${restDice}`;
   const flavor = `Rest (${restType})`;
 
@@ -1220,7 +1220,7 @@ async function applyRest(actor, wakeTime, sleptTime, restType = 'Rough') {
   }
 
   await actor.setFlag('brigandine', 'last_rest_time', wakeTime);
-  await applyFatigueDamage(actor, `rest`, dice, true, flavor);
+  await applyExhaustionDamage(actor, `rest`, dice, true, flavor);
 }
 
 export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime, restDice) {
@@ -1230,7 +1230,7 @@ export async function applyRestOnWake(actor, sleepStartTime, sleepEndTime, restD
   const lastRestedHoursAgo = Math.floor((sleepEndTime - lastRestTime) / Constant.SECONDS_IN_HOUR);
 
   if (sleptTimeHours >= 3) {
-    await Fatigue.resetFatigueType(actor, 'exhaustion', sleepEndTime);
+    await Exhaustion.resetExhaustionType(actor, 'sleep', sleepEndTime);
   }
 
   if (sleptTimeHours >= 6 && lastRestedHoursAgo >= 22) {
@@ -1253,7 +1253,7 @@ export async function addDisease(disease = null, options = {}) {
 
   const char = Util.selectedCharacter();
   const actor = char.actor;
-  const diseases = Fatigue.DISEASES;
+  const diseases = Exhaustion.DISEASES;
   disease = disease || options.altDialogChoice;
 
   if (!disease && !options.shownAltDialog) {
@@ -1273,10 +1273,10 @@ export async function addDisease(disease = null, options = {}) {
   }
 
   const startTime = Util.now();
-  const interval = Fatigue.DISEASES[disease].damageInterval;
+  const interval = Exhaustion.DISEASES[disease].damageInterval;
   const actorId = actor._id;
   const scope = { actorId, disease };
-  const command = Fatigue.DISEASE_DAMAGE_COMMAND;
+  const command = Exhaustion.DISEASE_DAMAGE_COMMAND;
   const macro = await Util.getMacroByCommand(`${command}`, `return game.brigandine.Macro.${command};`);
   const intervalId = await TimeQ.doEvery(interval, startTime, macro._id, scope);
 
@@ -1296,17 +1296,17 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   const actor = game.actors.get(actorId);
   if (!actor) return;
 
-  // only apply fatigue damage if actor is in the current scene
+  // only apply exhaustion damage if actor is in the current scene
   const token = Util.getTokenFromActor(actor);
   if (!token) return;
 
   const type = 'disease';
   const flavor = Util.upperCaseFirst(type);
-  const interval = Fatigue.DISEASES[disease].damageInterval;
+  const interval = Exhaustion.DISEASES[disease].damageInterval;
   const intervalInSeconds = Util.intervalInSeconds(interval);
   const extraDice = Math.max(0, Math.floor((newTime - execTime) / intervalInSeconds));
   const numDice = 1 + extraDice;
-  const die = Fatigue.DISEASES[disease].virulence;
+  const die = Exhaustion.DISEASES[disease].virulence;
   const dice = new Array(numDice).fill(die);
   let damage = 0;
   let resolved = false;
@@ -1316,13 +1316,13 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   const startTime = actorDiseases[disease].startTime;
 
   // if within incubation period, return
-  const incubationPeriod = Fatigue.DISEASES[disease].incubationPeriod;
+  const incubationPeriod = Exhaustion.DISEASES[disease].incubationPeriod;
   const incubationInSeconds = Util.intervalInSeconds(incubationPeriod);
   const isIncubating = newTime < startTime + incubationInSeconds;
   if (isIncubating) return true;
 
   const resolveDisease = async () => {
-    await Fatigue.deleteDisease(actor, disease);
+    await Exhaustion.deleteDisease(actor, disease);
     confirmed &&
       (await Util.macroChatMessage(
         actor,
@@ -1350,7 +1350,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     return Dialogs.confirmDiseaseDialog(
       actor,
       disease,
-      () => Fatigue.deleteDisease(actor, disease),
+      () => Exhaustion.deleteDisease(actor, disease),
       () => confirmDisease()
     );
   }
@@ -1365,7 +1365,7 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
     }
   }
 
-  const result = await applyFatigueDamage(actor, type, `${damage}`);
+  const result = await applyExhaustionDamage(actor, type, `${damage}`);
   actorDiseases[disease].maxHpDamage = Number(actorDiseases[disease].maxHpDamage + result) || result;
   await actor.setFlag('brigandine', 'disease', actorDiseases);
 
@@ -1374,11 +1374,11 @@ export async function applyDisease(actorId, disease, execTime, newTime) {
   return true;
 }
 
-export async function clearFatigueDamageMacro() {
+export async function clearExhaustionDamageMacro() {
   if (!game.user.isGM) return ui.notifications.error(`You shouldn't be here...`);
   const char = Util.selectedCharacter();
   const actor = char.actor;
-  const healedDamage = await Fatigue.clearMaxHpDamage(actor);
+  const healedDamage = await Exhaustion.clearMaxHpDamage(actor);
   const message =
     healedDamage > 0
       ? `Cleared ${healedDamage} max HP damage from ${actor.name}`

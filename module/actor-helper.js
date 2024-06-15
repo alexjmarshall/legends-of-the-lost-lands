@@ -389,7 +389,7 @@ function getConMod(actor, actorUpdates) {
 }
 
 function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
-  // find better word to distinguish between short term and long term fatigue
+  // find better word to distinguish between short term and long term exhaustion
   // use the max hp for sheet -- non editable, same as max XP required
   // real level drain? decrease skills/hp proportionately to level -- or could save the increases as data attached to actor and then remove
   // for monster xp, use Delta EHD * 100

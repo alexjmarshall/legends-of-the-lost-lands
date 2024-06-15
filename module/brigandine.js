@@ -17,7 +17,7 @@ import * as ITEM from './item-helper.js';
 import * as SPELLS from './rules/spells.js';
 import * as Util from './utils.js';
 import { TimeQ } from './time-queue.js';
-import * as Fatigue from './fatigue.js';
+import * as Exhaustion from './exhaustion.js';
 import * as Race from './rules/races/index.js';
 
 /* -------------------------------------------- */
@@ -205,7 +205,7 @@ Hooks.on('ready', () => {
     if (SimpleCalendar.api.isPrimaryGM()) {
       TimeQ.init();
       const now = Util.now();
-      await Fatigue.syncFatigueClocks(now, true);
+      await Exhaustion.syncExhaustionClocks(now, true);
       await removeInvalidEffects(now);
     }
 
@@ -230,7 +230,7 @@ Hooks.on('ready', () => {
         resetClocks = true;
       }
 
-      await Fatigue.syncFatigueClocks(newTime, resetClocks);
+      await Exhaustion.syncExhaustionClocks(newTime, resetClocks);
 
       for await (const event of TimeQ.eventsBefore(newTime)) {
         let macro = game.macros.find((m) => m._id === event.macroId);
@@ -450,7 +450,7 @@ Hooks.on('updateToken', (token, change) => {
 
 //   switch (effect) {
 //     case 'Dead':
-//       return Fatigue.deleteAllDiseases(actor);
+//       return Exhaustion.deleteAllDiseases(actor);
 //     case 'Rest':
 //       return Macro.selectRestDice(actor);
 //   }
@@ -473,8 +473,8 @@ Hooks.on('updateToken', (token, change) => {
 //     case 'Rest': {
 //       const restDice = actor.getFlag('brigandine', 'restDice');
 //       await actor.unsetFlag('brigandine', 'restDice');
-//       await Fatigue.resetFatigueType(actor, 'hunger');
-//       await Fatigue.resetFatigueType(actor, 'thirst');
+//       await Exhaustion.resetExhaustionType(actor, 'hunger');
+//       await Exhaustion.resetExhaustionType(actor, 'thirst');
 //       return applyRest(restDice);
 //     }
 //   }

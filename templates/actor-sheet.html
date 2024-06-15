@@ -11,14 +11,14 @@
                 <label class="left-label">HP</label>
                 <input type="number" name="data.hp.value" value="{{systemData.hp.value}}" {{#if isPlayer}}readonly{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}" {{#if isPlayer}}readonly{{/if}}/>
+                <input type="number" name="data.hp.max" value="{{systemData.hp.max}}" readonly/>
             </div>
             <div class="resource">
                 <label class="left-label">XP</label>
                 {{#if isCharacter}}
                 <input type="number" name="data.xp_req.value" value="{{systemData.xp_req.value}}" {{#if isPlayer}}readonly{{/if}}/>
                 <span> / </span>
-                <input type="number" name="data.xp_req.max" value="{{systemData.xp_req.max}}" {{#if isPlayer}}readonly{{/if}}/>
+                <input type="number" name="data.xp_req.max" value="{{systemData.xp_req.max}}" readonly/>
                 {{else}}
                 <input type="number" name="data.xp.value" value="{{systemData.xp}}" readonly/>
                 {{/if}}
@@ -68,7 +68,7 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Description</a>
+        <a class="item" data-tab="description">Bio</a>
         <a class="item" data-tab="items">Items</a>
         {{#if wearsGarments}}
         <a class="item" data-tab="armors">Armor</a>
@@ -81,7 +81,7 @@
         {{/if}}
         <a class="item" data-tab="attributes">Attributes</a>
         <a class="item" data-tab="voice">Voice</a>
-        <a class="item" data-tab="fatigue">Fatigue</a>
+        <a class="item" data-tab="exhaustion">Exhaustion</a>
         {{#if showEffects}}
         <a class="item" data-tab="effects">Effects</a>
         {{/if}}
@@ -99,7 +99,7 @@
         {{!-- Owned Items Tab --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <header class="items-header sticky flexrow">
-                <span>{{#if isCharacter}}Worn Clo: {{fatigue.wornClo}}{{/if}}</span>
+                <span>{{#if isCharacter}}Worn Clo: {{exhaustion.wornClo}}{{/if}}</span>
                 <span></span>
                 <span class="item-column">Quantity</span>
                 <span class="item-column">Weight</span>
@@ -312,35 +312,35 @@
             </div>
         </div>
 
-        {{!-- Fatigue Tab --}}
-        <div class="tab fatigue" data-group="primary" data-tab="fatigue">
+        {{!-- Exhaustion Tab --}}
+        <div class="tab exhaustion" data-group="primary" data-tab="exhaustion">
             <div class="flexrow">
-                <label class="fatigue-label">Ambient Temp.</label>
-                <span class="fatigue-value">{{fatigue.tempDesc}}</span>
+                <label class="exhaustion-label">Ambient Temp.</label>
+                <span class="exhaustion-value">{{exhaustion.tempDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Exposure</label>
-                <span class="fatigue-value">{{fatigue.exposureDesc}}</span>
+                <label class="exhaustion-label">Exposure</label>
+                <span class="exhaustion-value">{{exhaustion.exposureDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Thirst</label>
-                <span class="fatigue-value">{{fatigue.thirstDesc}}</span>
+                <label class="exhaustion-label">Thirst</label>
+                <span class="exhaustion-value">{{exhaustion.thirstDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Exhaustion</label>
-                <span class="fatigue-value">{{fatigue.exhaustionDesc}}</span>
+                <label class="exhaustion-label">Sleep</label>
+                <span class="exhaustion-value">{{exhaustion.sleepDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Hunger</label>
-                <span class="fatigue-value">{{fatigue.hungerDesc}}</span>
+                <label class="exhaustion-label">Hunger</label>
+                <span class="exhaustion-value">{{exhaustion.hungerDesc}}</span>
             </div>
             <div class="flexrow">
-                <label class="fatigue-label">Disease</label>
-                <span class="fatigue-value">{{fatigue.diseaseDesc}}</span>
+                <label class="exhaustion-label">Disease</label>
+                <span class="exhaustion-value">{{exhaustion.diseaseDesc}}</span>
             </div>
             <!-- <div class="flexrow">
-                <label class="fatigue-label">Wounds</label>
-                <input class="fatigue-value" type="text" name="data.injuries" value="{{systemData.injuries}}" {{#if isPlayer}}readonly{{/if}}/>
+                <label class="exhaustion-label">Wounds</label>
+                <input class="exhaustion-value" type="text" name="data.injuries" value="{{systemData.injuries}}" {{#if isPlayer}}readonly{{/if}}/>
             </div> -->
         </div>
 
