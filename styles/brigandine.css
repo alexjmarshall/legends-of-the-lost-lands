@@ -103,17 +103,6 @@ select {
   width: 145px;
   height: 28px;
 }
-.brigandine .sheet-header .item-resource {
-  width: 33%;
-  height: 38px;
-  margin-top: 8px;
-  float: left;
-  text-align: center;
-}
-.brigandine .sheet-header .item-resource input {
-  width: 55px;
-  height: 28px;
-}
 .brigandine .sheet-header .properties {
   display: flex;
   width: 100%;
@@ -332,8 +321,8 @@ select {
   line-height: 24px;
   height: 28px;
 }
-.brigandine .fatigue-label,
-.brigandine .fatigue-value {
+.brigandine .exhaustion-label,
+.brigandine .exhaustion-value {
   margin: 0 3px;
   padding: 1px;
   height: 28px;
@@ -344,13 +333,13 @@ select {
   border-bottom: 1px solid #aaa;
   overflow: hidden;
 }
-.brigandine .fatigue-value:read-only {
+.brigandine .exhaustion-value:read-only {
   pointer-events: none;
 }
 .brigandine .attribute-key-wrapper {
   max-width: 263px;
 }
-.brigandine .fatigue-label {
+.brigandine .exhaustion-label {
   max-width: 30%;
 }
 .brigandine .attribute input[type='text']::placeholder,
@@ -585,14 +574,25 @@ select {
   max-width: 175px;
   object-fit: cover;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .profile-img-and-submit
+  .character-create-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 40px;
   font-size: 18px;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container button {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .profile-img-and-submit
+  .character-create-container
+  button {
   height: 50px;
 }
 .brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options {
@@ -600,7 +600,12 @@ select {
   flex-wrap: wrap;
   gap: 5px;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options .portrait-img-option {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .portrait-img-options
+  .portrait-img-option {
   height: 90px;
   max-width: 60px;
 }
@@ -631,6 +636,19 @@ select {
   flex: 0 0 75px;
   height: 100px;
   max-width: 100px;
+}
+.brigandine.sheet.item .sheet-header .item-resources {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+.brigandine.sheet.item .sheet-header .item-resources .item-resource {
+  height: 38px;
+  text-align: center;
+}
+.brigandine.sheet.item .sheet-header .item-resources .item-resource input {
+  width: 55px;
+  height: 28px;
 }
 .dialog .dialog-button {
   background: rgba(0, 0, 0, 0.1) !important;

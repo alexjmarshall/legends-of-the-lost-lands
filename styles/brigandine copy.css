@@ -25,7 +25,7 @@
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  align-items: unset!important;
+  align-items: unset !important;
   margin-bottom: 5px;
 }
 .brigandine .sheet-header .profile-img {
@@ -42,7 +42,7 @@
 }
 .brigandine.sheet.item .sheet-header .profile-img,
 .brigandine.sheet.actor .sheet-header .container-img,
-.brigandine.sheet.actor .sheet-header .merchant-img{
+.brigandine.sheet.actor .sheet-header .merchant-img {
   flex: 0 0 75px;
   height: 100px;
   max-width: 100px;
@@ -115,8 +115,8 @@
 }
 .brigandine .tabs {
   flex: 0 0 40px;
-  height: 40px!important;
-  border: none!important;
+  height: 40px !important;
+  border: none !important;
 }
 .brigandine .tabs .item {
   line-height: 36px;
@@ -167,7 +167,7 @@
 }
 .brigandine .item-list .item {
   min-height: 30px;
-  border-bottom: 1px solid #BBB;
+  border-bottom: 1px solid #bbb;
   align-items: stretch;
 }
 .brigandine .item-list .item img {
@@ -265,7 +265,7 @@
   align-items: center;
   padding: 2px 5px;
   background: #cfcdc2;
-  border: 1px solid #AAA;
+  border: 1px solid #aaa;
   border-radius: 2px;
   text-align: left;
   font-weight: bold;
@@ -282,17 +282,17 @@
   margin: 0;
   padding: 0;
 }
-.brigandine .attributes-list li > *{
+.brigandine .attributes-list li > * {
   margin: 0 3px;
   height: 28px;
   line-height: 24px;
   background: transparent;
   border: none;
   border-radius: 0;
-  border-bottom: 1px solid #AAA;
+  border-bottom: 1px solid #aaa;
 }
-.brigandine .fatigue-label,
-.brigandine .fatigue-value {
+.brigandine .exhaustion-label,
+.brigandine .exhaustion-value {
   margin: 0 3px;
   padding: 1px;
   height: 28px;
@@ -300,16 +300,16 @@
   background: transparent;
   border: none;
   border-radius: 0;
-  border-bottom: 1px solid #AAA;
+  border-bottom: 1px solid #aaa;
   overflow: hidden;
 }
-.brigandine .fatigue-value:read-only {
+.brigandine .exhaustion-value:read-only {
   pointer-events: none;
 }
-.brigandine .attribute-key-wrapper{
+.brigandine .attribute-key-wrapper {
   max-width: 263px;
 }
-.brigandine .fatigue-label {
+.brigandine .exhaustion-label {
   max-width: 30%;
 }
 .brigandine .attributes-list .attribute-col {
@@ -325,13 +325,13 @@
   line-height: 24px;
   height: 28px;
 }
-.brigandine .attribute input[type="text"]::placeholder,
-.brigandine .group-header input[type="text"]::placeholder {
+.brigandine .attribute input[type='text']::placeholder,
+.brigandine .group-header input[type='text']::placeholder {
   opacity: 0;
   transition: opacity 0.25s ease-in-out;
 }
-.brigandine .attribute input[type="text"]:focus::placeholder,
-.brigandine .group-header input[type="text"]:focus::placeholder {
+.brigandine .attribute input[type='text']:focus::placeholder,
+.brigandine .group-header input[type='text']:focus::placeholder {
   opacity: 1;
 }
 .brigandine .group-controls {
@@ -349,7 +349,7 @@
 .brigandine .group-header {
   align-items: center;
   background: rgba(0, 0, 0, 0.05);
-  border: 1px solid #AAA;
+  border: 1px solid #aaa;
   border-radius: 2px;
   padding: 2px 5px;
   font-weight: bold;
@@ -359,7 +359,7 @@
 .brigandine .group-label {
   font-weight: bold;
   border: none;
-  border-bottom: 1px solid #AAA;
+  border-bottom: 1px solid #aaa;
   background: transparent;
   border-radius: 0;
   margin-right: 6px;
@@ -426,7 +426,7 @@
   background: transparent;
   border: none;
   border-radius: 0;
-  border-bottom: 1px solid #AAA;
+  border-bottom: 1px solid #aaa;
 }
 .brigandine .text-center {
   text-align: center;

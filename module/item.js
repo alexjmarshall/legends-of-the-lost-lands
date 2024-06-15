@@ -1,42 +1,11 @@
-import { EntitySheetHelper } from './helper.js';
+import { EntitySheetHelper, getArrFromCSV, roundToDecimal } from './helper.js';
 import * as Constant from './constants.js';
-import { SIZES, SIZE_VALUES, sizeMulti } from './rules/size.js';
+import { SIZE_VALUES, sizeMulti } from './rules/size.js';
 import { SHIELD_COVERAGE, SHIELD_WEIGHT_WORN_MULTI } from './rules/shields.js';
-import { getArrFromCSV, roundToDecimal } from './helper.js';
 import { allHitLocations, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
-import { garmentMaterials, armorMaterials, GARMENT_MATERIALS, armorVsDmgType } from './rules/armor-and-clothing.js';
+import { garmentMaterials, GARMENT_MATERIALS, armorVsDmgType } from './rules/armor-and-clothing.js';
 import { physicalDmgTypes } from './rules/attack-and-damage.js';
-
-export const ITEM_TYPES = Object.freeze({
-  ITEM: 'item',
-  ARMOR: 'armor',
-  BOW: 'bow',
-  CLOTHING: 'clothing',
-  CONTAINER: 'container',
-  CURRENCY: 'currency',
-  DISEASE: 'disease',
-  FEATURE: 'feature',
-  FOOD: 'food',
-  GEM: 'gem',
-  GRAPPLING_MANEUVER: 'grappling_maneuver',
-  HELM: 'helm',
-  HIT_LOCATION: 'hit_location',
-  INGREDIENT: 'ingredient',
-  INJURY: 'injury',
-  JEWELRY: 'jewelry',
-  MELEE_WEAPON: 'melee_weapon',
-  MISSILE: 'missile',
-  MISSILE_WEAPON: 'missile_weapon',
-  NATURAL_MISSILE_WEAPON: 'natural_missile_weapon',
-  NATURAL_WEAPON: 'natural_weapon',
-  RECIPE: 'recipe',
-  RUNE: 'rune',
-  SCROLL: 'scroll',
-  SHIELD: 'shield',
-  SPELL: 'spell',
-  STORAGE: 'storage',
-  TRADE_GOOD: 'trade_good',
-});
+import { ITEM_TYPES } from './item-helper.js';
 
 /**
  * Extend the base Item document to support attributes and groups with a custom template creation dialog.
@@ -209,8 +178,9 @@ export class SimpleItem extends Item {
     const durability = Math.max(1, Math.round(maxDurability * coverageWeight));
 
     data.durability = durability;
-    data.hp.max = durability;
-    data.hp.value = Math.min(data.hp.value, durability);
+    const hp = data.attributes.hp;
+    hp.max = durability;
+    hp.value = Math.min(hp.value, durability);
   }
 
   // TODO list of critical effects with mods for defender saving throw

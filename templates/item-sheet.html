@@ -1,27 +1,29 @@
 <form class="flexcol {{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-        <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
-        <div class="header-fields">
-            <h1 class="charname">
-                <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}readonly{{/if}}/>
-            </h1>
-            <div class="item-resource">
-                <label>Quantity</label>
-                <input type="number" name="data.quantity" value="{{systemData.quantity}}" {{#if isPlayer}}readonly{{/if}}/>
-            </div>
-            <div class="item-resource">
-                <label>Weight</label>
-                <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if isPlayer}}readonly{{/if}}/>
-            </div>
-            {{#if showValue}}
-            <div class="item-resource">
-                <label>Value</label>
-                <input type="number" name="data.value" value="{{systemData.value}}" {{#if isPlayer}}readonly{{/if}}/>
-            </div>
-            {{/if}}
+  <header class="sheet-header">
+    <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
+    <div class="header-fields">
+      <h1 class="charname">
+        <input name="name" type="text" value="{{data.name}}" placeholder="Name" {{#if isPlayer}}readonly{{/if}}/>
+      </h1>
+      <div class="item-resources">
+        <div class="item-resource">
+          <label>Qty</label>
+          <input type="number" name="data.quantity" value="{{systemData.quantity}}" {{#if isPlayer}}readonly{{/if}}/>
         </div>
-    </header>
+        <div class="item-resource">
+          <label>Wgt</label>
+          <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if isPlayer}}readonly{{/if}}/>
+        </div>
+        {{#if showValue}}
+        <div class="item-resource">
+          <label>Value</label>
+          <input type="number" name="data.value" value="{{systemData.value}}" {{#if isPlayer}}readonly{{/if}}/>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </header>
 
-    {{!-- Render the item sheet body partial. --}}
-    {{> "systems/brigandine/templates/parts/item-sheet-body.html" systemData=systemData}}
+  {{!-- Render the item sheet body partial. --}} {{> "systems/brigandine/templates/parts/item-sheet-body.html"
+  systemData=systemData}}
 </form>

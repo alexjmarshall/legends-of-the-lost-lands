@@ -1,5 +1,6 @@
 import { EntitySheetHelper } from '../helper.js';
 import * as Constant from '../constants.js';
+import { ITEM_TYPES } from '../item-helper.js';
 
 /**
  * Extend the basic ItemSheet with some very simple modifications
@@ -25,15 +26,17 @@ export class SimpleItemSheet extends ItemSheet {
     const context = super.getData();
     EntitySheetHelper.getAttributeData(context.data);
     context.systemData = context.data.data;
-    console.log(context.systemData);
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
 
-    context.showValue = context.isGM || context.data.type === 'currency';
-    // const identified = context.systemData.attributes.admin?.identified.value;
-    // context.identified = context.isGM || identified == null || identified === true;
+    context.showValue = context.isGM || context.data.type === ITEM_TYPES.CURRENCY;
+    context.showHp = context.systemData.hp != null;
 
+    const identified = context.systemData.attributes.admin?.identified.value;
+    context.identified = context.isGM || identified == null || identified === true;
+
+    // TODO
     // hide empty and hidden groups from players
     // const isMagic = context.systemData.attributes.admin?.magic.value;
     // Object.keys(context.systemData.groups).forEach((k) => {
