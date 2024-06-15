@@ -286,8 +286,6 @@ export const armorMaterials = deepFreeze({
   },
 });
 
-// TODO for each dmg type, need AC mod, pen TN and DR
-// pen is in secondary effects, ac mod and dr in weapon vs armor
 export const armorVsDmgType = deepFreeze({
   none: {
     baseAc: 0,

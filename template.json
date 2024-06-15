@@ -162,7 +162,6 @@
           "min": 0,
           "max": 50
         },
-        "xp": 0,
         "groups": {
           "admin": {
             "dtype": "Boolean",
@@ -171,11 +170,6 @@
         }
       },
       "monster": {
-        "hp": {
-          "value": 8,
-          "min": 0,
-          "max": 8
-        },
         "attributes": {
           "size": {
             "dtype": "String",
@@ -195,17 +189,23 @@
             "label": "Hit Dice",
             "value": ""
           },
+          "mv": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Movement Rate",
+            "value": 15
+          },
+          "ac": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Armor Class",
+            "value": 15
+          },
           "type": {
             "dtype": "String",
             "group": "",
             "label": "Type",
             "value": "aberration"
-          },
-          "xp_multi": {
-            "dtype": "Number",
-            "group": "",
-            "label": "XP Multiplier",
-            "value": 1
           },
           "alignment": {
             "dtype": "String",
@@ -882,32 +882,6 @@
             "value": 0,
             "min": 0
           }
-        },
-        "attributes": {
-          "base_mv": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Base Movement Rate",
-            "value": 12
-          },
-          "base_ac": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Base Armor Class",
-            "value": 10
-          },
-          "type": {
-            "dtype": "String",
-            "group": "",
-            "label": "Type",
-            "value": "humanoid"
-          },
-          "size": {
-            "dtype": "String",
-            "group": "",
-            "label": "Size",
-            "value": "M"
-          }
         }
       }
     },
@@ -916,6 +890,7 @@
       "right_handed": true,
       "gender": "M",
       "size": "M",
+      "type": "humanoid",
       "age": 0,
       "max_age": 100,
       "origin": "Wildling",
@@ -925,6 +900,8 @@
       "lvl": 0,
       "race": "Human",
       "class": "Fighter",
+      "base_ac": 10,
+      "base_mv": 12,
       "xp_req": {
         "value": 0,
         "min": 0,
@@ -1251,7 +1228,15 @@
       }
     },
     "humanoid": {
-      "templates": ["props", "actor", "humanoid", "monster", "resistances", "languages"]
+      "templates": ["props", "actor", "humanoid", "monster", "resistances", "languages"],
+      "attributes": {
+        "type": {
+          "dtype": "String",
+          "group": "",
+          "label": "Type",
+          "value": "humanoid"
+        }
+      }
     },
     "merchant": {
       "templates": ["props"],
@@ -1304,24 +1289,17 @@
     },
     "monster": {
       "templates": ["props", "actor", "monster", "resistances", "languages"],
+      "hp": {
+        "value": 8,
+        "min": 0,
+        "max": 8
+      },
       "attributes": {
         "atk_routine": {
           "dtype": "String",
           "group": "",
           "label": "Attack Routine",
           "value": "claw, claw, bite"
-        },
-        "mv": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Movement Rate",
-          "value": 15
-        },
-        "ac": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Class",
-          "value": 15
         }
       }
     },
@@ -1332,25 +1310,25 @@
           "apply_exhaustion_exposure": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Exposure Exhaustion Damage",
+            "label": "Apply Exposure",
             "value": true
           },
           "apply_exhaustion_sleep": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Sleep Exhaustion Damage",
+            "label": "Apply Sleep",
             "value": true
           },
           "apply_exhaustion_hunger": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Hunger Exhaustion Damage",
+            "label": "Apply Hunger",
             "value": true
           },
           "apply_exhaustion_thirst": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Thirst Exhaustion Damage",
+            "label": "Apply Thirst",
             "value": true
           },
           "apply_enc": {
@@ -1359,12 +1337,6 @@
             "label": "Apply Encumbrance to MV",
             "value": true
           }
-        },
-        "atk_routine": {
-          "dtype": "String",
-          "group": "",
-          "label": "Attack Routine",
-          "value": "kick, bite"
         },
         "type": {
           "dtype": "String",
@@ -1383,12 +1355,6 @@
           "group": "",
           "label": "Base Movement Rate",
           "value": 0
-        },
-        "ac": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Armor Class",
-          "value": 15
         },
         "rider_token": {
           "dtype": "String",
@@ -1445,7 +1411,6 @@
       "armor",
       "bow",
       "clothing",
-      "container",
       "currency",
       "disease",
       "feature",
@@ -1541,38 +1506,32 @@
               "label": "Improvised Weapon",
               "value": false
             },
-            "charges": {
-              "dtype": "Resource",
+            "consumable": {
+              "dtype": "Boolean",
               "group": "admin",
-              "label": "Charges",
-              "min": 0,
-              "value": 0,
-              "max": 0
-            },
-            "item_save_material": {
-              "dtype": "String",
-              "group": "admin",
-              "label": "Item Save Material",
-              "value": "wood"
+              "label": "Consumable",
+              "value": false
             }
-          }
-        }
-      },
-      "container": {
-        "attributes": {
-          "inner_item_wgt": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Inner Item Weight",
-            "value": 1
           },
-          "inner_item_qty": {
+          "charges": {
             "dtype": "Resource",
             "group": "",
-            "label": "Inner Item Quantity",
+            "label": "Charges",
             "min": 0,
-            "value": 3,
-            "max": 3
+            "value": 0,
+            "max": 0
+          },
+          "item_save_material": {
+            "dtype": "String",
+            "group": "",
+            "label": "Item Save Material",
+            "value": "wood"
+          },
+          "empty_weight": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Empty Weight",
+            "value": 0
           }
         }
       },
@@ -1737,12 +1696,6 @@
               "group": "admin",
               "label": "Beltable",
               "value": false
-            },
-            "slot": {
-              "dtype": "String",
-              "group": "admin",
-              "label": "Magic Item Slot",
-              "value": ""
             }
           },
           "hp": {
@@ -1752,6 +1705,12 @@
             "min": 0,
             "value": 8,
             "max": 8
+          },
+          "slot": {
+            "dtype": "String",
+            "group": "",
+            "label": "Magic Item Slot",
+            "value": ""
           },
           "material": {
             "dtype": "String",
@@ -1823,9 +1782,6 @@
           }
         }
       }
-    },
-    "container": {
-      "templates": ["props", "item", "container"]
     },
     "currency": {
       "templates": ["props", "item"],
@@ -1948,6 +1904,12 @@
             "group": "admin",
             "label": "Spoiled",
             "value": false
+          },
+          "consumable": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Consumable",
+            "value": true
           }
         },
         "shelf_life": {
@@ -2042,37 +2004,31 @@
             "group": "admin",
             "label": "Apply Damage to Main HP",
             "value": true
-          },
-          "hit_weight": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Hit Weight",
-            "value": 10
-          },
-          "dmg_multi": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Impale Damage Multiplier",
-            "value": 1
-          },
-          "crit_chance_multi": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Crit. Chance Multiplier",
-            "value": 1
-          },
-          "max_impale": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Max. Impale",
-            "value": 2
-          },
-          "injury_desc": {
-            "dtype": "String",
-            "group": "admin",
-            "label": "Injury Description",
-            "value": ""
           }
+        },
+        "hit_weight": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Hit Weight",
+          "value": 10
+        },
+        "dmg_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Impale Damage Multiplier",
+          "value": 1
+        },
+        "crit_chance_multi": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Crit. Chance Multiplier",
+          "value": 1
+        },
+        "max_impale": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Max. Impale",
+          "value": 2
         },
         "hp": {
           "dtype": "Resource",
@@ -2168,19 +2124,17 @@
           "label": "Amputation",
           "value": false
         },
-        "admin": {
-          "healing_mod": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Healing Bonus",
-            "value": 0
-          },
-          "heal_failures": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Healing Failures",
-            "value": 0
-          }
+        "healing_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Healing Bonus",
+          "value": 0
+        },
+        "heal_failures": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Healing Failures",
+          "value": 0
         }
       }
     },
@@ -2205,13 +2159,13 @@
             "group": "admin",
             "label": "Beltable",
             "value": false
-          },
-          "slot": {
-            "dtype": "String",
-            "group": "admin",
-            "label": "Magic Item Slot",
-            "value": ""
           }
+        },
+        "slot": {
+          "dtype": "String",
+          "group": "",
+          "label": "Magic Item Slot",
+          "value": ""
         }
       }
     },
@@ -2326,7 +2280,7 @@
       }
     },
     "missile": {
-      "templates": ["props", "item", "magic_dmg", "container"],
+      "templates": ["props", "item", "magic_dmg"],
       "attributes": {
         "admin": {
           "wearable": {
@@ -2353,11 +2307,11 @@
             "label": "Non-Metal Head",
             "value": false
           },
-          "auto_replenish": {
+          "consumable": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Auto-Replenish",
-            "value": false
+            "label": "Consumable",
+            "value": true
           }
         },
         "type": {
@@ -2521,20 +2475,26 @@
           "label": "Spell",
           "value": ""
         },
+        "learn_successes": {
+          "dtype": "Resource",
+          "group": "",
+          "label": "Learn Spell Successes",
+          "value": 0,
+          "min": 0,
+          "max": 1
+        },
+        "learn_failures": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Learn Spell Failures",
+          "value": 0
+        },
         "admin": {
-          "learn_successes": {
-            "dtype": "Resource",
+          "consumable": {
+            "dtype": "Boolean",
             "group": "admin",
-            "label": "Learn Spell Successes",
-            "value": 0,
-            "min": 0,
-            "max": 1
-          },
-          "learn_failures": {
-            "dtype": "Number",
-            "group": "admin",
-            "label": "Learn Spell Failures",
-            "value": 0
+            "label": "Consumable",
+            "value": true
           }
         }
       }

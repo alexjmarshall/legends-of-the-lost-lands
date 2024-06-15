@@ -163,6 +163,8 @@ export class SimpleItem extends Item {
       return;
     }
 
+    // TODO add empty weight to total weight
+
     const data = itemData.data;
     const material = data.attributes.material.value;
     const materialProps = garmentMaterials[material];

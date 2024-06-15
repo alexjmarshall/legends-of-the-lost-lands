@@ -7,6 +7,10 @@ import * as RACES from '../rules/races/index.js';
 import { getAdvancementPointsRequired } from '../rules/skills.js';
 import { rollDice } from '../dice.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
+import { ITEM_TYPES, NON_PHYSICAL_ITEM_TYPES, sortEquipmentByType } from '../item-helper.js';
+import { SIZE_VALUES } from '../rules/size.js';
+import { armorMaterials } from '../rules/armor-and-clothing.js';
+import { macroChatMessage } from '../chat.js';
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -102,11 +106,8 @@ export class SimpleActorSheet extends ActorSheet {
     // context.encPenaltyText = encPenalty == null ? '' : `Enc. Penalty: ${encPenalty > 0 ? '-' : ''}${encPenalty}`;
 
     // sort equipment
-    const equipment = items;
-    // .filter(
-    //   (i) => !Object.values(Constant.SPELL_TYPES).includes(i.type) && !Constant.NON_PHYSICAL_ITEM_TYPES.includes(i.type)
-    // );
-    context.equipment = Util.sortEquipmentByType(equipment);
+    const equipment = items.filter((i) => !NON_PHYSICAL_ITEM_TYPES.includes(i.type));
+    context.equipment = sortEquipmentByType(equipment);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
     // // sort armors
@@ -531,7 +532,7 @@ export class SimpleActorSheet extends ActorSheet {
       case 'wear':
         return this._handleWear(item);
       case 'hold_left':
-        return this._handleHold(item, 'left', event);
+        return this._handleHold(item, 'left', event); // TODO main and offhand
       case 'hold_right':
         return this._handleHold(item, 'right', event);
       case 'use':
@@ -582,60 +583,51 @@ export class SimpleActorSheet extends ActorSheet {
     const actorData = this.actor.data;
     const attrs = data.attributes;
     const isWorn = !!data.worn;
-    const isBulky = !!data.bulky;
-    const isArmor = item.type === 'armor' || item.type === 'helm';
-    const isClothing = item.type === 'clothing'; // TODO use enum of game item types
-    const isContainer = !!attrs.container;
+    const isArmor = item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.HELM;
+    const isClothing = item.type === ITEM_TYPES.clothing;
+    const isMissile = item.type === ITEM_TYPES.missile;
+    const isShield = item.type === ITEM_TYPES.shield;
     const wornItems = actorData.items.filter((i) => i.data.data.worn);
-    const charSize = Constant.SIZE_VALUES[actorData.data.attributes.size?.value] ?? 2;
-    const itemSize = Constant.SIZE_VALUES[attrs.size?.value];
-    const itemLocations = item.data.data.coverage;
+    const charSize = SIZE_VALUES[actorData.data.attributes.size?.value] ?? 3;
+    const itemSize = SIZE_VALUES[attrs.size?.value];
+    const itemLocations = data.coverage;
 
     if (!isWorn) {
-      // can't wear if quantity greater or less than 1 unless ammo
-      const wearLimit = isContainer ? Infinity : 1;
-      const itemQty = +item?.data.data.quantity || 0;
+      // can't wear if quantity greater or less than 1 unless missile
+      const wearLimit = isMissile ? Infinity : 1;
+      const itemQty = data.quantity || 0;
       if (itemQty < 1 || itemQty > wearLimit) return ui.notifications.error(`Can't wear with quantity of ${itemQty}`);
 
-      // can't wear armor, helm or clothing that is too small
+      // can't wear armor or clothing that is too small
       if (isArmor || isClothing) {
         if (itemSize < charSize) return ui.notifications.error('Item is too small to wear');
       }
 
-      // can't wear a bulky item if any of this item's locations are already covered by a bulky item
-      if (isBulky) {
-        const wornBulkyItems = wornItems.filter((i) => i.data.data.bulky);
-        const wornBulkyLocations = [...new Set(wornBulkyItems.map((i) => i.data.data.coverage).flat())];
-        const duplicateLocation = wornBulkyLocations.some((l) => itemLocations.includes(l));
-        if (duplicateLocation) return ui.notifications.error(`Already wearing a bulky item over ${duplicateLocation}`);
-      }
-
-      // can't wear armor if any of this item's locations are already covered by more than 2 armors
+      // can't wear armor if total bulk levels of any of this armor's locations would exceed 5
       if (isArmor) {
-        const wornArmors = wornItems.filter((i) => i.type === 'armor' || i.type === 'helm');
-        const wornArmorLocations = wornArmors.flatMap((a) => a.data.data.coverage);
+        const itemBulk = armorMaterials[attrs.material?.value]?.bulk;
+        if (!itemBulk) return ui.notifications.error('Armor material not found');
+        const allWornArmors = wornItems.filter((i) => i.type === ITEM_TYPES.ARMOR || i.type === ITEM_TYPES.HELM);
         for (const itemLoc of itemLocations) {
-          const count = wornArmorLocations.filter((l) => l === itemLoc).length;
-          if (count > 2) return ui.notifications.error(`Cannot wear any more armor layers over ${itemLoc}`);
+          const wornArmors = allWornArmors.filter((i) => i.data.data.coverage.includes(itemLoc));
+          const bulk = wornArmors.reduce((acc, i) => acc + armorMaterials[i.data.data.material].bulk, 0);
+          if (bulk + itemBulk > 5) return ui.notifications.error(`Can't wear. Armor bulk level exceeded at ${itemLoc}`);
         }
       }
 
-      // can't wear a shield if already wearing a shield,
-      //    while holding a 2 handed weapon
-      //    or if size of shield is bigger than character size + 1
-      const isShield = item.type === 'shield';
-      const wearingShield = wornItems.some((i) => i.type === 'shield');
+      // can't wear a shield if already wearing a shield, while holding a 2 handed weapon, or if size of shield is bigger than character size + 1
+      const wearingShield = wornItems.some((i) => i.type === ITEM_TYPES.shield);
       const holdingTwoHands = actorData.items.some((i) => i.data.data.held_offhand && i.data.data.held_mainhand);
       if (isShield) {
         if (itemSize > charSize + 1) return ui.notifications.error('Too small to wear a shield of this size');
         if (wearingShield) return ui.notifications.error('Can only wear one shield');
         if (holdingTwoHands)
-          return ui.notifications.error('Cannot wear a shield while holding a weapon with both hands');
+          return ui.notifications.error('Cannot wear a shield while holding a an item with both hands');
       }
     }
 
     const verb = isWorn ? 'doffs' : 'dons';
-    Util.macroChatMessage(this.actor, { flavor: 'Wear Item', content: `${this.actor.name} ${verb} ${item.name}.` });
+    macroChatMessage(this.actor, { flavor: 'Wear Item', content: `${this.actor.name} ${verb} ${item.name}.` });
     return this.actor.updateEmbeddedDocuments('Item', [{ _id: item._id, 'data.worn': !isWorn }]);
   }
 

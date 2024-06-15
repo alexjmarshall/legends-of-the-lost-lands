@@ -123,7 +123,7 @@ export class Swashbuckler extends Thief {
       new FeatureConfig(features.DUELLIST, 1, {
         changes: [
           {
-            key: 'data.attributes.base_ac.value',
+            key: 'data.base_ac',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 4),
           },

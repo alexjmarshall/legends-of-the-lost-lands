@@ -1,12 +1,3 @@
-export const NON_PHYSICAL_ITEM_TYPES = Object.freeze([
-  'spell',
-  'feature',
-  'skill',
-  'natural_weapon',
-  'natural_missile_weapon',
-  'hit_location',
-]);
-
 export function cloneItem(item) {
   const itemData = {
     data: foundry.utils.deepClone(item.data.data),
@@ -24,7 +15,6 @@ export const ITEM_TYPES = Object.freeze({
   ARMOR: 'armor',
   BOW: 'bow',
   CLOTHING: 'clothing',
-  CONTAINER: 'container',
   CURRENCY: 'currency',
   DISEASE: 'disease',
   FEATURE: 'feature',
@@ -49,3 +39,78 @@ export const ITEM_TYPES = Object.freeze({
   STORAGE: 'storage',
   TRADE_GOOD: 'trade_good',
 });
+
+export const NON_PHYSICAL_ITEM_TYPES = Object.freeze([
+  ITEM_TYPES.DISEASE,
+  ITEM_TYPES.FEATURE,
+  ITEM_TYPES.GRAPPLING_MANEUVER,
+  ITEM_TYPES.HIT_LOCATION,
+  ITEM_TYPES.INJURY,
+  ITEM_TYPES.NATURAL_MISSILE_WEAPON,
+  ITEM_TYPES.NATURAL_WEAPON,
+  ITEM_TYPES.RECIPE,
+  ITEM_TYPES.RUNE,
+  ITEM_TYPES.SPELL,
+]);
+
+export function sortEquipmentByType(items) {
+  const equipment = {};
+  const isMagic = (i) => i.data?.data?.attributes?.admin?.magic?.value;
+  const isConsumable = (i) => i.data?.data?.attributes?.admin?.consumable?.value;
+  const isWeapon = (i) =>
+    [ITEM_TYPES.MELEE_WEAPON, ITEM_TYPES.MISSILE_WEAPON, ITEM_TYPES.BOW, ITEM_TYPES.MISSILE].includes(i.type);
+  const isArmor = (i) => [ITEM_TYPES.ARMOR, ITEM_TYPES.SHIELD, ITEM_TYPES.HELM].includes(i.type);
+  const isClothing = (i) => i.type === ITEM_TYPES.CLOTHING;
+  const isGemOrJewelry = (i) => [ITEM_TYPES.GEM, ITEM_TYPES.JEWELRY].includes(i.type);
+  const isCurrency = (i) => i.type === ITEM_TYPES.CURRENCY;
+  const isMiscItem = (i) => !isWeapon(i) && !isArmor(i) && !isClothing(i) && !isGemOrJewelry(i) && !isCurrency(i);
+
+  const types = [
+    {
+      title: 'Weapons',
+      condition: isWeapon,
+    },
+    {
+      title: 'Armor',
+      condition: isArmor,
+    },
+    {
+      title: 'Clothing',
+      condition: isClothing,
+    },
+    {
+      title: 'Gems & Jewelry',
+      condition: isGemOrJewelry,
+    },
+    {
+      title: 'Currency',
+      condition: isCurrency,
+    },
+    {
+      title: 'Potions',
+      condition: (i) => isMagic(i) && isConsumable(i) && isMiscItem(i),
+    },
+    {
+      title: 'Misc. Magic',
+      condition: (i) => isMagic(i) && !isConsumable(i) && isMiscItem(i),
+    },
+    {
+      title: 'Other Items',
+      condition: (i) => !isMagic(i) && isMiscItem(i),
+    },
+  ];
+
+  types.forEach((t) => {
+    const equipItems = items.filter(t.condition).map((i) => ({
+      item: i,
+      holdable: i.data.attributes.admin?.holdable?.value,
+      wearable: i.data.attributes.admin?.wearable?.value,
+    }));
+
+    if (!equipItems.length) return;
+
+    equipment[t.title] = equipItems;
+  });
+
+  return equipment;
+}
