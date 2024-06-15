@@ -15,7 +15,7 @@ import { sizeMulti } from './rules/size.js';
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
   HUMANOID: 'humanoid',
-  MERCAHNT: 'merchant',
+  MERCHANT: 'merchant',
   MONSTER: 'monster',
   PACK_ANIMAL: 'pack_animal',
   PARTY: 'party',
@@ -62,6 +62,7 @@ export class SimpleActor extends Actor {
       missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
     };
+    charData.spell_failure = 0;
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
     charData.armor_penalty = 0; // TODO includes full penalty for all worn armors. Apply to skill checks with armorPenalty > 0
     charData.combat_armor_penalty = 0; // TODO includes full penalty for worn non-proficient armors and smaller penalty for proficient armors. Apply to combat skill checks and evasion saves.
@@ -149,12 +150,15 @@ export class SimpleActor extends Actor {
     const AGILITY_PENALTY_THRESHOLD = 5;
     const AGILITY_PENALTY_FACTOR = 3;
     const ARMOR_CHECK_THRESHOLD = 2;
+    const SPELL_FAILURE_MAX_WEIGHT = sizeMulti(60);
     const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
     charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE_FACTOR);
     charData.armor_check_penalty = Math.max(0, Math.floor(totalPenaltyWgt - ARMOR_CHECK_THRESHOLD));
     charData.agility_penalty = Math.floor(
       Math.max(0, totalPenaltyWgt - AGILITY_PENALTY_THRESHOLD) / AGILITY_PENALTY_FACTOR
     );
+
+    // TODO remove size from attributes?
 
     return;
 

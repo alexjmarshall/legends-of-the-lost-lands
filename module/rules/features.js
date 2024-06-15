@@ -121,7 +121,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attributes.base_ac.value',
+          key: 'data.base_ac',
           mode: 2,
           value: 1,
         },
@@ -207,7 +207,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attributes.base_mv.value',
+          key: 'data.base_mv',
           mode: 4,
           value: 15,
         },
@@ -234,7 +234,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attributes.base_ac.value',
+          key: 'data.base_ac',
           mode: 2,
           value: 2,
         },
@@ -267,22 +267,22 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attributes.base_ac.value',
+          key: 'data.base_ac',
           mode: 2,
           value: 2,
         },
         {
-          key: 'data.attributes.save_physical.value',
+          key: 'data.saves.physical',
           mode: 2,
           value: 2,
         },
         {
-          key: 'data.attributes.save_mental.value',
+          key: 'data.saves.mental',
           mode: 2,
           value: 2,
         },
         {
-          key: 'data.attributes.save_evasion.value',
+          key: 'data.saves.evasion',
           mode: 2,
           value: 2,
         },
