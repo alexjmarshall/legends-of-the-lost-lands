@@ -615,6 +615,8 @@ export class SimpleActorSheet extends ActorSheet {
         }
       }
 
+      // TODO can't wear metal if druid
+
       // can't wear a shield if already wearing a shield, while holding a 2 handed weapon, or if size of shield is bigger than character size + 1
       const wearingShield = wornItems.some((i) => i.type === ITEM_TYPES.shield);
       const holdingTwoHands = actorData.items.some((i) => i.data.data.held_offhand && i.data.data.held_mainhand);

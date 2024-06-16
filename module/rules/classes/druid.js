@@ -1,5 +1,5 @@
 import { lightArmors } from '../armor-and-clothing.js';
-import { SHIELD_TYPES } from '../shields.js';
+import { nonMetalShields } from '../shields.js';
 import { allSpellSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
@@ -112,7 +112,7 @@ export class Druid extends BaseClass {
   constructor(lvl, origin) {
     super(lvl, origin, Druid);
     this.armors = [...lightArmors];
-    this.shields = [SHIELD_TYPES.M];
+    this.shields = [...nonMetalShields];
   }
 }
 

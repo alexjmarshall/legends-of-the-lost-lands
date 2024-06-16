@@ -21,12 +21,21 @@ const {
   SKULL,
 } = HIT_LOCATIONS;
 
-export const SHIELD_TYPES = Object.freeze({
-  M: 'medium',
-  L: 'large',
+export const SHIELD_MATERIALS = Object.freeze({
+  WOOD: 'wood',
+  BONE: 'bone',
+  CUIR_BOUILLI: 'cuir bouilli',
+  IRON_PLATE: 'iron plate',
+  STEEL_PLATE: 'steel plate',
 });
 
-export const allShields = Object.freeze(Object.values(SHIELD_TYPES));
+export const allShields = Object.freeze(Object.values(SHIELD_MATERIALS));
+
+export const nonMetalShields = Object.freeze([
+  SHIELD_MATERIALS.WOOD,
+  SHIELD_MATERIALS.BONE,
+  SHIELD_MATERIALS.CUIR_BOUILLI,
+]);
 
 export const SHIELD_WEIGHT_WORN_MULTI = 1.2;
 

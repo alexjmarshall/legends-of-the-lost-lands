@@ -100,12 +100,12 @@ export class SimpleItem extends Item {
     // worn weight
     if (isShield) {
       data.worn_weight = roundToDecimal(data.weight * SHIELD_WEIGHT_WORN_MULTI, 1);
-      return;
+    } else {
+      const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN;
+      const wornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
+      const wornWeight = sizeMulti(materialWgt * wornWgtProportion, sizeVal);
+      data.worn_weight = roundToDecimal(wornWeight, 1);
     }
-    const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN;
-    const wornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
-    const wornWeight = sizeMulti(materialWgt * wornWgtProportion, sizeVal);
-    data.worn_weight = roundToDecimal(wornWeight, 1);
 
     // total weight
     const isWorn = !!data.worn;
@@ -115,7 +115,7 @@ export class SimpleItem extends Item {
     // penalty weight
     data.penalty_weight = 0;
     if (isWorn) {
-      const isExtraBulky = [GARMENT_MATERIALS.GAMBESON, GARMENT_MATERIALS.WOOD].includes(material);
+      const isExtraBulky = [GARMENT_MATERIALS.GAMBESON].includes(material);
       data.penalty_weight = isExtraBulky ? roundToDecimal(totalWeight * 2, 1) : totalWeight;
     }
   }

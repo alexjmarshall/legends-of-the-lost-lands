@@ -178,7 +178,7 @@
             "value": "L"
           },
           "infravision": {
-            "dtype": "String",
+            "dtype": "Number",
             "group": "",
             "label": "Infravision (ft.)",
             "value": 60

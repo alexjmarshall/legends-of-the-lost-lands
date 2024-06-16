@@ -2,6 +2,7 @@ import { EntitySheetHelper } from './helper.js';
 import * as Constant from './constants.js';
 import * as SIZE from './rules/size.js';
 import * as RACE from './rules/races/index.js';
+import * as CLASS from './rules/classes/index.js';
 import * as ALIGNMENT from './rules/alignment.js';
 import * as ABILITIES from './rules/abilities.js';
 import * as RULES_HELPER from './rules/helper.js';
@@ -13,6 +14,7 @@ import { removeDuplicates, roundToDecimal } from './helper.js';
 import { sizeMulti } from './rules/size.js';
 import { ITEM_TYPES } from './item-helper.js';
 import { features } from './rules/features.js';
+import { garmentMaterials } from './rules/armor-and-clothing.js';
 
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
@@ -64,10 +66,7 @@ export class SimpleActor extends Actor {
       missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
     };
-    charData.spell_failure = 0;
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
-    charData.armor_penalty = 0; // TODO includes full penalty for all worn armors. Apply to skill checks with armorPenalty > 0
-    charData.combat_armor_penalty = 0; // TODO includes full penalty for worn non-proficient armors and smaller penalty for proficient armors. Apply to combat skill checks and evasion saves.
   }
 
   /** @override */
@@ -115,6 +114,10 @@ export class SimpleActor extends Actor {
 
     const charData = actorData.data;
 
+    // size_val
+    const sizeVal = SIZE.SIZE_VALUES[charData.size] || SIZE.SIZE_VALUES.default;
+    charData.size_val = sizeVal;
+
     // ability score mods
     const attrs = charData.attributes;
     const abilities = attrs.ability_scores || {};
@@ -148,21 +151,8 @@ export class SimpleActor extends Actor {
     // set removed body part locations
     this._addRemovedLocations(charData, items);
 
-    // spell failure, skill check penalty & max dex mod // TODO go back to max dex mod from agility penalty
-    const wornItems = items; //.filter((i) => i.data.data.worn); // TODO worn items
-    const SPELL_FAILURE_FACTOR = 5 / 2;
-    const AGILITY_PENALTY_THRESHOLD = 5;
-    const AGILITY_PENALTY_FACTOR = 3;
-    const ARMOR_CHECK_THRESHOLD = 2;
-    const SPELL_FAILURE_MAX_WEIGHT = sizeMulti(60);
-    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
-    charData.spell_failure = Math.floor(totalPenaltyWgt * SPELL_FAILURE_FACTOR);
-    charData.armor_check_penalty = Math.max(0, Math.floor(totalPenaltyWgt - ARMOR_CHECK_THRESHOLD));
-    charData.agility_penalty = Math.floor(
-      Math.max(0, totalPenaltyWgt - AGILITY_PENALTY_THRESHOLD) / AGILITY_PENALTY_FACTOR
-    );
-
-    // TODO remove size from attributes?
+    // spell failure, skill check penalty & max dex mod
+    this._addWornWeightPenalties(charData, items);
 
     return;
 
@@ -215,6 +205,36 @@ export class SimpleActor extends Actor {
         .map((p) => p.toLowerCase())
         .filter((p) => Constant.WEAPON_CATEGORIES.includes(p));
     charData.weap_profs = getWeapProfs(attrs.weapons.weap_profs.value);
+  }
+
+  _addWornWeightPenalties(charData, items) {
+    const wornItems = items.filter((i) => i.data.data.worn);
+
+    const totalPenaltyWgt = wornItems.reduce((sum, i) => sum + (+i.data.data.penalty_weight || 0), 0);
+
+    const isNonProficientArmor = (i) => {
+      const material = i.data.data.attributes.material?.value;
+      const armorTypes = [ITEM_TYPES.ARMOR, ITEM_TYPES.SHIELD, ITEM_TYPES.HELM];
+      if (!armorTypes.includes(i.type)) return false;
+      const classObj = new CLASS[charData.class](charData.lvl, charData.origin);
+      if (i.type === ITEM_TYPES.SHIELD) return !classObj?.shields.includes(material);
+      return !classObj?.armors.includes(material);
+    };
+
+    const maxMailWgt = sizeMulti(garmentMaterials.mail.weight, charData.sizeVal);
+    charData.spell_failure = Math.min(100, Math.floor((totalPenaltyWgt / maxMailWgt) * 100));
+
+    const maxIronPlateWgt = sizeMulti(garmentMaterials['iron plate'].weight, charData.sizeVal);
+    charData.armor_penalty = 0 - Math.floor((totalPenaltyWgt / maxIronPlateWgt) * 8);
+
+    const totalNonProfPenaltyWgt = wornItems.reduce((sum, i) => {
+      const penaltyWeight = +i.data.data.penalty_weight || 0;
+      if (isNonProficientArmor(i)) return sum + penaltyWeight;
+      return sum + roundToDecimal(penaltyWeight / 8, 1);
+    }, 0);
+    charData.combat_armor_penalty = 0 - Math.floor((totalNonProfPenaltyWgt / maxIronPlateWgt) * 8);
+
+    charData.max_dex_mod = 6 - Math.floor((totalPenaltyWgt / maxIronPlateWgt) * 6);
   }
 
   _prepareHumanoidData(actorData) {
