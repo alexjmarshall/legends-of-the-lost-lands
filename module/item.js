@@ -6,6 +6,7 @@ import { allHitLocations, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/h
 import { garmentMaterials, GARMENT_MATERIALS, armorVsDmgType } from './rules/armor-and-clothing.js';
 import { physicalDmgTypes } from './rules/attack-and-damage.js';
 import { ITEM_TYPES } from './item-helper.js';
+import { ATK_MODES } from './rules/attack-and-damage.js';
 
 /**
  * Extend the base Item document to support attributes and groups with a custom template creation dialog.
@@ -33,12 +34,17 @@ export class SimpleItem extends Item {
     // armor, clothing, shield, helm
     this._prepareGarmentData(itemData);
 
+    // melee weapon
+    this._prepareMeleeWeaponData(itemData);
+
+    // missile weapon, bow
+    this._prepareMissileWeaponData(itemData);
+
     // // spell_magic, spell_cleric, spell_druid
     // this._prepareSpellData(itemData);
     // this._prepareCurrencyData(itemData);
     // this._prepareGemData(itemData);
-    // this._prepareMeleeWeaponData(itemData);
-    // this._prepareMissileWeaponData(itemData);
+
     // this._prepareSkillData(itemData);
   }
 
@@ -205,39 +211,39 @@ export class SimpleItem extends Item {
     this._addClo(itemData);
     this._addACandDR(itemData);
 
-    // TODO weapons get stuck if they impale and do >= 2x max damage total
+    // TODO weapons get stuck if they impale and do >= max weapon damage as rolled impale damage
     // TODO Rapier is Reach 1 but does have a lunge attack -- step forward and back
   }
 
   _prepareMeleeWeaponData(itemData) {
-    if (itemData.type !== 'melee_weapon' || itemData.type !== 'throw_weapon') return;
+    if (itemData.type !== ITEM_TYPES.MELEE_WEAPON) return;
 
     const { data } = itemData;
     const attrs = data.attributes;
 
-    const atkModes = Util.getArrFromCSV(attrs.atk_modes.value)
+    const atkModes = getArrFromCSV(attrs.atk_modes.value)
       .map((a) => a.toLowerCase().replace(' ', ''))
-      .filter((a) => Object.keys(Constant.ATK_MODES).includes(a));
+      .filter((a) => Object.keys(ATK_MODES).includes(a));
 
     const currMode = atkModes.includes(data.atk_mode) ? data.atk_mode : '';
 
     data.atk_mode = currMode || atkModes[0] || '';
+
+    // TODO test this and missileData with weapon/missile weapon item
   }
 
   _prepareMissileWeaponData(itemData) {
-    if (itemData.type !== 'missile_weapon' || itemData.type !== 'bow') return;
+    if (itemData.type !== ITEM_TYPES.MISSILE_WEAPON || itemData.type !== ITEM_TYPES.BOW) return;
 
     const { data } = itemData;
-    const attrs = data.attributes;
-    const proficiency = attrs.proficiency.value;
     const ownerItems = this.actor?.data?.items || [];
 
-    const wornAmmo = ownerItems
-      .filter((i) => i.data.data.worn && Util.stringMatch(i.data.data.attributes.proficiency?.value, proficiency))
+    const beltedAmmo = ownerItems
+      .filter((i) => i.data.data.belted && i.data.type === ITEM_TYPES.MISSILE)
       .map((i) => i.name);
 
-    const currAmmo = wornAmmo.includes(data.ammo) ? data.ammo : '';
-    const ranWornAmmo = wornAmmo[0]?.name;
+    const currAmmo = beltedAmmo.includes(data.ammo) ? data.ammo : '';
+    const ranWornAmmo = beltedAmmo[0]?.name;
 
     data.ammo = currAmmo || ranWornAmmo || '';
   }

@@ -121,12 +121,15 @@ export const hitLocations = {
   [FOOT]: {
     weights: [2, 2, 0, 0, 6, 6, 10, 4],
     bilateral: true,
+    soft: false, // if soft, blunt DR of 1 for size M+
+    max_impale: 1,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 0.5,
       [SLASH]: 0.5,
     },
-    max_impale: 1,
+    bleed_mod: 1, // apply to cutting roll to determine bleed, positive is easier bleed
+    major_bleed: '1d3+1', // bleed has to be at least 1d4+1 to be described as spurting
     injury: {
       [BLUNT]: {
         light: {
@@ -190,12 +193,15 @@ export const hitLocations = {
   [SHIN]: {
     weights: [6, 4, 0, 0, 14, 8, 16, 8],
     bilateral: true,
+    soft: false,
+    max_impale: 2,
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 0.5,
+      [PIERCE]: 1,
       [SLASH]: 0.5,
     },
-    max_impale: 2,
+    bleed_mod: 0,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -257,12 +263,15 @@ export const hitLocations = {
   [KNEE]: {
     weights: [8, 4, 0, 0, 14, 8, 8, 4],
     bilateral: true,
+    soft: false,
+    max_impale: 2,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 0.5,
       [SLASH]: 0.5,
     },
-    max_impale: 1,
+    bleed_mod: 0,
+    major_bleed: '1d5+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -322,12 +331,15 @@ export const hitLocations = {
   [THIGH]: {
     weights: [8, 10, 2, 2, 16, 20, 14, 10],
     bilateral: true,
+    soft: true,
+    max_impale: 4,
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 0.5,
+      [PIERCE]: 1,
       [SLASH]: 0.5,
     },
-    max_impale: 3,
+    bleed_mod: -1,
+    major_bleed: '1d8+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -389,12 +401,15 @@ export const hitLocations = {
   [HIP]: {
     weights: [8, 8, 4, 2, 16, 16, 8, 10],
     bilateral: true,
+    soft: false,
+    max_impale: 3,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 1,
       [SLASH]: 0.5,
     },
-    max_impale: 2,
+    bleed_mod: 0,
+    major_bleed: '1d8+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -455,12 +470,15 @@ export const hitLocations = {
   [HAND]: {
     weights: [6, 4, 6, 4, 4, 2, 8, 4],
     bilateral: true,
+    soft: false,
+    max_impale: 1,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 0.5,
       [SLASH]: 0.5,
     },
-    max_impale: 0,
+    bleed_mod: 1,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -522,12 +540,15 @@ export const hitLocations = {
   [FOREARM]: {
     weights: [8, 6, 8, 6, 4, 2, 10, 6],
     bilateral: true,
+    soft: true,
+    max_impale: 1,
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 0.5,
+      [PIERCE]: 1,
       [SLASH]: 0.5,
     },
-    max_impale: 1,
+    bleed_mod: 0,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -588,13 +609,16 @@ export const hitLocations = {
   },
   [ELBOW]: {
     weights: [6, 4, 8, 6, 2, 2, 4, 2],
+    bilateral: true,
+    soft: false,
+    max_impale: 1,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 0.5,
       [SLASH]: 0.5,
     },
-    max_impale: 1,
-    bilateral: true,
+    bleed_mod: 0,
+    major_bleed: '1d4+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -655,13 +679,16 @@ export const hitLocations = {
   },
   [UPPER_ARM]: {
     weights: [6, 4, 10, 10, 2, 2, 8, 6],
+    bilateral: true,
+    soft: true,
+    max_impale: 2,
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 0.5,
+      [PIERCE]: 1,
       [SLASH]: 0.5,
     },
-    max_impale: 1,
-    bilateral: true,
+    bleed_mod: -1,
+    major_bleed: '1d6+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -722,12 +749,15 @@ export const hitLocations = {
   },
   [ABDOMEN]: {
     weights: [10, 18, 6, 12, 18, 25, 6, 14],
+    soft: true,
+    max_impale: 5,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 1.5,
       [SLASH]: 0.5,
     },
-    max_impale: 3,
+    bleed_mod: -2,
+    major_bleed: '1d8+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -791,12 +821,16 @@ export const hitLocations = {
   },
   [CHEST]: {
     weights: [6, 14, 8, 18, 2, 7, 5, 9],
+    soft: false,
+    max_impale: 4,
     impale_multi: {
       [BLUNT]: 0,
       [PIERCE]: 2,
       [SLASH]: 0.5,
     },
-    max_impale: 3,
+    bleed_mod: -1,
+    major_bleed: '1d10+1',
+    major_bleed_exclude_dmg_type: [BLUNT, SLASH],
     injury: {
       [BLUNT]: {
         light: {
@@ -859,13 +893,16 @@ export const hitLocations = {
   },
   [SHOULDER]: {
     weights: [10, 8, 14, 14, 2, 2, 6, 8],
+    bilateral: true,
+    soft: false,
+    max_impale: 3,
     impale_multi: {
       [BLUNT]: 0,
-      [PIERCE]: 1,
+      [PIERCE]: 1.5,
       [SLASH]: 0.5,
     },
-    max_impale: 2,
-    bilateral: true,
+    bleed_mod: -1,
+    major_bleed: '1d6+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -925,12 +962,15 @@ export const hitLocations = {
   },
   [NECK]: {
     weights: [3, 3, 6, 4, 0, 0, 3, 3],
+    soft: true,
+    max_impale: 3,
     impale_multi: {
-      [BLUNT]: 0,
-      [PIERCE]: 1,
+      [BLUNT]: 0.5,
+      [PIERCE]: 1.5,
       [SLASH]: 1,
     },
-    max_impale: 2,
+    bleed_mod: 1,
+    major_bleed: '1d10+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -993,12 +1033,15 @@ export const hitLocations = {
   },
   [JAW]: {
     weights: [3, 2, 4, 4, 0, 0, 2, 2],
-    impale_multi: {
-      [BLUNT]: 1,
-      [PIERCE]: 1,
-      [SLASH]: 1,
-    },
+    soft: false,
     max_impale: 2,
+    impale_multi: {
+      [BLUNT]: 0.5,
+      [PIERCE]: 0.5,
+      [SLASH]: 0.5,
+    },
+    bleed_mod: 1,
+    major_bleed: '1d4+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -1066,12 +1109,15 @@ export const hitLocations = {
   },
   [NOSE]: {
     weights: [1, 2, 2, 4, 0, 0, 2, 2],
-    impale_multi: {
-      [BLUNT]: 1,
-      [PIERCE]: 1,
-      [SLASH]: 1,
-    },
+    soft: false,
     max_impale: 2,
+    impale_multi: {
+      [BLUNT]: 0.5,
+      [PIERCE]: 1,
+      [SLASH]: 0.5,
+    },
+    bleed_mod: 1,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -1139,13 +1185,16 @@ export const hitLocations = {
   },
   [EYE]: {
     weights: [0, 2, 2, 4, 0, 0, 2, 2],
+    bilateral: true,
+    soft: false,
+    max_impale: 4,
     impale_multi: {
-      [BLUNT]: 1,
+      [BLUNT]: 0.5,
       [PIERCE]: 2,
       [SLASH]: 1,
     },
-    max_impale: 3,
-    bilateral: true,
+    bleed_mod: 2,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -1213,13 +1262,16 @@ export const hitLocations = {
   },
   [EAR]: {
     weights: [4, 2, 8, 4, 0, 0, 2, 2],
-    impale_multi: {
-      [BLUNT]: 1,
-      [PIERCE]: 1,
-      [SLASH]: 1,
-    },
-    max_impale: 3,
     bilateral: true,
+    soft: false,
+    max_impale: 3,
+    impale_multi: {
+      [BLUNT]: 0.5,
+      [PIERCE]: 0.5,
+      [SLASH]: 0.5,
+    },
+    bleed_mod: 1,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {
@@ -1287,12 +1339,15 @@ export const hitLocations = {
   },
   [SKULL]: {
     weights: [5, 3, 12, 6, 0, 0, 6, 4],
-    impale_multi: {
-      [BLUNT]: 2,
-      [PIERCE]: 2,
-      [SLASH]: 2,
-    },
+    soft: false,
     max_impale: 3,
+    impale_multi: {
+      [BLUNT]: 0.5,
+      [PIERCE]: 0.5,
+      [SLASH]: 0.5,
+    },
+    bleed_mod: 1,
+    major_bleed: '1d3+1',
     injury: {
       [BLUNT]: {
         light: {

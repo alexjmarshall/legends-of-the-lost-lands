@@ -1,4 +1,4 @@
-import { lightArmors, mediumArmors } from '../armor-and-clothing.js';
+import { lightArmors, mediumArmors, heavyArmors } from '../armor-and-clothing.js';
 import { allShields } from '../shields.js';
 import { allCombatSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
@@ -10,7 +10,7 @@ import { WEAPON_CLASS } from '../weapons.js';
 import { deepFreeze } from '../../helper.js';
 
 export class Barbarian extends BaseClass {
-  static description = 'A brutal warrior of the untamed hinterlands.';
+  static description = 'A grim warrior of the untamed hinterlands.';
 
   static XP_REQS = Object.freeze([0, 700, 2000, 5000, 10000, 25000, 50000, 90000, 150000, 220000]);
 
@@ -48,7 +48,8 @@ export class Barbarian extends BaseClass {
   static getArmorsByLevel(lvl) {
     if (lvl < 4) return [];
     if (lvl < 7) return lightArmors;
-    return [...lightArmors, ...mediumArmors];
+    if (lvl < 10) return mediumArmors;
+    return [...lightArmors, ...mediumArmors, ...heavyArmors];
   }
 
   static firstLvlHp = '3d8';
@@ -56,7 +57,7 @@ export class Barbarian extends BaseClass {
   static fpReserve = 15;
   static afterNameHp = 3;
   static hitDie = 'd8';
-  static armorDescription = 'none (level 1-3), light (level 4+), medium (level 7+)';
+  static armorDescription = 'none (level 1-3), light (level 4+), medium (level 7+), heavy (10+)';
   static weaponClass = WEAPON_CLASS.MARTIAL;
   static abilityReqs = [
     {
