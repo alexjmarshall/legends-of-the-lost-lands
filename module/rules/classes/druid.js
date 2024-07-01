@@ -11,7 +11,7 @@ import { ALIGNMENTS } from '../alignment.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Druid extends BaseClass {
-  static description = 'A follower of the Old Ways who serves as mystic conduit to the ancient forces of nature.';
+  static description = 'A follower of the Old Ways who serves as mystic conduit to the forces of nature.';
 
   static XP_REQS = Object.freeze([
     0, 900, 2700, 6000, 12000, 20000, 35000, 60000, 90000, 130000, 200000, 300000, 450000, 670000,

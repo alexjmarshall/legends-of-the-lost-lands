@@ -8,7 +8,7 @@ import { UNITS_OF_ACCOUNT } from '../rules/currency.js';
 import { sizes } from '../rules/size.js';
 import { VOICE_SOUNDS, playSound, voiceTypesByGender } from '../sound.js';
 import { insertSpaceBeforeCapitalUnlessSlash } from '../string.js';
-import { ABILITIES, abilities, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
+import { ABILITIES, ABILITIES_LIST, FULL_ABILITIES, getScoreMod } from '../rules/abilities.js';
 import { alignmentDescriptions, minScore, alignmentByScore, allAlignments } from '../rules/alignment.js';
 import { portraits, basePath } from '../portrait.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
@@ -478,7 +478,7 @@ export class CreateActorSheet extends ActorSheet {
       const genAbiilities = [];
       do {
         genAbiilities.length = 0;
-        for (const ability of abilities) {
+        for (const ability of ABILITIES_LIST) {
           let abilityScore = rollDice('3d6');
           // add racial modifier
           abilityScore += selectedRace.abilityScoreModifiers[ability] || 0;

@@ -282,10 +282,7 @@ export function setStanceDialog(options = {}) {
     const currStyle = itemData.atk_style || 'stable';
     const currHeight = itemData.atk_height || 'mid';
     const currMode = itemData.atk_mode || atkModes[0];
-    // const currGrip = itemData.atk_grip || 'normal';
     const currInit = itemData.atk_timing || 'offense';
-    // const grips = ['hammer','reverse'];
-    // if (atkModes.includes('swi(s)')) grips.push('thumb');
     const inits = ['attack', 'counter', 'riposte'];
 
     const styleButtons = {
@@ -376,7 +373,6 @@ export function setStanceDialog(options = {}) {
             const height = shield ? ` ${selections['held_height']}` : ` ${selections['atk_height']}`;
             const atkForm = Constant.ATK_MODES[selections['atk_mode']]?.ATK_FORM;
             const mode = atkForm ? ` ${atkForm}ing` : '';
-            // const grip = (selections['atk_grip'] == null || selections['atk_grip'] === 'hammer') ? '' :  ` in a ${selections['atk_grip']} grip`;
             const init =
               selections['atk_timing'] === 'riposte' || selections['atk_timing'] === 'counter' ? ' defensive' : '';
             const doChatMsg = Object.keys(update).length > 1;

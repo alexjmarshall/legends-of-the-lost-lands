@@ -402,7 +402,7 @@ export async function attack(attacker, target, options) {
   const immuneImpale = !!targetRollData?.immune_impale;
   let dr = Number(targetRollData?.ac.total[dmgType]?.dr) || 0;
   let targetAc = Number(targetRollData?.ac?.total[dmgType]?.ac);
-  let targetTouchAc = Number(targetRollData?.ac?.touch_ac);
+  let targetTouchAc = Number(targetRollData?.ac?.touchAc);
   let unarmoredAc = targetTouchAc + (Constant.armorVsDmgType.none[dmgType]?.ac || 0);
   let shieldBonus = Number(targetRollData?.ac?.total[dmgType]?.shield_bonus);
   const targetTiming = targetRollData?.ac?.timing || '';
