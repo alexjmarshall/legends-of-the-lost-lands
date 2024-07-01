@@ -6,7 +6,7 @@ export const PHYSICAL_DMG_TYPES = Object.freeze({
   SLASH: 'slash', // S
 });
 
-export const physicalDmgTypes = Object.freeze(Object.values(PHYSICAL_DMG_TYPES));
+export const PHYSICAL_DMG_TYPES_LIST = Object.freeze(Object.values(PHYSICAL_DMG_TYPES));
 
 export const MAGIC_DMG_TYPES = Object.freeze({
   HOLY: 'holy', // H
@@ -114,3 +114,22 @@ export const ATK_MODES = {
     ATK_FORM: [ATK_FORMS.THROW],
   },
 };
+
+export const ATK_HEIGHTS = Object.freeze({
+  LOW: 'low',
+  MID: 'mid',
+  HIGH: 'high',
+});
+
+export const ATK_HEIGHTS_LIST = Object.freeze(Object.values(ATK_HEIGHTS));
+
+export const ATK_STYLES = Object.freeze({
+  STANDARD: 'standard',
+  POWER: 'power',
+});
+
+export const ATK_TIMINGS = Object.freeze({
+  STANDARD: 'standard',
+  COUNTER: 'counter',
+  PARRY: 'parry',
+});

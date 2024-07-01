@@ -15,6 +15,8 @@ import { sizeMulti } from './rules/size.js';
 import { ITEM_TYPES } from './item-helper.js';
 import { features } from './rules/features.js';
 import { GARMENT_MATERIALS, garmentMaterials, armorVsDmgType } from './rules/armor-and-clothing.js';
+import { ATK_STYLES, ATK_TIMINGS, ATK_HEIGHTS_LIST, PHYSICAL_DMG_TYPES_LIST } from './rules/attack-and-damage.js';
+import { hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
 
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
@@ -65,9 +67,11 @@ export class SimpleActor extends Actor {
       dmg_bonus_undead: 0,
       missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
+      missile_dmg_mod: 0,
+      melee_dmg_mod: 0,
     };
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
-    charData.healing_mod = 0; // TODO apply to natural healing
+    charData.healing_mod = 0; // TODO apply to natural healing and injury heal checks
   }
 
   /** @override */
@@ -156,8 +160,8 @@ export class SimpleActor extends Actor {
     this._addWornWeightPenalties(charData, items);
 
     // worn AC and clo
-    this._addWornAc(actorData, BASE_AC);
-    this._addWornClo(actorData);
+    this._addWornAc(actorData);
+    //this._addWornClo(actorData);
   }
 
   _addWornWeightPenalties(charData, items) {
@@ -174,7 +178,10 @@ export class SimpleActor extends Actor {
       return !classObj?.armors.includes(material);
     };
 
-    const maxMailWgt = sizeMulti(garmentMaterials.mail.weight + garmentMaterials.aketon.weight, charData.sizeVal);
+    const maxMailWgt = sizeMulti(
+      garmentMaterials[GARMENT_MATERIALS.MAIL].weight + garmentMaterials[GARMENT_MATERIALS.PADDED].weight,
+      charData.sizeVal
+    );
     charData.spell_failure = Math.min(100, Math.floor((totalPenaltyWgt / maxMailWgt) * 100));
 
     const maxIronPlateWgt = sizeMulti(garmentMaterials[GARMENT_MATERIALS.IRON_PLATE].weight, charData.sizeVal);
@@ -295,7 +302,7 @@ export class SimpleActor extends Actor {
     const naturalDr = Math.max(0, sizeVal - 2);
     const hideAc = Constant.armorVsDmgType[naturalArmorMaterial].base_AC;
     const touchAc = naturalAc - hideAc - sizeVal;
-    const ac = { touch_ac: touchAc, total: {} };
+    const ac = { touchAc: touchAc, total: {} };
 
     for (const dmgType of Constant.DMG_TYPES) {
       const unarmoredAc = Constant.armorVsDmgType[naturalArmorMaterial][dmgType].ac;
@@ -488,113 +495,105 @@ export class SimpleActor extends Actor {
   // TODO replace Delete Button on actor/item attributes with Show to Players checkmark
   // hide data type and attribute key from GM as well?
 
-  _addWornAc(actorData, naturalAc) {
+  _getParryValue(actorData, parryItem) {
+    const skill = parryItem.data.data.attributes.skill.value;
+    const skillValue = actorData.data.skills[skill]?.lvl || 0;
+    // parry value is the weapon's parry rating + 1/2 skill rating
+    const itemParry = +parryItem.data.data.attributes.parry.value || 0;
+    return itemParry + Math.floor(skillValue / 2);
+  }
+
+  _addParryWeapons(actorData, heldItems) {
+    // an active parry weapon has the parry timing
+    // a non-active parry weapon has the standard attack style
+    // if there are active parry weapons, the one with the highest parry value is the only weapon considered to be parrying
+    // otherwise, the best non-active parry weapon for each height area is considered to be parrying
+
+    const parry = {
+      active: undefined,
+      nonActive: Object.fromEntries(ATK_HEIGHTS_LIST.map((a) => [a, undefined])),
+    };
+
+    const activeParryWeaps = heldItems.filter(
+      (i) => i.type === ITEM_TYPES.MELEE_WEAPON && i.data.data.atk_timing === ATK_TIMINGS.PARRY
+    );
+
+    const parryValReducer = (a, b) => (this._getParryValue(actorData, b) > this._getParryValue(actorData, a) ? b : a);
+
+    const activeParryWeap = activeParryWeaps.reduce(parryValReducer, null);
+
+    if (activeParryWeap) {
+      parry.active = {
+        itemId: activeParryWeap._id,
+        parryBonus: this._getParryValue(actorData, activeParryWeap),
+        height: activeParryWeap.data.data.atk_height,
+      };
+      return parry;
+    }
+
+    const nonActiveParryWeaps = heldItems.filter(
+      (i) => i.type === ITEM_TYPES.MELEE_WEAPON && i.data.data.atk_style === ATK_STYLES.STANDARD
+    );
+
+    ATK_HEIGHTS_LIST.forEach((a) => {
+      const item = nonActiveParryWeaps.filter((w) => w.data.data.atk_height === a).reduce(parryValReducer, null);
+      if (item) {
+        parry.nonActive[a] = {
+          itemId: item._id,
+          parryBonus: this._getParryValue(actorData, item),
+          height: item.data.data.atk_height,
+        };
+      }
+    });
+
+    return parry;
+  }
+
+  _addWornAc(actorData) {
     const { data } = actorData;
     const attrs = data.attributes;
     const { items } = actorData;
     const heldItems = items.filter((i) => i.data.data.held_offhand || i.data.data.held_mainhand);
     const wornItems = items.filter((i) => i.data.data.worn);
-    const charSizeVal = data.size_val;
 
+    const dmgTypesObj = Object.fromEntries(PHYSICAL_DMG_TYPES_LIST.map((t) => [t, { ac: 0, dr: 0 }]));
+    const ac = {
+      touchAc: 0,
+      parry: this._addParryWeapons(actorData, heldItems),
+      timing: undefined,
+      mdr: 0,
+      total: dmgTypesObj,
+      location: Object.fromEntries(Object.keys(hitLocations).map((hitLoc) => [hitLoc, dmgTypesObj])),
+    };
+
+    // touch ac
+    const dexAcBonus = Math.max(data.max_dex_mod, +attrs.ability_scores?.dex?.mod || 0);
+    ac.touchAc = data.base_ac + dexAcBonus;
+
+    // timing
+    const counterWeap = heldItems.some((i) => i.data.data.atk_timing === ATK_TIMINGS.COUNTER);
+    const activeParryWeap = heldItems.some((i) => i.data.data.atk_timing === ATK_TIMINGS.PARRY);
+    ac.timing = counterWeap ? ATK_TIMINGS.COUNTER : activeParryWeap ? ATK_TIMINGS.PARRY : undefined;
+
+    // total mdr and ac by hit location
+    const charSizeVal = data.size_val;
     const naturalArmorMaterial = armorVsDmgType[attrs.hide?.value] || armorVsDmgType.none;
     const naturalDr = Math.max(0, charSizeVal - 3);
-    const dexAcBonus = Math.max(data.max_dex_mod, +attrs.ability_scores?.dex?.mod || 0);
 
-    // parry weapons
-    const parry = [];
-    const parryValReducer = (a, b) =>
-      +b.data.data.attributes.parry.value > +a.data.data.attributes.parry.value ? b : a;
-    const riposteWeaps = heldItems.filter(
-      (i) =>
-        (i.type === 'melee_weapon' || i.type === 'throw_weapon') &&
-        i.data.data.atk_timing === 'riposte' &&
-        +i.data.data.attributes.parry?.value
-    );
-    const riposteWeap = riposteWeaps.reduce(parryValReducer, null);
-    if (riposteWeap) {
-      parry.push({
-        parry_item_id: riposteWeap._id,
-        parry_bonus: +riposteWeap.data.data.attributes.parry.value || 0,
-        parry_type: 'riposte',
-        parry_height: riposteWeap.data.data.atk_height,
-      });
-    } else {
-      const fluidStableWeaps = heldItems.filter(
-        (i) =>
-          (i.type === 'melee_weapon' || i.type === 'throw_weapon') &&
-          (i.data.data.atk_style === 'fluid' || i.data.data.atk_style === 'stable') &&
-          +i.data.data.attributes.parry?.value
-      );
-      const fluidStableWeapsByHeight = Constant.HEIGHT_AREAS.map((a) =>
-        fluidStableWeaps.filter((w) => w.data.data.atk_height === a).reduce(parryValReducer, null)
-      ).filter((w) => w);
-      parry.push(
-        ...fluidStableWeapsByHeight.map((w) => {
-          const parry_type = w.data.data.atk_style;
-          const parry_value = Math.floor(+w.data.data.attributes.parry.value / 2) || 0;
-          const parryTypeBonus = parry_type === 'stable' ? 1 : 0;
-          const parry_bonus = parry_value + parryTypeBonus;
-          return {
-            parry_item_id: w._id,
-            parry_bonus,
-            parry_type,
-            parry_height: w.data.data.atk_height,
-          };
-        })
-      );
-    }
-
-    // stance penalty
-    const powerWeap = heldItems.some((i) => i.data.data.atk_style === 'power');
-    const counterWeap = heldItems.some((i) => i.data.data.atk_timing === 'counter');
-    const timing = counterWeap ? 'counter' : riposteWeap ? 'riposte' : '';
-    const powerWeapPenalty = powerWeap ? Constant.STANCE_MODS.power.ac_mod : 0;
-    const counterWeapPenalty = counterWeap ? Constant.STANCE_MODS.counter.ac_mod : 0;
-    const stancePenalty = powerWeapPenalty + counterWeapPenalty;
-
-    // get best clothing magical AC bonus
-    const magicWornClothing = wornItems.filter(
-      (i) => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value
-    );
-    const magicClothingACBonus = this._getHighestMagicVal(magicWornClothing, 'ac_mod');
-
-    // get best jewelry magical AC bonus
-    const magicWornJewelry = wornItems.filter((i) => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
-    const magicJewelryACBonus = this._getHighestMagicVal(magicWornJewelry, 'ac_mod');
-
-    // ac by hit location
-    // initialize total AC/DR values
-    const touchAc = Math.max(1, naturalAc + dexAcBonus + stancePenalty - agilityPenalty);
-    const ac = {
-      touch_ac: touchAc,
-      mdr: 0,
-      parry,
-      total: {},
-      stance_penalty: stancePenalty,
-      timing,
-    };
-    for (const dmgType of Constant.DMG_TYPES) {
-      ac.total[dmgType] = {
-        ac: 0,
-        dr: 0,
-      };
-    }
-
-    for (const [k, v] of Object.entries(Constant.HIT_LOCATIONS)) {
-      ac[k] = {};
+    for (const [locKey, locVal] of Object.entries(hitLocations)) {
       const locationWeight =
-        (v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.SWING] + v.weights[Constant.HIT_LOC_WEIGHT_INDEXES.THRUST]) / 200;
-      const coveringItems = wornItems.filter((i) => i.data.data.coverage?.includes(k));
-      // can only wear three total armor layers
-      const armor = coveringItems
-        .filter((i) => (i.type === 'armor' || i.type === 'helm') && i.data.data.ac)
-        .slice(0, 3);
-      const bulkyArmor = armor.filter((i) => i.data.data.bulky);
-      const nonBulkyArmor = armor.filter((i) => !i.data.data.bulky);
+        (locVal.weights[HIT_LOC_WEIGHT_INDEXES.SWING] + locVal.weights[HIT_LOC_WEIGHT_INDEXES.THRUST]) / 200;
 
-      // magic damage reduction
-      const mdr = armor.reduce((sum, i) => sum + +i.data.data.ac?.mdr || 0, 0);
+      const coveringItems = wornItems.filter((i) => i.data.data.coverage?.includes(locKey));
+      const armor = coveringItems.filter((i) => i.type === ITEM_TYPES.ARMOR || i.type === ITEM_TYPES.HELM);
+
+      // add armors' magic bonus to total magic damage reduction
+      const mdr = armor.reduce((sum, i) => sum + +i.data.data.attributes.ac_mod?.value || 0, 0);
       ac.mdr += mdr * locationWeight;
+
+      // sort armors by AC and record Ids
+      // shield goes on top
+      return;
 
       // shield
       const shield = coveringItems.find((i) => i.type === 'shield');
@@ -657,7 +656,7 @@ export class SimpleActor extends Actor {
       v.ac = Math.round(v.ac); // crit slash dmg armor must not be shield or helm
       v.dr = Math.round(v.dr); // if closed, must remove to listen/speak
     }
-    ac.mdr = Math.round(ac.mdr); // hinged helm has a macro to change between open/closed...automatically muffle in character speaking with closed helm?
+    ac.mdr = Math.floor(ac.mdr); // hinged helm has a macro to change between open/closed...automatically muffle in character speaking with closed helm?
 
     data.ac = ac;
   }

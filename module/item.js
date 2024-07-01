@@ -2,9 +2,9 @@ import { EntitySheetHelper, getArrFromCSV, roundToDecimal } from './helper.js';
 import * as Constant from './constants.js';
 import { SIZE_VALUES, sizeMulti } from './rules/size.js';
 import { SHIELD_COVERAGE, SHIELD_WEIGHT_WORN_MULTI } from './rules/shields.js';
-import { allHitLocations, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
+import { HIT_LOCATION_LIST, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
 import { garmentMaterials, armorVsDmgType } from './rules/armor-and-clothing.js';
-import { physicalDmgTypes } from './rules/attack-and-damage.js';
+import { PHYSICAL_DMG_TYPES_LIST } from './rules/attack-and-damage.js';
 import { ITEM_TYPES } from './item-helper.js';
 import { ATK_MODES } from './rules/attack-and-damage.js';
 
@@ -74,7 +74,7 @@ export class SimpleItem extends Item {
     const isShield = itemData.type === ITEM_TYPES.SHIELD;
     const coverageArr = isShield
       ? this._getShieldCoverage(itemData)
-      : getArrFromCSV(data.attributes.coverage?.value).filter((l) => allHitLocations.includes(l.toLowerCase())) || [];
+      : getArrFromCSV(data.attributes.coverage?.value).filter((l) => HIT_LOCATION_LIST.includes(l.toLowerCase())) || [];
     data.coverage = coverageArr;
   }
 
@@ -158,7 +158,7 @@ export class SimpleItem extends Item {
     const mdr = isMagic ? acMod : 0;
 
     data.armor = { mdr, baseAc };
-    physicalDmgTypes.forEach((dmgType) => {
+    PHYSICAL_DMG_TYPES_LIST.forEach((dmgType) => {
       data.armor[dmgType] = materialAcMods[dmgType];
     });
   }

@@ -1,5 +1,11 @@
 import { HIT_LOCATIONS } from './hit-locations.js';
 
+export const HELD_HEIGHTS = Object.freeze({
+  LOW: 'low',
+  MID: 'mid',
+  HIGH: 'high',
+});
+
 const {
   FOOT,
   SHIN,

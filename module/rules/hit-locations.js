@@ -1,5 +1,5 @@
 import { randomChoice } from '../helper.js';
-import { PHYSICAL_DMG_TYPES } from './attack-and-damage.js';
+import { PHYSICAL_DMG_TYPES, ATK_HEIGHTS } from './attack-and-damage.js';
 
 const { BLUNT, PIERCE, SLASH } = PHYSICAL_DMG_TYPES;
 
@@ -24,6 +24,8 @@ export const HIT_LOCATIONS = Object.freeze({
   SKULL: 'skull',
 });
 
+export const HIT_LOCATION_LIST = Object.values(HIT_LOCATIONS);
+
 const {
   FOOT,
   SHIN,
@@ -44,14 +46,6 @@ const {
   EAR,
   SKULL,
 } = HIT_LOCATIONS;
-
-export const ATK_HEIGHTS = Object.freeze({
-  LOW: 'low',
-  MID: 'mid',
-  HIGH: 'high',
-});
-
-export const atkHeights = Object.values(ATK_HEIGHTS);
 
 export const HEIGHT_AREAS = {
   [ATK_HEIGHTS.LOW]: [FOOT, SHIN, KNEE, THIGH, HIP],
@@ -1419,8 +1413,6 @@ export const hitLocations = {
   // all we need to worry about is how to handle hook and peg leg?
   // prosthetic item can have ITS OWN active effect! -- removes disabled prop when worn, but adds maluses
 };
-
-export const allHitLocations = Object.keys(hitLocations);
 
 export const AIM_AREAS = {
   head: [SKULL, `left ${EYE}`, `right ${EYE}`, `left ${EAR}`, `right ${EAR}`, NOSE, JAW, NECK],

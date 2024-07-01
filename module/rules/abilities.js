@@ -16,7 +16,7 @@ export const FULL_ABILITIES = Object.freeze({
   [ABILITIES.CHA]: 'Charisma',
 });
 
-export const abilities = Object.freeze(Object.values(ABILITIES));
+export const ABILITIES_LIST = Object.freeze(Object.values(ABILITIES));
 
 export const getScoreMod = (score) => {
   return Math.round((score - 10) / 3);

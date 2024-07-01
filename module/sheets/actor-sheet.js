@@ -107,6 +107,7 @@ export class SimpleActorSheet extends ActorSheet {
 
     // sort equipment
     const equipment = items.filter((i) => !NON_PHYSICAL_ITEM_TYPES.includes(i.type));
+    console.log(equipment.map((i) => i.name));
     context.equipment = sortEquipmentByType(equipment);
     context.hasEquipment = Object.values(context.equipment).flat().length > 0;
 
