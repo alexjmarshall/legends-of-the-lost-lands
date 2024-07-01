@@ -30,8 +30,8 @@ export const GARMENT_MATERIALS = Object.freeze({
   WOOL: 'wool',
   SILK: 'silk',
   FURS: 'furs',
-  AKETON: 'aketon',
-  GAMBESON: 'gambeson',
+  PADDED: 'padded',
+  QUILTED: 'quilted',
   LEATHER: 'leather',
   CUIR_BOUILLI: 'cuir bouilli',
   BRIGANDINE: 'brigandine',
@@ -53,8 +53,8 @@ const {
   WOOL,
   SILK,
   FURS,
-  AKETON,
-  GAMBESON,
+  PADDED,
+  QUILTED,
   LEATHER,
   CUIR_BOUILLI,
   BRIGANDINE,
@@ -107,13 +107,13 @@ export const garmentMaterials = deepFreeze({
     value: 600,
     durability: 60,
   },
-  [AKETON]: {
+  [PADDED]: {
     weight: 12,
     clo: 11,
     value: 150,
     durability: 80,
   },
-  [GAMBESON]: {
+  [QUILTED]: {
     weight: 20,
     clo: 18,
     value: 216,
@@ -194,13 +194,13 @@ export const armorMaterials = deepFreeze({
     type: LIGHT,
     cuttable: true,
   },
-  [AKETON]: {
+  [PADDED]: {
     metal: false,
     bulk: NON,
     type: LIGHT,
     cuttable: true,
   },
-  [GAMBESON]: {
+  [QUILTED]: {
     metal: false,
     bulk: SEMI,
     type: LIGHT,
@@ -323,7 +323,7 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
   },
-  [AKETON]: {
+  [PADDED]: {
     baseAc: 2,
     [BLUNT]: {
       ac: 0,
@@ -341,7 +341,7 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
   },
-  [GAMBESON]: {
+  [QUILTED]: {
     baseAc: 2,
     [BLUNT]: {
       ac: 0,

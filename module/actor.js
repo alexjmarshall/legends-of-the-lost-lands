@@ -485,6 +485,9 @@ export class SimpleActor extends Actor {
     return Math.max(0, +itemSize - +charSize) || 0;
   }
 
+  // TODO replace Delete Button on actor/item attributes with Show to Players checkmark
+  // hide data type and attribute key from GM as well?
+
   _addWornAc(actorData, naturalAc) {
     const { data } = actorData;
     const attrs = data.attributes;
