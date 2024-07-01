@@ -14,7 +14,7 @@ import { removeDuplicates, roundToDecimal } from './helper.js';
 import { sizeMulti } from './rules/size.js';
 import { ITEM_TYPES } from './item-helper.js';
 import { features } from './rules/features.js';
-import { garmentMaterials } from './rules/armor-and-clothing.js';
+import { GARMENT_MATERIALS, garmentMaterials, armorVsDmgType } from './rules/armor-and-clothing.js';
 
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
@@ -67,6 +67,7 @@ export class SimpleActor extends Actor {
       melee_to_hit_mod: 0,
     };
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
+    charData.healing_mod = 0; // TODO apply to natural healing
   }
 
   /** @override */
@@ -154,57 +155,9 @@ export class SimpleActor extends Actor {
     // spell failure, skill check penalty & max dex mod
     this._addWornWeightPenalties(charData, items);
 
-    return;
-
-    // const size = attrs.size.value.toUpperCase().trim();
-    // const sizeVal = Constant.SIZE_VALUES[size] ?? Constant.SIZE_VALUES.default;
-
-    // const DEFAULT_STR = 10;
-    // const ENC_BASE = 20 / 3;
-    // const ENC_FACTOR = 2 / 3;
-    // const BASE_MV = {
-    //   default: 12,
-    //   dwarf: 9,
-    //   barbarian: 15,
-    // };
-    // const BASE_SV = {
-    //   default: 0,
-    //   paladin: 2,
-    // };
-    // const BASE_AC = 10;
-
-    // save bonuses
-    const magicWornClothing = wornItems.filter(
-      (i) => i.type === 'clothing' && i.data.data.attributes.admin?.magic.value
-    );
-    const magicClothingSvMod = this._getHighestMagicVal(magicWornClothing, 'sv_mod');
-    const magicWornJewelry = wornItems.filter((i) => i.type === 'jewelry' && i.data.data.attributes.admin?.magic.value);
-    const magicJewelrySvMod = this._getHighestMagicVal(magicWornJewelry, 'sv_mod');
-    const baseSv = BASE_SV[attrs.class.value?.toLowerCase()] ?? BASE_SV.default;
-    charData.sv = baseSv + +attrs.lvl.value + magicClothingSvMod + magicJewelrySvMod;
-    charData.msv = baseSv + +attrs.lvl.value + abilities.wis.mod + magicClothingSvMod + magicJewelrySvMod;
-
-    // TODO CONTINUE HERE
-    // base attack bonus - derive from level and class
-    // derive other things from level and class
-    // macro for increasing level and button that becomes active if XP > xp_required
-    //    also rolls chat for hit points
-    charData.bab =
-      charData.hit_die =
-      // size
-      charData.size =
-        sizeVal;
-
     // worn AC and clo
     this._addWornAc(actorData, BASE_AC);
     this._addWornClo(actorData);
-
-    // weapons
-    const getWeapProfs = (weapCatList) =>
-      Util.getArrFromCSV(weapCatList || '')
-        .map((p) => p.toLowerCase())
-        .filter((p) => Constant.WEAPON_CATEGORIES.includes(p));
-    charData.weap_profs = getWeapProfs(attrs.weapons.weap_profs.value);
   }
 
   _addWornWeightPenalties(charData, items) {
@@ -221,10 +174,10 @@ export class SimpleActor extends Actor {
       return !classObj?.armors.includes(material);
     };
 
-    const maxMailWgt = sizeMulti(garmentMaterials.mail.weight, charData.sizeVal);
+    const maxMailWgt = sizeMulti(garmentMaterials.mail.weight + garmentMaterials.aketon.weight, charData.sizeVal);
     charData.spell_failure = Math.min(100, Math.floor((totalPenaltyWgt / maxMailWgt) * 100));
 
-    const maxIronPlateWgt = sizeMulti(garmentMaterials['iron plate'].weight, charData.sizeVal);
+    const maxIronPlateWgt = sizeMulti(garmentMaterials[GARMENT_MATERIALS.IRON_PLATE].weight, charData.sizeVal);
     charData.armor_penalty = 0 - Math.floor((totalPenaltyWgt / maxIronPlateWgt) * 8);
 
     const totalNonProfPenaltyWgt = wornItems.reduce((sum, i) => {
@@ -448,7 +401,7 @@ export class SimpleActor extends Actor {
     const encStr = strScore * encMod;
 
     const load = +charData.enc || 0;
-    const maxLoad = Math.floor(100 + encStr * 10);
+    const maxLoad = Math.floor(80 + encStr * 10);
     const sizeAdjustedMaxLoad = sizeMulti(maxLoad, sizeVal);
     const relativeLoad = load / sizeAdjustedMaxLoad;
 
@@ -538,16 +491,13 @@ export class SimpleActor extends Actor {
     const { items } = actorData;
     const heldItems = items.filter((i) => i.data.data.held_offhand || i.data.data.held_mainhand);
     const wornItems = items.filter((i) => i.data.data.worn);
-    const charSize = data.size;
-    const NATURAL_DR_THRESHOLD = 2;
+    const charSizeVal = data.size_val;
 
-    const naturalArmorMaterial = Constant.armorVsDmgType[attrs.hide?.value] ? attrs.hide.value : 'none';
-    const naturalDr = Math.max(0, charSize - NATURAL_DR_THRESHOLD);
-    const dexAcBonus = +attrs.ability_scores?.dex?.mod || 0;
-    const agilityPenalty = +data.agility_penalty || 0;
+    const naturalArmorMaterial = armorVsDmgType[attrs.hide?.value] || armorVsDmgType.none;
+    const naturalDr = Math.max(0, charSizeVal - 3);
+    const dexAcBonus = Math.max(data.max_dex_mod, +attrs.ability_scores?.dex?.mod || 0);
 
     // parry weapons
-    // riposte parry overwrites fluid parry, stable bonus is 1/2 parry, fluid is 1/2 + 1
     const parry = [];
     const parryValReducer = (a, b) =>
       +b.data.data.attributes.parry.value > +a.data.data.attributes.parry.value ? b : a;

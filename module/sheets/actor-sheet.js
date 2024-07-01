@@ -584,9 +584,9 @@ export class SimpleActorSheet extends ActorSheet {
     const attrs = data.attributes;
     const isWorn = !!data.worn;
     const isArmor = item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.HELM;
-    const isClothing = item.type === ITEM_TYPES.clothing;
-    const isMissile = item.type === ITEM_TYPES.missile;
-    const isShield = item.type === ITEM_TYPES.shield;
+    const isClothing = item.type === ITEM_TYPES.CLOTHING;
+    const isMissile = item.type === ITEM_TYPES.MISSILE;
+    const isShield = item.type === ITEM_TYPES.SHIELD;
     const wornItems = actorData.items.filter((i) => i.data.data.worn);
     const charSize = SIZE_VALUES[actorData.data.attributes.size?.value] ?? 3;
     const itemSize = SIZE_VALUES[attrs.size?.value];
@@ -603,6 +603,14 @@ export class SimpleActorSheet extends ActorSheet {
         if (itemSize < charSize) return ui.notifications.error('Item is too small to wear');
       }
 
+      // druids can't wear metal armor or shields
+      if ((isArmor || isShield) && actorData.data.class === CLASSES.Druid.name) {
+        if (armorMaterials[attrs.material?.value]?.metal) {
+          const armorType = isArmor ? 'armor' : 'shield';
+          return ui.notifications.error(`Druids can't wear metal ${armorType}s`);
+        }
+      }
+
       // can't wear armor if total bulk levels of any of this armor's locations would exceed 5
       if (isArmor) {
         const itemBulk = armorMaterials[attrs.material?.value]?.bulk;
@@ -610,15 +618,17 @@ export class SimpleActorSheet extends ActorSheet {
         const allWornArmors = wornItems.filter((i) => i.type === ITEM_TYPES.ARMOR || i.type === ITEM_TYPES.HELM);
         for (const itemLoc of itemLocations) {
           const wornArmors = allWornArmors.filter((i) => i.data.data.coverage.includes(itemLoc));
-          const bulk = wornArmors.reduce((acc, i) => acc + armorMaterials[i.data.data.material].bulk, 0);
-          if (bulk + itemBulk > 5) return ui.notifications.error(`Can't wear. Armor bulk level exceeded at ${itemLoc}`);
+          const bulk = wornArmors.reduce(
+            (acc, i) => acc + armorMaterials[i.data.data.attributes.material?.value].bulk,
+            0
+          );
+          if (bulk + itemBulk > 5)
+            return ui.notifications.error(`Can't wear. Armor layers are too bulky at ${itemLoc}`);
         }
       }
 
-      // TODO can't wear metal if druid
-
       // can't wear a shield if already wearing a shield, while holding a 2 handed weapon, or if size of shield is bigger than character size + 1
-      const wearingShield = wornItems.some((i) => i.type === ITEM_TYPES.shield);
+      const wearingShield = wornItems.some((i) => i.type === ITEM_TYPES.SHIELD);
       const holdingTwoHands = actorData.items.some((i) => i.data.data.held_offhand && i.data.data.held_mainhand);
       if (isShield) {
         if (itemSize > charSize + 1) return ui.notifications.error('Too small to wear a shield of this size');

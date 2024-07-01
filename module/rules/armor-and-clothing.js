@@ -295,12 +295,12 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 0,
       dr: 0,
     },
     [SLASH]: {
-      ac: 0,
+      ac: -1,
       pen: 0,
       dr: 0,
     },
@@ -605,4 +605,8 @@ export const lightArmors = Object.freeze(
 
 export const mediumArmors = Object.freeze(
   Object.keys(armorMaterials).filter((k) => armorMaterials[k].type === WEIGHT_TYPES.MEDIUM)
+);
+
+export const heavyArmors = Object.freeze(
+  Object.keys(armorMaterials).filter((k) => armorMaterials[k].type === WEIGHT_TYPES.HEAVY)
 );

@@ -37,7 +37,7 @@
               "label": "Disease",
               "value": false
             },
-            "crits": {
+            "crit": {
               "dtype": "Boolean",
               "group": "immunities",
               "label": "Critical Hit",
@@ -1556,7 +1556,7 @@
           "dmg_mod": {
             "dtype": "Number",
             "group": "",
-            "label": "Damage Bonus",
+            "label": "Damage Mod.",
             "value": 0
           },
           "admin": {
@@ -1581,7 +1581,7 @@
           "to_hit_mod": {
             "dtype": "Number",
             "group": "",
-            "label": "To-Hit Bonus",
+            "label": "To-Hit Mod.",
             "value": 0
           },
           "skill": {
@@ -1742,7 +1742,7 @@
         "ac_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "AC Bonus",
+          "label": "AC Mod.",
           "value": 0
         }
       }
@@ -1955,7 +1955,7 @@
         "check_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Check Bonus",
+          "label": "Check Mod.",
           "value": 0
         }
       }
@@ -1972,7 +1972,7 @@
         "ac_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "AC Bonus",
+          "label": "AC Mod.",
           "value": 0
         },
         "fixed": {
@@ -1993,12 +1993,6 @@
       "templates": ["props"],
       "attributes": {
         "admin": {
-          "use_loc_hp": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Use Location HP",
-            "value": false
-          },
           "apply_main_hp": {
             "dtype": "Boolean",
             "group": "admin",
@@ -2006,29 +2000,47 @@
             "value": true
           }
         },
-        "hit_weight": {
+        "swi_hit_weight": {
           "dtype": "Number",
           "group": "",
-          "label": "Hit Weight",
+          "label": "Swing Hit Weight",
           "value": 10
         },
-        "dmg_multi": {
+        "thr_hit_weight": {
           "dtype": "Number",
           "group": "",
-          "label": "Impale Damage Multiplier",
-          "value": 1
+          "label": "Thrust Hit Weight",
+          "value": 10
         },
-        "crit_chance_multi": {
+        "soft": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Soft (Blunt DR)",
+          "value": false
+        },
+        "impale_multi": {
           "dtype": "Number",
           "group": "",
-          "label": "Crit. Chance Multiplier",
+          "label": "Impale Multi.",
           "value": 1
         },
         "max_impale": {
           "dtype": "Number",
           "group": "",
-          "label": "Max. Impale",
-          "value": 2
+          "label": "Max. Impales",
+          "value": 3
+        },
+        "bleed_mod": {
+          "dtype": "Number",
+          "group": "",
+          "label": "Bleed Mod.",
+          "value": 1
+        },
+        "major_bleed": {
+          "dtype": "String",
+          "group": "",
+          "label": "Major Bleed Damage",
+          "value": "1d4+1"
         },
         "hp": {
           "dtype": "Resource",
@@ -2037,12 +2049,6 @@
           "value": 8,
           "min": 0,
           "max": 8
-        },
-        "name": {
-          "dtype": "String",
-          "group": "",
-          "label": "Name",
-          "value": ""
         },
         "ac": {
           "dtype": "Number",
@@ -2054,7 +2060,7 @@
           "dtype": "String",
           "group": "",
           "label": "Hide",
-          "value": ""
+          "value": "none"
         }
       }
     },
@@ -2127,7 +2133,7 @@
         "healing_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Healing Bonus",
+          "label": "Healing Mod.",
           "value": 0
         },
         "heal_failures": {
@@ -2202,7 +2208,7 @@
         "to_hit_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "To-Hit Bonus",
+          "label": "To-Hit Mod.",
           "value": 0
         },
         "dmg": {
@@ -2211,16 +2217,10 @@
           "label": "Damage",
           "value": "d6"
         },
-        "dmg_vs_l": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage vs. Large",
-          "value": "d6"
-        },
         "dmg_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Damage Bonus",
+          "label": "Damage Mod.",
           "value": 0
         },
         "skill": {
@@ -2326,16 +2326,10 @@
           "label": "Damage",
           "value": "1d6"
         },
-        "dmg_vs_l": {
-          "dtype": "String",
-          "group": "",
-          "label": "Damage vs. Large",
-          "value": "d6"
-        },
         "dmg_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Damage Bonus",
+          "label": "Damage Mod.",
           "value": 0
         },
         "dmg_type": {
@@ -2396,7 +2390,7 @@
         "to_hit_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "To-Hit Bonus",
+          "label": "To-Hit Mod.",
           "value": 0
         },
         "impact": {
@@ -2512,7 +2506,7 @@
         "ac_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "AC Bonus",
+          "label": "AC Mod.",
           "value": 0
         }
       }

@@ -97,6 +97,8 @@ export const PREP_MODS = {
     speed_mod: (weap) => 0 - Math.ceil(weap.data.data.attributes.speed?.value / 2) || 0,
   },
 };
+// TODO beat always beats counter, doesn't always lose to feint (gives up attack, but not guaranteed defender riposte)
+// TODO feint always beats parry, but doesn't always lose to counter (just halves speed)
 export const WEAP_BREAK_CHANCE = 5;
 
 export const MERCHANT_SUBTYPES = [
