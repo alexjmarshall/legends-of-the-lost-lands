@@ -22,7 +22,12 @@
   ],
   "packs": [],
   "system": [],
-  "dependencies": [],
+  "dependencies": [
+    {
+      "name": "lib-wrapper",
+      "type": "module"
+    }
+  ],
   "socket": false,
   "manifest": "n/a",
   "download": "n/a",

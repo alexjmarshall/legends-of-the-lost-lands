@@ -19,6 +19,7 @@ import * as Util from './utils.js';
 import { TimeQ } from './time-queue.js';
 import * as Exhaustion from './exhaustion.js';
 import * as Race from './rules/races/index.js';
+import * as Overrides from './overrides.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -158,9 +159,28 @@ Hooks.once('init', async function () {
 
   // Preload template partials
   await preloadHandlebarsTemplates();
+
+  // Replace core class functions with libWrapper
+  libWrapper.register('brigandine', 'KeyboardManager.prototype._onDigit', Overrides._onDigit, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Roll.expandInlineResult', Overrides.expandInlineResult, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Actor.prototype.modifyTokenAttribute', Overrides.modifyTokenAttribute, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Macro.prototype._executeChat', Overrides._executeChat, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Macro.prototype._executeScript', Overrides._executeScript, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Macro.prototype.execute', Overrides.execute, 'OVERRIDE');
+  libWrapper.register('brigandine', 'TextEditor._onClickInlineRoll', Overrides._onClickInlineRoll, 'OVERRIDE');
+  libWrapper.register('brigandine', 'ActorSheet.prototype._onDropItem', Overrides._onDropItem, 'OVERRIDE');
+  libWrapper.register('brigandine', 'ActorSheet.prototype._onSortItem', Overrides._onSortItem, 'OVERRIDE');
+  libWrapper.register('brigandine', 'Hotbar.prototype._onClickMacro', Overrides._onClickMacro, 'OVERRIDE');
+  libWrapper.register('brigandine', 'ChatLog.prototype._onDiceRollClick', Overrides._onDiceRollClick, 'OVERRIDE');
+  // Add new core class functions
+  GridLayer.prototype.measureDistanceGrid = Overrides.measureDistanceGrid;
 });
 
 Hooks.on('ready', () => {
+  if (!game.modules.get('lib-wrapper')?.active && game.user.isGM) {
+    ui.notifications.error("Brigandine system requires the 'libWrapper' module. Please install and activate it.");
+  }
+
   // update party actors' MV
   // TODO need to do this here? or on update an actor's MV
   // TODO maybe scrap this -- make macro to update party's MV rate
