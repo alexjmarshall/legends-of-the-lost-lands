@@ -19,7 +19,7 @@ import * as Util from './utils.js';
 import { TimeQ } from './time-queue.js';
 import * as Exhaustion from './exhaustion.js';
 import * as Race from './rules/races/index.js';
-import * as Overrides from './overrides.js';
+import * as Overrides from './overrides/index.js';
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
