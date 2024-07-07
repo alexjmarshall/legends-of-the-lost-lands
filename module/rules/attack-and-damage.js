@@ -9,11 +9,13 @@ export const PHYSICAL_DMG_TYPES = Object.freeze({
 export const PHYSICAL_DMG_TYPES_LIST = Object.freeze(Object.values(PHYSICAL_DMG_TYPES));
 
 export const MAGIC_DMG_TYPES = Object.freeze({
+  // TODO add MAGIC dmg type here and in template.json
   HOLY: 'holy', // H
   FIRE: 'fire', // F
   COLD: 'cold', // C
   ELECTRICITY: 'electricity', // E
   ACID: 'acid', // A
+  MAGIC: 'magic', // M
 });
 
 export const ATK_TYPES = Object.freeze({

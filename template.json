@@ -1553,12 +1553,6 @@
             "label": "Damage",
             "value": "d6"
           },
-          "dmg_mod": {
-            "dtype": "Number",
-            "group": "",
-            "label": "Damage Mod.",
-            "value": 0
-          },
           "admin": {
             "magic": {
               "dtype": "Boolean",
@@ -1566,10 +1560,10 @@
               "label": "Magic",
               "value": false
             },
-            "non_metal_head": {
+            "non_metal": {
               "dtype": "Boolean",
               "group": "admin",
-              "label": "Non-Metal Head",
+              "label": "Non-Metal",
               "value": true
             }
           }
@@ -1625,53 +1619,41 @@
         },
         "attributes": {
           "magic_dmg": {
-            "dmg_silver": {
+            "dmg_magic": {
               "dtype": "Boolean",
               "group": "magic_dmg",
-              "label": "Silver",
-              "value": false
-            },
-            "dmg_cold_iron": {
-              "dtype": "Boolean",
-              "group": "magic_dmg",
-              "label": "Cold Iron",
-              "value": false
+              "label": "Magic",
+              "value": ""
             },
             "dmg_acid": {
               "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Acid",
-              "value": false
+              "value": ""
             },
             "dmg_fire": {
               "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Fire",
-              "value": false
+              "value": ""
             },
             "dmg_cold": {
               "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Cold",
-              "value": false
+              "value": ""
             },
             "dmg_elec": {
               "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Electricity",
-              "value": false
+              "value": ""
             },
             "dmg_holy": {
               "dtype": "Boolean",
               "group": "magic_dmg",
               "label": "Holy",
-              "value": false
-            },
-            "dmg_poison": {
-              "dtype": "Boolean",
-              "group": "magic_dmg",
-              "label": "Poison",
-              "value": false
+              "value": ""
             }
           }
         }
@@ -1772,14 +1754,6 @@
           "group": "",
           "label": "Coverage",
           "value": "chest,abdomen"
-        },
-        "admin": {
-          "wet": {
-            "dtype": "Boolean",
-            "group": "admin",
-            "label": "Wet",
-            "value": false
-          }
         }
       }
     },
@@ -1963,6 +1937,14 @@
     "helm": {
       "templates": ["props", "item", "garment"],
       "attributes": {
+        "admin": {
+          "has_visor": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Has Visor",
+            "value": false
+          }
+        },
         "coverage": {
           "dtype": "String",
           "group": "",
@@ -1998,6 +1980,12 @@
             "group": "admin",
             "label": "Apply Damage to Main HP",
             "value": true
+          },
+          "bilateral": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Bilateral",
+            "value": false
           }
         },
         "swi_hit_weight": {
@@ -2011,12 +1999,6 @@
           "group": "",
           "label": "Thrust Hit Weight",
           "value": 10
-        },
-        "soft": {
-          "dtype": "Boolean",
-          "group": "",
-          "label": "Soft (Blunt DR)",
-          "value": false
         },
         "impale_multi": {
           "dtype": "Number",
@@ -2039,7 +2021,7 @@
         "major_bleed": {
           "dtype": "String",
           "group": "",
-          "label": "Major Bleed Damage",
+          "label": "Major Bleed",
           "value": "1d4+1"
         },
         "hp": {
@@ -2183,10 +2165,22 @@
       "atk_timing": "standard",
       "attributes": {
         "admin": {
-          "non_metal_head": {
+          "non_metal": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Non-Metal Head",
+            "label": "Non-Metal",
+            "value": false
+          },
+          "silver": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Silver",
+            "value": false
+          },
+          "cold_iron": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Cold Iron",
             "value": false
           }
         },
@@ -2215,12 +2209,6 @@
           "group": "",
           "label": "Damage",
           "value": "d6"
-        },
-        "dmg_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Damage Mod.",
-          "value": 0
         },
         "skill": {
           "dtype": "String",
@@ -2300,10 +2288,22 @@
             "label": "Beltable",
             "value": false
           },
-          "non_metal_head": {
+          "non_metal": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Non-Metal Head",
+            "label": "Non-Metal",
+            "value": false
+          },
+          "silver": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Silver",
+            "value": false
+          },
+          "cold_iron": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Cold Iron",
             "value": false
           },
           "consumable": {
@@ -2324,12 +2324,6 @@
           "group": "",
           "label": "Damage",
           "value": "1d6"
-        },
-        "dmg_mod": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Damage Mod.",
-          "value": 0
         },
         "dmg_type": {
           "dtype": "String",

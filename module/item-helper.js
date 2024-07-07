@@ -53,8 +53,7 @@ export const NON_PHYSICAL_ITEM_TYPES = Object.freeze([
   ITEM_TYPES.SPELL,
 ]);
 
-export function sortEquipmentByType(items) {
-  const equipment = {};
+export const equipmentTypes = () => {
   const isMagic = (i) => i.data?.data?.attributes?.admin?.magic?.value;
   const isConsumable = (i) => i.data?.data?.attributes?.admin?.consumable?.value;
   const isWeapon = (i) =>
@@ -63,9 +62,15 @@ export function sortEquipmentByType(items) {
   const isClothing = (i) => i.type === ITEM_TYPES.CLOTHING;
   const isGemOrJewelry = (i) => [ITEM_TYPES.GEM, ITEM_TYPES.JEWELRY].includes(i.type);
   const isCurrency = (i) => i.type === ITEM_TYPES.CURRENCY;
-  const isMiscItem = (i) => !isWeapon(i) && !isArmor(i) && !isClothing(i) && !isGemOrJewelry(i) && !isCurrency(i);
+  const isMiscItem = (i) =>
+    !NON_PHYSICAL_ITEM_TYPES.includes(i.type) &&
+    !isWeapon(i) &&
+    !isArmor(i) &&
+    !isClothing(i) &&
+    !isGemOrJewelry(i) &&
+    !isCurrency(i);
 
-  const types = [
+  return [
     {
       title: 'Weapons',
       condition: isWeapon,
@@ -99,7 +104,12 @@ export function sortEquipmentByType(items) {
       condition: (i) => !isMagic(i) && isMiscItem(i),
     },
   ];
+};
 
+export function sortEquipmentByType(items) {
+  const equipment = {};
+
+  const types = equipmentTypes();
   types.forEach((t) => {
     const equipItems = items.filter(t.condition).map((i) => ({
       item: i,
@@ -113,4 +123,12 @@ export function sortEquipmentByType(items) {
   });
 
   return equipment;
+}
+
+export function isSameEquipmentType(item1, item2) {
+  const types = equipmentTypes();
+  for (const type of types) {
+    if (type.condition(item1) && type.condition(item2)) return true;
+  }
+  return false;
 }

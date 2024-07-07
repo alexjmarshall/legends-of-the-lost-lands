@@ -1,7 +1,7 @@
 import { EntitySheetHelper, getArrFromCSV, roundToDecimal } from './helper.js';
 import * as Constant from './constants.js';
 import { SIZE_VALUES, sizeMulti } from './rules/size.js';
-import { SHIELD_COVERAGE, SHIELD_WEIGHT_WORN_MULTI } from './rules/shields.js';
+import { SHIELD_COVERAGE, SHIELD_WEIGHT_WORN_MULTI, FIXED_HELM_WEIGHT_WORN_MULTI } from './rules/helms-and-shields.js';
 import { HIT_LOCATION_LIST, hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
 import { garmentMaterials, armorVsDmgType } from './rules/armor-and-clothing.js';
 import { PHYSICAL_DMG_TYPES_LIST } from './rules/attack-and-damage.js';
@@ -12,7 +12,7 @@ import { ATK_MODES } from './rules/attack-and-damage.js';
  * Extend the base Item document to support attributes and groups with a custom template creation dialog.
  * @extends {Item}
  */
-export class SimpleItem extends Item {
+export class BrigandineItem extends Item {
   /** @override*/
   prepareBaseData() {
     super.prepareBaseData();
@@ -35,10 +35,10 @@ export class SimpleItem extends Item {
     this._prepareGarmentData(itemData);
 
     // melee weapon
-    this._prepareMeleeWeaponData(itemData);
+    // this._prepareMeleeWeaponData(itemData);
 
     // missile weapon, bow
-    this._prepareMissileWeaponData(itemData);
+    // this._prepareMissileWeaponData(itemData);
 
     // // spell_magic, spell_cleric, spell_druid
     // this._prepareSpellData(itemData);
@@ -50,12 +50,17 @@ export class SimpleItem extends Item {
 
   _addTotalWeight(data) {
     if (data.quantity == null || data.weight == null) return;
-    data.total_weight = Math.max(0, roundToDecimal(data.weight * data.quantity, 1));
+    data.total_weight = Math.max(0.1, roundToDecimal(data.weight * data.quantity, 1));
   }
 
   _prepareItemData(itemData) {
     const { data } = itemData;
     this._addTotalWeight(data);
+
+    if (itemData.data.attributes.size) {
+      const size = itemData.data.attributes.size.value;
+      data.size_val = SIZE_VALUES[size] || SIZE_VALUES.default;
+    }
   }
 
   _getShieldCoverage(itemData) {
@@ -81,6 +86,7 @@ export class SimpleItem extends Item {
   _addWeight(itemData) {
     const data = itemData.data;
     const isShield = itemData.type === ITEM_TYPES.SHIELD;
+    const isFixedHelm = itemData.type === ITEM_TYPES.HELM && data.attributes.fixed.value;
     const material = data.attributes.material.value;
     const isMagic = data.attributes.admin?.magic.value;
     let materialWgt = garmentMaterials[material]?.weight || 0;
@@ -106,6 +112,8 @@ export class SimpleItem extends Item {
     // worn weight
     if (isShield) {
       data.worn_weight = roundToDecimal(data.weight * SHIELD_WEIGHT_WORN_MULTI, 1);
+    } else if (isFixedHelm) {
+      data.worn_weight = roundToDecimal(data.weight * FIXED_HELM_WEIGHT_WORN_MULTI, 1);
     } else {
       const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_WORN;
       const wornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
@@ -157,9 +165,15 @@ export class SimpleItem extends Item {
     const baseAc = (materialAcMods.baseAc || 0) + acMod;
     const mdr = isMagic ? acMod : 0;
 
-    data.armor = { mdr, baseAc };
+    data.ac = { mdr, baseAc };
     PHYSICAL_DMG_TYPES_LIST.forEach((dmgType) => {
-      data.armor[dmgType] = materialAcMods[dmgType];
+      data.ac[dmgType] = { ...materialAcMods[dmgType] };
+      data.ac[dmgType].ac += baseAc;
+      // add 1 AC & DR if Shield
+      if (itemData.type === ITEM_TYPES.SHIELD) {
+        data.ac[dmgType].ac += 1;
+        data.ac[dmgType].dr += 1;
+      }
     });
   }
 

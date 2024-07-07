@@ -744,14 +744,14 @@ export class CreateActorSheet extends ActorSheet {
 
     const firstLevelUpdates = getLevelUpdates(this.actor, 1, formData);
 
-    // add SP item
+    // add SP item for starting wealth
     const spItem = game.items.getName(UNITS_OF_ACCOUNT.sp.name);
     if (!spItem) {
       ui.notifications.error(`Could not find ${UNITS_OF_ACCOUNT.sp.name} in game items!`);
     } else {
       const createData = cloneItem(spItem);
       createData.data.quantity = formData['sp'];
-      firstLevelUpdates.item.push(createData);
+      firstLevelUpdates.item.create.push(createData);
     }
     delete formData['sp'];
 
@@ -763,7 +763,7 @@ export class CreateActorSheet extends ActorSheet {
     const yesCallback = async () => {
       this.actor.sheet.close();
       this.actor._sheet = null;
-      await this.actor.setFlag('core', 'sheetClass', 'brigandine.SimpleActorSheet');
+      await this.actor.setFlag('core', 'sheetClass', 'brigandine.BrigandineActorSheet');
       await updateLevel(this.actor, formData, firstLevelUpdates.item);
     };
     // confirm with user

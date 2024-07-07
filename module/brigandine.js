@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 /* eslint-disable no-undef */
-import { SimpleActor } from './actor.js';
-import { SimpleItem } from './item.js';
-import { SimpleItemSheet } from './sheets/item-sheet.js';
+import { BrigandineActor } from './actor.js';
+import { BrigandineItem } from './item.js';
+import { BrigandineItemSheet } from './sheets/item-sheet.js';
 import { SpellItemSheet } from './sheets/spell-item-sheet.js';
 import { FeatureItemSheet } from './sheets/feature-item-sheet.js';
-import { SimpleActorSheet } from './sheets/actor-sheet.js';
+import { BrigandineActorSheet } from './sheets/actor-sheet.js';
 import { ContainerActorSheet } from './sheets/container-actor-sheet.js';
 import { CreateActorSheet } from './sheets/create-actor-sheet.js';
 import { MerchantActorSheet } from './sheets/merchant-actor-sheet.js';
@@ -41,21 +41,21 @@ Hooks.once('init', async function () {
   };
 
   // Define custom Entity classes
-  CONFIG.Actor.documentClass = SimpleActor;
-  CONFIG.Item.documentClass = SimpleItem;
+  CONFIG.Actor.documentClass = BrigandineActor;
+  CONFIG.Item.documentClass = BrigandineItem;
 
   // Define custom status effects
   CONFIG.statusEffects = Constant.STATUS_EFFECTS;
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet);
-  Actors.registerSheet('brigandine', SimpleActorSheet, { makeDefault: true });
+  Actors.registerSheet('brigandine', BrigandineActorSheet, { makeDefault: true });
   Actors.registerSheet('brigandine', CreateActorSheet, { makeDefault: false });
   Actors.registerSheet('brigandine', ContainerActorSheet, { makeDefault: false });
   Actors.registerSheet('brigandine', MerchantActorSheet, { makeDefault: false });
   Actors.registerSheet('brigandine', PartyActorSheet, { makeDefault: false });
   Items.unregisterSheet('core', ItemSheet);
-  Items.registerSheet('brigandine', SimpleItemSheet, { makeDefault: true });
+  Items.registerSheet('brigandine', BrigandineItemSheet, { makeDefault: true });
   Items.registerSheet('brigandine', SpellItemSheet, { makeDefault: false });
   Items.registerSheet('brigandine', FeatureItemSheet, { makeDefault: false });
 
@@ -119,7 +119,7 @@ Hooks.once('init', async function () {
   });
 
   game.brigandine = {
-    SimpleActor,
+    BrigandineActor,
     Macro,
     Util,
     Constant,

@@ -1414,50 +1414,62 @@ export const hitLocations = {
   // prosthetic item can have ITS OWN active effect! -- removes disabled prop when worn, but adds maluses
 };
 
+// TODO back of knee, inside of elbow, armpit and groin are 'weak points' to skip bulky armor.
 export const AIM_AREAS = {
-  head: [SKULL, `left ${EYE}`, `right ${EYE}`, `left ${EAR}`, `right ${EAR}`, NOSE, JAW, NECK],
-  left_arm: [`left ${SHOULDER}`, `left ${UPPER_ARM}`, `left ${ELBOW}`, `left ${FOREARM}`, `left ${HAND}`],
-  right_arm: [`right ${SHOULDER}`, `right ${UPPER_ARM}`, `right ${ELBOW}`, `right ${FOREARM}`, `right ${HAND}`],
-  // TODO back of knee, inside of elbow, armpit and groin are 'weak points' to skip bulky armor.
-  upper_torso: [CHEST],
-  lower_torso: [ABDOMEN],
-  left_leg: [`left ${HIP}`, `left ${THIGH}`, `left ${KNEE}`, `left ${SHIN}`, `left ${FOOT}`],
-  right_leg: [`right ${HIP}`, `right ${THIGH}`, `right ${KNEE}`, `right ${SHIN}`, `right ${FOOT}`],
+  head: {
+    bloodied_desc: 'their vision swims',
+    hitLocations: [SKULL, `left ${EYE}`, `right ${EYE}`, `left ${EAR}`, `right ${EAR}`, NOSE, JAW, NECK],
+  },
+  left_arm: {
+    bloodied_desc: 'their left arm is numb with pain',
+    hitLocations: [`left ${SHOULDER}`, `left ${UPPER_ARM}`, `left ${ELBOW}`, `left ${FOREARM}`, `left ${HAND}`],
+  },
+  right_arm: {
+    bloodied_desc: 'their right arm is numb with pain',
+    hitLocations: [`right ${SHOULDER}`, `right ${UPPER_ARM}`, `right ${ELBOW}`, `right ${FOREARM}`, `right ${HAND}`],
+  },
+  upper_torso: {
+    bloodied_desc: 'they have trouble breathing',
+    hitLocations: [CHEST],
+  },
+  lower_torso: {
+    bloodied_desc: 'they double over in pain',
+    hitLocations: [ABDOMEN],
+  },
+  left_leg: {
+    bloodied_desc: 'their left leg is numb with pain',
+    hitLocations: [`left ${HIP}`, `left ${THIGH}`, `left ${KNEE}`, `left ${SHIN}`, `left ${FOOT}`],
+  },
+  right_leg: {
+    bloodied_desc: 'their right leg is numb with pain',
+    hitLocations: [`right ${HIP}`, `right ${THIGH}`, `right ${KNEE}`, `right ${SHIN}`, `right ${FOOT}`],
+  },
 };
 
 // populate hit location arrays on startup
 export const HIT_LOC_ARRS = {
   SWING: [],
+  SWING_HIGH: [],
+  SWING_LOW: [],
   THRUST: [],
+  THRUST_HIGH: [],
+  THRUST_LOW: [],
 };
 (() => {
-  const fillLocArr = function (loc, weight, bi) {
+  const fillLocArr = function (loc, weight) {
     const arr = [];
     for (let i = 0; i < weight; i++) {
-      const entry = bi ? (i < weight / 2 ? `left ${loc}` : `right ${loc}`) : loc;
-      arr.push(entry);
+      arr.push(loc);
     }
     return arr;
   };
 
-  // add more hit location tables for high/low
-  Object.keys(HIT_LOC_ARRS).forEach((a) =>
-    ['HIGH', 'LOW'].forEach((l) => Object.assign(HIT_LOC_ARRS, { [`${a}_${l}`]: [] }))
-  );
   for (const [k, v] of Object.entries(hitLocations)) {
     Object.keys(HIT_LOC_ARRS).forEach((arr) => {
       const i = HIT_LOC_WEIGHT_INDEXES[arr];
-      HIT_LOC_ARRS[arr].push(...fillLocArr(k, v.weights[i], v.bilateral));
+      HIT_LOC_ARRS[arr].push(...fillLocArr(k, v.weights[i]));
     });
   }
-  // add more hit location tables for the aim areas
-  Object.keys(HIT_LOC_ARRS).forEach((a) =>
-    Object.keys(AIM_AREAS).forEach((l) => {
-      const key = `${a}_${l.toUpperCase()}`;
-      const values = AIM_AREAS[l].map((loc) => HIT_LOC_ARRS[a].filter((hitLoc) => hitLoc === loc)).flat();
-      Object.assign(HIT_LOC_ARRS, { [key]: values });
-    })
-  );
 
   console.log('Completed loading hit locations', HIT_LOC_ARRS);
 })();

@@ -1,5 +1,5 @@
 import { lightArmors } from '../armor-and-clothing.js';
-import { nonMetalShields } from '../shields.js';
+import { nonMetalShields } from '../helms-and-shields.js';
 import { allSpellSkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';

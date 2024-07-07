@@ -349,7 +349,7 @@ export const armorVsDmgType = deepFreeze({
       dr: 1,
     },
     [PIERCE]: {
-      ac: 0,
+      ac: 1,
       pen: 2,
       dr: 1,
     },
@@ -367,9 +367,9 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 2,
-      dr: 0,
+      dr: 1,
     },
     [SLASH]: {
       ac: -1,

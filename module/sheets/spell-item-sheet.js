@@ -1,8 +1,8 @@
-import { SimpleItemSheet } from './item-sheet.js';
+import { BrigandineItemSheet } from './item-sheet.js';
 import { EntitySheetHelper } from '../helper.js';
 import * as Constant from '../constants.js';
 
-export class SpellItemSheet extends SimpleItemSheet {
+export class SpellItemSheet extends BrigandineItemSheet {
   /** @inheritdoc */
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {

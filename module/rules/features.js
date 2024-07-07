@@ -600,7 +600,7 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.INHERENT,
   },
   SMALL_ARMS: {
-    name: 'Small Arms',
+    name: 'Small Arms', // TODO cannot wield greatswords or longbows
     description: ['Cannot wield greatswords or longbows', 'Maximum 9 movement rate'],
     type: FEATURE_TYPE.INHERENT,
   },

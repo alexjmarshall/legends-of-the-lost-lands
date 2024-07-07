@@ -1,3 +1,5 @@
+import { isSameEquipmentType, NON_PHYSICAL_ITEM_TYPES } from '../item-helper.js';
+
 /**
  * Handle dropping of an item reference or item data onto an Actor Sheet
  * @param {DragEvent} event     The concluding DragEvent which contains drop data
@@ -6,6 +8,7 @@
  * @private
  */
 // TODO test and update all references to const/util files and cleanup
+// TODO make sure to handle all actor types here
 export async function _onDropItem(event, data, qtyDropped, options = {}) {
   if (!this.actor.isOwner) return false;
   const item = await Item.implementation.fromDropData(data);
@@ -140,7 +143,7 @@ export async function _onDropItem(event, data, qtyDropped, options = {}) {
   }
 
   // If sourceActor and targetActor are the same, sort source and target items
-  if (sameActor) return this._onSortItem(sourceItem, siblings, targetItem);
+  if (sameActor) return this._onSortItem(event, itemData);
 
   // Otherwise, create a new item and delete source item
   await this._onDropItemCreate(itemData);
@@ -279,12 +282,26 @@ export async function _onDropItem(event, data, qtyDropped, options = {}) {
  * @param {Object} itemData
  * @private
  */
-export function _onSortItem(source, siblings, target) {
+export function _onSortItem(event, itemData) {
+  // Get the drag source and its siblings
+  const source = this.actor.items.get(itemData._id);
+  const siblings = this.actor.items.filter((i) => {
+    return isSameType(i, source) && i.data._id !== source.data._id;
+  });
+
+  // Get the drop target
+  const dropTarget = event.target.closest('[data-item-id]');
+  const targetId = dropTarget ? dropTarget.dataset.itemId : null;
+  const target = siblings.find((s) => s.data._id === targetId);
+
   // Ensure we are only sorting like-types
-  if (target && source.data.type !== target.data.type) return;
+  if (target && !isSameType(source, target)) return;
+
+  // sortBefore if target is before source
+  const sortBefore = !target || (target && target.data.sort < source.data.sort);
 
   // Perform the sort
-  const sortUpdates = SortingHelpers.performIntegerSort(source, { target: target, siblings });
+  const sortUpdates = SortingHelpers.performIntegerSort(source, { target: target, siblings, sortBefore });
   const updateData = sortUpdates.map((u) => {
     const update = u.update;
     update._id = u.target.data._id;
@@ -293,4 +310,11 @@ export function _onSortItem(source, siblings, target) {
 
   // Perform the update
   return this.actor.updateEmbeddedDocuments('Item', updateData);
+
+  function isSameType(item1, item2) {
+    if (!NON_PHYSICAL_ITEM_TYPES.includes(item1.data.type) && !NON_PHYSICAL_ITEM_TYPES.includes(item2.data.type)) {
+      return isSameEquipmentType(item1, item2);
+    }
+    return item1.data.type === item2.data.type;
+  }
 }

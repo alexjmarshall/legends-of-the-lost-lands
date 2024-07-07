@@ -45,6 +45,8 @@ export const nonMetalShields = Object.freeze([
 
 export const SHIELD_WEIGHT_WORN_MULTI = 1.2;
 
+export const FIXED_HELM_WEIGHT_WORN_MULTI = 0.4;
+
 // TODO make shield high guard -4 atk for being blind
 export const SHIELD_COVERAGE = {
   round: {

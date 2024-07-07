@@ -1,6 +1,6 @@
 import { lightArmors } from '../armor-and-clothing.js';
 import { allCombatSkills, allThieverySkills, SKILLS } from '../skills.js';
-import { allShields } from '../shields.js';
+import { allShields } from '../helms-and-shields.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
