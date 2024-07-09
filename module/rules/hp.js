@@ -6,8 +6,8 @@ import { deepFreeze } from '../helper.js';
 
 export const HP_AREAS = Object.freeze({
   HEAD: 'head',
-  UPPER_TORSO: 'upper torso',
-  LOWER_TORSO: 'lower torso',
+  CHEST: 'chest',
+  ABDOMEN: 'abdomen',
   RIGHT_ARM: 'right arm',
   LEFT_ARM: 'left arm',
   RIGHT_LEG: 'right leg',
@@ -18,10 +18,10 @@ export const hpAreas = deepFreeze({
   [HP_AREAS.HEAD]: {
     proportion: 0.36,
   },
-  [HP_AREAS.UPPER_TORSO]: {
+  [HP_AREAS.CHEST]: {
     proportion: 0.45,
   },
-  [HP_AREAS.LOWER_TORSO]: {
+  [HP_AREAS.ABDOMEN]: {
     proportion: 0.36,
   },
   [HP_AREAS.RIGHT_ARM]: {

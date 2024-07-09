@@ -870,11 +870,11 @@
             "value": 0,
             "min": 0
           },
-          "lower_torso": {
+          "abdomen": {
             "value": 0,
             "min": 0
           },
-          "upper_torso": {
+          "chest": {
             "value": 0,
             "min": 0
           },
@@ -1735,13 +1735,7 @@
         "str_mod": {
           "dtype": "Number",
           "group": "",
-          "label": "Strength Required for Full Draw",
-          "value": 0
-        },
-        "dmg_bonus": {
-          "dtype": "Number",
-          "group": "",
-          "label": "Full Draw Damage Bonus",
+          "label": "Max. Strength Mod.",
           "value": 0
         }
       }
@@ -1981,23 +1975,29 @@
             "label": "Apply Damage to Main HP",
             "value": true
           },
-          "bilateral": {
+          "use_hp": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Bilateral",
+            "label": "Use HP",
+            "value": true
+          },
+          "must_flank": {
+            "dtype": "Boolean",
+            "group": "admin",
+            "label": "Must Flank to Hit",
             "value": false
           }
         },
-        "swi_hit_weight": {
+        "swi_hit_chance": {
           "dtype": "Number",
           "group": "",
-          "label": "Swing Hit Weight",
+          "label": "Swing Hit Chance",
           "value": 10
         },
-        "thr_hit_weight": {
+        "thr_hit_chance": {
           "dtype": "Number",
           "group": "",
-          "label": "Thrust Hit Weight",
+          "label": "Thrust Hit Chance",
           "value": 10
         },
         "impale_multi": {
@@ -2159,7 +2159,7 @@
     },
     "melee_weapon": {
       "templates": ["props", "item", "weapon", "magic_dmg"],
-      "atk_mode": "",
+      "atk_mode": "swi(S)",
       "atk_height": "mid",
       "atk_style": "standard",
       "atk_timing": "standard",
@@ -2247,10 +2247,10 @@
           "value": "d6"
         },
         "speed": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
           "label": "Speed",
-          "value": 0
+          "value": "d6"
         },
         "parry": {
           "dtype": "Number",
@@ -2393,10 +2393,10 @@
           "value": "d8"
         },
         "speed": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
           "label": "Speed",
-          "value": 0
+          "value": "d8"
         },
         "reach": {
           "dtype": "String",
@@ -2551,11 +2551,11 @@
           "label": "Components",
           "value": "V,S"
         },
-        "casting_speed": {
-          "dtype": "Number",
+        "speed": {
+          "dtype": "String",
           "group": "",
           "label": "Casting Speed",
-          "value": 1
+          "value": "d6"
         }
       }
     },

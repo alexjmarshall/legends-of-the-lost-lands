@@ -22,7 +22,7 @@ import {
   PHYSICAL_DMG_TYPES_LIST,
   PHYSICAL_DMG_TYPES,
 } from './rules/attack-and-damage.js';
-import { hitLocations, HIT_LOC_WEIGHT_INDEXES } from './rules/hit-locations.js';
+import { hitLocations, HIT_LOC_WEIGHT_INDEXES, HEIGHT_AREAS } from './rules/hit-locations.js';
 
 export const ACTOR_TYPES = Object.freeze({
   CHARACTER: 'character',
@@ -167,7 +167,7 @@ export class BrigandineActor extends Actor {
 
     // worn AC and clo
     this._addWornAc(actorData);
-    //this._addWornClo(actorData); // CONTINUE after testing weapon parry!!
+    this._addWornClo(actorData);
   }
 
   _addWornWeightPenalties(charData, items) {
@@ -470,6 +470,7 @@ export class BrigandineActor extends Actor {
     const { items } = actorData;
     const wornItems = items.filter((i) => i.data.data.worn);
     const charSize = +data.size ?? Constant.SIZE_VALUES.default;
+    return;
 
     let clo = 0;
 
@@ -502,6 +503,7 @@ export class BrigandineActor extends Actor {
   // hide data type and attribute key from GM as well?
 
   _getParryValue(actorData, parryItem) {
+    if (!parryItem) return 0;
     const skill = parryItem.data.data.attributes.skill.value;
     const skillValue = actorData.data.skills[skill]?.lvl || 0;
     // parry value is the weapon's parry rating + 1/2 skill rating
@@ -516,8 +518,8 @@ export class BrigandineActor extends Actor {
     // otherwise, the best non-active parry weapon for each height area is considered to be parrying
 
     const parry = {
-      active: undefined,
-      non_active: Object.fromEntries(ATK_HEIGHTS_LIST.map((a) => [a, undefined])),
+      active: null,
+      non_active: Object.fromEntries(ATK_HEIGHTS_LIST.map((a) => [a, null])),
     };
 
     const activeParryWeaps = heldItems.filter(
@@ -535,8 +537,6 @@ export class BrigandineActor extends Actor {
         parry_height: activeParryWeap.data.data.atk_height,
       };
       return parry;
-    } else {
-      parry.active = null;
     }
 
     const nonActiveParryWeaps = heldItems.filter(
@@ -551,8 +551,6 @@ export class BrigandineActor extends Actor {
           parry_bonus: this._getParryValue(actorData, item),
           parry_height: item.data.data.atk_height,
         };
-      } else {
-        parry.non_active[a] = null;
       }
     });
 
@@ -621,12 +619,16 @@ export class BrigandineActor extends Actor {
       });
 
       // parry bonus applies if active, or if parry_height includes this area
-      // TODO TEST with parry weapon
       let appliedParryBonus = 0;
       if (ac.parry.active) {
         appliedParryBonus = ac.parry.active.parry_bonus;
-      } else if (ac.parry.non_active[locKey]?.parry_height === locKey) {
-        appliedParryBonus = ac.parry.non_active[locKey]?.parry_bonus;
+      } else {
+        for (const [atkHeight, parryData] of Object.entries(ac.parry.non_active)) {
+          if (parryData && HEIGHT_AREAS[atkHeight].includes(locKey)) {
+            appliedParryBonus = parryData.parry_bonus;
+            break;
+          }
+        }
       }
 
       // add ac, pen & dr by damage type

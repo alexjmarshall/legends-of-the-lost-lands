@@ -1428,11 +1428,11 @@ export const AIM_AREAS = {
     bloodied_desc: 'their right arm is numb with pain',
     hitLocations: [`right ${SHOULDER}`, `right ${UPPER_ARM}`, `right ${ELBOW}`, `right ${FOREARM}`, `right ${HAND}`],
   },
-  upper_torso: {
+  chest: {
     bloodied_desc: 'they have trouble breathing',
     hitLocations: [CHEST],
   },
-  lower_torso: {
+  abdomen: {
     bloodied_desc: 'they double over in pain',
     hitLocations: [ABDOMEN],
   },
