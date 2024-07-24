@@ -25,8 +25,8 @@
             "label": "Immunities"
           },
           "dmg_multi": {
-            "dtype": "String",
-            "label": "Damage Resistances/Vulnerabilities"
+            "dtype": "Number",
+            "label": "Damage Type Multipliers"
           }
         },
         "attributes": {
@@ -79,18 +79,6 @@
               "label": "Grapples",
               "value": false
             },
-            "silver": {
-              "dtype": "Boolean",
-              "group": "immunities",
-              "label": "Silver",
-              "value": false
-            },
-            "cold_iron": {
-              "dtype": "Boolean",
-              "group": "immunities",
-              "label": "Cold Iron",
-              "value": false
-            },
             "non_magical": {
               "dtype": "Boolean",
               "group": "immunities",
@@ -106,52 +94,64 @@
           },
           "dmg_multi": {
             "fire": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Fire",
-              "value": "standard"
+              "value": 1
             },
             "cold": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Cold",
-              "value": "standard"
+              "value": 1
             },
             "electricity": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Electricity",
-              "value": "standard"
+              "value": 1
             },
             "acid": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Acid",
-              "value": "standard"
+              "value": 1
             },
             "holy": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Holy",
-              "value": "standard"
+              "value": 1
             },
             "blunt": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Blunt",
-              "value": "standard"
+              "value": 1
             },
             "piercing": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Piercing",
-              "value": "standard"
+              "value": 1
             },
             "slashing": {
-              "dtype": "String",
+              "dtype": "Number",
               "group": "dmg_multi",
               "label": "Slashing",
-              "value": "standard"
+              "value": 1
+            },
+            "silver": {
+              "dtype": "Number",
+              "group": "dmg_multi",
+              "label": "Silver",
+              "value": 1
+            },
+            "cold_iron": {
+              "dtype": "Number",
+              "group": "dmg_multi",
+              "label": "Cold Iron",
+              "value": 1
             }
           }
         }
@@ -192,7 +192,7 @@
           "mv": {
             "dtype": "Number",
             "group": "",
-            "label": "Movement Rate",
+            "label": "Move",
             "value": 15
           },
           "ac": {
@@ -407,7 +407,7 @@
               "max": 1000
             }
           },
-          "disarm trap": {
+          "trap disarming": {
             "lvl": 0,
             "target": 0,
             "adv_req": {
@@ -1334,7 +1334,7 @@
           "apply_enc": {
             "dtype": "Boolean",
             "group": "admin",
-            "label": "Apply Encumbrance to MV",
+            "label": "Apply Encumbrance to Mv",
             "value": true
           }
         },
@@ -1353,7 +1353,7 @@
         "base_mv": {
           "dtype": "Number",
           "group": "",
-          "label": "Base Movement Rate",
+          "label": "Base Move",
           "value": 0
         },
         "rider_token": {
@@ -1453,9 +1453,8 @@
         "belted": false,
         "held_mainhand": false,
         "held_offhand": false,
-        "value": 0,
         "quantity": 1,
-        "weight": 0,
+        "weight": 1,
         "attributes": {
           "admin": {
             "identified": {
@@ -1531,6 +1530,12 @@
             "dtype": "Number",
             "group": "",
             "label": "Empty Weight",
+            "value": 0
+          },
+          "value": {
+            "dtype": "Number",
+            "group": "",
+            "label": "Value (CPs)",
             "value": 0
           }
         }
@@ -1620,37 +1625,37 @@
         "attributes": {
           "magic_dmg": {
             "dmg_magic": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Magic",
               "value": ""
             },
             "dmg_acid": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Acid",
               "value": ""
             },
             "dmg_fire": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Fire",
               "value": ""
             },
             "dmg_cold": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Cold",
               "value": ""
             },
             "dmg_elec": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Electricity",
               "value": ""
             },
             "dmg_holy": {
-              "dtype": "Boolean",
+              "dtype": "String",
               "group": "magic_dmg",
               "label": "Holy",
               "value": ""
@@ -1846,13 +1851,19 @@
           "label": "Type",
           "value": "inherent"
         },
-        "uses_per_day": {
+        "uses": {
           "dtype": "Resource",
           "group": "",
-          "label": "Uses Per Day",
+          "label": "Uses",
           "min": 0,
           "value": 0,
           "max": 0
+        },
+        "interval": {
+          "dtype": "String",
+          "group": "",
+          "label": "Interval",
+          "value": "day"
         }
       }
     },
@@ -2188,9 +2199,15 @@
           "dtype": "Resource",
           "group": "",
           "label": "Hit Points",
-          "value": 8,
+          "value": 80,
           "min": 0,
-          "max": 8
+          "max": 80
+        },
+        "balanced": {
+          "dtype": "Boolean",
+          "group": "",
+          "label": "Balanced",
+          "value": false
         },
         "atk_modes": {
           "dtype": "String",
@@ -2253,10 +2270,22 @@
           "value": "d6"
         },
         "parry": {
-          "dtype": "Number",
+          "dtype": "String",
           "group": "",
           "label": "Parry",
-          "value": 0
+          "value": "d6"
+        },
+        "cut": {
+          "dtype": "String",
+          "group": "",
+          "label": "Cut",
+          "value": "d6"
+        },
+        "puncture": {
+          "dtype": "String",
+          "group": "",
+          "label": "Puncture",
+          "value": "d6"
         },
         "special_props": {
           "dtype": "String",

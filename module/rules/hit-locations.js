@@ -14,7 +14,7 @@ export const HIT_LOCATIONS = Object.freeze({
   HAND: 'hand',
   FOREARM: 'forearm',
   ELBOW: 'elbow',
-  UPPER_ARM: 'upper arm',
+  UPPER_ARM: 'upperarm',
   SHOULDER: 'shoulder',
   NECK: 'neck',
   JAW: 'jaw',
@@ -694,11 +694,11 @@ export const hitLocations = {
         },
         critical: {
           text: ' and snaps the bone',
-          dmgEffect: lowCompFract(true, 'upper arm'),
+          dmgEffect: lowCompFract(true, 'upperarm'),
         },
         gruesome: {
           text: ' and shatters the bone!',
-          dmgEffect: highCompFract(true, 'upper arm'),
+          dmgEffect: highCompFract(true, 'upperarm'),
         },
       },
       [PIERCE]: {

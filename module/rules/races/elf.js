@@ -53,8 +53,9 @@ export class Elf extends BaseRace {
     CLASS.Fighter.name,
     CLASS.Cleric.name,
     CLASS.Mage.name,
+    CLASS.Diviner.name,
+    CLASS.Enchanter.name,
     CLASS.Thief.name,
-    CLASS.Assassin.name,
   ]);
 
   static allowedMultiClasses = Object.freeze([
@@ -71,10 +72,10 @@ export class Elf extends BaseRace {
       case CLASS.Cleric.name:
         return 200 + rollDice('5d10');
       case CLASS.Mage.name:
-      case CLASS.Incantatrix.name:
+      case CLASS.Diviner.name:
+      case CLASS.Enchanter.name:
         return 150 + rollDice('5d6');
       case CLASS.Thief.name:
-      case CLASS.Assassin.name:
         return 100 + rollDice('5d6');
       default:
         return 130 + rollDice('5d6');

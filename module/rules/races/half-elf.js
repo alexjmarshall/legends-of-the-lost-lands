@@ -18,7 +18,7 @@ export class HalfElf extends BaseRace {
 
   static description = 'A restive wanderlust makes them natural explorers.';
 
-  static features = Object.freeze([features.COMELY, features.SUPPLE_MIND, features.SHARP_SIGHT]);
+  static features = Object.freeze([features.DELICATE, features.SUPPLE_MIND, features.SHARP_SIGHT, features.COMELY]);
 
   static ageCategoryMaxes = Object.freeze({
     [AGE_CATEGORIES.YOUNG_ADULT]: 40,
@@ -47,6 +47,10 @@ export class HalfElf extends BaseRace {
     CLASS.VampireHunter.name,
     CLASS.Cleric.name,
     CLASS.Mage.name,
+    CLASS.Conjurer.name,
+    CLASS.Diviner.name,
+    CLASS.Enchanter.name,
+    CLASS.Transmuter.name,
     CLASS.Druid.name,
     CLASS.Thief.name,
     CLASS.Swashbuckler.name,
@@ -76,7 +80,10 @@ export class HalfElf extends BaseRace {
       case CLASS.Assassin.name:
         return 22 + rollDice('3d8');
       case CLASS.Mage.name:
-      case CLASS.Incantatrix.name:
+      case CLASS.Conjurer.name:
+      case CLASS.Diviner.name:
+      case CLASS.Enchanter.name:
+      case CLASS.Transmuter.name:
         return 30 + rollDice('2d8');
       default:
         return 22 + rollDice('3d4');

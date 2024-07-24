@@ -21,8 +21,8 @@ export class HalfOrc extends BaseRace {
   static features = Object.freeze([
     features.BRUTAL,
     features.INFRAVISION,
-    features.BEASTMARKED,
     features.KILLER_INSTINCT,
+    features.BEASTMARKED,
   ]);
 
   static ageCategoryMaxes = Object.freeze({
@@ -51,12 +51,10 @@ export class HalfOrc extends BaseRace {
     CLASS.Berserker.name,
     CLASS.Runepriest.name,
     CLASS.Thief.name,
-    CLASS.Swashbuckler.name,
     CLASS.Assassin.name,
     CLASS.Barbarian.name,
     CLASS.Paladin.name,
     CLASS.Cleric.name,
-    CLASS.CloisteredCleric.name,
   ]);
 
   static allowedMultiClasses = Object.freeze([
@@ -73,7 +71,6 @@ export class HalfOrc extends BaseRace {
       case CLASS.Runepriest.name:
         return 15 + rollDice('d4');
       case CLASS.Thief.name:
-      case CLASS.Swashbuckler.name:
       case CLASS.Paladin.name:
         return 17 + rollDice('d4');
       case CLASS.Assassin.name:
@@ -81,7 +78,6 @@ export class HalfOrc extends BaseRace {
       case CLASS.Barbarian.name:
         return 14 + rollDice('d4');
       case CLASS.Cleric.name:
-      case CLASS.CloisteredCleric.name:
         return 20 + rollDice('d4');
       default:
         return 15 + rollDice('d4');

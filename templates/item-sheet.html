@@ -12,12 +12,13 @@
         </div>
         <div class="item-resource">
           <label>Wgt</label>
-          <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if isPlayer}}readonly{{/if}}/>
+          <input type="number" name="data.weight" value="{{systemData.weight}}" {{#if isPlayer}}readonly{{/if}} {{#if
+          showWeightHint}}title="{{systemData.derived.weight}}"{{/if}}/>
         </div>
         {{#if showValue}}
         <div class="item-resource">
           <label>Value</label>
-          <input type="number" name="data.value" value="{{systemData.value}}" {{#if isPlayer}}readonly{{/if}}/>
+          <span>{{systemData.valueString}}</span>
         </div>
         {{/if}}
       </div>

@@ -35,7 +35,7 @@ export class BrigandineItem extends Item {
     this._prepareGarmentData(itemData);
 
     // melee weapon
-    // this._prepareMeleeWeaponData(itemData);
+    this._prepareMeleeWeaponData(itemData);
 
     // missile weapon, bow
     // this._prepareMissileWeaponData(itemData);
@@ -50,7 +50,8 @@ export class BrigandineItem extends Item {
 
   _addTotalWeight(data) {
     if (data.quantity == null || data.weight == null) return;
-    data.total_weight = Math.max(0.1, roundToDecimal(data.weight * data.quantity, 1));
+    const emptyWeight = data.attributes.empty_weight?.value || 0;
+    data.total_weight = Math.max(0.1, roundToDecimal(data.weight * data.quantity, 1)) + emptyWeight;
   }
 
   _prepareItemData(itemData) {
@@ -77,9 +78,15 @@ export class BrigandineItem extends Item {
     }
     const data = itemData.data;
     const isShield = itemData.type === ITEM_TYPES.SHIELD;
-    const coverageArr = isShield
-      ? this._getShieldCoverage(itemData)
-      : getArrFromCSV(data.attributes.coverage?.value).filter((l) => HIT_LOCATION_LIST.includes(l.toLowerCase())) || [];
+    let coverageArr = [];
+    if (isShield) {
+      coverageArr = this._getShieldCoverage(itemData);
+    } else {
+      coverageArr =
+        getArrFromCSV(data.attributes.coverage?.value)
+          .map((a) => a.toLowerCase().replace(' ', ''))
+          .filter((l) => HIT_LOCATION_LIST.includes(l)) || [];
+    }
     data.coverage = coverageArr;
   }
 
@@ -95,19 +102,18 @@ export class BrigandineItem extends Item {
     const sizeVal = SIZE_VALUES[size] || SIZE_VALUES.default;
 
     // unworn weight
-    if (!data.weight) {
-      const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-      const unwornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
-      let unwornWeight = sizeMulti(materialWgt * unwornWgtProportion, sizeVal);
-      if (isShield) {
-        // divide weight in half since a shield only covers half the body
-        unwornWeight = Math.round(unwornWeight / 2);
-        const shape = data.attributes.shape.value;
-        const weightMulti = SHIELD_COVERAGE[shape]?.[size]?.weight_multi || 1;
-        unwornWeight *= weightMulti;
-      }
-      data.weight = roundToDecimal(unwornWeight, 1);
+    const idx = HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+    const unwornWgtProportion = data.coverage.reduce((sum, l) => sum + hitLocations[l].weights[idx], 0) / 100;
+    let unwornWeight = sizeMulti(materialWgt * unwornWgtProportion, sizeVal);
+    if (isShield) {
+      // divide weight in half since a shield only covers half the body
+      unwornWeight = Math.round(unwornWeight / 2);
+      const shape = data.attributes.shape.value;
+      const weightMulti = SHIELD_COVERAGE[shape]?.[size]?.weight_multi || 1;
+      unwornWeight *= weightMulti;
     }
+    data.derived = data.derived || {};
+    data.derived.weight = roundToDecimal(unwornWeight, 1);
 
     // worn weight
     if (isShield) {
@@ -135,14 +141,15 @@ export class BrigandineItem extends Item {
 
   _addValue(itemData) {
     const data = itemData.data;
-    if (data.value != null) return;
-
     const material = data.attributes.material.value;
     const materialMaxValue = garmentMaterials[material]?.value || 0;
     const maxWeight = garmentMaterials[material]?.weight || 1;
     const weightProportion = data.weight / maxWeight;
     const materialValue = Math.round(materialMaxValue * weightProportion);
-    data.value = materialValue;
+
+    const value = data.attributes.value;
+    value.derived = value.derived || {};
+    value.derived.value = materialValue;
   }
 
   _addClo(itemData) {
@@ -160,12 +167,10 @@ export class BrigandineItem extends Item {
     const material = data.attributes.material.value;
     const materialAcMods = armorVsDmgType[material] || {};
 
-    const isMagic = !!data.attributes.admin?.magic.value;
     const acMod = +data.attributes.ac_mod.value || 0;
     const baseAc = (materialAcMods.baseAc || 0) + acMod;
-    const mdr = isMagic ? acMod : 0;
 
-    data.ac = { mdr, baseAc };
+    data.ac = { baseAc };
     PHYSICAL_DMG_TYPES_LIST.forEach((dmgType) => {
       data.ac[dmgType] = { ...materialAcMods[dmgType] };
       data.ac[dmgType].ac += baseAc;
@@ -181,8 +186,6 @@ export class BrigandineItem extends Item {
     if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD, ITEM_TYPES.CLOTHING].includes(itemData.type) === false) {
       return;
     }
-
-    // TODO add empty weight to total weight
 
     const data = itemData.data;
     const material = data.attributes.material.value;
@@ -200,8 +203,8 @@ export class BrigandineItem extends Item {
 
     data.durability = durability;
     const hp = data.attributes.hp;
-    hp.max = durability;
-    hp.value = Math.min(hp.value, durability);
+    hp.derived = hp.derived || {};
+    hp.derived.max = durability;
   }
 
   // TODO list of critical effects with mods for defender saving throw
@@ -239,8 +242,16 @@ export class BrigandineItem extends Item {
       .filter((a) => Object.keys(ATK_MODES).includes(a));
 
     const currMode = atkModes.includes(data.atk_mode) ? data.atk_mode : '';
-
     data.atk_mode = currMode || atkModes[0] || '';
+
+    // suggest derived reach from weapon length
+    const length = attrs.length.value;
+    const minReach =
+      length < 2 ? 'G' : length < 3 ? '0' : length < 8 ? '1' : length < 13 ? '2' : length < 20 ? '3' : '4';
+    let maxReach = length < 6 ? '1' : length < 13 ? '2' : length < 20 ? '3' : '4';
+    const reach = attrs.reach;
+    reach.derived = reach.derived || {};
+    reach.derived.value = `${minReach}${maxReach === minReach ? '' : `/${maxReach}`}`;
 
     // TODO test this and missileData with weapon/missile weapon item
   }

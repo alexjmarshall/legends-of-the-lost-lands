@@ -9,9 +9,9 @@ import { BaseRace } from './base-race.js';
 export class HalfOgre extends BaseRace {
   static abilityScoreModifiers = {
     [ABILITIES.STR]: 3,
-    [ABILITIES.DEX]: 0,
+    [ABILITIES.DEX]: -2,
     [ABILITIES.CON]: 0,
-    [ABILITIES.INT]: -2,
+    [ABILITIES.INT]: 0,
     [ABILITIES.WIS]: 0,
     [ABILITIES.CHA]: -3,
   };
@@ -20,8 +20,8 @@ export class HalfOgre extends BaseRace {
 
   static features = Object.freeze([
     features.MONSTROUS,
-    features.IRON_STOMACH,
     features.INFRAVISION,
+    features.IRON_STOMACH,
     features.FELL_COUNTENANCE,
   ]);
 
@@ -46,16 +46,10 @@ export class HalfOgre extends BaseRace {
     return BaseRace.modifiedAbilityScores(HalfOgre, abilityScores);
   }
 
-  static allowedClasses = Object.freeze([
-    CLASS.Fighter.name,
-    CLASS.Barbarian.name,
-    CLASS.Cleric.name,
-    CLASS.Thief.name,
-  ]);
+  static allowedClasses = Object.freeze([CLASS.Fighter.name, CLASS.Barbarian.name, CLASS.Thief.name]);
 
   static allowedMultiClasses = Object.freeze([
     [CLASS.Fighter.name, CLASS.Thief.name],
-    [CLASS.Fighter.name, CLASS.Cleric.name],
     [CLASS.Barbarian.name, CLASS.Thief.name],
   ]);
 
@@ -63,8 +57,6 @@ export class HalfOgre extends BaseRace {
     switch (Class) {
       case CLASS.Fighter.name:
         return 16 + rollDice('d4');
-      case CLASS.Cleric.name:
-        return 20 + rollDice('d4');
       case CLASS.Thief.name:
         return 18 + rollDice('d4');
       case CLASS.Barbarian.name:

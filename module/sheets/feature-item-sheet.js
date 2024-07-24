@@ -21,17 +21,11 @@ export class FeatureItemSheet extends BrigandineItemSheet {
     const context = super.getData();
     context.props = {};
 
-    this._prepareSkillData(context);
-    this._prepareFeatureData(context);
-    this._prepareGrapplingData(context);
-    this._prepareWeaponData(context);
+    // this._prepareFeatureData(context);
+    // this._prepareGrapplingData(context);
+    // this._prepareWeaponData(context);
 
     return context;
-  }
-
-  _prepareSkillData(context) {
-    if (context.data.type !== 'skill') return;
-    context.props['ST'] = +context.data.data.st ?? +context.data.data.attributes.base_st?.value;
   }
 
   _prepareFeatureData(context) {

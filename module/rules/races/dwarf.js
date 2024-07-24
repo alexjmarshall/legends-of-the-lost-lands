@@ -19,9 +19,9 @@ export class Dwarf extends BaseRace {
 
   static features = Object.freeze([
     features.STOLID,
+    features.INFRAVISION,
     features.HARDY,
     features.DUNGEON_NAVIGATOR,
-    features.INFRAVISION,
     features.SMALL_ARMS,
   ]);
 
@@ -53,10 +53,9 @@ export class Dwarf extends BaseRace {
   static allowedClasses = Object.freeze([
     CLASS.Fighter.name,
     CLASS.Berserker.name,
-    CLASS.Runepriest.name,
     CLASS.Cleric.name,
+    CLASS.Runepriest.name,
     CLASS.Thief.name,
-    CLASS.Assassin.name,
   ]);
 
   static allowedMultiClasses = Object.freeze([
@@ -74,7 +73,6 @@ export class Dwarf extends BaseRace {
       case CLASS.Runepriest.name:
         return 100 + rollDice('2d10');
       case CLASS.Thief.name:
-      case CLASS.Assassin.name:
         return 75 + rollDice('3d6');
       default:
         return 40 + rollDice('5d4');

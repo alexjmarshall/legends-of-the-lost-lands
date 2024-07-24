@@ -7,7 +7,7 @@ import * as RACES from '../rules/races/index.js';
 import { getAdvancementPointsRequired } from '../rules/skills.js';
 import { rollDice } from '../dice.js';
 import { getLevelUpdates, updateLevel } from '../actor-helper.js';
-import { ITEM_TYPES, NON_PHYSICAL_ITEM_TYPES, sortEquipmentByType } from '../item-helper.js';
+import { ITEM_TYPES, NON_PHYSICAL_ITEM_TYPES, sortEquipmentByType, getItemIconByType } from '../item-helper.js';
 import { SIZE_VALUES } from '../rules/size.js';
 import { armorMaterials } from '../rules/armor-and-clothing.js';
 import { macroChatMessage } from '../chat.js';
@@ -448,20 +448,7 @@ export class BrigandineActorSheet extends ActorSheet {
         let createData = data;
 
         // Set default icon by type here feature, spell, equipment
-        const img =
-          createData.type === 'container'
-            ? 'icons/svg/chest.svg'
-            : Constant.NON_PHYSICAL_ITEM_TYPES.includes(createData.type)
-            ? 'icons/svg/feature.svg'
-            : createData.type === 'spell_magic'
-            ? 'icons/svg/spell.svg'
-            : createData.type === 'spell_cleric'
-            ? 'icons/svg/prayer.svg'
-            : createData.type === 'spell_druid'
-            ? 'icons/svg/pentacle.svg'
-            : createData.type === 'currency'
-            ? 'icons/svg/coins.svg'
-            : 'icons/svg/item-bag.svg';
+        const img = getItemIconByType(createData.type);
         if (img) {
           createData.img = img;
         }

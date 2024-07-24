@@ -22,25 +22,6 @@ export function sizeComparator(a, b) {
   if (aSize === bSize) return 0;
 }
 
-export function expandPrice(priceInCps) {
-  if (!priceInCps) return;
-  const gp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.gp.value);
-  priceInCps -= gp * Constant.UNITS_OF_ACCOUNT.gp.value;
-  const sp = Math.floor(priceInCps / Constant.UNITS_OF_ACCOUNT.sp.value);
-  const cp = priceInCps - sp * Constant.UNITS_OF_ACCOUNT.sp.value;
-  return { gp, sp, cp };
-}
-
-export function getPriceString(priceInCps) {
-  if (!priceInCps) return;
-  const priceObj = expandPrice(priceInCps);
-  let priceString = '';
-  for (const [unit, value] of Object.entries(priceObj)) {
-    if (value) priceString += `${value} ${Constant.UNITS_OF_ACCOUNT[unit].abbr}, `;
-  }
-  return priceString.replace(/,\s*$/, '');
-}
-
 export function replacePunc(str) {
   return str.replace(/!+\s*$|\.+\s*$/, '');
 }

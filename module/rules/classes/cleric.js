@@ -9,7 +9,7 @@ import { deepFreeze } from '../../helper.js';
 import { WEAPON_CLASS } from '../weapons.js';
 
 export class Cleric extends BaseClass {
-  static description = 'A holy warrior who wields divine power to mend wounds and smite foes.';
+  static description = 'A holy warrior who channels divine will to mend wounds and smite foes.';
 
   static XP_REQS = Object.freeze([0, 800, 2400, 5600, 12000, 25000, 55000, 110000]);
 
@@ -50,10 +50,10 @@ export class Cleric extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.TURN_UNDEAD, 1),
-    new FeatureConfig(features.BLUNT_DAMAGE_ONLY, 1),
-    new FeatureConfig(features.CAST_CLERIC_SPELLS, 1),
-    new FeatureConfig(features.READ_CLERIC_SCROLLS, 1),
+    new FeatureConfig(features.TURN_UNDEAD),
+    new FeatureConfig(features.BLUNT_DAMAGE_ONLY),
+    new FeatureConfig(features.CAST_CLERIC_SPELLS),
+    new FeatureConfig(features.READ_CLERIC_SCROLLS),
   ]);
 
   static specializedSkills = Object.freeze([...allSpellSkills]);
@@ -108,7 +108,7 @@ export class CloisteredCleric extends Cleric {
 }
 
 export class Runepriest extends Cleric {
-  static description = 'A worshipper of Wotan who shapes magic runes to channel divine will.';
+  static description = 'A worshipper of Wotan who shapes magic runes to wield divine power.';
   static armorDescription = 'medium';
   static featuresConfig = deepFreeze([new FeatureConfig(features.RUNE_MAGIC, 1)]);
   static specializedSkills = Object.freeze([SKILLS.RUNELORE, SKILLS.RUNECARVING]);

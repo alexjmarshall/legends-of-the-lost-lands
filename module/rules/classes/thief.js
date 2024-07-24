@@ -1,6 +1,5 @@
 import { lightArmors } from '../armor-and-clothing.js';
-import { allCombatSkills, allThieverySkills, SKILLS } from '../skills.js';
-import { allShields } from '../helms-and-shields.js';
+import { allMeleeWeaponSkills, allMissileWeaponSkills, allThieverySkills, SKILLS } from '../skills.js';
 import { saveBases } from '../saves.js';
 import { FeatureConfig, features } from '../features.js';
 import { BaseClass } from './base-class.js';
@@ -31,7 +30,7 @@ export class Thief extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.BACKSTAB, 1),
+    new FeatureConfig(features.BACKSTAB),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
   ]);
 
@@ -64,7 +63,7 @@ export class Thief extends BaseClass {
   static afterNameHp = 1;
   static shieldsDescription = 'buckler only';
   static armorDescription = 'light';
-  static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
+  static weaponDescription = 'one-handed swords, daggers, bludgeons, slings, bows and crossbows';
   static weaponClass = WEAPON_CLASS.SIMPLE;
 
   static primeReqs = [ABILITIES.DEX];
@@ -82,41 +81,42 @@ export class Assassin extends Thief {
   static description = 'The antithesis of weal.';
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.BACKSTAB, 1),
-    new FeatureConfig(features.ASSASSINATE, 1),
+    new FeatureConfig(features.BACKSTAB),
+    new FeatureConfig(features.ASSASSINATE),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
   ]);
 
-  static specializedSkills = Object.freeze([SKILLS.POISONLORE, SKILLS.POISON_HANDLING]);
+  static specializedSkills = Object.freeze([SKILLS.POISONLORE, SKILLS.POISON_HANDLING, SKILLS.DISGUISE]);
 
   static proficientSkills = Object.freeze([
     SKILLS.SEARCHING,
     SKILLS.LISTENING,
     SKILLS.HIDING,
-    ...allCombatSkills,
-    ...allThieverySkills.filter((s) => s !== SKILLS.APPRAISAL && s !== SKILLS.PICKPOCKETING),
+    ...allMeleeWeaponSkills,
+    ...allMissileWeaponSkills,
+    ...allThieverySkills.filter((s) => s !== SKILLS.APPRAISAL && s !== SKILLS.PICKPOCKETING && s !== SKILLS.DISGUISE),
   ]);
   static weaponClass = WEAPON_CLASS.MARTIAL;
   static alignments = evilAlignments;
 
   static abilityReqs = [
     {
-      name: ABILITIES.DEX,
-      min: 12,
-    },
-    {
       name: ABILITIES.INT,
       min: 11,
+    },
+    {
+      name: ABILITIES.CHA,
+      max: 10,
     },
   ];
 
   constructor(lvl, origin) {
     super(lvl, origin, Assassin);
-    this.shields = [...allShields];
   }
 }
 
 export class Swashbuckler extends Thief {
-  static description = 'A master of the blade and the art of the duel.';
+  static description = 'A duelist who uses their agility and wits to outmaneuver opponents.';
 
   static featuresConfig = deepFreeze([
     (lvl) =>
@@ -128,45 +128,34 @@ export class Swashbuckler extends Thief {
             value: super.onePlusOnePerNLevels(lvl, 4),
           },
           {
-            key: 'data.riposte_to_hit_mod',
+            key: 'data.melee_to_hit_mod',
             mode: 2,
             value: super.onePlusOnePerNLevels(lvl, 3),
           },
           {
-            key: 'data.riposte_dmg_mod',
+            key: 'data.melee_dmg_mod',
             mode: 2,
-            value: super.onePlusOnePerNLevels(lvl, 3),
-          },
-          {
-            key: 'data.counter_to_hit_mod',
-            mode: 2,
-            value: super.onePlusOnePerNLevels(lvl, 3),
-          },
-          {
-            key: 'data.counter_dmg_mod',
-            mode: 2,
-            value: super.onePlusOnePerNLevels(lvl, 3),
+            value: super.onePlusOnePerNLevels(lvl, 4),
           },
         ],
       }),
-    new FeatureConfig(features.AMBIDEXTROUS, 1),
-    new FeatureConfig(features.IMPROVED_EVASION, 1),
+    new FeatureConfig(features.IMPROVED_EVASION),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
   ]);
 
   static proficientSkills = Thief.proficientSkills.filter((s) => s !== SKILLS.ANCIENT_LANGUAGES);
 
-  static shieldsDescription = 'buckler only';
   static weaponDescription = 'swords, daggers, bludgeons, slings, bows and crossbows';
   static weaponClass = WEAPON_CLASS.MARTIAL;
 
   static abilityReqs = [
     {
       name: ABILITIES.DEX,
-      min: 12,
+      min: 13,
     },
     {
-      name: ABILITIES.STR,
-      min: 12,
+      name: ABILITIES.CHA,
+      min: 11,
     },
   ];
 

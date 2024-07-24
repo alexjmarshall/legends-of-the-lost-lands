@@ -1,6 +1,7 @@
 import { ABILITIES } from './abilities.js';
 import { progressions } from './helper.js';
 import { deepFreeze } from '../helper.js';
+import { PENALTY_MULTIPLIERS } from './skills.js';
 
 const { WIS, DEX, CON } = ABILITIES;
 
@@ -13,18 +14,13 @@ export const SAVES = Object.freeze({
 export const saves = deepFreeze({
   [SAVES.EVASION]: {
     ability: DEX,
-    proficientArmorPenalty: false,
-    nonProficientPenalty: true,
+    armorPenalty: PENALTY_MULTIPLIERS.ONE_TIMES,
   },
   [SAVES.MENTAL]: {
     ability: WIS,
-    proficientArmorPenalty: false,
-    nonProficientPenalty: false,
   },
   [SAVES.PHYSICAL]: {
     ability: CON,
-    proficientArmorPenalty: false,
-    nonProficientPenalty: false,
   },
 });
 

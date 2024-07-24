@@ -16,6 +16,7 @@ export const RECIPE_TYPES = Object.freeze({
 
 export const RECIPES = Object.freeze({
   POULTICE_TO_NEUTRALIZE_POISON: 'Poultice to Neutralize Poison',
+  PURIFICATION_TO_RESTORE_ENERVATION: 'Purification to Restore Enervation',
   WARD_AGAINST_VAMPIRES: 'Ward Against Vampires',
   WARD_AGAINST_LYCANTHROPES: 'Ward Against Lycanthropes',
   ELIXIR_FOR_LYCANTHROPY: 'Elixir for Lycanthropy',
@@ -36,70 +37,77 @@ export const recipes = deepFreeze({
   [RECIPES.POULTICE_TO_NEUTRALIZE_POISON]: {
     ingredients: ['Kingsfoil', 'Bandage'],
     tools: [TOOLS.MORTAR_AND_PESTLE],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
+    magic: true,
+  },
+  [RECIPES.PURIFICATION_TO_RESTORE_ENERVATION]: {
+    // TODO restores to threshold of old level
+    ingredients: ['Holy Water', 'Vervain'],
+    tools: [TOOLS.MORTAR_AND_PESTLE],
+    type: RECIPE_TYPES.HERBAL,
     magic: true,
   },
   [RECIPES.WARD_AGAINST_VAMPIRES]: {
     ingredients: ['Garlic', 'String'],
     tools: [],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.WARD_AGAINST_LYCANTHROPES]: {
     ingredients: ['Wolfsbane', 'String'],
     tools: [],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_LYCANTHROPY]: {
     ingredients: ['Belladonna', 'Powdered Silver'],
     tools: [TOOLS.ALEMBIC],
-    type: [RECIPE_TYPES.ALCHEMICAL],
+    type: RECIPE_TYPES.ALCHEMICAL,
   },
   [RECIPES.ELIXIR_FOR_NAUSEA]: {
     ingredients: ['Adrue'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_COUGH]: {
     ingredients: ['Mallow'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_FEVER]: {
     ingredients: ['Feverfew'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_DIARRHEA]: {
     ingredients: ['Nutmeg'], // TODO replace
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_PAIN]: {
     ingredients: ['Willow Bark'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL, // TODO skill for alchemy
   },
   [RECIPES.ELIXIR_FOR_GUT_PAIN]: {
     ingredients: ['Anise'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_HEADACHE]: {
     ingredients: ['Butterbur'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_INSOMNIA]: {
     ingredients: ['Valerian'],
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
   [RECIPES.ELIXIR_FOR_EXHAUSTION]: {
     ingredients: ['Ginseng'], // TODO replace
     tools: [TOOLS.MORTAR_AND_PESTLE, TOOLS.TEAPOT],
-    type: [RECIPE_TYPES.HERBAL],
+    type: RECIPE_TYPES.HERBAL,
   },
-});
+}); // TODO one for bleeding
 
 export const commonRecipes = Object.keys(recipes).filter((recipe) => recipes[recipe].magic !== true);
 

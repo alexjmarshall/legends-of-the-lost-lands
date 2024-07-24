@@ -65,19 +65,16 @@ export class BrigandineActor extends Actor {
     const charData = actorData.data;
     charData.combat = {
       attacks: 1,
-      riposte_to_hit_mod: 0,
-      riposte_dmg_mod: 0,
-      counter_to_hit_mod: 0,
-      counter_dmg_mod: 0,
       dmg_bonus_humanoid: 0,
       dmg_bonus_undead: 0,
-      missile_to_hit_mod: 0,
       melee_to_hit_mod: 0,
-      missile_dmg_mod: 0,
       melee_dmg_mod: 0,
+      missile_to_hit_mod: 0,
+      missile_dmg_mod: 0,
     };
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
     charData.healing_mod = 0; // TODO apply to natural healing and injury heal checks
+    charData.reaction_mod = 0; // TODO apply to reaction rolls
   }
 
   /** @override */
@@ -117,7 +114,7 @@ export class BrigandineActor extends Actor {
     this._addEnc(charData, items);
 
     // mv & speed
-    this._addMvSpeedPackAnimal(charData);
+    this._addMvSpeedPackAnimal(charData); // TODO durability affects AC and clo
   }
 
   _prepareCharacterData(actorData) {
@@ -126,8 +123,7 @@ export class BrigandineActor extends Actor {
     const charData = actorData.data;
 
     // size_val
-    const sizeVal = SIZE.SIZE_VALUES[charData.size] || SIZE.SIZE_VALUES.default;
-    charData.size_val = sizeVal;
+    charData.size_val = SIZE.SIZE_VALUES[charData.size] || SIZE.SIZE_VALUES.default;
 
     // ability score mods
     const attrs = charData.attributes;
@@ -186,11 +182,11 @@ export class BrigandineActor extends Actor {
 
     const maxMailWgt = sizeMulti(
       garmentMaterials[GARMENT_MATERIALS.MAIL].weight + garmentMaterials[GARMENT_MATERIALS.PADDED].weight,
-      charData.sizeVal
+      charData.size_val
     );
     charData.spell_failure = Math.min(100, Math.floor((totalPenaltyWgt / maxMailWgt) * 100));
 
-    const maxIronPlateWgt = sizeMulti(garmentMaterials[GARMENT_MATERIALS.IRON_PLATE].weight, charData.sizeVal);
+    const maxIronPlateWgt = sizeMulti(garmentMaterials[GARMENT_MATERIALS.IRON_PLATE].weight, charData.size_val);
     charData.armor_penalty = 0 - Math.floor((totalPenaltyWgt / maxIronPlateWgt) * 8);
 
     const totalNonProfPenaltyWgt = wornItems.reduce((sum, i) => {
@@ -199,7 +195,7 @@ export class BrigandineActor extends Actor {
       return sum + roundToDecimal(penaltyWeight / 8, 1);
     }, 0);
     charData.combat_armor_penalty = 0 - Math.floor((totalNonProfPenaltyWgt / maxIronPlateWgt) * 8);
-
+    // TODO for skill checks, use the armor_penalty for non-combat and combat_armor_penalty for combat skills
     charData.max_dex_mod = 6 - Math.floor((totalPenaltyWgt / maxIronPlateWgt) * 6);
   }
 
@@ -372,7 +368,7 @@ export class BrigandineActor extends Actor {
       const memberMVs = members.map((a) => +a.data.data.mv).filter((m) => m != null && !isNaN(m));
       const slowestMV = memberMVs.length ? Math.min(...memberMVs) : Constant.DEFAULT_BASE_MV;
       const mv = slowestMV || Constant.DEFAULT_BASE_MV;
-      console.log(`Updating party ${actorData.name} MV to ${mv}`, members);
+      console.log(`Updating party ${actorData.name} Mv to ${mv}`, members);
       data.mv = mv;
     }
   }
@@ -407,8 +403,7 @@ export class BrigandineActor extends Actor {
   }
 
   _addMvSpeedCharacter(charData) {
-    const size = charData.size;
-    const sizeVal = SIZE.SIZE_VALUES[size] || SIZE.SIZE_VALUES.default;
+    const sizeVal = charData.size_val;
     const strScore = +charData.attributes.ability_scores.str?.value || 10;
     const encMod = +RACE[charData.race]?.encModifier || 1;
     const encStr = strScore * encMod;
@@ -469,24 +464,18 @@ export class BrigandineActor extends Actor {
     const { data } = actorData;
     const { items } = actorData;
     const wornItems = items.filter((i) => i.data.data.worn);
-    const charSize = +data.size ?? Constant.SIZE_VALUES.default;
-    return;
+    const charSizeVal = data.size_val;
 
-    let clo = 0;
+    let clo = 0; // TODO binary hit locations don't need to be an even weight number
 
-    for (const [k, v] of Object.entries(Constant.HIT_LOCATIONS)) {
-      const coveringItems = wornItems.filter((i) => i.data.data.coverage?.includes(k));
-      const garments = coveringItems.filter(
-        (i) => i.data.data.attributes.admin?.wearable.value && Number(i.data.data.clo)
-      );
+    for (const [locKey, locVal] of Object.entries(hitLocations)) {
+      const garments = wornItems.filter((i) => i.data.data.coverage?.includes(locKey) && Number(i.data.data.clo));
 
       // sort the layers by descending clo
       //    second layer adds 1/2 its full clo, third layer 1/4, and so on
-      const unwornIndex = Constant.HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
-      const locationWeight = v.weights[unwornIndex] / 100;
-      const cloVals = garments.map(
-        (i) => (i.data.data.clo - this._getSizePenalty(i.data.data.size, charSize)) * locationWeight
-      );
+      const unwornIndex = HIT_LOC_WEIGHT_INDEXES.WEIGHT_UNWORN;
+      const locationWeight = locVal.weights[unwornIndex] / 100;
+      const cloVals = garments.map((i) => i.data.data.clo * locationWeight);
       cloVals.sort((a, b) => b - a);
       const locWarmth = cloVals.reduce((sum, val, index) => sum + val / 2 ** index, 0);
       clo += locWarmth;
@@ -580,7 +569,7 @@ export class BrigandineActor extends Actor {
     // touch ac
     const dexAcBonus = Math.min(data.max_dex_mod, +attrs.ability_scores?.dex?.mod || 0);
     const touchAc = data.base_ac + dexAcBonus;
-    ac.touch_ac = touchAc;
+    ac.touch_ac = touchAc; // TODO also add location based derived attribute
 
     // timing
     const counterWeap = heldItems.some((i) => i.data.data.atk_timing === ATK_TIMINGS.COUNTER);

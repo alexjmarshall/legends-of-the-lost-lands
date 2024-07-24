@@ -27,9 +27,9 @@ function getClassInstance(className, lvl, origin) {
 
 function addNewFeature(itemData, feature, featureItem) {
   const featureData = cloneItem(featureItem);
-  if (feature.usesPerDay) {
-    featureData.data.attributes.uses_per_day.value = feature.usesPerDay;
-    featureData.data.attributes.uses_per_day.max = feature.usesPerDay;
+  if (feature.usesPer?.uses) {
+    featureData.data.attributes.uses.value = feature.usesPer.uses;
+    featureData.data.attributes.uses.max = feature.usesPer.uses;
   }
   if (feature.effectData?.changes?.length) {
     featureData.effects = [feature.effectData];
@@ -38,16 +38,16 @@ function addNewFeature(itemData, feature, featureItem) {
 }
 
 function updateFeature(itemData, feature, actorFeature) {
-  // no need to update if the feature doesn't have uses per day or effect data
-  if (!feature.usesPerDay && !feature.effectData?.changes?.length) {
+  // no need to update if the feature doesn't have uses or effect data
+  if (!feature.usesPer?.uses && !feature.effectData?.changes?.length) {
     return;
   }
   const featureData = {
     _id: actorFeature._id,
   };
-  if (feature.usesPerDay && feature.usesPerDay !== actorFeature.data.data.attributes.uses_per_day.value) {
-    featureData['data.attributes.uses_per_day.value'] = feature.usesPerDay;
-    featureData['data.attributes.uses_per_day.max'] = feature.usesPerDay;
+  if (feature.usesPer && feature.usesPer.uses !== actorFeature.data.data.attributes.uses.value) {
+    featureData['data.attributes.uses.value'] = feature.usesPer.uses;
+    featureData['data.attributes.uses.max'] = feature.usesPer.uses;
   }
   if (feature.effectData?.changes?.length) {
     featureData.effects = [feature.effectData];
@@ -215,7 +215,7 @@ const addLanguages = (updateData, classInstance, int) => {
 };
 
 const getPrimeReqBonus = (actorData, formData, classInstance) => {
-  // bonus is 1.2 if all prime reqs are > 17, 1.1 of all are > 15
+  // bonus is 1.2 if all prime reqs are > 17, 1.1 if all are > 15
   const primeReqs = CLASSES[classInstance.constructor.name].primeReqs;
   const abilityScores = actorData.attributes.ability_scores;
   if (primeReqs.length === 0) {

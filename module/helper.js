@@ -12,6 +12,15 @@ export class EntitySheetHelper {
         attr.isResource = attr.dtype === 'Resource';
         attr.isFormula = attr.dtype === 'Formula';
       }
+      // Determine whether to show derive data as title hint.
+      if (game.user.isGM && attr.derived) {
+        if (attr.derived.value) {
+          attr.showValueHint = true;
+        }
+        if (attr.derived.max) {
+          attr.showMaxHint = true;
+        }
+      }
     }
 
     // Initialize ungrouped attributes for later.
@@ -606,22 +615,7 @@ export class EntitySheetHelper {
         }
 
         // Set default icon by type
-        const img =
-          createData.type === 'container'
-            ? 'icons/svg/chest.svg'
-            : ITEM.NON_PHYSICAL_ITEM_TYPES.includes(createData.type)
-            ? 'icons/svg/feature.svg'
-            : createData.type === 'spell_magic'
-            ? 'icons/svg/spell.svg'
-            : createData.type === 'spell_cleric'
-            ? 'icons/svg/prayer.svg'
-            : createData.type === 'spell_druid'
-            ? 'icons/svg/pentacle.svg'
-            : createData.type === 'currency'
-            ? 'icons/svg/coins.svg'
-            : documentName === 'Item'
-            ? 'icons/svg/item-bag.svg'
-            : null;
+        const img = ITEM.getItemIconByType(createData.type);
         if (img) {
           createData.img = img;
         }

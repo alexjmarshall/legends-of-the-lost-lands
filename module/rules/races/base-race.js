@@ -46,67 +46,67 @@ export class BaseRace {
     const heightRoll = rollDice('d1000');
     switch (true) {
       case heightRoll <= 5:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight - avgHeight * ((12 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight - avgHeight * ((9 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight - avgHeight * ((12 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight - avgHeight * ((9 + rollDice('d3')) / 100));
+        // }
         break;
       case heightRoll <= 25:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight - avgHeight * ((8 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight - avgHeight * ((6 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight - avgHeight * ((8 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight - avgHeight * ((6 + rollDice('d3')) / 100));
+        // }
         break;
       case heightRoll <= 150:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight - avgHeight * ((4 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight - avgHeight * ((3 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight - avgHeight * ((4 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight - avgHeight * ((3 + rollDice('d3')) / 100));
+        // }
         break;
       case heightRoll <= 350:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight - avgHeight * (rollDice('d4') / 100));
-        } else {
-          height = Math.round(avgHeight - avgHeight * (rollDice('d3') / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight - avgHeight * (rollDice('d4') / 100));
+        // } else {
+        height = Math.round(avgHeight - avgHeight * (rollDice('d3') / 100));
+        // }
         break;
       case heightRoll <= 650:
-        if (Race.name === 'Human') {
-          height = avgHeight + (rollDice('d5') - 3);
-        } else {
-          height = avgHeight + (rollDice('d3') - 2);
-        }
+        // if (Race.name === 'Human') {
+        //   height = avgHeight + (rollDice('d5') - 3);
+        // } else {
+        height = avgHeight + (rollDice('d3') - 2);
+        // }
         break;
       case heightRoll <= 850:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight + avgHeight * (rollDice('d4') / 100));
-        } else {
-          height = Math.round(avgHeight + avgHeight * (rollDice('d3') / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight + avgHeight * (rollDice('d4') / 100));
+        // } else {
+        height = Math.round(avgHeight + avgHeight * (rollDice('d3') / 100));
+        // }
         break;
       case heightRoll <= 975:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight + avgHeight * ((4 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight + avgHeight * ((3 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight + avgHeight * ((4 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight + avgHeight * ((3 + rollDice('d3')) / 100));
+        // }
         break;
       case heightRoll <= 995:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight + avgHeight * ((8 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight + avgHeight * ((6 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight + avgHeight * ((8 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight + avgHeight * ((6 + rollDice('d3')) / 100));
+        // }
         break;
       case heightRoll <= 1000:
-        if (Race.name === 'Human') {
-          height = Math.round(avgHeight + avgHeight * ((12 + rollDice('d4')) / 100));
-        } else {
-          height = Math.round(avgHeight + avgHeight * ((9 + rollDice('d3')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   height = Math.round(avgHeight + avgHeight * ((12 + rollDice('d4')) / 100));
+        // } else {
+        height = Math.round(avgHeight + avgHeight * ((9 + rollDice('d3')) / 100));
+        // }
         break;
     }
 
@@ -247,67 +247,67 @@ export class BaseRace {
     const weightRoll = rollDice('d1000');
     switch (true) {
       case weightRoll <= 5:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight - weight * ((24 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight - weight * ((18 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight - weight * ((24 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight - weight * ((18 + rollDice('d6')) / 100));
+        // }
         break;
       case weightRoll <= 25:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight - weight * ((16 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight - weight * ((12 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight - weight * ((16 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight - weight * ((12 + rollDice('d6')) / 100));
+        // }
         break;
       case weightRoll <= 150:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight - weight * ((8 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight - weight * ((6 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight - weight * ((8 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight - weight * ((6 + rollDice('d6')) / 100));
+        // }
         break;
       case weightRoll <= 350:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight - weight * (rollDice('d8') / 100));
-        } else {
-          weight = Math.round(weight - weight * (rollDice('d6') / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight - weight * (rollDice('d8') / 100));
+        // } else {
+        weight = Math.round(weight - weight * (rollDice('d6') / 100));
+        // }
         break;
       case weightRoll <= 650:
-        if (Race.name === 'Human') {
-          weight = weight + (rollDice('2d6') - 7);
-        } else {
-          weight = weight + (rollDice('2d4') - 5);
-        }
+        // if (Race.name === 'Human') {
+        //   weight = weight + (rollDice('2d6') - 7);
+        // } else {
+        weight = weight + (rollDice('2d4') - 5);
+        // }
         break;
       case weightRoll <= 850:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight + weight * (rollDice('d8') / 100));
-        } else {
-          weight = Math.round(weight + weight * (rollDice('d6') / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight + weight * (rollDice('d8') / 100));
+        // } else {
+        weight = Math.round(weight + weight * (rollDice('d6') / 100));
+        // }
         break;
       case weightRoll <= 975:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight + weight * ((8 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight + weight * ((6 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight + weight * ((8 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight + weight * ((6 + rollDice('d6')) / 100));
+        // }
         break;
       case weightRoll <= 995:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight + weight * ((16 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight + weight * ((12 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight + weight * ((16 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight + weight * ((12 + rollDice('d6')) / 100));
+        // }
         break;
       case weightRoll <= 1000:
-        if (Race.name === 'Human') {
-          weight = Math.round(weight + weight * ((24 + rollDice('d8')) / 100));
-        } else {
-          weight = Math.round(weight + weight * ((18 + rollDice('d6')) / 100));
-        }
+        // if (Race.name === 'Human') {
+        //   weight = Math.round(weight + weight * ((24 + rollDice('d8')) / 100));
+        // } else {
+        weight = Math.round(weight + weight * ((18 + rollDice('d6')) / 100));
+        // }
         break;
     }
 

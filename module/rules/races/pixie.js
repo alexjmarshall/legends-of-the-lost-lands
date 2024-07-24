@@ -34,8 +34,8 @@ export class Pixie extends BaseRace {
   });
 
   static averageHeight = {
-    M: 32,
-    F: 30,
+    M: 25,
+    F: 23,
   };
 
   static weightModifier = 1.2;
@@ -49,16 +49,15 @@ export class Pixie extends BaseRace {
   static allowedClasses = Object.freeze([
     CLASS.Fighter.name,
     CLASS.Mage.name,
+    CLASS.Illusionist.name,
     CLASS.Druid.name,
     CLASS.Thief.name,
-    CLASS.Swashbuckler.name,
   ]);
 
   static allowedMultiClasses = Object.freeze([
     [CLASS.Fighter.name, CLASS.Thief.name],
     [CLASS.Fighter.name, CLASS.Mage.name],
     [CLASS.Mage.name, CLASS.Thief.name],
-    [CLASS.Mage.name, CLASS.Swashbuckler.name],
     [CLASS.Druid.name, CLASS.Mage.name],
   ]);
 
@@ -67,12 +66,11 @@ export class Pixie extends BaseRace {
       case CLASS.Fighter.name:
         return 30 + rollDice('3d4');
       case CLASS.Mage.name:
-      case CLASS.Incantatrix.name:
+      case CLASS.Illusionist.name:
         return 40 + rollDice('2d8');
       case CLASS.Druid.name:
         return 45 + rollDice('2d4');
       case CLASS.Thief.name:
-      case CLASS.Swashbuckler.name:
         return 28 + rollDice('3d8');
       default:
         return 30 + rollDice('3d4');

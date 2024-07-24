@@ -87,8 +87,7 @@ export class Ranger extends BaseClass {
           },
         ],
       }),
-    new FeatureConfig(features.ALERT, 1),
-    new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
+    new FeatureConfig(features.NEUTRALIZE_POISON),
     new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
     new FeatureConfig(features.CAST_MAGIC_SPELLS, 7),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
@@ -143,9 +142,13 @@ export class Ranger extends BaseClass {
 }
 
 export class VampireHunter extends Ranger {
-  static description = 'An implacable hunter of the undead.';
+  static description = 'A relentless foe of the most powerful undead.';
 
-  static startingRecipes = [RECIPES.WARD_AGAINST_VAMPIRES, RECIPES.WARD_AGAINST_LYCANTHROPES];
+  static startingRecipes = [
+    RECIPES.WARD_AGAINST_VAMPIRES,
+    RECIPES.WARD_AGAINST_LYCANTHROPES,
+    RECIPES.PURIFICATION_TO_RESTORE_ENERVATION,
+  ];
 
   static featuresConfig = deepFreeze([
     (lvl) =>
@@ -158,16 +161,33 @@ export class VampireHunter extends Ranger {
           },
         ],
       }),
-    new FeatureConfig(features.ALERT, 1),
-    new FeatureConfig(features.NEUTRALIZE_POISON, 1, { usesPerDay: 1 }),
-    new FeatureConfig(features.ENERGY_DRAIN_RESISTANCE, 1),
+    new FeatureConfig(features.RESTORE_ENERGY_DRAIN),
+    new FeatureConfig(features.ENERGY_DRAIN_RESISTANCE),
     new FeatureConfig(features.CAST_DRUID_SPELLS, 6),
     new FeatureConfig(features.CAST_MAGIC_SPELLS, 7),
     new FeatureConfig(features.READ_MAGIC_SCROLLS, 7),
-    new FeatureConfig(features.MASTERY_OF_THE_STONE, 7),
     new FeatureConfig(features.RELUCTANT_LEADER, 8),
     super.multiattackFeature(8, 15),
   ]);
+
+  static abilityReqs = [
+    {
+      name: ABILITIES.STR,
+      min: 12,
+    },
+    {
+      name: ABILITIES.INT,
+      min: 15,
+    },
+    {
+      name: ABILITIES.WIS,
+      min: 13,
+    },
+    {
+      name: ABILITIES.CON,
+      min: 9,
+    },
+  ];
 
   constructor(lvl, origin) {
     super(lvl, origin, VampireHunter);

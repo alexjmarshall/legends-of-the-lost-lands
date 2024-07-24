@@ -112,7 +112,7 @@ export async function _onDropItem(event, data, qtyDropped, options = {}) {
       i.data.name === itemData.name &&
       i.data.data.macro === itemData.data.macro &&
       foundry.utils.fastDeepEqual(i.data.data.attributes, itemData.data.attributes)
-  );
+  ); // TODO need an internal deep equal
   let targetItem = targetItems[0];
   if (sameActor) {
     const dropTarget = event.target.closest('[data-item-id]');

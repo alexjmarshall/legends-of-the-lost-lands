@@ -1,3 +1,6 @@
+import { WEAPON_SKILLS } from './skills.js';
+import { SIZES } from './size.js';
+
 // TODO double blade costs
 
 export const WEAPON_SPECIAL_PROPS = Object.freeze({

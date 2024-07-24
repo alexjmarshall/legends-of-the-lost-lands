@@ -348,7 +348,7 @@ Hooks.on('controlToken', (token, selected) => {
   Util.playVoiceSound(Constant.VOICE_MOODS.what, actor, token, { push: false, bubble: false, chance: 0.5 });
 });
 
-// Play 'ok' voice sound on token movement
+// Play 'ok' voice sound on token move
 Hooks.on('updateToken', (token, change) => {
   if (change.x && change.y) {
     Util.playVoiceSound(Constant.VOICE_MOODS.ok, token.actor, token.data, { push: true, bubble: false, chance: 0.7 });

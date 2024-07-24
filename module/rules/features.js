@@ -4,11 +4,14 @@ export const FEATURE_SOURCE = Object.freeze({
 });
 
 export class FeatureConfig {
-  constructor(feature, reqLvl, options = { usesPerDay: undefined, changes: [] }) {
-    const { usesPerDay, changes } = options;
+  constructor(feature, reqLvl = 1, options = { usesPer: {}, changes: [] }) {
+    const { usesPer, changes } = options;
     this.feature = {
       ...feature,
-      usesPerDay,
+      usesPer: {
+        ...feature.usesPer,
+        ...usesPer,
+      },
       effectData: {
         ...feature.effectData,
         changes,
@@ -25,6 +28,134 @@ export const FEATURE_TYPE = {
 };
 
 export const features = Object.freeze({
+  ABJURATION_SPECIALIZATION: {
+    name: 'Abjuration Specialization',
+    description: ['+2 to Abjuration', 'Cannot learn or cast Alteration spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Abjuration Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.abjuration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  CONJURATION_SPECIALIZATION: {
+    name: 'Conjuration Specialization',
+    description: ['+2 to Conjuration', 'Cannot learn or cast Divination spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Conjuration Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.conjuration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  DIVINATION_SPECIALIZATION: {
+    name: 'Divination Specialization',
+    description: ['+2 to Divination', 'Cannot learn or cast Conjuration spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Divination Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.divination.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  ENCHANTMENT_SPECIALIZATION: {
+    name: 'Enchantment Specialization',
+    description: ['+2 to Enchantment', 'Cannot learn or cast Evocation spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Enchantment Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.enchantment.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  EVOCATION_SPECIALIZATION: {
+    name: 'Evocation Specialization',
+    description: ['+2 to Evocation', 'Cannot learn or cast Enchantment spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Evocation Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.evocation.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  ILLUSION_SPECIALIZATION: {
+    name: 'Illusion Specialization',
+    description: ['+2 to Illusion', 'Cannot learn or cast Necromancy spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Illusion Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.illusion.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  NECROMANCY_SPECIALIZATION: {
+    name: 'Necromancy Specialization',
+    description: ['+2 to Necromancy', 'Cannot learn or cast Illusion spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Necromancy Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.necromancy.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  ALTERATION_SPECIALIZATION: {
+    name: 'Alteration Specialization',
+    description: ['+2 to Alteration', 'Cannot learn or cast Abjuration spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Alteration Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.alteration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
   CHAIN_ATTACK: {
     name: 'Chain Attack',
     description: 'Extra attack after slaying an enemy',
@@ -49,12 +180,17 @@ export const features = Object.freeze({
   BERSERK: {
     // TODO +2 HP/level reduces to +1 after name level and immune to bleeding
     name: 'Berserk',
-    description: 'Berserk rage (+2 to-hit, damage and AC, +4 to mental saving throws, 5 + 2/level temporary HP)',
+    description: 'Berserk rage (+2 to-hit, damage & AC, +4 to mental saving throws, 5 + 2/level temporary HP)',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   TURN_UNDEAD: {
     name: 'Turn Undead',
-    description: 'Turn the undead',
+    description: 'Turn the undead by holding aloft a Holy Symbol',
+    type: FEATURE_TYPE.ABILITY,
+  },
+  REBUKE_UNDEAD: {
+    name: 'Rebuke Undead',
+    description: 'Turn the undead by striking them with a Holy Sword',
     type: FEATURE_TYPE.ABILITY,
   },
   CAST_MAGIC_SPELLS: {
@@ -88,10 +224,10 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
   BLUNT_DAMAGE_ONLY: {
+    // TODO code in attack macro
     name: 'Blunt Damage Only',
     description: 'Inflicts blunt weapon damage only',
     type: FEATURE_TYPE.INHERENT,
-    virtual: true,
   },
   CAST_DRUID_SPELLS: {
     name: 'Cast Druid Spells',
@@ -115,7 +251,7 @@ export const features = Object.freeze({
   },
   DUELLIST: {
     name: 'Duellist',
-    description: ['+1 AC every 4 levels', '+1 to-hit and damage every 3 levels when riposting or countering'],
+    description: '+1 to-hit, damage & AC every 4 levels',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Duellist',
@@ -127,22 +263,12 @@ export const features = Object.freeze({
           value: 1,
         },
         {
-          key: 'data.riposte_to_hit_mod',
+          key: 'data.melee_to_hit_mod',
           mode: 2,
           value: 1,
         },
         {
-          key: 'data.riposte_dmg_mod',
-          mode: 2,
-          value: 1,
-        },
-        {
-          key: 'data.counter_to_hit_mod',
-          mode: 2,
-          value: 1,
-        },
-        {
-          key: 'data.counter_dmg_mod',
+          key: 'data.melee_dmg_mod',
           mode: 2,
           value: 1,
         },
@@ -181,7 +307,7 @@ export const features = Object.freeze({
   },
   DRAIN_MAGIC: {
     name: 'Drain Magic',
-    description: 'Drain magic item charges to restore HP',
+    description: 'Drain magical energy to restore HP',
     type: FEATURE_TYPE.ABILITY,
   },
   ENHANCED_SPELLCASTING: {
@@ -201,7 +327,7 @@ export const features = Object.freeze({
   },
   FLEET_FOOTED: {
     name: 'Fleet-Footed',
-    description: 'Enhanced movement rate (15)',
+    description: 'Enhanced move (15)',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Fleet-Footed',
@@ -217,7 +343,7 @@ export const features = Object.freeze({
   },
   WIZARD_SLAYER: {
     name: 'Wizard Slayer',
-    description: 'Free attack against casting mages within melee range',
+    description: 'Free attack against spellcasting enemies within melee range',
     type: FEATURE_TYPE.ABILITY,
   },
   SENSE_DANGER: {
@@ -228,7 +354,7 @@ export const features = Object.freeze({
   },
   NATURAL_TOUGHNESS: {
     name: 'Natural Toughness',
-    description: '+2 natural AC',
+    description: '+2 natural AC, +2 Healing',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Natural Toughness',
@@ -239,25 +365,45 @@ export const features = Object.freeze({
           mode: 2,
           value: 2,
         },
+        {
+          key: 'data.healing_mod',
+          mode: 2,
+          value: 2,
+        },
       ],
     },
   },
   FIRST_ATTACK_FEROCITY: {
+    // TODO implement in alt/ctrl attack dialog?
     name: 'First Attack Ferocity',
-    description: '+1-4 to-hit and damage when attacking with initiative',
+    description: '+1-5 to-hit and x1-5 damage when attacking with initiative in melee',
     type: FEATURE_TYPE.ABILITY,
   },
   KILLER_INSTINCT: {
     // TODO code in attack macro
     name: 'Killer Instinct',
-    description: '+2 to-hit injured or bleeding opponents',
+    description: '+2 to hit injured or bleeding opponents',
     type: FEATURE_TYPE.INHERENT,
   },
-  LAY_ON_HANDS: {
+  LAY_ON_HANDS_HEALING: {
     // TODO +2 HP/level reduces to +1 after name level
-    name: 'Lay on Hands',
-    description: 'Lay on hands to heal 2 HP/level or cure disease (1/day)',
+    name: 'Lay on Hands (Healing)',
+    description: 'Lay on hands to heal 2 HP/level (1/day)',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 1,
+      interval: 'day',
+    },
+  },
+  LAY_ON_HANDS_CURE_DISEASE: {
+    // TODO +2 HP/level reduces to +1 after name level
+    name: 'Lay on Hands (Healing)',
+    description: 'Lay on hands to cure disease (1/week)',
+    type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 1,
+      interval: 'week',
+    },
   },
   HOLY_PROTECTION: {
     name: 'Holy Protection',
@@ -324,7 +470,7 @@ export const features = Object.freeze({
   },
   BLEED_IMMUNITY: {
     name: 'Bleed Immunity',
-    description: 'Immune to bleeding',
+    description: 'Wounds do not bleed heavily',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Bleed Immunity',
@@ -340,11 +486,17 @@ export const features = Object.freeze({
   },
   ASCETIC: {
     name: 'Ascetic',
-    description: [
-      'Must tithe at least 10% of treasure gained to a church',
-      'Will keep no more than 4 magic items, excluding weapons and armor',
-      'Will hire only Good retainers',
-    ],
+    description: 'Must tithe at least 20% of treasure gained to a temple',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  HARD_LEADER_PALADIN: {
+    name: 'Hard Leader (Paladin)',
+    description: 'Will accept only Lawful Good retainers',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  HARD_LEADER_INQUISITOR: {
+    name: 'Hard Leader (Inquisitor)',
+    description: 'Will accept only Lawful retainers',
     type: FEATURE_TYPE.INHERENT,
   },
   DETECT_EVIL: {
@@ -358,28 +510,29 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
   DISPEL_MAGIC: {
+    // TODO at 1.5x level?
     name: 'Dispel Magic',
-    description: 'Dispel magic 1/day every 4 levels',
+    description: 'Dispel Magic 1/day every 4 levels',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   PALADIN_STEED: {
     name: "Paladin's Steed",
-    description: 'Summons an intelligent warhorse',
+    description: 'Summon an intelligent warhorse',
     type: FEATURE_TYPE.ABILITY,
   },
   AURA_OF_PROTECTION: {
     name: 'Aura of Protection',
-    description: "+2 to saving throws & AC and +4 to morale for allies in a 10' radius",
+    description: "+2 to saving throws & AC and +4 to morale for allies in a 10' radius by holding aloft a Holy Sword",
     type: FEATURE_TYPE.INHERENT,
   },
   BANISH_EVIL: {
     name: 'Banish Evil',
-    description: 'Banish evil summoned/extraplanar creatures',
+    description: 'Banish evil summoned/extraplanar creatures by striking them with a Holy Sword',
     type: FEATURE_TYPE.ABILITY,
   },
   TRUE_SIGHT: {
     name: 'True Sight',
-    description: 'True sight 1/day every 4 levels',
+    description: 'True Sight 1/day every 4 levels',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
   },
   ANCIENT_HATRED: {
@@ -423,7 +576,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.skills.searching.lvl',
+          key: 'data.skills.listening.lvl',
           mode: 2,
           value: 4,
         },
@@ -432,8 +585,21 @@ export const features = Object.freeze({
   },
   NEUTRALIZE_POISON: {
     name: 'Neutralize Poison',
-    description: 'Apply a special poultice to neutralize poison 1/day',
+    description: 'Apply a magic poultice to neutralize poison 1/day',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 1,
+      interval: 'day',
+    },
+  },
+  RESTORE_ENERGY_DRAIN: {
+    name: 'Reastore Energy Drain',
+    description: "Cleanse a victim's blood to restore energy drain 1/week",
+    type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 1,
+      interval: 'week',
+    },
   },
   AMBIDEXTROUS: {
     // TODO derive in actor.js from ability scores if have this feature
@@ -443,7 +609,8 @@ export const features = Object.freeze({
   },
   RELUCTANT_LEADER: {
     name: 'Reluctant Leader',
-    description: 'Cannot lead retainers or followers',
+    description: 'Cannot lead retainers or followers until level 8',
+    excludeReqLvlFromDesc: true,
     type: FEATURE_TYPE.INHERENT,
   },
   MASTERY_OF_THE_STONE: {
@@ -491,10 +658,14 @@ export const features = Object.freeze({
     name: 'Animal Form',
     description: 'Transform into a reptile, bird or mammal',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 3,
+      interval: 'day',
+    },
   },
   QUICK_TO_MASTER: {
     name: 'Quick to Master',
-    description: 'Prime requisite XP bonus',
+    description: 'Prime requisite XP bonus (+10% if score is 16+, +20% if 18+)',
     type: FEATURE_TYPE.INHERENT,
   },
   COMMANDING: {
@@ -503,8 +674,8 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.INHERENT,
     virtual: true,
   },
-  COMELY: {
-    name: 'Comely',
+  DELICATE: {
+    name: 'DELICATE',
     description: '+1 Charisma, -1 Constitution',
     type: FEATURE_TYPE.INHERENT,
     virtual: true,
@@ -522,21 +693,32 @@ export const features = Object.freeze({
   },
   BEASTMARKED: {
     name: 'Beastmarked',
-    description: '+2 to intimidation and -2 to persuasion',
+    description: '-1 to Reaction',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Beastmarked',
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.skills.persuasion.lvl',
+          key: 'data.reaction_mod',
           mode: 2,
-          value: -2,
+          value: -1,
         },
+      ],
+    },
+  },
+  COMELY: {
+    name: 'COMELY',
+    description: '+1 to Reaction',
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Beastmarked',
+      icon: 'icons/svg/aura.svg',
+      changes: [
         {
-          key: 'data.skills.intimidation.lvl',
+          key: 'data.reaction_mod',
           mode: 2,
-          value: 2,
+          value: 1,
         },
       ],
     },
@@ -554,7 +736,7 @@ export const features = Object.freeze({
   },
   KEEN_SIGHT: {
     name: 'Keen Sight',
-    description: '+4 to searching and passively searches for secret doors',
+    description: '+4 to Searching and passively notices secret doors',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Keen Sight',
@@ -569,9 +751,11 @@ export const features = Object.freeze({
     },
   },
   PARTING_GIFT: {
+    // TODO implement this
     name: 'Parting Gift',
     description: 'Begins with a valuable item',
     type: FEATURE_TYPE.INHERENT,
+    virtual: true,
   },
   WORLDBOUND: {
     name: 'Worldbound',
@@ -591,7 +775,7 @@ export const features = Object.freeze({
   },
   DUNGEON_NAVIGATOR: {
     name: 'Dungeon Navigator',
-    description: 'Senses depth underground and passively searches for pits traps, falling blocks and shifting walls',
+    description: 'Senses their depth underground and passively notices stonework traps',
     type: FEATURE_TYPE.INHERENT,
   },
   ANCESTRAL_TREASURE: {
@@ -600,13 +784,13 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.INHERENT,
   },
   SMALL_ARMS: {
-    name: 'Small Arms', // TODO cannot wield greatswords or longbows
-    description: ['Cannot wield greatswords or longbows', 'Maximum 9 movement rate'],
+    name: 'Small Arms', // TODO cannot wield size H swords or bows
+    description: ['Cannot wield greatswords or longbows', 'Maximum 9 move'],
     type: FEATURE_TYPE.INHERENT,
   },
   UNCANNY_SHOT: {
     name: 'Uncanny Shot',
-    description: '+3 to-hit with missile weapons',
+    description: '+3 to hit with missile weapons',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Uncanny Shot',
@@ -622,7 +806,7 @@ export const features = Object.freeze({
   },
   DIMINUTIVE: {
     name: 'Diminutive',
-    description: '+4 to hiding',
+    description: '+4 to Hiding',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Diminuitive',
@@ -654,27 +838,22 @@ export const features = Object.freeze({
   },
   MONSTROUS: {
     name: 'Monstrous',
-    description: '+3 Strength, -2 Intelligence, -3 Charisma',
+    description: '+3 Strength, -2 Dexterity, -3 Charisma',
     type: FEATURE_TYPE.INHERENT,
     virtual: true,
   },
   FELL_COUNTENANCE: {
     name: 'Fell Countenance',
-    description: '+4 to intimidation and -4 to persuasion',
+    description: '-2 to Reaction',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Fell Countenance',
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.skills.persuasion.lvl',
+          key: 'data.reaction_mod',
           mode: 2,
-          value: -4,
-        },
-        {
-          key: 'data.skills.intimidation.lvl',
-          mode: 2,
-          value: 4,
+          value: -2,
         },
       ],
     },
@@ -686,7 +865,7 @@ export const features = Object.freeze({
   },
   SHARP_SIGHT: {
     name: 'Sharp Sight',
-    description: '+2 to searching',
+    description: '+2 to Searching',
     type: FEATURE_TYPE.INHERENT,
     effectData: {
       label: 'Sharp Sight',
@@ -705,11 +884,14 @@ export const features = Object.freeze({
     description:
       'Thrice per day, can blow magic dust upon a creature to make them either: invisible for 1 turn, fly for 1d4 rounds, or fall asleep',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
-    usesPerDay: 3,
+    usesPer: {
+      uses: 3,
+      interval: 'day',
+    },
   },
   NATURAL_INVISIBILITY: {
     name: 'Natural Invisibility',
-    description: 'Chooses which creatures may see them',
+    description: 'Can become invisible at will',
     type: FEATURE_TYPE.ABILITY,
   },
   FLIGHTY: {

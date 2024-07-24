@@ -30,19 +30,19 @@ export class Barbarian extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.NATURAL_TOUGHNESS, 1),
-    new FeatureConfig(features.BLEED_IMMUNITY, 1),
-    new FeatureConfig(features.BACKSTAB_IMMUNITY, 1),
-    new FeatureConfig(features.FEARLESS, 1),
-    new FeatureConfig(features.FLEET_FOOTED, 1),
-    new FeatureConfig(features.WIZARD_SLAYER, 1),
-    new FeatureConfig(features.FIRST_ATTACK_FEROCITY, 1),
-    new FeatureConfig(features.SENSE_DANGER, 1),
+    new FeatureConfig(features.NATURAL_TOUGHNESS),
+    new FeatureConfig(features.BLEED_IMMUNITY),
+    new FeatureConfig(features.ALERT),
+    new FeatureConfig(features.SENSE_DANGER),
+    new FeatureConfig(features.FLEET_FOOTED),
+    new FeatureConfig(features.FEARLESS),
+    new FeatureConfig(features.WIZARD_SLAYER),
+    new FeatureConfig(features.FIRST_ATTACK_FEROCITY),
     super.multiattackFeature(8, 15),
   ]);
 
   static specializedSkills = Object.freeze([...allCombatSkills]);
-  static proficientSkills = Object.freeze([SKILLS.CLIMBING, SKILLS.LISTENING]);
+  static proficientSkills = Object.freeze([SKILLS.CLIMBING, SKILLS.LISTENING, SKILLS.SNEAKING]);
   static saveProgressions = saveBases.fighter;
 
   static getArmorsByLevel(lvl) {

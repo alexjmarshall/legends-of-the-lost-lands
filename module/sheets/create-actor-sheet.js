@@ -25,7 +25,7 @@ export class CreateActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['brigandine', 'sheet', 'actor', 'create-actor'],
       template: 'systems/brigandine/templates/create-actor-sheet.html',
-      width: 682,
+      width: 785,
       height: 950,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'genderrace' }],
       submitOnChange: false,
@@ -151,7 +151,9 @@ export class CreateActorSheet extends ActorSheet {
     let featuresDescriptions = selectedClass.featuresConfig.flatMap((f) => {
       const feature = typeof f === 'function' ? f(99).feature : f.feature;
       const descArr = Array.isArray(feature.description) ? feature.description : [feature.description];
-      return descArr.map((d) => `${d}${f.reqLvl && f.reqLvl > 1 ? ` (level ${f.reqLvl})` : ''}`);
+      return descArr.map(
+        (d) => `${d}${f.reqLvl && f.reqLvl > 1 && !feature.excludeReqLvlFromDesc ? ` (level ${f.reqLvl})` : ''}`
+      );
     });
     featuresDescriptions.push(this._getAbilityReqsDescription(selectedClass.abilityReqs));
     featuresDescriptions.push(this._getAlignmentReqsDescription(selectedClass.alignments));

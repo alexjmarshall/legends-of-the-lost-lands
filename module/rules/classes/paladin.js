@@ -27,15 +27,17 @@ export class Paladin extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.LAY_ON_HANDS, 1, { usesPerDay: 1 }),
-    new FeatureConfig(features.HOLY_PROTECTION, 1),
-    new FeatureConfig(features.DISEASE_IMMUNITY, 1),
-    new FeatureConfig(features.DETECT_EVIL, 1),
-    new FeatureConfig(features.ASCETIC, 1),
-    new FeatureConfig(features.TURN_UNDEAD, 3),
+    new FeatureConfig(features.HOLY_PROTECTION),
+    new FeatureConfig(features.DISEASE_IMMUNITY),
+    new FeatureConfig(features.DETECT_EVIL),
+    new FeatureConfig(features.LAY_ON_HANDS_HEALING),
+    new FeatureConfig(features.LAY_ON_HANDS_CURE_DISEASE),
+    new FeatureConfig(features.REBUKE_UNDEAD, 3),
     new FeatureConfig(features.PALADIN_STEED, 4),
     new FeatureConfig(features.AURA_OF_PROTECTION, 6),
     new FeatureConfig(features.BANISH_EVIL, 8),
+    new FeatureConfig(features.ASCETIC),
+    new FeatureConfig(features.HARD_LEADER_PALADIN),
     super.multiattackFeature(7, 13),
   ]);
 
@@ -77,36 +79,43 @@ export class Paladin extends BaseClass {
 }
 
 export class Inquisitor extends Paladin {
+  // TODO TEST classes with uses per day abilities
   static description = 'A remorseless upholder of the law.';
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.HOLY_PROTECTION, 1),
-    new FeatureConfig(features.DISEASE_IMMUNITY, 1),
-    new FeatureConfig(features.DETECT_EVIL, 1),
-    new FeatureConfig(features.DETECT_LIE, 1),
-    new FeatureConfig(features.ASCETIC, 1),
-    (lvl) => new FeatureConfig(features.DISPEL_MAGIC, 3, { usesPerDay: super.onePlusOnePerNLevels(lvl - 2, 4) }),
+    new FeatureConfig(features.HOLY_PROTECTION),
+    new FeatureConfig(features.DISEASE_IMMUNITY),
+    new FeatureConfig(features.DETECT_EVIL),
+    new FeatureConfig(features.DETECT_LIE),
+    (lvl) =>
+      new FeatureConfig(features.DISPEL_MAGIC, 3, {
+        // TODO cast as 1.5x level? what speed factor?
+        usesPer: { uses: super.onePlusOnePerNLevels(lvl, 4), interval: 'day' },
+      }),
+    (lvl) =>
+      new FeatureConfig(features.TRUE_SIGHT, 1, {
+        usesPer: { uses: super.onePlusOnePerNLevels(lvl, 4), interval: 'day' },
+      }),
     new FeatureConfig(features.PALADIN_STEED, 4),
-    (lvl) => new FeatureConfig(features.TRUE_SIGHT, 5, { usesPerDay: super.onePlusOnePerNLevels(lvl - 4, 4) }),
+    new FeatureConfig(features.ASCETIC),
+    new FeatureConfig(features.HARD_LEADER_INQUISITOR),
     super.multiattackFeature(7, 13),
   ]);
 
   static abilityReqs = [
-    {
-      name: ABILITIES.STR,
-      min: 9,
-    },
-    {
-      name: ABILITIES.WIS,
-      min: 13,
-    },
-    {
-      name: ABILITIES.CHA,
-      min: 16,
-    },
+    // {
+    //   name: ABILITIES.STR,
+    //   min: 9,
+    // },
+    // {
+    //   name: ABILITIES.WIS,
+    //   min: 13,
+    // },
+    // {
+    //   name: ABILITIES.CHA,
+    //   min: 16,
+    // },
   ];
-
-  static primeReqs = [ABILITIES.WIS, ABILITIES.CHA];
 
   static alignments = lawfulAlignments;
 

@@ -1,6 +1,7 @@
 import { EntitySheetHelper } from '../helper.js';
 import * as Constant from '../constants.js';
 import { ITEM_TYPES } from '../item-helper.js';
+import { getPriceString } from '../rules/currency.js';
 
 /**
  * Extend the basic ItemSheet with some very simple modifications
@@ -29,11 +30,16 @@ export class BrigandineItemSheet extends ItemSheet {
     context.dtypes = Constant.ATTRIBUTE_TYPES;
     context.isGM = game.user.isGM;
     context.isPlayer = !game.user.isGM;
+    const attrs = context.systemData.attributes;
 
-    context.showValue = context.isGM || context.data.type === ITEM_TYPES.CURRENCY;
-    context.showHp = context.systemData.hp != null;
+    context.showValue = attrs.value?.value != null && (context.isGM || context.data.type === ITEM_TYPES.CURRENCY);
+    if (context.showValue) {
+      context.systemData.valueString = getPriceString(attrs.value.value);
+    }
 
-    const identified = context.systemData.attributes.admin?.identified.value;
+    context.showWeightHint = context.isGM && context.systemData.derived?.weight;
+
+    const identified = context.systemData.attributes.admin?.identified?.value;
     context.identified = context.isGM || identified == null || identified === true;
 
     // TODO

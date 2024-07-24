@@ -19,11 +19,19 @@ export const FULL_ABILITIES = Object.freeze({
 export const ABILITIES_LIST = Object.freeze(Object.values(ABILITIES));
 
 export const getScoreMod = (score) => {
-  return Math.round((score - 10) / 3);
+  if (score > 17) return 3;
+  if (score > 15) return 2;
+  if (score > 12) return 1;
+  if (score > 9) return 0;
+  if (score > 6) return -1;
+  if (score > 3) return -2;
+  return -3;
 };
 
 export const getFullScoreMod = (score) => {
-  return score - 10;
+  let mod = score - 10;
+  if (mod < 1) mod--;
+  return mod;
 };
 
 export const getNumExtraLanguages = (int) => {

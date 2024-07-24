@@ -122,7 +122,7 @@ export const SKILLS = Object.freeze({
   DANCING: 'dancing',
   DECEPTION: 'deception',
   DEMONLORE: 'demonlore',
-  DISARM_TRAP: 'disarm trap',
+  TRAP_DISARMING: 'trap disarming',
   DISGUISE: 'disguise',
   DIVINATION: 'divination',
   ENCHANTMENT: 'enchantment',
@@ -134,7 +134,7 @@ export const SKILLS = Object.freeze({
   FORAGING: 'foraging',
   FORGERY: 'forgery',
   HAND_TO_HAND: 'hand-to-hand',
-  HANDGONNE: 'handgonne',
+  // HANDGONNE: 'handgonne',
   HERALDRY: 'heraldry',
   HERBALISM: 'herbalism',
   HERBLORE: 'herblore',
@@ -218,8 +218,9 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.AXE]: {
-    ability: STR,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -230,14 +231,16 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.BLUDGEON]: {
-    ability: STR,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.BOW]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -275,8 +278,9 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.CROSSBOW]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -299,7 +303,7 @@ export const skills = deepFreeze({
     category: LORE,
     advancementBase: OCCASIONAL,
   },
-  [SKILLS.DISARM_TRAP]: {
+  [SKILLS.TRAP_DISARMING]: {
     ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
@@ -367,16 +371,16 @@ export const skills = deepFreeze({
     advancementBase: RARE,
   },
   [SKILLS.HAND_TO_HAND]: {
-    ability: STR,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   // [SKILLS.HANDGONNE]: {
-  //   ability: DEX,
+  //   ability: null,
   //   expert: true,
-  //   proficientArmorPenalty: 0,
-  //   nonproficientArmorPenalty: 1,
+  //   armorPenalty: ONE_TIMES,
   //   category: COMBAT,
   //   advancementBase: CONTINUAL,
   // },
@@ -511,8 +515,9 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.POLEARM]: {
-    ability: STR,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -523,10 +528,11 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.RIDING]: {
-    ability: CON,
+    ability: null,
     expert: false,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
-    advancementBase: COMMON,
+    advancementBase: OCCASIONAL,
   },
   [SKILLS.RUNNING]: {
     ability: CON,
@@ -560,8 +566,9 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.SLING]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -573,8 +580,9 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.STAFF]: {
-    ability: STR,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -585,14 +593,16 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.STRAIGHT_SWORD]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.CURVED_SWORD]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -623,20 +633,23 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.WHIP]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.DAGGER]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.SPEAR]: {
-    ability: DEX,
+    ability: null,
     expert: true,
+    armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
@@ -658,12 +671,18 @@ export const allSkills = Object.keys(skills);
 
 export const allCombatSkills = Object.keys(skills).filter((s) => skills[s].category === COMBAT);
 
+export const WEAPON_SKILLS = Object.fromEntries(
+  Object.keys(SKILLS)
+    .filter((s) => skills[SKILLS[s]].category === COMBAT && s !== 'RIDING')
+    .map((s) => [s, SKILLS[s]])
+);
+
 export const allSurvivalSkills = Object.keys(skills).filter((s) => skills[s].category === SURVIVAL);
 
 export const allMissileWeaponSkills = [SKILLS.BOW, SKILLS.CROSSBOW, SKILLS.SLING]; //SKILLS.HANDGONNE
 
 export const allMeleeWeaponSkills = Object.keys(skills).filter(
-  (s) => skills[s].category === COMBAT && !allMissileWeaponSkills.includes(s)
+  (s) => skills[s].category === COMBAT && !allMissileWeaponSkills.includes(s) && s !== SKILLS.RIDING
 );
 
 export const allSpellSkills = Object.keys(skills).filter((s) => skills[s].category === SPELLS);

@@ -7,7 +7,6 @@ import { WEAPON_CLASS } from '../weapons.js';
 import { progressions } from '../helper.js';
 import { removeDuplicates } from '../../helper.js';
 import { allOrigins, origins } from '../origin.js';
-import { FULL_ABILITIES } from '../abilities.js';
 
 const BASE_AC_DEFAULT = 10;
 const MAX_LVL = 20;
@@ -45,7 +44,9 @@ export class BaseClass {
     return this.#addNSpellSlotsPerLevel(spellSlots, -1);
   }
 
-  static onePlusOnePerNLevels(lvl, n) {
+  static onePlusOnePerNLevels(lvl, n, minLvl = 0) {
+    if (lvl < minLvl) return 0;
+    lvl = lvl - (minLvl - 1);
     return 1 + this.onePerNLevels(lvl, n);
   }
 

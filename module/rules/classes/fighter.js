@@ -28,7 +28,7 @@ export class Fighter extends BaseClass {
     'Lord',
   ]);
 
-  static featuresConfig = deepFreeze([new FeatureConfig(features.CHAIN_ATTACK, 1), super.multiattackFeature(7, 13)]);
+  static featuresConfig = deepFreeze([new FeatureConfig(features.CHAIN_ATTACK), super.multiattackFeature(7, 13)]);
   static specializedSkills = Object.freeze([...allCombatSkills]);
   static saveProgressions = saveBases.fighter;
   static firstLvlHp = 'd6+2';
@@ -50,7 +50,10 @@ export class Berserker extends Fighter {
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.CHAIN_ATTACK, 1),
-    (lvl) => new FeatureConfig(features.BERSERK, 1, { usesPerDay: super.onePlusOnePerNLevels(lvl, 4) }),
+    (lvl) =>
+      new FeatureConfig(features.BERSERK, 1, {
+        usesPer: { uses: super.onePlusOnePerNLevels(lvl, 4), interval: 'day' },
+      }),
     super.multiattackFeature(7, 13),
   ]);
 
@@ -65,7 +68,7 @@ export class Berserker extends Fighter {
     },
     {
       name: ABILITIES.WIS,
-      max: 11,
+      max: 10,
     },
   ];
   static alignments = chaoticAlignments;

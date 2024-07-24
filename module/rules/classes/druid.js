@@ -60,11 +60,11 @@ export class Druid extends BaseClass {
   ]);
 
   static featuresConfig = deepFreeze([
-    new FeatureConfig(features.CAST_DRUID_SPELLS, 1),
+    new FeatureConfig(features.CAST_DRUID_SPELLS),
     new FeatureConfig(features.IDENTIFY_PURE_WATER, 3),
     new FeatureConfig(features.PASS_WITHOUT_TRACE, 3),
     new FeatureConfig(features.SYLVAN_CHARM_IMMUNITY, 7),
-    new FeatureConfig(features.ANIMAL_FORM, 7, { usesPerDay: 3 }),
+    new FeatureConfig(features.ANIMAL_FORM, 7),
   ]);
 
   static specializedSkills = Object.freeze([...allSpellSkills, SKILLS.HERBLORE, SKILLS.ANIMAL_HANDLING]);
@@ -97,7 +97,7 @@ export class Druid extends BaseClass {
   static abilityReqs = [
     {
       name: ABILITIES.WIS,
-      min: 12,
+      min: 11,
     },
     {
       name: ABILITIES.CHA,
