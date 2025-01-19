@@ -574,14 +574,25 @@ select {
   max-width: 175px;
   object-fit: cover;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .profile-img-and-submit
+  .character-create-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 40px;
   font-size: 18px;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .profile-img-and-submit .character-create-container button {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .profile-img-and-submit
+  .character-create-container
+  button {
   height: 50px;
 }
 .brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options {
@@ -589,7 +600,12 @@ select {
   flex-wrap: wrap;
   gap: 5px;
 }
-.brigandine.sheet.create-actor .sheet-body .tab.appearance .portrait-container .portrait-img-options .portrait-img-option {
+.brigandine.sheet.create-actor
+  .sheet-body
+  .tab.appearance
+  .portrait-container
+  .portrait-img-options
+  .portrait-img-option {
   height: 90px;
   max-width: 60px;
 }
