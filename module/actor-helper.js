@@ -410,18 +410,19 @@ function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
   const hpGained = actorUpdates['data.hp.max'] - actorData.hp.max;
 
   // TODO move into dialogs file
+  // TODO level drain works?
   new Dialog({
     title: `Level Gained`,
     content: `
       <p style="text-align:center;">${actor.name} grows stronger...</p>
-      <div style="display:flex;"><p style="width:50%">Level: ${actorUpdates['data.lvl']}</p>
+      <p><div style="display:flex;"><p style="width:50%">Level: ${actorUpdates['data.lvl']}</p>
       <p>HP: +${hpGained}</p></div>
-      ${featuresGained.length ? `<p>Features: ${featuresGained.map((f) => `${f}`).join(', ')}</p>` : ''}
+      ${featuresGained.length ? `<p>New Features: ${featuresGained.map((f) => `${f}`).join(', ')}</p>` : ''}
       <div style="display:flex;">${
         skillsImproved.length
           ? `<div style="width:50%"><p>Skills:</p>
       <ul>
-        ${skillsImproved.map((s) => `<li>${s.name}: ${s.oldValue} > ${s.newValue}</li>`).join('')}
+        ${skillsImproved.map((s) => `<li>${s.name}: ${s.newValue}</li>`).join('')}
       </ul></div>`
           : ''
       }
@@ -429,12 +430,10 @@ function showLevelUpNotice(actor, actorUpdates, itemUpdates) {
         abilityScoresImproved.length
           ? `<div><p>Ability Scores:</p>
       <ul> 
-        ${abilityScoresImproved
-          .map((a) => `<li>${FULL_ABILITIES[a.name]}: ${a.oldValue} > ${a.newValue}</li>`)
-          .join('')}
+        ${abilityScoresImproved.map((a) => `<li>${FULL_ABILITIES[a.name]}: ${a.newValue}</li>`).join('')}
       </ul></div>`
           : ''
-      }</div>
+      }</div></p>
     `,
     buttons: {
       one: {

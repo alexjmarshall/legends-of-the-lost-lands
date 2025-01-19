@@ -1439,7 +1439,16 @@
       "props": {
         "description": "",
         "notes": "",
-        "attributes": {},
+        "attributes": {
+          "admin": {
+            "invisible": {
+              "dtype": "Boolean",
+              "group": "admin",
+              "label": "Invisible to Players",
+              "value": false
+            }
+          }
+        },
         "macro": "",
         "groups": {
           "admin": {
@@ -2551,10 +2560,10 @@
           "value": 1
         },
         "range": {
-          "dtype": "String",
+          "dtype": "Number",
           "group": "",
           "label": "Range (ft.)",
-          "value": ""
+          "value": 60
         },
         "duration": {
           "dtype": "String",
@@ -2572,7 +2581,7 @@
           "dtype": "String",
           "group": "",
           "label": "School",
-          "value": ""
+          "value": "abjuration"
         },
         "components": {
           "dtype": "String",

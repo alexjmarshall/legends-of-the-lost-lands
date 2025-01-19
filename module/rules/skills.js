@@ -101,6 +101,7 @@ const { ADVENTURE, COMBAT, CRAFT, CULTURE, LORE, SPELLS, SURVIVAL, THIEVERY } = 
 
 // TODO separate macros for use skill and increase skill (DM only)
 // combat skills do increase automatically as long as there is a target
+// or just a DM macro to DECREASE skill to counteract frivolous use
 export const SKILLS = Object.freeze({
   ABJURATION: 'abjuration',
   ALTERATION: 'alteration',
@@ -218,7 +219,7 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.AXE]: {
-    ability: null,
+    ability: STR,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -231,14 +232,14 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.BLUDGEON]: {
-    ability: null,
+    ability: STR,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.BOW]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -278,7 +279,7 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.CROSSBOW]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -371,14 +372,14 @@ export const skills = deepFreeze({
     advancementBase: RARE,
   },
   [SKILLS.HAND_TO_HAND]: {
-    ability: null,
+    ability: STR,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   // [SKILLS.HANDGONNE]: {
-  //   ability: null,
+  //   ability: DEX,
   //   expert: true,
   //   armorPenalty: ONE_TIMES,
   //   category: COMBAT,
@@ -515,7 +516,7 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.POLEARM]: {
-    ability: null,
+    ability: STR,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -528,7 +529,7 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.RIDING]: {
-    ability: null,
+    ability: CON,
     expert: false,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -566,7 +567,7 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.SLING]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -580,7 +581,7 @@ export const skills = deepFreeze({
     advancementBase: COMMON,
   },
   [SKILLS.STAFF]: {
-    ability: null,
+    ability: STR,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -593,14 +594,14 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.STRAIGHT_SWORD]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.CURVED_SWORD]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
@@ -633,21 +634,21 @@ export const skills = deepFreeze({
     advancementBase: OCCASIONAL,
   },
   [SKILLS.WHIP]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.DAGGER]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,
     advancementBase: CONTINUAL,
   },
   [SKILLS.SPEAR]: {
-    ability: null,
+    ability: DEX,
     expert: true,
     armorPenalty: ONE_TIMES,
     category: COMBAT,

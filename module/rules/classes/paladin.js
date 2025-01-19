@@ -79,7 +79,6 @@ export class Paladin extends BaseClass {
 }
 
 export class Inquisitor extends Paladin {
-  // TODO TEST classes with uses per day abilities
   static description = 'A remorseless upholder of the law.';
 
   static featuresConfig = deepFreeze([
@@ -88,7 +87,7 @@ export class Inquisitor extends Paladin {
     new FeatureConfig(features.DETECT_EVIL),
     new FeatureConfig(features.DETECT_LIE),
     (lvl) =>
-      new FeatureConfig(features.DISPEL_MAGIC, 3, {
+      new FeatureConfig(features.DISPEL_MAGIC, 1, {
         // TODO cast as 1.5x level? what speed factor?
         usesPer: { uses: super.onePlusOnePerNLevels(lvl, 4), interval: 'day' },
       }),
@@ -103,18 +102,18 @@ export class Inquisitor extends Paladin {
   ]);
 
   static abilityReqs = [
-    // {
-    //   name: ABILITIES.STR,
-    //   min: 9,
-    // },
-    // {
-    //   name: ABILITIES.WIS,
-    //   min: 13,
-    // },
-    // {
-    //   name: ABILITIES.CHA,
-    //   min: 16,
-    // },
+    {
+      name: ABILITIES.STR,
+      min: 9,
+    },
+    {
+      name: ABILITIES.WIS,
+      min: 13,
+    },
+    {
+      name: ABILITIES.CHA,
+      min: 16,
+    },
   ];
 
   static alignments = lawfulAlignments;

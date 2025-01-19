@@ -110,7 +110,7 @@ export class CloisteredCleric extends Cleric {
 export class Runepriest extends Cleric {
   static description = 'A worshipper of Wotan who shapes magic runes to wield divine power.';
   static armorDescription = 'medium';
-  static featuresConfig = deepFreeze([new FeatureConfig(features.RUNE_MAGIC, 1)]);
+  static featuresConfig = deepFreeze([new FeatureConfig(features.RUNE_MAGIC)]);
   static specializedSkills = Object.freeze([SKILLS.RUNELORE, SKILLS.RUNECARVING]);
   static proficientSkills = Object.freeze([...allCombatSkills]);
   static weaponDescription = 'any';

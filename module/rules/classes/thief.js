@@ -31,7 +31,7 @@ export class Thief extends BaseClass {
 
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.BACKSTAB),
-    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 10),
   ]);
 
   static specializedSkills = Object.freeze([
@@ -83,7 +83,7 @@ export class Assassin extends Thief {
   static featuresConfig = deepFreeze([
     new FeatureConfig(features.BACKSTAB),
     new FeatureConfig(features.ASSASSINATE),
-    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 10),
   ]);
 
   static specializedSkills = Object.freeze([SKILLS.POISONLORE, SKILLS.POISON_HANDLING, SKILLS.DISGUISE]);
@@ -130,7 +130,7 @@ export class Swashbuckler extends Thief {
           {
             key: 'data.melee_to_hit_mod',
             mode: 2,
-            value: super.onePlusOnePerNLevels(lvl, 3),
+            value: super.onePlusOnePerNLevels(lvl, 4),
           },
           {
             key: 'data.melee_dmg_mod',
@@ -140,7 +140,7 @@ export class Swashbuckler extends Thief {
         ],
       }),
     new FeatureConfig(features.IMPROVED_EVASION),
-    new FeatureConfig(features.READ_MAGIC_SCROLLS, 4),
+    new FeatureConfig(features.READ_MAGIC_SCROLLS, 10),
   ]);
 
   static proficientSkills = Thief.proficientSkills.filter((s) => s !== SKILLS.ANCIENT_LANGUAGES);

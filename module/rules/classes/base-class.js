@@ -21,7 +21,7 @@ export class BaseClass {
    *                    but with 'n' added to each spell slot value.
    */
   static #addNSpellSlotsPerLevel(spellSlots, n) {
-    return spellSlots.map((x) => x.map((y) => y + n));
+    return spellSlots.map((x) => x.map((y) => y + n).filter((y) => y > 0));
   }
 
   /**
@@ -44,7 +44,7 @@ export class BaseClass {
     return this.#addNSpellSlotsPerLevel(spellSlots, -1);
   }
 
-  static onePlusOnePerNLevels(lvl, n, minLvl = 0) {
+  static onePlusOnePerNLevels(lvl, n, minLvl = 1) {
     if (lvl < minLvl) return 0;
     lvl = lvl - (minLvl - 1);
     return 1 + this.onePerNLevels(lvl, n);

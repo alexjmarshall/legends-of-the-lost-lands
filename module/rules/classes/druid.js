@@ -70,13 +70,10 @@ export class Druid extends BaseClass {
   static specializedSkills = Object.freeze([...allSpellSkills, SKILLS.HERBLORE, SKILLS.ANIMAL_HANDLING]);
 
   static proficientSkills = Object.freeze([
-    SKILLS.CURVED_SWORD,
-    SKILLS.POLEARM,
-    SKILLS.BLUDGEON,
+    SKILLS.DAGGER,
     SKILLS.HAND_TO_HAND,
     SKILLS.SLING,
     SKILLS.STAFF,
-    SKILLS.DAGGER,
     SKILLS.SPEAR,
     SKILLS.HERBALISM,
   ]);

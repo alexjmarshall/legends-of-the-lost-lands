@@ -210,12 +210,6 @@ export class BrigandineItem extends Item {
   // TODO list of critical effects with mods for defender saving throw
   // on critical, auto roll the defender's save, and show the valid effect choices to the attacker!!
   // start with fumble results, remove fumble rolls
-  // chance for a M shield to move to the attacked/feinted height area
-  // TODO nail down bleeding. Each hit location has min damage for minor/major bleed.
-  // TODO barbarians also immune to impales
-
-  // for polearms you need to thrust to use max reach?
-  // TODO assign penetration resistance values to armors and whether they are cuttable
 
   _prepareGarmentData(itemData) {
     if ([ITEM_TYPES.ARMOR, ITEM_TYPES.HELM, ITEM_TYPES.SHIELD, ITEM_TYPES.CLOTHING].includes(itemData.type) === false) {

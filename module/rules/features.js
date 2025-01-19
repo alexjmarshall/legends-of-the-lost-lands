@@ -27,6 +27,7 @@ export const FEATURE_TYPE = {
   LIMITED_USE_ABILITY: 'limited use ability',
 };
 
+// TODO test levelling a druid
 export const features = Object.freeze({
   ABJURATION_SPECIALIZATION: {
     name: 'Abjuration Specialization',
@@ -43,6 +44,101 @@ export const features = Object.freeze({
         },
       ],
     },
+  },
+  ALERT: {
+    name: 'Alert',
+    description: "Reduces the party's chance of being surprised",
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Alert',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.passive_perception',
+          mode: 2,
+          value: 3,
+        },
+      ],
+    },
+  },
+  ALTERATION_SPECIALIZATION: {
+    name: 'Alteration Specialization',
+    description: ['+2 to Alteration', 'Cannot learn or cast Abjuration spells'],
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Alteration Specialization',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.skills.alteration.lvl',
+          mode: 2,
+          value: 2,
+        },
+      ],
+    },
+  },
+  ANCIENT_HATRED: {
+    name: 'Ancient Hatred (Evil Humanoids)',
+    description: '+1 damage every 3 levels against evil humanoids',
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Damage Bonus vs. Humanoids',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.dmg_bonus_humanoid',
+          mode: 2,
+          value: 1,
+        },
+      ],
+    },
+  },
+  ANCIENT_HATRED_UNDEAD: {
+    name: 'Ancient Hatred (Undead)',
+    description: '+1 damage every 3 levels against the undead',
+    type: FEATURE_TYPE.INHERENT,
+    effectData: {
+      label: 'Damage Bonus vs. Undead',
+      icon: 'icons/svg/aura.svg',
+      changes: [
+        {
+          key: 'data.dmg_bonus_undead',
+          mode: 2,
+          value: 1,
+        },
+      ],
+    },
+  },
+  ANIMAL_FORM: {
+    name: 'Animal Form',
+    description: 'Transform into a reptile, bird or mammal',
+    type: FEATURE_TYPE.LIMITED_USE_ABILITY,
+    usesPer: {
+      uses: 3,
+      interval: 'day',
+    },
+  },
+  ASCETIC: {
+    name: 'Ascetic',
+    description: 'Must tithe at least 20% of treasure gained to a temple',
+    type: FEATURE_TYPE.INHERENT,
+  },
+  ASSASSINATE: {
+    name: 'Assassinate',
+    description: 'Assassinate surprised foes',
+    type: FEATURE_TYPE.ABILITY,
+  },
+  AURA_OF_PROTECTION: {
+    // TODO check Active Auras module to implement
+    name: 'Aura of Protection',
+    description: "+2 to saving throws & AC and +4 to morale for allies in a 10' radius by holding aloft a Holy Sword",
+    type: FEATURE_TYPE.INHERENT,
+  },
+  BACKSTAB: {
+    // CONTINUE
+    name: 'Backstab',
+    description: 'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
+    type: FEATURE_TYPE.ABILITY,
   },
   CONJURATION_SPECIALIZATION: {
     name: 'Conjuration Specialization',
@@ -140,22 +236,6 @@ export const features = Object.freeze({
       ],
     },
   },
-  ALTERATION_SPECIALIZATION: {
-    name: 'Alteration Specialization',
-    description: ['+2 to Alteration', 'Cannot learn or cast Abjuration spells'],
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Alteration Specialization',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.skills.alteration.lvl',
-          mode: 2,
-          value: 2,
-        },
-      ],
-    },
-  },
   CHAIN_ATTACK: {
     name: 'Chain Attack',
     description: 'Extra attack after slaying an enemy',
@@ -239,16 +319,6 @@ export const features = Object.freeze({
     description: 'Shape magic runes',
     type: FEATURE_TYPE.ABILITY,
   },
-  BACKSTAB: {
-    name: 'Backstab',
-    description: 'Backstab unaware foes for x2 damage (+1 multiple every 4 levels)',
-    type: FEATURE_TYPE.ABILITY,
-  },
-  ASSASSINATE: {
-    name: 'Assassinate',
-    description: 'Assassinate surprised foes',
-    type: FEATURE_TYPE.ABILITY,
-  },
   DUELLIST: {
     name: 'Duellist',
     description: '+1 to-hit, damage & AC every 4 levels',
@@ -274,6 +344,11 @@ export const features = Object.freeze({
         },
       ],
     },
+  },
+  TRIGGER_SPELL: {
+    name: 'Trigger Spell',
+    description: 'Activate a spell memorized by another',
+    type: FEATURE_TYPE.ABILITY,
   },
   STEAL_SPELL: {
     name: 'Steal Spell',
@@ -445,7 +520,7 @@ export const features = Object.freeze({
       icon: 'icons/svg/aura.svg',
       changes: [
         {
-          key: 'data.attributes.immunities.immune_disease.value',
+          key: 'data.attributes.immunities.disease.value',
           mode: 5,
           value: true,
         },
@@ -484,11 +559,6 @@ export const features = Object.freeze({
       ],
     },
   },
-  ASCETIC: {
-    name: 'Ascetic',
-    description: 'Must tithe at least 20% of treasure gained to a temple',
-    type: FEATURE_TYPE.INHERENT,
-  },
   HARD_LEADER_PALADIN: {
     name: 'Hard Leader (Paladin)',
     description: 'Will accept only Lawful Good retainers',
@@ -520,11 +590,6 @@ export const features = Object.freeze({
     description: 'Summon an intelligent warhorse',
     type: FEATURE_TYPE.ABILITY,
   },
-  AURA_OF_PROTECTION: {
-    name: 'Aura of Protection',
-    description: "+2 to saving throws & AC and +4 to morale for allies in a 10' radius by holding aloft a Holy Sword",
-    type: FEATURE_TYPE.INHERENT,
-  },
   BANISH_EVIL: {
     name: 'Banish Evil',
     description: 'Banish evil summoned/extraplanar creatures by striking them with a Holy Sword',
@@ -534,54 +599,6 @@ export const features = Object.freeze({
     name: 'True Sight',
     description: 'True Sight 1/day every 4 levels',
     type: FEATURE_TYPE.LIMITED_USE_ABILITY,
-  },
-  ANCIENT_HATRED: {
-    name: 'Ancient Hatred',
-    description: '+1 damage every 3 levels against evil humanoids',
-    type: FEATURE_TYPE.INHERENT, // TODO program in attack macro
-    effectData: {
-      label: 'Damage Bonus vs. Humanoids',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.dmg_bonus_humanoid',
-          mode: 2,
-          value: 1,
-        },
-      ],
-    },
-  },
-  ANCIENT_HATRED_UNDEAD: {
-    name: 'Ancient Hatred',
-    description: '+1 damage every 3 levels against the undead',
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Damage Bonus vs. Undead',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.dmg_bonus_undead',
-          mode: 2,
-          value: 1,
-        },
-      ],
-    },
-  },
-  ALERT: {
-    name: 'Alert',
-    description: "Reduces the party's chance of being surprised",
-    type: FEATURE_TYPE.INHERENT,
-    effectData: {
-      label: 'Listening Bonus',
-      icon: 'icons/svg/aura.svg',
-      changes: [
-        {
-          key: 'data.skills.listening.lvl',
-          mode: 2,
-          value: 4,
-        },
-      ],
-    },
   },
   NEUTRALIZE_POISON: {
     name: 'Neutralize Poison',
@@ -600,12 +617,6 @@ export const features = Object.freeze({
       uses: 1,
       interval: 'week',
     },
-  },
-  AMBIDEXTROUS: {
-    // TODO derive in actor.js from ability scores if have this feature
-    name: 'Ambidextrous', // TODO use derived penalties in attack macro
-    description: 'Halved two-weapon fighting penalties',
-    type: FEATURE_TYPE.INHERENT,
   },
   RELUCTANT_LEADER: {
     name: 'Reluctant Leader',
@@ -653,15 +664,6 @@ export const features = Object.freeze({
     name: 'Sylvan Charm Immunity',
     description: 'Immune to charm by sylvan creatures',
     type: FEATURE_TYPE.INHERENT,
-  },
-  ANIMAL_FORM: {
-    name: 'Animal Form',
-    description: 'Transform into a reptile, bird or mammal',
-    type: FEATURE_TYPE.LIMITED_USE_ABILITY,
-    usesPer: {
-      uses: 3,
-      interval: 'day',
-    },
   },
   QUICK_TO_MASTER: {
     name: 'Quick to Master',
@@ -776,11 +778,6 @@ export const features = Object.freeze({
   DUNGEON_NAVIGATOR: {
     name: 'Dungeon Navigator',
     description: 'Senses their depth underground and passively notices stonework traps',
-    type: FEATURE_TYPE.INHERENT,
-  },
-  ANCESTRAL_TREASURE: {
-    name: 'Ancestral Treasure',
-    description: 'Ancestral Treasure',
     type: FEATURE_TYPE.INHERENT,
   },
   SMALL_ARMS: {
@@ -906,3 +903,5 @@ export const features = Object.freeze({
     type: FEATURE_TYPE.ABILITY,
   },
 });
+const sortedFeatures = Object.values(features).sort((a, b) => a.name.localeCompare(b.name));
+console.log(sortedFeatures.map((f) => f.name));

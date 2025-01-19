@@ -28,8 +28,8 @@ export class Mage extends BaseClass {
   ]);
 
   static MAGIC_SPELL_SLOTS = deepFreeze([
+    [1],
     [2],
-    [3],
     [3, 1],
     [4, 2],
     [4, 2, 1],
@@ -80,55 +80,35 @@ export class Mage extends BaseClass {
   }
 }
 
-// export class Incantatrix extends Mage {
-//   static description = 'A mage with the uncanny ability to steal spells from the minds of others.';
+export class Incantatrix extends Mage {
+  static description = 'A mage with the uncanny ability to steal spells from the minds of others.';
 
-//   static featuresConfig = deepFreeze([
-//     ...super.featuresConfig,
-//     new FeatureConfig(features.DIMINISHED_SPELLCASTING, 1),
-//     new FeatureConfig(features.READ_THOUGHTS, 1),
-//     new FeatureConfig(features.DETECT_MAGIC, 1),
-//     new FeatureConfig(features.SENSE_SPELL, 1),
-//     new FeatureConfig(features.FORGET, 2),
-//     new FeatureConfig(features.SENSE_MEMORIZED_SPELLS, 2),
-//     new FeatureConfig(features.STEAL_SPELL, 3),
-//     new FeatureConfig(features.DRAIN_MAGIC, 6),
-//   ]);
+  static featuresConfig = deepFreeze([
+    ...super.featuresConfig,
+    new FeatureConfig(features.DIMINISHED_SPELLCASTING),
+    new FeatureConfig(features.READ_THOUGHTS),
+    new FeatureConfig(features.DETECT_MAGIC),
+    new FeatureConfig(features.SENSE_SPELL),
+    new FeatureConfig(features.FORGET, 2),
+    new FeatureConfig(features.SENSE_MEMORIZED_SPELLS, 2),
+    new FeatureConfig(features.TRIGGER_SPELL, 3),
+    new FeatureConfig(features.STEAL_SPELL, 5),
+    new FeatureConfig(features.DRAIN_MAGIC, 11),
+  ]);
 
-//   static MAGIC_SPELL_SLOTS = Object.freeze([
-//     [1],
-//     [2],
-//     [3],
-//     [3, 1],
-//     [3, 2],
-//     [3, 2, 1],
-//     [3, 2, 2],
-//     [3, 2, 2, 1],
-//     [3, 2, 2, 2],
-//     [3, 3, 2, 2, 1],
-//     [3, 3, 3, 2, 2],
-//     [3, 3, 3, 3, 3],
-//     [4, 4, 4, 3, 3, 1],
-//     [4, 4, 4, 3, 3, 2],
-//     [4, 4, 4, 3, 3, 3, 1],
-//     [4, 4, 4, 4, 4, 4, 1],
-//     [5, 5, 5, 4, 4, 4, 1, 1],
-//     [5, 5, 5, 5, 5, 5, 2, 1, 1],
-//     [6, 6, 6, 5, 5, 5, 2, 1, 1],
-//     [6, 6, 6, 6, 6, 6, 2, 2, 1],
-//   ]);
+  static MAGIC_SPELL_SLOTS = Object.freeze([...BaseClass.removeOneSpellSlotPerLevel(Mage.MAGIC_SPELL_SLOTS)]);
 
-//   static abilityReqs = [
-//     {
-//       name: ABILITIES.CHA,
-//       min: 13,
-//     },
-//   ];
+  static abilityReqs = [
+    {
+      name: ABILITIES.CHA,
+      min: 13,
+    },
+  ];
 
-//   constructor(lvl, origin) {
-//     super(lvl, origin, Incantatrix);
-//   }
-// }
+  constructor(lvl, origin) {
+    super(lvl, origin, Incantatrix);
+  }
+}
 
 class BaseSpecialist extends Mage {
   static MAGIC_SPELL_SLOTS = Object.freeze([...BaseClass.addOneSpellSlotPerLevel(Mage.MAGIC_SPELL_SLOTS)]);

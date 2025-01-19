@@ -37,7 +37,7 @@ export const GARMENT_MATERIALS = Object.freeze({
   BRIGANDINE: 'brigandine',
   SCALE: 'scale',
   MAIL: 'mail',
-  ELVEN_MAIL: 'elven mail',
+  MITHRIL_MAIL: 'mithril mail',
   PLATED_MAIL: 'plated mail',
   LAMELLAR: 'lamellar',
   SPLINT: 'splint',
@@ -60,7 +60,7 @@ const {
   BRIGANDINE,
   SCALE,
   MAIL,
-  ELVEN_MAIL,
+  MITHRIL_MAIL,
   PLATED_MAIL,
   LAMELLAR,
   SPLINT,
@@ -153,7 +153,7 @@ export const garmentMaterials = deepFreeze({
     value: 2000,
     durability: 230,
   },
-  [ELVEN_MAIL]: {
+  [MITHRIL_MAIL]: {
     weight: 24,
     clo: 1,
     value: 20000,
@@ -194,7 +194,7 @@ export const garmentMaterials = deepFreeze({
 export const armorMaterials = deepFreeze({
   [FURS]: {
     metal: false,
-    bulk: NON,
+    bulk: SEMI,
     type: LIGHT,
     cuttable: true,
   },
@@ -252,7 +252,7 @@ export const armorMaterials = deepFreeze({
     type: MEDIUM,
     cuttable: false,
   },
-  [ELVEN_MAIL]: {
+  [MITHRIL_MAIL]: {
     metal: true,
     bulk: NON,
     type: LIGHT,
@@ -294,7 +294,7 @@ export const armorVsDmgType = deepFreeze({
   none: {
     baseAc: 0,
     [BLUNT]: {
-      ac: 0,
+      ac: 1,
       pen: 0,
       dr: 0,
     },
@@ -348,12 +348,12 @@ export const armorVsDmgType = deepFreeze({
   [QUILTED]: {
     baseAc: 2,
     [BLUNT]: {
-      ac: 0,
+      ac: 1,
       pen: 9,
       dr: 1,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 2,
       dr: 1,
     },
@@ -366,7 +366,7 @@ export const armorVsDmgType = deepFreeze({
   [LEATHER]: {
     baseAc: 2,
     [BLUNT]: {
-      ac: 0,
+      ac: 1,
       pen: 8,
       dr: 0,
     },
@@ -384,17 +384,17 @@ export const armorVsDmgType = deepFreeze({
   [CUIR_BOUILLI]: {
     baseAc: 3,
     [BLUNT]: {
-      ac: 0,
+      ac: 1,
       pen: 6,
       dr: 0,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 3,
       dr: 0,
     },
     [SLASH]: {
-      ac: -1,
+      ac: 0,
       pen: 5,
       dr: 0,
     },
@@ -407,12 +407,12 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
     [PIERCE]: {
-      ac: 0,
+      ac: -1,
       pen: 3,
       dr: 0,
     },
     [SLASH]: {
-      ac: -1,
+      ac: 0,
       pen: 4,
       dr: 0,
     },
@@ -461,7 +461,7 @@ export const armorVsDmgType = deepFreeze({
       dr: 1,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 5,
       dr: 1,
     },
@@ -489,11 +489,11 @@ export const armorVsDmgType = deepFreeze({
       dr: 1,
     },
   },
-  [ELVEN_MAIL]: {
+  [MITHRIL_MAIL]: {
     baseAc: 3,
     [BLUNT]: {
       ac: 0,
-      pen: 16,
+      pen: 15,
       dr: 0,
     },
     [PIERCE]: {
@@ -526,9 +526,9 @@ export const armorVsDmgType = deepFreeze({
     },
   },
   [LAMELLAR]: {
-    baseAc: 4,
+    baseAc: 5,
     [BLUNT]: {
-      ac: 0,
+      ac: -1,
       pen: 11,
       dr: 1,
     },
@@ -569,33 +569,32 @@ export const armorVsDmgType = deepFreeze({
       dr: 0,
     },
     [PIERCE]: {
-      ac: 1,
+      ac: 0,
       pen: 7,
       dr: 0,
     },
     [SLASH]: {
-      ac: 0,
+      ac: 1,
       pen: 9,
-      dr: 1,
+      dr: 0,
     },
   },
   [STEEL_PLATE]: {
-    // TODO either DR or another point of AC? check these numbers in spreadsheet
     baseAc: 8,
     [BLUNT]: {
       ac: -2,
       pen: 10,
-      dr: 1,
+      dr: 0,
     },
     [PIERCE]: {
-      ac: 2,
+      ac: 0,
       pen: 9,
       dr: 0,
     },
     [SLASH]: {
       ac: 1,
       pen: 12,
-      dr: 1,
+      dr: 0,
     },
   },
 });

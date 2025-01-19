@@ -75,6 +75,7 @@ export class BrigandineActor extends Actor {
     charData.pain_penalty = 0; // TODO apply to all skill checks, ability checks, and saves
     charData.healing_mod = 0; // TODO apply to natural healing and injury heal checks
     charData.reaction_mod = 0; // TODO apply to reaction rolls
+    charData.passive_perception = 10; // TODO apply to surprise checks
   }
 
   /** @override */
@@ -556,7 +557,7 @@ export class BrigandineActor extends Actor {
     const ac = {
       touch_ac: 0,
       parry: this._addParryWeapons(actorData, heldItems),
-      timing: undefined,
+      timing: null,
       total: Object.fromEntries(PHYSICAL_DMG_TYPES_LIST.map((t) => [t, { ac: 0, dr: 0 }])),
       location: Object.fromEntries(
         Object.keys(hitLocations).map((hitLoc) => [
@@ -574,7 +575,7 @@ export class BrigandineActor extends Actor {
     // timing
     const counterWeap = heldItems.some((i) => i.data.data.atk_timing === ATK_TIMINGS.COUNTER);
     const activeParryWeap = heldItems.some((i) => i.data.data.atk_timing === ATK_TIMINGS.PARRY);
-    ac.timing = counterWeap ? ATK_TIMINGS.COUNTER : activeParryWeap ? ATK_TIMINGS.PARRY : undefined;
+    ac.timing = counterWeap ? ATK_TIMINGS.COUNTER : activeParryWeap ? ATK_TIMINGS.PARRY : ac.timing;
 
     // ac and dr by hit location and dmg type
     const charSizeVal = data.size_val;
@@ -669,7 +670,7 @@ export class BrigandineActor extends Actor {
 
     // round total ac & dr values
     for (const v of Object.values(ac.total)) {
-      v.ac = Math.floor(v.ac);
+      v.ac = Math.round(v.ac);
       v.dr = Math.floor(v.dr);
     }
     // TODO hinged helm has a macro to change between open/closed...automatically muffle in character speaking with closed helm?

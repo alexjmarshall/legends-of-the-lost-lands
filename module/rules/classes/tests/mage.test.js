@@ -1,22 +1,22 @@
 import { Mage, Incantatrix, Necromancer } from '../mage';
 
-describe('Mage class', () => {
-  const expectedLevels = [11];
+// describe('Mage class', () => {
+//   const expectedLevels = [11];
 
-  it.each(expectedLevels)('constructs a Mage of level %i with the correct properties', (lvl) => {
-    const actual = new Mage(lvl, 'Sage');
-    console.log(actual);
-  });
-});
-
-// describe('Incantatrix variant', () => {
-//   const expectedLevels = [1];
-
-//   it.each(expectedLevels)('constructs a Incantatrix of level %i with the correct properties', (lvl) => {
-//     const actual = new Incantatrix(lvl, 'Herald');
+//   it.each(expectedLevels)('constructs a Mage of level %i with the correct properties', (lvl) => {
+//     const actual = new Mage(lvl, 'Sage');
 //     console.log(actual);
 //   });
 // });
+
+describe('Incantatrix variant', () => {
+  const expectedLevels = [12];
+
+  it.each(expectedLevels)('constructs a Incantatrix of level %i with the correct properties', (lvl) => {
+    const actual = new Incantatrix(lvl, 'Herald');
+    console.log(actual);
+  });
+});
 
 // describe('Necromancer variant', () => {
 //   const expectedLevels = [1];

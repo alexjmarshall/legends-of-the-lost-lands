@@ -7,8 +7,8 @@ export const CURRENCY_MATERIAL_VALUE_PER_POUND = {
   platinum: 24000,
 };
 
-// NOTE: to convert historical prices in pence to cp, shillings to sp, and pounds to gp,
-// multiply by 4
+// NOTE: to convert historical prices in pence to cp, shillings to sp, or pounds to gp,
+// multiply by 3
 export const CURRENCY = {
   cp: {
     weight: 0.05, // 20 per pound
@@ -76,7 +76,8 @@ export function expandPrice(priceInCps) {
 }
 
 export function getPriceString(priceInCps) {
-  if (!priceInCps) return;
+  if (priceInCps === 0) return '0 CP';
+  if (priceInCps == null) return '-';
   const priceObj = expandPrice(priceInCps);
   let priceString = '';
   for (const [unit, value] of Object.entries(priceObj)) {
